@@ -1,0 +1,23 @@
+:root {
+  color-scheme: light;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  color-scheme: light;
+}
+
+svg {
+  display: inline-block;
+  vertical-align: middle;
+}

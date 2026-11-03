@@ -457,7 +457,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                           maxLength={1}
                           value={digit}
                           onChange={(e) => handlePinDigitChange(idx, e.target.value)}
-                          onKeyDown={(e) => handlePinDigitKeyDown(idx, e.target.value ? e : e)}
+                          onKeyDown={(e) => handlePinDigitKeyDown(idx, e)}
                           className="w-12 h-12 text-center text-lg font-black bg-slate-50 border border-slate-300 rounded-2xl text-slate-900 focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 focus:outline-hidden transition-all shadow-2xs"
                         />
                       ))}

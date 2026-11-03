@@ -158,26 +158,30 @@ export const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <div className="p-3 bg-white rounded-xl border border-slate-200/90 text-left">
           <span className="text-[11px] font-medium text-slate-500 block">Kayıtlı Öğrenci</span>
-          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">342 Öğrenci</p>
+          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">
+            {classes.reduce((acc, c) => acc + c.studentCount, 0)} Öğrenci
+          </p>
           <span className="text-[10px] text-slate-400 block mt-0.5">Aktif öğrenim gören</span>
         </div>
 
         <div className="p-3 bg-white rounded-xl border border-slate-200/90 text-left">
           <span className="text-[11px] font-medium text-slate-500 block">Öğretmen Kadrosu</span>
-          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">{teachers.length} Branş Öğrt.</p>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Tüm branşlar dolu</span>
+          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">{teachers.length} Öğretmen</p>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Aktif branş kadrosu</span>
         </div>
 
         <div className="p-3 bg-white rounded-xl border border-slate-200/90 text-left">
           <span className="text-[11px] font-medium text-slate-500 block">Aktif Şubeler</span>
           <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">{classes.length} Sınıf</p>
-          <span className="text-[10px] text-slate-400 block mt-0.5">6, 7 ve 8. sınıflar</span>
+          <span className="text-[10px] text-slate-400 block mt-0.5">Tanımlı şube sayısı</span>
         </div>
 
         <div className="p-3 bg-white rounded-xl border border-slate-200/90 text-left">
           <span className="text-[11px] font-medium text-slate-500 block">Okul Başarı Ortalaması</span>
-          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">77.8 Puan</p>
-          <span className="text-[10px] text-emerald-600 block mt-0.5">%96 Devam Oranı</span>
+          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">
+            {classes.length > 0 ? (classes.reduce((acc, c) => acc + c.averageScore, 0) / classes.length).toFixed(1) : '0.0'} Puan
+          </p>
+          <span className="text-[10px] text-emerald-600 block mt-0.5">Genel akademik durum</span>
         </div>
       </div>
 
@@ -290,27 +294,37 @@ export const AdminDashboard: React.FC = () => {
           )}
 
           {/* Sınıf Kartları */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {classes.map((cls) => (
-              <div key={cls.id} className="bg-white p-4 rounded-2xl border border-slate-200/90 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-slate-900">{cls.name} Sınıfı</span>
-                  <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-                    {cls.studentCount} Öğrenci
-                  </span>
-                </div>
+          {classes.length === 0 ? (
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center space-y-2">
+              <School className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">Henüz Eklenmiş Şube Bulunmuyor</p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Yukarıdaki "+ Yeni Şube Ekle" butonuna tıklayarak okulunuzun şubelerini ve sınıflarını tanımlayabilirsiniz.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {classes.map((cls) => (
+                <div key={cls.id} className="bg-white p-4 rounded-2xl border border-slate-200/90 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-bold text-slate-900">{cls.name} Sınıfı</span>
+                    <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                      {cls.studentCount} Öğrenci
+                    </span>
+                  </div>
 
-                <div className="text-xs text-slate-500">
-                  <span>Sınıf Rehberi: <strong>{cls.homeroomTeacher}</strong></span>
-                </div>
+                  <div className="text-xs text-slate-500">
+                    <span>Sınıf Rehberi: <strong>{cls.homeroomTeacher}</strong></span>
+                  </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Başarı Ortalaması:</span>
-                  <span className="font-bold text-slate-900">{cls.averageScore} Puan</span>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Başarı Ortalaması:</span>
+                    <span className="font-bold text-slate-900">{cls.averageScore} Puan</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -380,28 +394,38 @@ export const AdminDashboard: React.FC = () => {
             </form>
           )}
 
-          <div className="divide-y divide-slate-100 bg-white rounded-2xl border border-slate-200/90 p-2">
-            {teachers.map((t) => (
-              <div key={t.id} className="p-3 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-700">
-                    {t.name.substring(0, 2).toUpperCase()}
+          {teachers.length === 0 ? (
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center space-y-2">
+              <Users className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">Henüz Kayıtlı Öğretmen Bulunmuyor</p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Öğretmenler portaldan kayıt oldukça veya yukarıdaki "+ Öğretmen Ekle" butonu ile ekledikçe burada listelenir.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 bg-white rounded-2xl border border-slate-200/90 p-2">
+              {teachers.map((t) => (
+                <div key={t.id} className="p-3 flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-700">
+                      {t.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-900 block text-xs sm:text-sm">{t.name}</span>
+                      <span className="text-slate-400 text-[11px]">
+                        {t.branch} • {t.homeroomClass ? `Rehberlik: ${t.homeroomClass}` : 'Rehberlik Yok'}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-semibold text-slate-900 block text-xs sm:text-sm">{t.name}</span>
-                    <span className="text-slate-400 text-[11px]">
-                      {t.branch} • {t.homeroomClass ? `Rehberlik: ${t.homeroomClass}` : 'Rehberlik Yok'}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="text-right">
-                  <span className="text-slate-500 block">{t.classes.join(', ')} Sınıfları</span>
-                  <span className="text-[11px] text-slate-400">{t.phone}</span>
+                  <div className="text-right">
+                    <span className="text-slate-500 block">{t.classes.join(', ')} Sınıfları</span>
+                    <span className="text-[11px] text-slate-400">{t.phone}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -470,21 +494,31 @@ export const AdminDashboard: React.FC = () => {
             </form>
           )}
 
-          <div className="space-y-2">
-            {announcements.map((ann) => (
-              <div key={ann.id} className="bg-white p-4 rounded-2xl border border-slate-200/90 space-y-1">
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span className="font-semibold text-slate-600 uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded-md">
-                    {ann.category}
-                  </span>
-                  <span>{ann.date}</span>
+          {announcements.length === 0 ? (
+            <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center space-y-2">
+              <Bell className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">Henüz Yayınlanmış Duyuru Bulunmuyor</p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Yukarıdaki "+ Yeni Duyuru Yayınla" butonunu kullanarak okul geneline duyuru yayınlayabilirsiniz.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {announcements.map((ann) => (
+                <div key={ann.id} className="bg-white p-4 rounded-2xl border border-slate-200/90 space-y-1">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="font-semibold text-slate-600 uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded-md">
+                      {ann.category}
+                    </span>
+                    <span>{ann.date}</span>
+                  </div>
+                  <h4 className="text-sm font-semibold text-slate-900">{ann.title}</h4>
+                  <p className="text-xs text-slate-600">{ann.content}</p>
+                  <span className="text-[10px] text-slate-400 block pt-1">Yayınlayan: {ann.sender}</span>
                 </div>
-                <h4 className="text-sm font-semibold text-slate-900">{ann.title}</h4>
-                <p className="text-xs text-slate-600">{ann.content}</p>
-                <span className="text-[10px] text-slate-400 block pt-1">Yayınlayan: {ann.sender}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

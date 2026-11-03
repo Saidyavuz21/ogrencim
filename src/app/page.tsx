@@ -99,7 +99,7 @@ import {
 } from '../components/icons';
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserAccount>(INITIAL_USER_ACCOUNTS[0]);
   const [currentRole, setCurrentRole] = useState<UserRole>('admin');
   const [isParentAuthenticated, setIsParentAuthenticated] = useState<boolean>(true);

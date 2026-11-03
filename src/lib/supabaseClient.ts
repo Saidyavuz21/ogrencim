@@ -70,11 +70,20 @@ export interface ProfileRecord {
   branch: string | null;
   city: string | null;
   district: string | null;
+  school_id: string | null;
   school_name: string | null;
   class_name: string | null;
   approved: boolean;
   is_active: boolean;
   created_at: string;
+}
+
+export interface SchoolRecord {
+  id: string;
+  name: string;
+  city: string;
+  district: string;
+  status: 'approved' | 'pending';
 }
 
 interface StudentSessionInfo {
@@ -206,7 +215,10 @@ export async function signUpTeacher(input: {
   branch: string;
   city: string;
   district: string;
-  school: string;
+  /** Listeden seçilen onaylı okul */
+  schoolId?: string;
+  /** "Okulum listede yok" ile yazılan okul adı (onay bekleyen okul olarak eklenir) */
+  newSchoolName?: string;
   className: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.auth.signUp({
@@ -218,7 +230,8 @@ export async function signUpTeacher(input: {
         branch: input.branch,
         city: input.city,
         district: input.district,
-        school: input.school.trim(),
+        school_id: input.schoolId || null,
+        new_school_name: input.schoolId ? null : input.newSchoolName?.trim() || null,
         class_name: input.className,
       },
     },
@@ -369,6 +382,67 @@ export async function deleteStudent(studentId: string): Promise<{ ok: boolean; e
 }
 
 // ========================================================
+// 1b. OKULLAR (il → ilçe → okul)
+// ========================================================
+/** Bir ilçedeki onaylı okullar (giriş yapmadan da okunabilir; kayıt ekranı için) */
+export async function listSchools(city: string, district: string): Promise<SchoolRecord[]> {
+  if (!city || !district) return [];
+  const { data, error } = await supabase
+    .from('schools')
+    .select('id, name, city, district, status')
+    .eq('city', city)
+    .eq('district', district)
+    .eq('status', 'approved')
+    .order('name');
+  if (error) {
+    console.error('Supabase listSchools hatası:', error.message);
+    return [];
+  }
+  return (data as SchoolRecord[]) || [];
+}
+
+/** Admin: onay bekleyen okullar */
+export async function listPendingSchools(): Promise<SchoolRecord[]> {
+  const { data, error } = await supabase
+    .from('schools')
+    .select('id, name, city, district, status')
+    .eq('status', 'pending')
+    .order('city')
+    .order('district');
+  if (error) {
+    console.error('Supabase listPendingSchools hatası:', error.message);
+    return [];
+  }
+  return (data as SchoolRecord[]) || [];
+}
+
+type Result = { ok: boolean; error?: string };
+const rpcResult = async (fn: string, args: Record<string, unknown>): Promise<Result> => {
+  const { error } = await supabase.rpc(fn, args);
+  return error ? { ok: false, error: error.message } : { ok: true };
+};
+
+/** Admin: okul ekler (onaylı). Aynı ilçede aynı ad varsa yenisini oluşturmaz. */
+export const addSchool = (name: string, city: string, district: string) =>
+  rpcResult('admin_add_school', { p_name: name, p_city: city, p_district: district });
+
+/** Admin: bekleyen okulu onaylar (isteğe bağlı ad düzeltmesiyle) */
+export const approveSchool = (schoolId: string, name?: string) =>
+  rpcResult('admin_approve_school', { p_school_id: schoolId, p_name: name ?? null });
+
+/** Admin: yanlış yazılmış okulu doğru okulla birleştirir (öğretmenler taşınır) */
+export const mergeSchool = (fromId: string, intoId: string) =>
+  rpcResult('admin_merge_school', { p_from: fromId, p_into: intoId });
+
+/** Admin: okulu siler (bağlı öğretmenlerin okulu boşalır) */
+export async function deleteSchool(schoolId: string): Promise<Result> {
+  const { error, count } = await supabase.from('schools').delete({ count: 'exact' }).eq('id', schoolId);
+  if (error) return { ok: false, error: error.message };
+  if (!count) return { ok: false, error: 'Okul silinemedi.' };
+  return { ok: true };
+}
+
+// ========================================================
 // 2. ADMIN: ÖĞRETMEN ONAYI
 // ========================================================
 export async function listProfiles(): Promise<ProfileRecord[]> {
@@ -395,7 +469,8 @@ export function setTeacherActive(profileId: string, isActive: boolean) {
 /** Admin: öğretmen bilgilerini düzenler */
 export function updateTeacherProfile(
   profileId: string,
-  values: Pick<ProfileRecord, 'full_name' | 'branch' | 'school_name' | 'city' | 'district' | 'class_name'>
+  // Okul adı school_id'den veritabanında otomatik eşitlenir (profiles_sync_school_name)
+  values: Pick<ProfileRecord, 'full_name' | 'branch' | 'school_id' | 'city' | 'district' | 'class_name'>
 ) {
   return updateProfile(profileId, values);
 }

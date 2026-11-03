@@ -4,8 +4,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle, Edit } from '../icons';
 import { TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName, parseClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
+import { SchoolPicker } from '../SchoolPicker';
+import { SchoolManagement } from './SchoolManagement';
 import {
   listProfiles,
+  listPendingSchools,
   setTeacherApproved,
   setTeacherActive,
   updateTeacherProfile,
@@ -24,17 +27,14 @@ const isValidPin = (pin: string) => /^[0-9]{4}$/.test(pin);
 const EMPTY_EDIT_FORM = {
   full_name: '',
   branch: '',
-  school_name: '',
+  school_id: '',
   city: '',
   district: '',
   class_level: '',
   class_section: '',
 };
 
-const TEXT_FIELDS = [
-  ['full_name', 'Ad Soyad'],
-  ['school_name', 'Okul'],
-] as const;
+const TEXT_FIELDS = [['full_name', 'Ad Soyad']] as const;
 
 const SELECT_CLASS = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800';
 
@@ -67,10 +67,20 @@ export const AccessManagement: React.FC = () => {
   const [pinResetFor, setPinResetFor] = useState<StudentRecord | null>(null);
   const [resetPinValue, setResetPinValue] = useState('');
 
+  // Okullar: bekleyen okul id'leri (öğretmen satırında "yeni okul" etiketi için) ve okul bölümü yenileme sayacı
+  const [pendingSchoolIds, setPendingSchoolIds] = useState<Set<string>>(new Set());
+  const [schoolsRefreshKey, setSchoolsRefreshKey] = useState(0);
+
   const refresh = useCallback(async () => {
-    const [p, s, session] = await Promise.all([listProfiles(), getLiveStudents(), supabase.auth.getSession()]);
+    const [p, s, session, ps] = await Promise.all([
+      listProfiles(),
+      getLiveStudents(),
+      supabase.auth.getSession(),
+      listPendingSchools(),
+    ]);
     setProfiles(p);
     setStudents(s);
+    setPendingSchoolIds(new Set(ps.map((x) => x.id)));
     setMyId(session.data.session?.user.id ?? null);
     setIsLoading(false);
   }, []);
@@ -92,9 +102,12 @@ export const AccessManagement: React.FC = () => {
     const res = await setTeacherApproved(p.id, true);
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'İşlem başarısız.');
-    notify('ok', `${displayName(p)} onaylandı; artık giriş yapabilir.`);
+    const schoolNote = p.school_id && pendingSchoolIds.has(p.school_id) ? ' Okulu hâlâ onay bekliyor (Okullar bölümü).' : '';
+    notify('ok', `${displayName(p)} onaylandı; artık giriş yapabilir.${schoolNote}`);
     refresh();
   };
+
+  const handleDeleteTeacherAndRefreshSchools = () => setSchoolsRefreshKey((k) => k + 1);
 
   const handleToggleActive = async (p: ProfileRecord) => {
     const makeActive = !p.is_active;
@@ -116,6 +129,7 @@ export const AccessManagement: React.FC = () => {
     if (!res.ok) return notify('error', res.error || 'Silinemedi.');
     notify('ok', `${displayName(p)} silindi.`);
     refresh();
+    handleDeleteTeacherAndRefreshSchools();
   };
 
   const openEdit = (p: ProfileRecord) => {
@@ -124,7 +138,7 @@ export const AccessManagement: React.FC = () => {
     setEditForm({
       full_name: p.full_name || '',
       branch: p.branch || '',
-      school_name: p.school_name || '',
+      school_id: p.school_id || '',
       city: p.city || '',
       district: p.district || '',
       class_level: level,
@@ -140,7 +154,7 @@ export const AccessManagement: React.FC = () => {
     const res = await updateTeacherProfile(editing.id, {
       full_name: editForm.full_name.trim(),
       branch: editForm.branch.trim() || null,
-      school_name: editForm.school_name.trim() || null,
+      school_id: editForm.school_id || null,
       city: editForm.city || null,
       district: editForm.district || null,
       class_name: composeClassName(editForm.class_level, editForm.class_section) || null,
@@ -245,6 +259,11 @@ export const AccessManagement: React.FC = () => {
                     {p.email} • {p.branch || 'Branş yok'} • {p.school_name || 'Okul yok'}
                     {p.district || p.city ? ` • ${[p.district, p.city].filter(Boolean).join('/')}` : ''}
                   </span>
+                  {p.school_id && pendingSchoolIds.has(p.school_id) && (
+                    <span className="mt-1 inline-block text-[10px] font-semibold px-1.5 rounded bg-amber-100 text-amber-800">
+                      Yeni okul — aşağıdaki “Okullar” bölümünden onaylayın veya birleştirin
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
@@ -336,6 +355,9 @@ export const AccessManagement: React.FC = () => {
           })}
         </div>
       </section>
+
+      {/* OKULLAR */}
+      <SchoolManagement notify={notify} onChanged={refresh} refreshKey={schoolsRefreshKey} />
 
       {/* ÖĞRENCİ HESAPLARI */}
       <section className="bg-white rounded-2xl p-4 border border-slate-200/90 space-y-3">
@@ -496,7 +518,7 @@ export const AccessManagement: React.FC = () => {
                 <select
                   value={editForm.city}
                   onChange={(e) =>
-                    setEditForm({ ...editForm, city: e.target.value, district: (TURKEY_CITIES[e.target.value] || [''])[0] })
+                    setEditForm({ ...editForm, city: e.target.value, district: (TURKEY_CITIES[e.target.value] || [''])[0], school_id: '' })
                   }
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
                 >
@@ -512,7 +534,7 @@ export const AccessManagement: React.FC = () => {
                 <span className="font-semibold text-slate-700 block mb-1">İlçe</span>
                 <select
                   value={editForm.district}
-                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
+                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value, school_id: '' })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
                 >
                   <option value="">Seçiniz</option>
@@ -524,6 +546,17 @@ export const AccessManagement: React.FC = () => {
                 </select>
               </label>
             </div>
+
+            <SchoolPicker
+              idPrefix="edit-teacher"
+              city={editForm.city}
+              district={editForm.district}
+              schoolId={editForm.school_id}
+              newSchoolName=""
+              currentSchoolName={editing.school_id === editForm.school_id ? editing.school_name : null}
+              onChange={({ schoolId }) => setEditForm({ ...editForm, school_id: schoolId })}
+              selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+            />
 
             <div className="flex gap-2 pt-1">
               <button

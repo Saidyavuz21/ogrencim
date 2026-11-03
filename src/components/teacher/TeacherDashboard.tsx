@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -44,6 +44,7 @@ import {
   Megaphone
 } from '../icons';
 import {
+  UserAccount,
   CURRENT_TEACHER,
   ASSIGNMENTS,
   INITIAL_SUBMISSIONS,
@@ -776,7 +777,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
       {/* Toast Bildirimi */}
       {toastMessage && (
-        <div className="fixed top-18 right-4 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 shadow-sm animate-in fade-in">
+        <div role="status" className={styles.toast}>
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -855,7 +856,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             </div>
 
             {/* ÖDEV SEÇİCİ DROPDOWN / PİLL BAR */}
-            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className={`${styles.checkContext} pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="text-xs font-semibold text-slate-600 shrink-0">
                   Kontrol Edilen Ödev:
@@ -961,7 +962,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                 <span className="text-[11px] text-slate-400 mr-1">Filtrele:</span>
                 {[
-                  { id: 'all', label: Tümü () },
+                  { id: 'all', label: `Tümü (${leaderboardStudents.length})` },
                   { id: 'yapti', label: `Yaptı (${statYapti})` },
                   { id: 'kismen', label: `Kısmen (${statKismen})` },
                   { id: 'yapmadi', label: `Yapmadı (${statYapmadi})` },

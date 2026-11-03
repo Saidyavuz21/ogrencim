@@ -115,3 +115,13 @@
 @media (prefers-reduced-motion: reduce) {
   .dashboard *, .dashboard *::before, .dashboard *::after { transition: none !important; animation: none !important; }
 }
+@media (max-width: 767px) {
+  .checkContext > div { min-width: 0; flex-wrap: wrap; }
+  .checkContext select { width: 100%; }
+}
+.dashboard button { min-width: 44px; }
+.dashboard :global(.text-emerald-600) { color: #216044; }
+.dashboard :global(.text-amber-600), .dashboard :global(.text-amber-700) { color: #805217; }
+.dashboard :global(.text-rose-600) { color: #a33342; }
+.toast { position: fixed; top: 80px; right: 16px; left: 16px; margin-left: auto; width: fit-content; max-width: min(480px, calc(100vw - 32px)); z-index: 60; display: flex; align-items: start; gap: 10px; padding: 16px; border-radius: 12px; background: var(--teacher-primary); color: white; font-size: 14px; line-height: 1.6; }
+.toast svg { flex-shrink: 0; margin-top: 3px; }

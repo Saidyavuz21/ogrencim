@@ -5,6 +5,7 @@ import { GraduationCap, ShieldCheck, Check, ArrowRight, Eye, EyeOff, AlertCircle
 import styles from './AuthPage.module.css';
 import { UserAccount, TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
+import { SchoolPicker, NEW_SCHOOL } from '../SchoolPicker';
 import { signInStaff, signInStudent, signUpTeacher } from '../../lib/supabaseClient';
 
 type Audience = 'ogrenci' | 'ogretmen';
@@ -47,7 +48,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
   const [regEmail, setRegEmail] = useState('');
   const [regCity, setRegCity] = useState('Diyarbakır');
   const [regDistrict, setRegDistrict] = useState('Kayapınar');
-  const [regSchool, setRegSchool] = useState('');
+  const [regSchoolId, setRegSchoolId] = useState(''); // onaylı okul id'si veya NEW_SCHOOL
+  const [regNewSchool, setRegNewSchool] = useState(''); // "Okulum listede yok" ile yazılan ad
   const [regBranch, setRegBranch] = useState('Sınıf Öğretmenliği');
   const [regClassLevel, setRegClassLevel] = useState('');
   const [regClassSection, setRegClassSection] = useState('');
@@ -72,10 +74,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     clearFeedback();
   };
 
+  const resetSchool = () => {
+    setRegSchoolId('');
+    setRegNewSchool('');
+  };
+
   const handleCityChange = (newCity: string) => {
     setRegCity(newCity);
     const districts = TURKEY_CITIES[newCity] || ['Merkez'];
     setRegDistrict(districts[0] || 'Merkez');
+    resetSchool();
   };
 
   // ---------------- PIN kutucukları ----------------
@@ -181,7 +189,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       setRegStep('hesap');
       return setErrorMsg(accountErr);
     }
-    if (!regSchool.trim()) return setErrorMsg('Lütfen okulunuzun adını giriniz.');
+    if (!regSchoolId) return setErrorMsg('Lütfen okulunuzu listeden seçiniz ya da "Okulum listede yok" seçeneğini kullanınız.');
+    if (regSchoolId === NEW_SCHOOL && regNewSchool.trim().length < 3) {
+      return setErrorMsg('Lütfen okulunuzun tam adını yazınız.');
+    }
 
     setIsSubmitting(true);
     const res = await signUpTeacher({
@@ -191,7 +202,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       branch: regBranch,
       city: regCity,
       district: regDistrict,
-      school: regSchool,
+      schoolId: regSchoolId === NEW_SCHOOL ? undefined : regSchoolId,
+      newSchoolName: regSchoolId === NEW_SCHOOL ? regNewSchool : undefined,
       className: composeClassName(regClassLevel, regClassSection),
     });
     setIsSubmitting(false);
@@ -440,14 +452,27 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                         </select>
                       </AuthField>
                       <AuthField id="register-district" label="İlçe">
-                        <select id="register-district" name="district" value={regDistrict} onChange={(e) => setRegDistrict(e.target.value)}>
+                        <select id="register-district" name="district" value={regDistrict} onChange={(e) => { setRegDistrict(e.target.value); resetSchool(); }}>
                           {(TURKEY_CITIES[regCity] || ['Merkez']).map((d) => <option key={d} value={d}>{d}</option>)}
                         </select>
                       </AuthField>
                     </div>
-                    <AuthField id="register-school" label="Okul adı">
-                      <input id="register-school" name="school" required placeholder="Okulunuzun adı" value={regSchool} onChange={(e) => setRegSchool(e.target.value)} />
-                    </AuthField>
+                    <SchoolPicker
+                      idPrefix="register"
+                      city={regCity}
+                      district={regDistrict}
+                      schoolId={regSchoolId}
+                      newSchoolName={regNewSchool}
+                      onChange={({ schoolId, newSchoolName }) => {
+                        setRegSchoolId(schoolId);
+                        setRegNewSchool(newSchoolName);
+                      }}
+                      allowNew
+                      disabled={isSubmitting}
+                      renderField={({ id, label, control, hint }) => (
+                        <AuthField id={id} label={label} hint={hint}>{control}</AuthField>
+                      )}
+                    />
                     <AuthField id="register-branch" label="Branş">
                       <select id="register-branch" name="branch" value={regBranch} onChange={(e) => setRegBranch(e.target.value)}>
                         {TEACHER_BRANCH_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}

@@ -405,7 +405,11 @@ export const CLASS_LEVEL_GROUPS: { label: string; levels: string[] }[] = [
   { label: 'Lise', levels: ['Hazırlık', '9', '10', '11', '12'] },
 ];
 
-export const CLASS_SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+// Türk alfabesinin 29 harfi (e-Okul şube adlandırmasıyla uyumlu)
+export const CLASS_SECTIONS = [
+  'A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 'Ğ', 'H', 'I', 'İ', 'J', 'K', 'L',
+  'M', 'N', 'O', 'Ö', 'P', 'R', 'S', 'Ş', 'T', 'U', 'Ü', 'V', 'Y', 'Z',
+];
 
 /** Seviye listesinde gösterilecek ad: '3' → '3. sınıf' */
 export const classLevelLabel = (level: string) => (/^\d+$/.test(level) ? `${level}. sınıf` : level);

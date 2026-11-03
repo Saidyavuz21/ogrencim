@@ -1,21 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Upload, 
-  CheckCircle2, 
-  Clock, 
-  Search, 
-  Plus, 
-  Users, 
-  Award, 
-  MessageSquare, 
-  ChevronDown, 
-  ChevronUp, 
-  Save, 
-  Send, 
-  BookOpen, 
+import {
+  FileText,
+  Upload,
+  CheckCircle2,
+  Clock,
+  Search,
+  Plus,
+  Users,
+  Award,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Save,
+  Send,
+  BookOpen,
   Sparkles,
   TrendingUp,
   Inbox,
@@ -43,11 +43,11 @@ import {
   ThumbsDown,
   Megaphone
 } from '../icons';
-import { 
-  CURRENT_TEACHER, 
-  ASSIGNMENTS, 
-  INITIAL_SUBMISSIONS, 
-  INITIAL_PARENT_MESSAGES, 
+import {
+  CURRENT_TEACHER,
+  ASSIGNMENTS,
+  INITIAL_SUBMISSIONS,
+  INITIAL_PARENT_MESSAGES,
   LEADERBOARD_STUDENTS,
   INITIAL_TEACHER_CLASSES,
   INITIAL_HOMEWORK_CHECKS,
@@ -101,7 +101,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>(INITIAL_TEACHER_CLASSES);
   const [selectedClass, setSelectedClass] = useState<string>('7-B');
   const [activeSubTab, setActiveSubTab] = useState<'check_sheet' | 'plus_minus' | 'assignments' | 'classes' | 'grading' | 'grade_entry' | 'messages' | 'bulk_message' | 'leaderboard'>('check_sheet');
-  
+
   // Ödev Kontrol Çizelgesi Durumları (Yaptı / Kısmen / Yapmadı & Puan)
   const [selectedCheckHwId, setSelectedCheckHwId] = useState<string>('hw-4');
   const [studentChecks, setStudentChecks] = useState<{ [assignmentId: string]: { [studentId: string]: HomeworkCheckRecord } }>({
@@ -176,12 +176,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   // Önizleme Modalleri
   const [previewPdf, setPreviewPdf] = useState<{ title: string; fileName: string; size?: string } | null>(null);
   const [previewImage, setPreviewImage] = useState<{ title: string; fileName: string; subject: string; note?: string } | null>(null);
-  
+
   // Puanlama Durumu
   const [gradingScores, setGradingScores] = useState<{ [id: string]: number }>({ 'sub-1': 95 });
   const [gradingFeedbacks, setGradingFeedbacks] = useState<{ [id: string]: string }>({ 'sub-1': 'Metin kurgusu ve anlatım zenginliği çok başarılı.' });
   const [expandedSubId, setExpandedSubId] = useState<string | null>('sub-1');
-  
+
   // Mesaj Yanıtlama ve Kopyalama Bildirimleri
   const [replyTexts, setReplyTexts] = useState<{ [id: string]: string }>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -229,11 +229,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   // Öğrenci ödev durumunu değiştirme (Yaptı / Kısmen / Yapmadı) & Otomatik Puan
   const handleSetStudentStatus = (studentId: string, status: HomeworkCheckStatus) => {
-    const defaultScore = status === 'yapti' 
-      ? activeMaxPoints 
-      : status === 'kismen' 
-      ? Math.round(activeMaxPoints / 2) 
-      : 0;
+    const defaultScore = status === 'yapti'
+      ? activeMaxPoints
+      : status === 'kismen'
+        ? Math.round(activeMaxPoints / 2)
+        : 0;
 
     setStudentChecks((prev) => {
       const hwChecks = prev[selectedCheckHwId] || { ...INITIAL_HOMEWORK_CHECKS };
@@ -289,15 +289,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   // Tüm sınıfa toplu durum uygulama (Tümünü Yaptı İşaretle vb.)
   const handleMarkAllStudents = (status: HomeworkCheckStatus) => {
-    const defaultScore = status === 'yapti' 
-      ? activeMaxPoints 
-      : status === 'kismen' 
-      ? Math.round(activeMaxPoints / 2) 
-      : 0;
+    const defaultScore = status === 'yapti'
+      ? activeMaxPoints
+      : status === 'kismen'
+        ? Math.round(activeMaxPoints / 2)
+        : 0;
 
     setStudentChecks((prev) => {
       const hwChecks = { ...(prev[selectedCheckHwId] || INITIAL_HOMEWORK_CHECKS) };
-      LEADERBOARD_STUDENTS.forEach((st) => {
+      leaderboardStudents.forEach((st) => {
         hwChecks[st.id] = {
           ...hwChecks[st.id],
           status,
@@ -311,7 +311,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       };
     });
     const label = status === 'yapti' ? '"Yaptı (Tam Puan)"' : status === 'kismen' ? '"Kısmen (Yarı Puan)"' : '"Yapmadı (0 Puan)"';
-    showToast(`Tüm sınıf (${LEADERBOARD_STUDENTS.length} öğrenci) ${label} olarak işaretlendi.`);
+    showToast(`Tüm sınıf (${leaderboardStudents.length} öğrenci) ${label} olarak işaretlendi.`);
   };
 
   // Kontrol çizelgesini kaydetme ve veli portalına yansıtma
@@ -321,7 +321,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     let countKismen = 0;
     let countYapmadi = 0;
 
-    LEADERBOARD_STUDENTS.forEach((st) => {
+    leaderboardStudents.forEach((st) => {
       const s = checks[st.id]?.status || 'yapti';
       if (s === 'yapti') countYapti++;
       else if (s === 'kismen') countKismen++;
@@ -353,7 +353,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   // Öğrenciye Artı (+) / Eksi (-) verme işlemi
   const addPointRecord = (studentId: string, type: PointType, reason: string) => {
-    const targetStudent = LEADERBOARD_STUDENTS.find((s) => s.id === studentId) || {
+    const targetStudent = leaderboardStudents.find((s) => s.id === studentId) || {
       id: studentId,
       name: 'Öğrenci',
       studentNo: '---',
@@ -456,7 +456,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   // Ders içi anlık Artı / Eksi seçimi (Checkbox / Toggle düğmesi)
   const handleToggleStudentSessionMark = (studentId: string, markType: 'plus' | 'minus') => {
     const currentMark = sessionMarks[studentId];
-    const targetStudent = LEADERBOARD_STUDENTS.find((s) => s.id === studentId);
+    const targetStudent = leaderboardStudents.find((s) => s.id === studentId);
     const studentName = targetStudent ? targetStudent.name : 'Öğrenci';
 
     if (currentMark === markType) {
@@ -474,12 +474,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   // Tüm sınıfa toplu Artı verme
   const handleMarkAllClassPlus = () => {
     const updatedMarks: { [studentId: string]: 'plus' | 'minus' | null } = {};
-    LEADERBOARD_STUDENTS.forEach((st) => {
+    leaderboardStudents.forEach((st) => {
       updatedMarks[st.id] = 'plus';
       addPointRecord(st.id, 'plus', 'Tüm sınıf ders içi etkinlik ve aktif katılım ödülü');
     });
     setSessionMarks(updatedMarks);
-    showToast(`Tüm sınıfa (${LEADERBOARD_STUDENTS.length} öğrenci) +1 Artı (+1 Puan) verildi.`);
+    showToast(`Tüm sınıfa (${leaderboardStudents.length} öğrenci) +1 Artı (+1 Puan) verildi.`);
   };
 
   // Tüm ders içi işaretleri temizleme
@@ -676,11 +676,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       prev.map((m) =>
         m.id === msgId
           ? {
-              ...m,
-              status: 'yanitlandi',
-              reply: replyText,
-              replyDate: 'Bugün ' + timeStr,
-            }
+            ...m,
+            status: 'yanitlandi',
+            reply: replyText,
+            replyDate: 'Bugün ' + timeStr,
+          }
           : m
       )
     );
@@ -750,7 +750,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   let statKismen = 0;
   let statYapmadi = 0;
 
-  LEADERBOARD_STUDENTS.forEach((st) => {
+  leaderboardStudents.forEach((st) => {
     const s = currentChecks[st.id]?.status || 'yapti';
     if (s === 'yapti') statYapti++;
     else if (s === 'kismen') statKismen++;
@@ -758,10 +758,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   });
 
   // Filtrelenmiş öğrenci listesi
-  const filteredStudents = LEADERBOARD_STUDENTS.filter((st) => {
+  const filteredStudents = leaderboardStudents.filter((st) => {
     const status = currentChecks[st.id]?.status || 'yapti';
     const matchesFilter = checkStatusFilter === 'all' || status === checkStatusFilter;
-    const matchesSearch = 
+    const matchesSearch =
       st.name.toLowerCase().includes(searchStudentQuery.toLowerCase()) ||
       st.studentNo.includes(searchStudentQuery);
     return matchesFilter && matchesSearch;
@@ -769,7 +769,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   return (
     <div className="space-y-4">
-      
+
       {/* Toast Bildirimi */}
       {toastMessage && (
         <div className="fixed top-18 right-4 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 shadow-sm animate-in fade-in">
@@ -811,11 +811,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 key={cls.id}
                 type="button"
                 onClick={() => setSelectedClass(cls.name)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                  selectedClass === cls.name
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${selectedClass === cls.name
                     ? 'bg-slate-900 text-white'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 <span>{cls.name}</span>
                 {cls.isHomeroom && (
@@ -854,7 +853,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
       {/* 4 Özet Bilgi Kartı */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div 
+        <div
           onClick={() => setActiveSubTab('check_sheet')}
           className="p-3 bg-white rounded-xl border border-slate-200/90 text-left cursor-pointer hover:border-slate-300 transition-colors"
         >
@@ -863,7 +862,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           <span className="text-[10px] text-emerald-600 block mt-0.5 font-medium">Yaptı / Kısmen / Yapmadı →</span>
         </div>
 
-        <div 
+        <div
           onClick={() => {
             setActiveSubTab('assignments');
             setIsNewHwOpen(true);
@@ -875,7 +874,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           <span className="text-[10px] text-indigo-600 block mt-0.5 font-medium">PDF, Resim, Not Ekle →</span>
         </div>
 
-        <div 
+        <div
           onClick={() => setActiveSubTab('classes')}
           className="p-3 bg-white rounded-xl border border-slate-200/90 text-left cursor-pointer hover:border-slate-300 transition-colors"
         >
@@ -884,7 +883,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           <span className="text-[10px] text-slate-400 block mt-0.5">Katılım Kodları &rarr;</span>
         </div>
 
-        <div 
+        <div
           onClick={() => setActiveSubTab('messages')}
           className="p-3 bg-white rounded-xl border border-slate-200/90 text-left cursor-pointer hover:border-slate-300 transition-colors"
         >
@@ -919,17 +918,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveSubTab(tab.id as any)}
-              className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                isActive
+              className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 ${isActive
                   ? 'bg-slate-900 text-white'
                   : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80'
-              }`}
+                }`}
             >
               <span>{tab.label}</span>
               {tab.count !== undefined && tab.count !== null && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold ${
-                  isActive ? 'bg-white/20 text-white' : tab.highlight ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'
-                }`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold ${isActive ? 'bg-white/20 text-white' : tab.highlight ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                  }`}>
                   {tab.count}
                 </span>
               )}
@@ -943,7 +940,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* ========================================================================= */}
       {activeSubTab === 'check_sheet' && (
         <div className="space-y-3.5">
-          
+
           {/* Üst Bar: Kontrol Edilen Ödev Seçimi & Açıklaması */}
           <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -1006,12 +1003,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               {/* Canlı İstatistik Sayaçları */}
               <div className="flex items-center gap-2 flex-wrap text-xs">
                 <span className="text-xs font-semibold text-slate-500 mr-1">Sonuç Özeti:</span>
-                
+
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/70 font-bold">
                   <Check className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{statYapti} Yaptı</span>
                   <span className="text-[10px] font-normal text-emerald-600">
-                    (%{Math.round((statYapti / LEADERBOARD_STUDENTS.length) * 100)})
+                    (%{leaderboardStudents.length > 0 ? Math.round((statYapti / leaderboardStudents.length) * 100) : 0})
                   </span>
                 </span>
 
@@ -1019,7 +1016,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
                   <span>{statKismen} Kısmen</span>
                   <span className="text-[10px] font-normal text-amber-600">
-                    (%{Math.round((statKismen / LEADERBOARD_STUDENTS.length) * 100)})
+                    (%{leaderboardStudents.length > 0 ? Math.round((statKismen / leaderboardStudents.length) * 100) : 0})
                   </span>
                 </span>
 
@@ -1027,7 +1024,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <X className="w-3.5 h-3.5 text-rose-600" />
                   <span>{statYapmadi} Yapmadı</span>
                   <span className="text-[10px] font-normal text-rose-600">
-                    (%{Math.round((statYapmadi / LEADERBOARD_STUDENTS.length) * 100)})
+                    (%{leaderboardStudents.length > 0 ? Math.round((statYapmadi / leaderboardStudents.length) * 100) : 0})
                   </span>
                 </span>
               </div>
@@ -1084,11 +1081,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     key={f.id}
                     type="button"
                     onClick={() => setCheckStatusFilter(f.id as any)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                      checkStatusFilter === f.id
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${checkStatusFilter === f.id
                         ? 'bg-slate-900 text-white'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     {f.label}
                   </button>
@@ -1118,9 +1114,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 return (
                   <div
                     key={st.id}
-                    className={`p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${
-                      isMyStudent ? 'bg-indigo-50/30' : 'hover:bg-slate-50/50'
-                    }`}
+                    className={`p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${isMyStudent ? 'bg-indigo-50/30' : 'hover:bg-slate-50/50'
+                      }`}
                   >
                     {/* 1. Öğrenci Bilgisi */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -1147,14 +1142,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
                     {/* 2. CHECKBOX: Yaptı / Kısmen / Yapmadı */}
                     <div className="w-full sm:w-72 flex items-center gap-1.5 justify-start sm:justify-center">
-                      
+
                       {/* 1. Yaptı Checkbox */}
                       <label
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${
-                          currentStatus === 'yapti'
+                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${currentStatus === 'yapti'
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-2 ring-emerald-100'
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -1167,11 +1161,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
                       {/* 2. Kısmen Checkbox */}
                       <label
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${
-                          currentStatus === 'kismen'
+                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${currentStatus === 'kismen'
                             ? 'bg-amber-50 text-amber-800 border-amber-300 ring-2 ring-amber-100'
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -1184,11 +1177,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
                       {/* 3. Yapmadı Checkbox */}
                       <label
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${
-                          currentStatus === 'yapmadi'
+                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${currentStatus === 'yapmadi'
                             ? 'bg-rose-50 text-rose-800 border-rose-300 ring-2 ring-rose-100'
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -1209,13 +1201,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         max={activeMaxPoints}
                         value={currentScore}
                         onChange={(e) => handleSetStudentScore(st.id, Number(e.target.value))}
-                        className={`w-14 px-1.5 py-1.5 border rounded-lg text-xs font-bold text-center focus:outline-hidden focus:border-indigo-400 ${
-                          currentScore >= activeMaxPoints * 0.8
+                        className={`w-14 px-1.5 py-1.5 border rounded-lg text-xs font-bold text-center focus:outline-hidden focus:border-indigo-400 ${currentScore >= activeMaxPoints * 0.8
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                             : currentScore >= activeMaxPoints * 0.5
-                            ? 'bg-amber-50 text-amber-800 border-amber-300'
-                            : 'bg-rose-50 text-rose-800 border-rose-300'
-                        }`}
+                              ? 'bg-amber-50 text-amber-800 border-amber-300'
+                              : 'bg-rose-50 text-rose-800 border-rose-300'
+                          }`}
                       />
                       <span className="text-[10px] text-slate-400 font-medium">/{activeMaxPoints}</span>
                     </div>
@@ -1231,7 +1222,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         +
                       </button>
 
-                      <span 
+                      <span
                         onClick={() => {
                           setPointModalStudent({ id: st.id, name: st.name, studentNo: st.studentNo, type: 'plus' });
                         }}
@@ -1374,11 +1365,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     key={f.id}
                     type="button"
                     onClick={() => setPointsFilter(f.id as any)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                      pointsFilter === f.id
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${pointsFilter === f.id
                         ? 'bg-slate-900 text-white'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     {f.label}
                   </button>
@@ -1449,7 +1439,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             </div>
 
             <div className="divide-y divide-slate-100">
-              {LEADERBOARD_STUDENTS.filter((st) => {
+              {leaderboardStudents.filter((st) => {
                 const pts = studentPoints[st.id] || getStudentPointsSummary(studentPoints, st.id, st.name, st.studentNo);
                 const matchesSearch = st.name.toLowerCase().includes(searchStudentQuery.toLowerCase()) || st.studentNo.includes(searchStudentQuery);
                 if (!matchesSearch) return false;
@@ -1465,9 +1455,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 return (
                   <div
                     key={st.id}
-                    className={`p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 transition-colors ${
-                      isMyStudent ? 'bg-indigo-50/40 border-l-4 border-l-indigo-600' : 'hover:bg-slate-50/60'
-                    }`}
+                    className={`p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 transition-colors ${isMyStudent ? 'bg-indigo-50/40 border-l-4 border-l-indigo-600' : 'hover:bg-slate-50/60'
+                      }`}
                   >
                     {/* 1. ÖĞRENCİ NUMARASI VE ADI */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1499,11 +1488,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => handleToggleStudentSessionMark(st.id, 'plus')}
-                        className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border select-none ${
-                          currentMark === 'plus'
+                        className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border select-none ${currentMark === 'plus'
                             ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-200 shadow-2xs'
                             : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                        }`}
+                          }`}
                       >
                         <span className="text-sm font-black">{currentMark === 'plus' ? '✓' : '+'}</span>
                         <span>+ Artı (+1 Puan)</span>
@@ -1513,11 +1501,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => handleToggleStudentSessionMark(st.id, 'minus')}
-                        className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border select-none ${
-                          currentMark === 'minus'
+                        className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border select-none ${currentMark === 'minus'
                             ? 'bg-rose-600 text-white border-rose-600 ring-2 ring-rose-200 shadow-2xs'
                             : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
-                        }`}
+                          }`}
                       >
                         <span className="text-sm font-black">{currentMark === 'minus' ? '✕' : '-'}</span>
                         <span>- Eksi (-1 Puan)</span>
@@ -1553,9 +1540,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           <span className="text-slate-300">/</span>
                           <span className="text-rose-600">-{pts.minusCount}</span>
                         </div>
-                        <span className={`text-[10px] font-extrabold block ${
-                          pts.netScore > 0 ? 'text-emerald-700' : pts.netScore < 0 ? 'text-rose-600' : 'text-slate-500'
-                        }`}>
+                        <span className={`text-[10px] font-extrabold block ${pts.netScore > 0 ? 'text-emerald-700' : pts.netScore < 0 ? 'text-rose-600' : 'text-slate-500'
+                          }`}>
                           {pts.netScore > 0 ? `+${pts.netScore}` : pts.netScore}p Net
                         </span>
                       </div>
@@ -1616,7 +1602,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             {/* Alt Çubuk ve Kaydet */}
             <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <span className="text-xs text-slate-500">
-                Toplam <strong>{LEADERBOARD_STUDENTS.length}</strong> öğrenci listeleniyor. Yapılan artı ve eksi değerlendirmeleri doğrudan öğrencinin başarı puanına ve veli karnesine işlenir.
+                Toplam <strong>{leaderboardStudents.length}</strong> öğrenci listeleniyor. Yapılan artı ve eksi değerlendirmeleri doğrudan öğrencinin başarı puanına ve veli karnesine işlenir.
               </span>
 
               <button
@@ -1653,18 +1639,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${
-                        rec.type === 'plus' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${rec.type === 'plus' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                        }`}>
                         {rec.type === 'plus' ? '+' : '-'}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold text-slate-900">{rec.studentName}</span>
                           <span className="text-[10px] text-slate-400">({rec.studentNo})</span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
-                            rec.type === 'plus' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                          }`}>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${rec.type === 'plus' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                            }`}>
                             {rec.points > 0 ? `+${rec.points}` : rec.points} Puan
                           </span>
                           <span className="text-[10px] text-slate-400">• {rec.subject} ({rec.teacherName})</span>
@@ -1762,11 +1746,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <div
                         key={t.id}
                         onClick={() => applyHomeworkTemplate(t.id as HomeworkType)}
-                        className={`p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 flex flex-col justify-between ${
-                          isSelected
+                        className={`p-3 rounded-xl border cursor-pointer select-none transition-all duration-150 flex flex-col justify-between ${isSelected
                             ? 'border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-100'
                             : 'border-slate-200/90 hover:border-slate-300 bg-white'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2 mb-1.5">
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${t.color}`}>
@@ -1946,8 +1929,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           {/* VERİLEN ÖDEVLER LİSTESİ */}
           <div className="space-y-2.5">
             {teacherAssignments.map((hw) => (
-              <div 
-                key={hw.id} 
+              <div
+                key={hw.id}
                 className="bg-white p-4 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-colors"
               >
                 <div className="min-w-0 flex-1">
@@ -2054,9 +2037,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               return (
                 <div
                   key={cls.id}
-                  className={`bg-white rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all duration-150 relative ${
-                    isSelected ? 'border-indigo-400 ring-2 ring-indigo-50 bg-indigo-50/10' : 'border-slate-200/90 hover:border-slate-300'
-                  }`}
+                  className={`bg-white rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all duration-150 relative ${isSelected ? 'border-indigo-400 ring-2 ring-indigo-50 bg-indigo-50/10' : 'border-slate-200/90 hover:border-slate-300'
+                    }`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2.5">
@@ -2128,12 +2110,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           {cls.studentCount} / {cls.capacity} ({occupancy}%)
                         </span>
                       </div>
-                      
+
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            occupancy > 90 ? 'bg-amber-500' : 'bg-indigo-600'
-                          }`}
+                          className={`h-full rounded-full transition-all duration-300 ${occupancy > 90 ? 'bg-amber-500' : 'bg-indigo-600'
+                            }`}
                           style={{ width: `${Math.min(100, occupancy || 5)}%` }}
                         />
                       </div>
@@ -2210,9 +2191,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               return (
                 <div
                   key={sub.id}
-                  className={`bg-white rounded-2xl border transition-all duration-150 overflow-hidden ${
-                    isExpanded ? 'border-slate-300' : 'border-slate-200/90'
-                  }`}
+                  className={`bg-white rounded-2xl border transition-all duration-150 overflow-hidden ${isExpanded ? 'border-slate-300' : 'border-slate-200/90'
+                    }`}
                 >
                   <div
                     onClick={() => setExpandedSubId(isExpanded ? null : sub.id)}
@@ -2359,7 +2339,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {LEADERBOARD_STUDENTS.slice(0, 10).map((st) => (
+                {leaderboardStudents.slice(0, 10).map((st) => (
                   <tr key={st.id} className="hover:bg-slate-50">
                     <td className="py-2.5 px-2 font-medium text-slate-400">{st.studentNo}</td>
                     <td className="py-2.5 px-3 font-semibold text-slate-800">
@@ -2428,11 +2408,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   setMessageViewMode('live_chat');
                   setTeacherSelectedChatId('grp-7b');
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  messageViewMode === 'live_chat' && teacherSelectedChatId === 'grp-7b'
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${messageViewMode === 'live_chat' && teacherSelectedChatId === 'grp-7b'
                     ? 'bg-white text-emerald-800 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span>📢 7-B Veli Duyuru Grubu (28 Veli)</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -2444,11 +2423,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   setMessageViewMode('live_chat');
                   setTeacherSelectedChatId('tch-zehra');
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  messageViewMode === 'live_chat' && teacherSelectedChatId === 'tch-zehra'
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${messageViewMode === 'live_chat' && teacherSelectedChatId === 'tch-zehra'
                     ? 'bg-white text-indigo-700 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span>💬 Ahmet Demir (452 Emre) Özel Sohbet</span>
               </button>
@@ -2456,11 +2434,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setMessageViewMode('inbox')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  messageViewMode === 'inbox'
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${messageViewMode === 'inbox'
                     ? 'bg-white text-slate-900 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 📋 Tüm Gelen Mesajlar ({messages.length})
               </button>
@@ -2479,13 +2456,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           {/* GÖRÜNÜM 1: CANLI SOHBET AKIŞI (WhatsApp Tarzı) */}
           {messageViewMode === 'live_chat' ? (
             <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
-              
+
               {/* Sohbet Başlığı */}
               <div className="px-4 py-3 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl font-bold text-xs flex items-center justify-center text-white shadow-2xs ${
-                    teacherSelectedChatId === 'grp-7b' ? 'bg-emerald-600' : 'bg-indigo-600'
-                  }`}>
+                  <div className={`w-9 h-9 rounded-xl font-bold text-xs flex items-center justify-center text-white shadow-2xs ${teacherSelectedChatId === 'grp-7b' ? 'bg-emerald-600' : 'bg-indigo-600'
+                    }`}>
                     {teacherSelectedChatId === 'grp-7b' ? '📢' : 'AD'}
                   </div>
                   <div>
@@ -2493,9 +2469,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <span className="text-xs sm:text-sm font-bold text-slate-900">
                         {teacherSelectedChatId === 'grp-7b' ? '7-B Resmi Veli Bilgilendirme Grubu' : 'Ahmet Demir'}
                       </span>
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-sm ${
-                        teacherSelectedChatId === 'grp-7b' ? 'bg-emerald-50 text-emerald-800' : 'bg-indigo-50 text-indigo-700'
-                      }`}>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-sm ${teacherSelectedChatId === 'grp-7b' ? 'bg-emerald-50 text-emerald-800' : 'bg-indigo-50 text-indigo-700'
+                        }`}>
                         {teacherSelectedChatId === 'grp-7b' ? '28 Katılımcı (WhatsApp Sınıf Grubu)' : '452 Emre Demir Velisi (7-B)'}
                       </span>
                     </div>
@@ -2530,11 +2505,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         )}
 
                         <div
-                          className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-3.5 py-2.5 text-xs ${
-                            isTeacher
+                          className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-3.5 py-2.5 text-xs ${isTeacher
                               ? 'bg-slate-900 text-white rounded-br-xs shadow-2xs'
                               : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-xs shadow-2xs'
-                          }`}
+                            }`}
                         >
                           <span className={`text-[10px] font-bold block mb-0.5 ${isTeacher ? 'text-slate-300' : 'text-indigo-700'}`}>
                             {isTeacher ? 'Siz (Zehra Aydın)' : msg.senderName}
@@ -2565,17 +2539,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">Hızlı Yanıt:</span>
                 {(teacherSelectedChatId === 'grp-7b'
                   ? [
-                      '📢 Yarınki ders ödevlerini hatırlatırım.',
-                      '📅 Pazar günkü veli toplantımızı rica ederim.',
-                      '📚 Kitap okuma saatini uygulamayı unutmayınız.',
-                      '👍 Sınıfımızın bu haftaki başarısını tebrik ederim.',
-                    ]
+                    '📢 Yarınki ders ödevlerini hatırlatırım.',
+                    '📅 Pazar günkü veli toplantımızı rica ederim.',
+                    '📚 Kitap okuma saatini uygulamayı unutmayınız.',
+                    '👍 Sınıfımızın bu haftaki başarısını tebrik ederim.',
+                  ]
                   : [
-                      '👍 Ödevi inceledim ve sisteme tam puan olarak kaydettim.',
-                      '📅 Çarşamba günü saat 15:00\'te rehberlik odasında görüşebiliriz.',
-                      '🌟 Emre\'nin ders içi gayreti ve performansı çok iyi, tebrik ederim.',
-                      '📚 Yarın derste konunun alıştırmalarını tahtada çözeceğiz.',
-                    ]
+                    '👍 Ödevi inceledim ve sisteme tam puan olarak kaydettim.',
+                    '📅 Çarşamba günü saat 15:00\'te rehberlik odasında görüşebiliriz.',
+                    '🌟 Emre\'nin ders içi gayreti ve performansı çok iyi, tebrik ederim.',
+                    '📚 Yarın derste konunun alıştırmalarını tahtada çözeceğiz.',
+                  ]
                 ).map((resp, i) => (
                   <button
                     key={i}
@@ -2613,11 +2587,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     type="button"
                     onClick={() => handleSendLiveTeacherMessage()}
                     disabled={!teacherChatInput.trim()}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer ${
-                      teacherChatInput.trim()
+                    className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer ${teacherChatInput.trim()
                         ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-2xs'
                         : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                    }`}
+                      }`}
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Yanıtı Gönder</span>
@@ -2724,7 +2697,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </div>
 
           <div className="divide-y divide-slate-100">
-            {LEADERBOARD_STUDENTS.map((st) => (
+            {leaderboardStudents.map((st) => (
               <div key={st.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5">
                   <span className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-xs">
@@ -2751,7 +2724,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* ========================================================================= */}
       {isNewClassModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/40 backdrop-blur-xs animate-in fade-in">
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 border border-slate-200 space-y-4 shadow-sm"
           >
@@ -3121,9 +3094,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           <div className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full border border-slate-200 shadow-lg space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-base ${
-                  pointModalStudent.type === 'plus' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                }`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-base ${pointModalStudent.type === 'plus' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}>
                   {pointModalStudent.type === 'plus' ? '+' : '-'}
                 </div>
                 <div>
@@ -3154,11 +3126,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setPointModalStudent({ ...pointModalStudent, type: 'plus' })}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    pointModalStudent.type === 'plus'
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${pointModalStudent.type === 'plus'
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-2 ring-emerald-100'
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <span>✓</span>
                   <span>Artı (+) Ver (+1 Puan)</span>
@@ -3167,11 +3138,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setPointModalStudent({ ...pointModalStudent, type: 'minus' })}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    pointModalStudent.type === 'minus'
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${pointModalStudent.type === 'minus'
                       ? 'bg-rose-50 text-rose-800 border-rose-300 ring-2 ring-rose-100'
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <span>✕</span>
                   <span>Eksi (-) Ver (-1 Puan)</span>
@@ -3201,11 +3171,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     key={reasonChip}
                     type="button"
                     onClick={() => setPointReasonText(reasonChip)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                      pointReasonText === reasonChip
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${pointReasonText === reasonChip
                         ? 'bg-slate-900 text-white border-slate-900'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     {reasonChip}
                   </button>
@@ -3243,9 +3212,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   addPointRecord(pointModalStudent.id, pointModalStudent.type, pointReasonText.trim() || (pointModalStudent.type === 'plus' ? 'Ders içi katılım' : 'Ders kurallarına uymama'));
                   setPointModalStudent(null);
                 }}
-                className={`px-5 py-2 rounded-xl text-xs font-bold text-white transition-colors shadow-xs cursor-pointer ${
-                  pointModalStudent.type === 'plus' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
-                }`}
+                className={`px-5 py-2 rounded-xl text-xs font-bold text-white transition-colors shadow-xs cursor-pointer ${pointModalStudent.type === 'plus' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
               >
                 {pointModalStudent.type === 'plus' ? 'Artı (+) Puanını Kaydet' : 'Eksi (-) Puanını Kaydet'}
               </button>

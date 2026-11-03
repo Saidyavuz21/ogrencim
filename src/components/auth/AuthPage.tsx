@@ -543,7 +543,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </label>
                     <input
                       type="email"
-                      placeholder="admin@okul.k12.tr"
+                      placeholder="saidyvz21@gmail.com"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
@@ -555,7 +555,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </label>
                     <input
                       type="password"
-                      placeholder="Örn: admin123"
+                      placeholder="Syv848112."
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
@@ -740,7 +740,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 onClick={() => handleQuickDemoLogin('admin')}
                 className="p-1.5 rounded-xl border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 text-[11px] font-bold transition-colors cursor-pointer text-center"
               >
-                🏛️ Admin
+                🏛️ Süper Admin (Said)
               </button>
             </div>
           </div>

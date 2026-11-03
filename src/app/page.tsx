@@ -101,14 +101,14 @@ import {
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<UserAccount>(INITIAL_USER_ACCOUNTS[0]);
-  const [currentRole, setCurrentRole] = useState<UserRole>('veli');
+  const [currentRole, setCurrentRole] = useState<UserRole>('admin');
   const [isParentAuthenticated, setIsParentAuthenticated] = useState<boolean>(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [activeNotification, setActiveNotification] = useState<ActiveNotification | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>(ASSIGNMENTS);
   const [studentPoints, setStudentPoints] = useState<{ [studentId: string]: StudentPointsSummary }>(INITIAL_STUDENT_POINTS);
@@ -148,7 +148,7 @@ export default function Home() {
         if (!isMounted) return;
 
         // 1. Canlı Öğrenci Listesi & Puan Sıralaması
-        if (liveStudents && liveStudents.length > 0) {
+        if (liveStudents) {
           setLeaderboardStudents(
             liveStudents.map((s, idx) => ({
               id: s.student_number === '4527-B' ? 'ogr-452' : `ogr-${s.student_number}`,
@@ -165,25 +165,36 @@ export default function Home() {
         }
 
         // 2. Canlı Mesajlar
-        if (liveMsgs && liveMsgs.length > 0) {
-          setChatMessages((prev) => {
-            const mapped: ChatMessage[] = liveMsgs.map((m) => ({
-              id: m.id,
-              conversationId: m.conversation_id === 't1' ? 'za' : m.conversation_id === 'g1' ? 'grp-7b' : m.conversation_id,
-              senderId: m.sender_id,
-              senderName: m.sender_name,
-              senderRole: m.sender_role === 'teacher' ? 'ogretmen' : 'veli',
-              text: m.content,
-              timestamp: new Date(m.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-              timeOnly: new Date(m.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-              status: m.is_read ? 'read' : 'delivered',
-              isRead: m.is_read,
-              voiceNote: m.message_type === 'audio' ? { duration: m.audio_duration || '0:15', isPlaying: false } : undefined,
-            }));
-            const existingIds = new Set(prev.map((p) => p.id));
-            const newOnes = mapped.filter((m) => !existingIds.has(m.id));
-            return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
-          });
+        if (liveMsgs) {
+          const mapped: ChatMessage[] = liveMsgs.map((m) => ({
+            id: m.id,
+            conversationId: m.conversation_id === 't1' ? 'za' : m.conversation_id === 'g1' ? 'grp-7b' : m.conversation_id,
+            senderId: m.sender_id,
+            senderName: m.sender_name,
+            senderRole: m.sender_role === 'teacher' ? 'ogretmen' : 'veli',
+            text: m.content,
+            timestamp: new Date(m.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+            timeOnly: new Date(m.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+            status: m.is_read ? 'read' : 'delivered',
+            isRead: m.is_read,
+            voiceNote: m.message_type === 'audio' ? { duration: m.audio_duration || '0:15', isPlaying: false } : undefined,
+          }));
+          setChatMessages(mapped);
+        }
+
+        // 3. Canlı Duyurular
+        if (liveAnns) {
+          setAnnouncements(
+            liveAnns.map((a) => ({
+              id: a.id,
+              title: a.title,
+              date: new Date(a.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
+              sender: 'Okul Yönetimi',
+              content: a.content,
+              category: (a.category as any) || 'duyuru',
+              priority: (a.priority as any) || 'normal',
+            }))
+          );
         }
       } catch (err) {
         console.error('Supabase senkronizasyon hatası:', err);

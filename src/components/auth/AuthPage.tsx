@@ -13,11 +13,7 @@ import {
   EyeOff, 
   AlertCircle,
   School,
-  Sparkles,
-  BookOpen,
-  MapPin,
-  Building,
-  Users
+  BookOpen
 } from '../icons';
 import { UserRole, UserAccount, INITIAL_USER_ACCOUNTS, TEACHER_LIST, CURRENT_STUDENT, TURKEY_CITIES } from '../../data/portalData';
 

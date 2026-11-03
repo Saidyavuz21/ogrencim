@@ -43,14 +43,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [pin, setPin] = useState(['', '', '', '', '', '']); // Veli için 6 haneli PIN modu
   const [parentLoginMode, setParentLoginMode] = useState<'pin' | 'password'>('pin');
 
-  // Kayıt Form Alanları
+  // Kayıt Form Alanları (Yalnızca Öğretmen Kaydı)
   const [regName, setRegName] = useState('');
   const [regPhoneOrEmail, setRegPhoneOrEmail] = useState('');
-  const [regStudentNo, setRegStudentNo] = useState('');
+  const [regPhone, setRegPhone] = useState('');
   const [regBranch, setRegBranch] = useState('Türkçe');
   const [regClass, setRegClass] = useState('7-B');
   const [regPassword, setRegPassword] = useState('');
-  const [regPin, setRegPin] = useState('');
+  const [regPasswordConfirm, setRegPasswordConfirm] = useState('');
 
   // Şifremi Unuttum Modalı
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
@@ -191,46 +191,71 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  // Kayıt Ol İşlemi
+  // Yalnızca Öğretmen Kayıt Ol İşlemi
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
     if (!regName.trim() || !regPhoneOrEmail.trim() || !regPassword.trim()) {
-      setErrorMsg('Lütfen zorunlu alanları eksiksiz doldurunuz.');
+      setErrorMsg('Lütfen ad soyad, kurum e-postası ve şifre alanlarını eksiksiz doldurunuz.');
       return;
     }
 
-    if (selectedRole === 'veli' && regPin && regPin.length !== 6) {
-      setErrorMsg('Veli güvenlik PIN kodu tam olarak 6 haneli olmalıdır.');
+    if (!regPhoneOrEmail.includes('@') || !regPhoneOrEmail.includes('.')) {
+      setErrorMsg('Lütfen geçerli bir e-posta adresi giriniz (Örn: ad.soyad@okul.meb.gov.tr).');
       return;
     }
 
-    const newUser: UserAccount = {
-      id: `usr-${Date.now()}`,
-      role: selectedRole,
-      name: regName,
-      emailOrPhone: regPhoneOrEmail,
-      studentNo: regStudentNo || '452',
-      studentName: selectedRole === 'ogrenci' ? regName : 'Emre Demir (7-B)',
-      pin: regPin || '123456',
-      password: regPassword,
+    if (regPassword.length < 6) {
+      setErrorMsg('Şifreniz güvenlik sebebiyle en az 6 karakter olmalıdır.');
+      return;
+    }
+
+    if (regPasswordConfirm && regPassword !== regPasswordConfirm) {
+      setErrorMsg('Girdiğiniz şifreler birbiriyle uyuşmuyor.');
+      return;
+    }
+
+    const newTeacher: UserAccount = {
+      id: `usr-tch-${Date.now()}`,
+      role: 'ogretmen',
+      name: regName.trim(),
+      emailOrPhone: regPhoneOrEmail.trim(),
       branch: regBranch,
-      avatar: regName.slice(0, 2).toUpperCase(),
-      title:
-        selectedRole === 'veli'
-          ? `Öğrenci Velisi (${regName})`
-          : selectedRole === 'ogrenci'
-          ? `${regClass} Sınıfı Öğrencisi (No: ${regStudentNo || '452'})`
-          : selectedRole === 'ogretmen'
-          ? `${regBranch} Öğretmeni`
-          : 'Okul Yöneticisi',
+      password: regPassword,
+      avatar: regName.trim().slice(0, 2).toUpperCase(),
+      title: `${regBranch} Öğretmeni (${regClass !== 'Yok' ? `${regClass} Rehberliği` : 'Branş'})`,
     };
 
-    setSuccessMsg('Kaydınız başarıyla oluşturuldu! Sisteme yönlendiriliyorsunuz...');
+    // Bellekteki kullanıcı listesine ekle
+    INITIAL_USER_ACCOUNTS.push(newTeacher);
+
+    // Supabase Auth kaydı dene (arka planda)
+    try {
+      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pvxkyazarymowhbbhzgo.supabase.co';
+      const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_w6U3bU8s6f9mwwdCvG1gfA_Xx805Utm';
+      fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: regPhoneOrEmail.trim(),
+          password: regPassword,
+          data: {
+            name: regName.trim(),
+            role: 'teacher',
+            branch: regBranch,
+          },
+        }),
+      }).catch(() => {});
+    } catch {}
+
+    setSuccessMsg(`Öğretmen kaydınız oluşturuldu! Hoş geldiniz Sn. ${newTeacher.name}. Sisteme yönlendiriliyorsunuz...`);
     setTimeout(() => {
-      onLoginSuccess(newUser);
-    }, 600);
+      onLoginSuccess(newTeacher);
+    }, 500);
   };
 
   return (
@@ -274,60 +299,63 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               type="button"
               onClick={() => {
                 setAuthMode('register');
+                setSelectedRole('ogretmen');
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
               className={`py-2 rounded-xl transition-all cursor-pointer ${
                 authMode === 'register'
-                  ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                  ? 'bg-white text-blue-700 shadow-2xs font-extrabold'
                   : 'hover:text-slate-900'
               }`}
             >
-              Yeni Kayıt Ol
+              Öğretmen Kaydı
             </button>
           </div>
 
-          {/* 2. ROL SEÇİMİ BUTONLARI (4 Rol) */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Giriş Rolünüzü Seçiniz
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {roleCards.map((r) => {
-                const Icon = r.icon;
-                const isSelected = selectedRole === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole(r.id);
-                      setErrorMsg(null);
-                      setSuccessMsg(null);
-                    }}
-                    className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? `${r.color} ring-2 ring-indigo-500/20 shadow-2xs`
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isSelected ? r.activeColor : 'bg-slate-100 text-slate-600'}`}>
-                        <Icon className="w-3.5 h-3.5" />
+          {/* 2. ROL SEÇİMİ BUTONLARI (Yalnızca Giriş Yap modunda gösterilir) */}
+          {authMode === 'login' && (
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                Giriş Rolünüzü Seçiniz
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {roleCards.map((r) => {
+                  const Icon = r.icon;
+                  const isSelected = selectedRole === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedRole(r.id);
+                        setErrorMsg(null);
+                        setSuccessMsg(null);
+                      }}
+                      className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? `${r.color} ring-2 ring-indigo-500/20 shadow-2xs`
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isSelected ? r.activeColor : 'bg-slate-100 text-slate-600'}`}>
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/80 border border-slate-200/60 text-slate-600">
+                          {r.badge}
+                        </span>
                       </div>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/80 border border-slate-200/60 text-slate-600">
-                        {r.badge}
-                      </span>
-                    </div>
-                    <div className="mt-2">
-                      <span className="text-xs font-bold block">{r.title}</span>
-                      <span className="text-[10px] text-slate-500 line-clamp-1 block">{r.desc}</span>
-                    </div>
-                  </button>
-                );
-              })}
+                      <div className="mt-2">
+                        <span className="text-xs font-bold block">{r.title}</span>
+                        <span className="text-[10px] text-slate-500 line-clamp-1 block">{r.desc}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* BİLDİRİM / HATA KUTUSU */}
           {errorMsg && (
@@ -572,101 +600,81 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <span>Güvenli Giriş Yap</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+
+              {/* Öğretmen Kaydına Yönlendirme Linki */}
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('register');
+                    setSelectedRole('ogretmen');
+                    setErrorMsg(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="text-[11px] text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  Öğretmen misiniz ve henüz hesabınız yok mu?{' '}
+                  <span className="text-blue-600 font-bold hover:underline">Öğretmen Kaydı Açın</span>
+                </button>
+              </div>
             </form>
           ) : (
-            /* ======================= KAYIT OL FORMU ======================= */
+            /* ======================= YALNIZCA ÖĞRETMEN KAYIT FORMU ======================= */
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+              
+              {/* Bilgilendirme Kutusu: Veli ve Öğrenci kayıtlarının neden burada olmadığını açıklar */}
+              <div className="p-3 bg-blue-50/90 border border-blue-200/80 rounded-2xl flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-blue-950">Öğretmen Kayıt Portalı</h3>
+                  <p className="text-[11px] text-blue-800 leading-relaxed mt-0.5">
+                    Veli ve öğrenci hesapları okul yönetimi / rehberlik tarafından tanımlanır. Bu form <strong>yalnızca öğretmenlerimizin</strong> kaydı içindir.
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Adınız ve Soyadınız *
+                  Öğretmenin Adı ve Soyadı *
                 </label>
                 <input
                   type="text"
-                  placeholder="Örn: Ahmet Demir"
+                  placeholder="Örn: Zehra Aydın"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-indigo-400"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  {selectedRole === 'ogretmen' || selectedRole === 'admin' ? 'E-Posta Adresi *' : 'Telefon Numarası *'}
+                  Kurum / MEB E-Posta Adresi *
                 </label>
                 <input
-                  type="text"
-                  placeholder={selectedRole === 'ogretmen' ? 'ad.soyad@okul.k12.tr' : '0532 999 88 77'}
+                  type="email"
+                  placeholder="ad.soyad@okul.meb.gov.tr"
                   value={regPhoneOrEmail}
                   onChange={(e) => setRegPhoneOrEmail(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-indigo-400"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
                 />
               </div>
 
-              {selectedRole === 'veli' && (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">
-                        Öğrencinin Okul No *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Örn: 452"
-                        value={regStudentNo}
-                        onChange={(e) => setRegStudentNo(e.target.value)}
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">
-                        6 Haneli PIN Belirleyin *
-                      </label>
-                      <input
-                        type="password"
-                        maxLength={6}
-                        placeholder="123456"
-                        value={regPin}
-                        onChange={(e) => setRegPin(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 text-center font-bold tracking-widest focus:bg-white focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  İletişim / Cep Telefonu (İsteğe Bağlı)
+                </label>
+                <input
+                  type="tel"
+                  placeholder="0532 111 22 33"
+                  value={regPhone}
+                  onChange={(e) => setRegPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
+                />
+              </div>
 
-              {selectedRole === 'ogrenci' && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Okul Numaranız *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="452"
-                      value={regStudentNo}
-                      onChange={(e) => setRegStudentNo(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Sınıf Şubeniz *
-                    </label>
-                    <select
-                      value={regClass}
-                      onChange={(e) => setRegClass(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden"
-                    >
-                      <option value="7-A">7-A</option>
-                      <option value="7-B">7-B</option>
-                      <option value="8-A">8-A</option>
-                      <option value="8-B">8-B</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {selectedRole === 'ogretmen' && (
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
                     Ders Branşınız *
@@ -674,76 +682,132 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <select
                     value={regBranch}
                     onChange={(e) => setRegBranch(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
                   >
                     <option value="Türkçe">Türkçe</option>
                     <option value="Matematik">Matematik</option>
                     <option value="Fen Bilimleri">Fen Bilimleri</option>
                     <option value="Sosyal Bilgiler">Sosyal Bilgiler</option>
                     <option value="İngilizce">İngilizce</option>
+                    <option value="Din Kültürü ve Ahlak Bilgisi">Din Kültürü</option>
+                    <option value="Bilişim Teknolojileri">Bilişim Teknolojileri</option>
+                    <option value="Görsel Sanatlar">Görsel Sanatlar</option>
+                    <option value="Müzik">Müzik</option>
+                    <option value="Beden Eğitimi">Beden Eğitimi</option>
+                    <option value="Rehberlik">Rehberlik</option>
                   </select>
                 </div>
-              )}
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Rehberlik Şubesi *
+                  </label>
+                  <select
+                    value={regClass}
+                    onChange={(e) => setRegClass(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
+                  >
+                    <option value="7-B">7-B Şubesi</option>
+                    <option value="7-A">7-A Şubesi</option>
+                    <option value="8-A">8-A Şubesi</option>
+                    <option value="8-B">8-B Şubesi</option>
+                    <option value="8-C">8-C Şubesi</option>
+                    <option value="6-A">6-A Şubesi</option>
+                    <option value="5-A">5-A Şubesi</option>
+                    <option value="Yok">Şube Rehberliği Yok</option>
+                  </select>
+                </div>
+              </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Şifre Belirleyin *
-                </label>
-                <input
-                  type="password"
-                  placeholder="En az 6 karakter"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-indigo-400"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Giriş Şifresi *
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="En az 6 karakter"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Şifre Tekrarı *
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Şifreyi doğrulayın"
+                    value={regPasswordConfirm}
+                    onChange={(e) => setRegPasswordConfirm(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full mt-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Hesabı Oluştur & Giriş Yap</span>
+                <span>Öğretmen Hesabını Oluştur & Başla</span>
                 <Check className="w-4 h-4" />
               </button>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('login');
+                    setErrorMsg(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  Zaten bir öğretmen veya okul hesabınız var mı?{' '}
+                  <span className="text-blue-600 font-bold hover:underline">Giriş Yap</span>
+                </button>
+              </div>
             </form>
           )}
 
-          {/* HIZLI TEST / DEMO GİRİŞ BUTONLARI (Kullanıcı için hayat kurtaran kısım) */}
-          <div className="pt-3 border-t border-slate-100 space-y-2">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block text-center">
-              ⚡ Hızlı Tek Tıkla Demo Giriş
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('veli')}
-                className="p-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
-              >
-                👨‍👩‍👧 Veli (Ahmet)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('ogrenci')}
-                className="p-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 text-indigo-800 hover:bg-indigo-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
-              >
-                🎒 Öğrenci (Emre)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('ogretmen')}
-                className="p-1.5 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-800 hover:bg-blue-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
-              >
-                👩‍🏫 Öğretmen (Zehra)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('admin')}
-                className="p-1.5 rounded-xl border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 text-[11px] font-bold transition-colors cursor-pointer text-center"
-              >
-                🏛️ Süper Admin (Said)
-              </button>
+          {/* HIZLI TEST / DEMO GİRİŞ BUTONLARI (Sadece Giriş Yap Modunda Gösterilir) */}
+          {authMode === 'login' && (
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block text-center">
+                ⚡ Hızlı Tek Tıkla Demo Giriş
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('veli')}
+                  className="p-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
+                >
+                  👨‍👩‍👧 Veli (Ahmet)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('ogrenci')}
+                  className="p-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 text-indigo-800 hover:bg-indigo-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
+                >
+                  🎒 Öğrenci (Emre)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('ogretmen')}
+                  className="p-1.5 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-800 hover:bg-blue-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
+                >
+                  👩‍🏫 Öğretmen (Zehra)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('admin')}
+                  className="p-1.5 rounded-xl border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 text-[11px] font-bold transition-colors cursor-pointer text-center"
+                >
+                  🏛️ Süper Admin (Said)
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
 

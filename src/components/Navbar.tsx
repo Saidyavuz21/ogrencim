@@ -8,6 +8,8 @@ interface NavbarProps {
   student: Student;
   currentRole: UserRole;
   onRoleChange: (role: UserRole) => void;
+  /** Bu kullanıcının geçebileceği roller; tek rol varsa seçici gizlenir */
+  allowedRoles?: UserRole[];
   onOpenMobileMenu: () => void;
   onOpenNotifications: () => void;
   unreadCount: number;
@@ -22,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   student,
   currentRole,
   onRoleChange,
+  allowedRoles = [],
   onOpenMobileMenu,
   onOpenNotifications,
   unreadCount,
@@ -33,14 +36,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
 
-  const roles: { id: UserRole; label: string; roleName: string; userDesc: string }[] = [
+  const allRoles: { id: UserRole; label: string; roleName: string; userDesc: string }[] = [
     { id: 'veli', label: 'Veli Girişi', roleName: 'Veli Paneli', userDesc: 'Öğrenci & Veli Takip Portalı' },
     { id: 'ogrenci', label: 'Öğrenci Girişi', roleName: 'Öğrenci Portalı', userDesc: 'Ders, Not ve Ödev Takibi' },
     { id: 'ogretmen', label: 'Öğretmen Girişi', roleName: 'Öğretmen Paneli', userDesc: 'Öğretmen ve Sınıf Yönetimi' },
     { id: 'admin', label: 'Süper Admin', roleName: 'Yönetici Paneli', userDesc: 'Süper Admin & Sistem İdaresi' },
   ];
 
-  const currentRoleObj = roles.find((r) => r.id === currentRole) || roles[0];
+  const roles = allRoles.filter((r) => allowedRoles.includes(r.id));
+  const currentRoleObj = allRoles.find((r) => r.id === currentRole) || allRoles[0];
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80">
@@ -85,7 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                onClick={() => roles.length > 1 && setIsRoleDropdownOpen(!isRoleDropdownOpen)}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -94,7 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
 
-              {isRoleDropdownOpen && (
+              {isRoleDropdownOpen && roles.length > 1 && (
                 <>
                   <div
                     className="fixed inset-0 z-40"

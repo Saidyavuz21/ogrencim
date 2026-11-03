@@ -34,6 +34,7 @@ import {
   Announcement,
   UserAccount
 } from '../../data/portalData';
+import { AccessManagement } from './AccessManagement';
 
 // Standart Öğretmen Branşları Listesi
 const TEACHER_BRANCHES = [
@@ -59,7 +60,7 @@ const TEACHER_BRANCHES = [
 ];
 
 export const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'classes' | 'teachers' | 'announcements' | 'settings'>('classes');
+  const [activeTab, setActiveTab] = useState<'access' | 'classes' | 'teachers' | 'announcements' | 'settings'>('access');
   const [classes, setClasses] = useState<SchoolClass[]>(SCHOOL_CLASSES);
   
   // Öğretmen Listesi (TEACHER_LIST ve INITIAL_USER_ACCOUNTS ile senkronize başlangıç)
@@ -310,33 +311,7 @@ export const AdminDashboard: React.FC = () => {
         title: `${formBranch} Öğretmeni (${formSchool.trim()} • ${formDistrict}/${formCity})`,
       });
 
-      // Supabase Auth kaydı dene (arka planda)
-      try {
-        const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pvxkyazarymowhbbhzgo.supabase.co';
-        const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_w6U3bU8s6f9mwwdCvG1gfA_Xx805Utm';
-        fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: formEmail.trim(),
-            password: formPassword.trim(),
-            data: {
-              name: formName.trim(),
-              role: 'teacher',
-              branch: formBranch,
-              school: formSchool.trim(),
-              class_name: formHomeroom,
-              city: formCity,
-              district: formDistrict,
-            },
-          }),
-        }).catch(() => {});
-      } catch {}
-
-      showToast(`Sn. ${formName} (${formBranch}) sisteme kaydedildi. Belirlediğiniz şifreyle giriş yapabilir.`);
+      showToast(`Sn. ${formName} (${formBranch}) kadro listesine eklendi. Giriş hesabı için öğretmenin kendisi kayıt olmalı, ardından "Hesaplar & Onay" sekmesinden onaylayın.`);
     }
 
     setIsTeacherModalOpen(false);
@@ -496,6 +471,7 @@ export const AdminDashboard: React.FC = () => {
       {/* Sekmeler */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
         {[
+          { id: 'access', label: 'Hesaplar & Onay' },
           { id: 'classes', label: 'Sınıflar & Şubeler', count: classes.length },
           { id: 'teachers', label: 'Öğretmen Kadrosu', count: teachers.length },
           { id: 'announcements', label: 'Okul Geneli Duyurular', count: announcements.length },
@@ -525,6 +501,11 @@ export const AdminDashboard: React.FC = () => {
           );
         })}
       </div>
+
+      {/* ======================================================== */}
+      {/* MODÜL 0: GERÇEK HESAPLAR (öğretmen onayı, öğrenci PIN'leri) */}
+      {/* ======================================================== */}
+      {activeTab === 'access' && <AccessManagement />}
 
       {/* ======================================================== */}
       {/* MODÜL 1: SINIFLAR & ŞUBELER */}

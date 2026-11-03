@@ -198,17 +198,9 @@ export interface UserAccount {
   title: string;
 }
 
-export const INITIAL_USER_ACCOUNTS: UserAccount[] = [
-  {
-    id: 'usr-admin-1',
-    role: 'admin',
-    name: 'Said Yavuz',
-    emailOrPhone: 'saidyvz21@gmail.com',
-    password: 'Syv848112.',
-    avatar: 'SY',
-    title: 'Süper Admin & Sistem Yöneticisi',
-  },
-];
+// Hesaplar artık Supabase Auth (öğretmen/admin) ve students tablosunda (öğrenci/veli) tutulur.
+// Bu dizi yalnızca eski yerel ekranlarla uyumluluk için boş bırakılmıştır; şifre/PIN EKLEMEYİN.
+export const INITIAL_USER_ACCOUNTS: UserAccount[] = [];
 
 
 export interface TeacherProfile {

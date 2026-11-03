@@ -24,6 +24,7 @@ interface MobileDrawerProps {
   onClose: () => void;
   currentRole: UserRole;
   onRoleChange: (role: UserRole) => void;
+  allowedRoles?: UserRole[];
   activeTab: string;
   onSelectTab: (tab: string) => void;
   student: Student;
@@ -38,6 +39,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   onClose,
   currentRole,
   onRoleChange,
+  allowedRoles = [],
   activeTab,
   onSelectTab,
   student,
@@ -122,18 +124,19 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           </button>
         </div>
 
-        {/* Rol Değiştirme Butonları (Mobilde Kolay Geçiş) */}
+        {/* Rol Değiştirme Butonları (yalnızca hesabın izin verdiği roller) */}
+        {allowedRoles.length > 1 && (
         <div className="p-3 border-b border-slate-100 bg-slate-50/70">
           <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5 px-1">
             Giriş Rolü
           </span>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-2 gap-1">
             {[
               { id: 'veli', label: 'Veli' },
               { id: 'ogrenci', label: 'Öğrenci' },
               { id: 'ogretmen', label: 'Öğretmen' },
               { id: 'admin', label: 'Admin' },
-            ].map((r) => {
+            ].filter((r) => allowedRoles.includes(r.id as UserRole)).map((r) => {
               const isSelected = currentRole === r.id;
               return (
                 <button
@@ -155,6 +158,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             })}
           </div>
         </div>
+        )}
 
         {/* Menü Linkleri */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">

@@ -6,7 +6,10 @@ import {
   getLiveMessages, 
   sendLiveMessage, 
   updateStudentScore,
-  getLiveAnnouncements 
+  getLiveAnnouncements,
+  restoreSession,
+  signOutUser,
+  verifyMyPin
 } from '../lib/supabaseClient';
 import { 
   Navbar 
@@ -71,7 +74,6 @@ import {
   ANNOUNCEMENTS,
   INITIAL_STUDENT_POINTS,
   INITIAL_CHAT_MESSAGES,
-  INITIAL_USER_ACCOUNTS,
   ChatMessage,
   Announcement,
   BulkMessage,
@@ -98,9 +100,26 @@ import {
   Lock
 } from '../components/icons';
 
+const SIGNED_OUT_USER: UserAccount = {
+  id: '',
+  role: 'ogrenci',
+  name: '',
+  emailOrPhone: '',
+  avatar: '',
+  title: '',
+};
+
+// Bir kullanıcının arayüzde geçebileceği roller (veri yetkisi ayrıca veritabanında RLS ile korunur)
+function allowedRolesFor(user: UserAccount): UserRole[] {
+  if (user.role === 'admin') return ['admin'];
+  if (user.role === 'ogretmen') return ['ogretmen'];
+  return ['ogrenci', 'veli'];
+}
+
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<UserAccount>(INITIAL_USER_ACCOUNTS[0]);
+  const [isRestoringSession, setIsRestoringSession] = useState<boolean>(true);
+  const [currentUser, setCurrentUser] = useState<UserAccount>(SIGNED_OUT_USER);
   const [currentRole, setCurrentRole] = useState<UserRole>('ogrenci');
   const [isParentAuthenticated, setIsParentAuthenticated] = useState<boolean>(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -120,22 +139,40 @@ export default function Home() {
     setCurrentUser(user);
     setCurrentRole(user.role);
     setIsAuthenticated(true);
-    if (user.role === 'veli') {
-      setIsParentAuthenticated(true);
-    }
+    // Öğrenci/veli girişi zaten PIN ile yapıldığı için veli görünümü açık başlar
+    setIsParentAuthenticated(true);
     setActiveTab('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsAuthenticated(false);
     setIsProfileModalOpen(false);
     setIsParentAuthenticated(false);
+    setCurrentUser(SIGNED_OUT_USER);
+    await signOutUser();
   };
+
+  // Sayfa yenilendiğinde mevcut Supabase oturumunu geri yükle
+  useEffect(() => {
+    let cancelled = false;
+    restoreSession()
+      .then((user) => {
+        if (!cancelled && user) handleLoginSuccess(user);
+      })
+      .catch((err) => console.error('Oturum geri yüklenemedi:', err))
+      .finally(() => {
+        if (!cancelled) setIsRestoringSession(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ========================================================
   // SUPABASE CANLI VERİ SENKRONİZASYONU (Realtime Polling)
   // ========================================================
   useEffect(() => {
+    if (!isAuthenticated) return;
     let isMounted = true;
     async function syncSupabase() {
       try {
@@ -207,7 +244,7 @@ export default function Home() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const handleStudentPointsChange = (updatedMap: { [studentId: string]: StudentPointsSummary }) => {
     setStudentPoints(updatedMap);
@@ -233,9 +270,7 @@ export default function Home() {
     // Supabase'e canlı kaydet
     sendLiveMessage({
       conversation_id: newMsg.conversationId === 'za' ? 't1' : newMsg.conversationId === 'grp-7b' ? 'g1' : newMsg.conversationId,
-      sender_id: newMsg.senderId,
       sender_name: newMsg.senderName,
-      sender_role: newMsg.senderRole === 'ogretmen' ? 'teacher' : 'parent',
       content: newMsg.text || (newMsg.voiceNote ? 'Sesli mesaj' : 'Ek dosya'),
       message_type: newMsg.voiceNote ? 'audio' : 'text',
       audio_duration: newMsg.voiceNote?.duration,
@@ -316,13 +351,25 @@ export default function Home() {
 
   const pendingHomeworkCount = assignments.filter((a) => a.status === 'bekliyor').length;
 
+  const allowedRoles = allowedRolesFor(currentUser);
+
+  // Giriş yapan öğrencinin bilgileri (personel için boş şablon kalır)
+  const activeStudent =
+    currentUser.role === 'ogrenci' && currentUser.studentNo
+      ? {
+          ...CURRENT_STUDENT,
+          id: currentUser.id,
+          name: currentUser.name,
+          studentNo: currentUser.studentNo,
+          class: currentUser.className || CURRENT_STUDENT.class,
+          avatar: currentUser.avatar,
+        }
+      : CURRENT_STUDENT;
+
   const handleRoleChange = (role: UserRole) => {
+    // Kullanıcı yalnızca kendi hesabının izin verdiği görünümler arasında geçebilir
+    if (!allowedRoles.includes(role)) return;
     setCurrentRole(role);
-    const matchedAccount = INITIAL_USER_ACCOUNTS.find((a) => a.role === role) || INITIAL_USER_ACCOUNTS[0];
-    setCurrentUser(matchedAccount);
-    if (role === 'veli') {
-      setIsParentAuthenticated(true);
-    }
     setActiveTab('dashboard'); // Rol değişince varsayılan panele dön
   };
 
@@ -412,6 +459,14 @@ export default function Home() {
       ? ogrenciNavTabs
       : veliNavTabs;
 
+  if (isRestoringSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-xs text-slate-500">
+        Oturum kontrol ediliyor...
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <AuthPage
@@ -427,9 +482,10 @@ export default function Home() {
       
       {/* 1. Üst Menü Çubuğu (Rol Değiştirici & Bildirimler) */}
       <Navbar
-        student={CURRENT_STUDENT}
+        student={activeStudent}
         currentRole={currentRole}
         onRoleChange={handleRoleChange}
+        allowedRoles={allowedRoles}
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         unreadCount={unreadCount}
@@ -504,7 +560,7 @@ export default function Home() {
           <>
             {activeTab === 'dashboard' && (
               <StudentDashboard
-                student={CURRENT_STUDENT}
+                student={activeStudent}
                 assignments={assignments}
                 onAssignmentsChange={setAssignments}
                 studentPoints={studentPoints['ogr-452']}
@@ -527,7 +583,7 @@ export default function Home() {
             )}
             {activeTab === 'messages' && (
               <ParentTeacherChat
-                student={CURRENT_STUDENT}
+                student={activeStudent}
                 messages={chatMessages}
                 onSendMessage={handleSendChatMessage}
                 onTeacherReply={handleTeacherReplyChatMessage}
@@ -541,13 +597,9 @@ export default function Home() {
         {currentRole === 'veli' && (
           !isParentAuthenticated ? (
             <ParentPinLogin
-              student={CURRENT_STUDENT}
+              student={activeStudent}
               onSuccess={() => setIsParentAuthenticated(true)}
-              onCancelToRole={(role) => {
-                setCurrentRole(role);
-                setActiveTab('dashboard');
-              }}
-              correctPin="123456"
+              verifyPin={verifyMyPin}
             />
           ) : (
             <>
@@ -588,7 +640,7 @@ export default function Home() {
                 
                 {/* Öğrenci Özet Kartı */}
                 <StudentHero
-                  student={CURRENT_STUDENT}
+                  student={activeStudent}
                   studentPoints={studentPoints['ogr-452']}
                   onNavigateToLeaderboard={() => setActiveTab('leaderboard')}
                   onNavigateToHomeworks={() => setActiveTab('homeworks')}
@@ -900,7 +952,7 @@ export default function Home() {
             {/* Sekme 5: ANLIK ÖĞRETMEN MESAJLAŞMA */}
             {activeTab === 'messages' && (
               <ParentTeacherChat
-                student={CURRENT_STUDENT}
+                student={activeStudent}
                 messages={chatMessages}
                 onSendMessage={handleSendChatMessage}
                 onTeacherReply={handleTeacherReplyChatMessage}
@@ -961,12 +1013,13 @@ export default function Home() {
         onClose={() => setIsMobileMenuOpen(false)}
         currentRole={currentRole}
         onRoleChange={handleRoleChange}
+        allowedRoles={allowedRoles}
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
           setIsMobileMenuOpen(false);
         }}
-        student={CURRENT_STUDENT}
+        student={activeStudent}
         unreadCount={unreadCount}
         pendingHomeworkCount={pendingHomeworkCount}
         isParentAuthenticated={isParentAuthenticated}
@@ -986,7 +1039,7 @@ export default function Home() {
       <TeacherMessageModal
         isOpen={isMessageModalOpen}
         onClose={() => setIsMessageModalOpen(false)}
-        student={CURRENT_STUDENT}
+        student={activeStudent}
         onSendToChat={(text, teacherId) => {
           const timeOnly = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
           handleSendChatMessage({

@@ -15,7 +15,8 @@ import {
   School,
   BookOpen
 } from '../icons';
-import { UserRole, UserAccount, INITIAL_USER_ACCOUNTS, TEACHER_LIST, CURRENT_STUDENT, TURKEY_CITIES } from '../../data/portalData';
+import { UserRole, UserAccount, TURKEY_CITIES } from '../../data/portalData';
+import { signInStaff, signInStudent, signUpTeacher } from '../../lib/supabaseClient';
 
 interface AuthPageProps {
   onLoginSuccess: (user: UserAccount) => void;
@@ -36,6 +37,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 1. Öğrenci & Veli Giriş Form Alanları
   const [studentNo, setStudentNo] = useState('');
@@ -118,10 +120,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   // ========================================================
   // GİRİŞ YAP İŞLEMİ (Öğrenci & Veli PIN, Öğretmen, Admin)
+  // Tüm doğrulama sunucuda (Supabase Auth + veritabanı fonksiyonları) yapılır.
   // ========================================================
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setErrorMsg(null);
+    setSuccessMsg(null);
 
     // 1. Öğrenci & Veli Girişi (Okul No + 4 Haneli PIN)
     if (selectedRole === 'ogrenci' || selectedRole === 'veli') {
@@ -138,19 +143,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         return;
       }
 
-      // Kayıtlı Öğrenci / Veli Kontrolü
-      const matchedStudent = INITIAL_USER_ACCOUNTS.find(
-        (acc) =>
-          (acc.role === 'ogrenci' || acc.role === 'veli') &&
-          acc.studentNo === enteredNo &&
-          acc.pin === enteredPin
-      );
+      setIsSubmitting(true);
+      const res = await signInStudent(enteredNo, enteredPin);
+      setIsSubmitting(false);
 
-      if (matchedStudent) {
+      if (res.ok) {
         setSuccessMsg('PIN doğrulandı! Öğrenci ve Veli Portalı açılıyor...');
-        setTimeout(() => onLoginSuccess(matchedStudent), 400);
+        setTimeout(() => onLoginSuccess(res.user), 400);
       } else {
-        setErrorMsg('Sistemde henüz kayıtlı öğrenci bulunmamaktadır. Lütfen öğretmeninizin veya okul yönetiminin sizi sisteme kaydetmesini bekleyiniz.');
+        setPinDigits(['', '', '', '']);
+        setErrorMsg(res.error);
       }
       return;
     }
@@ -161,61 +163,38 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
-    if (!password.trim()) {
+    if (!password) {
       setErrorMsg('Lütfen şifrenizi giriniz.');
       return;
     }
 
-    // Admin Giriş Kontrolü (Sadece Süper Admin)
-    if (selectedRole === 'admin') {
-      if (
-        identifier.trim().toLowerCase() === 'saidyvz21@gmail.com' &&
-        password === 'Syv848112.'
-      ) {
-        const adminAcc = INITIAL_USER_ACCOUNTS.find((a) => a.role === 'admin') || {
-          id: 'usr-admin-said',
-          role: 'admin',
-          name: 'Said Yavuz',
-          emailOrPhone: 'saidyvz21@gmail.com',
-          avatar: 'SY',
-          title: 'Süper Admin & Sistem Yöneticisi',
-        };
-        setSuccessMsg('Süper Admin girişi başarılı! Panel açılıyor...');
-        setTimeout(() => onLoginSuccess(adminAcc), 400);
-        return;
-      } else {
-        setErrorMsg('Yönetici e-posta veya şifresi hatalı.');
-        return;
-      }
+    setIsSubmitting(true);
+    const res = await signInStaff(identifier, password, selectedRole === 'admin' ? 'admin' : 'ogretmen');
+    setIsSubmitting(false);
+
+    if (!res.ok) {
+      setErrorMsg(res.error);
+      return;
     }
 
-    // Öğretmen Giriş Kontrolü
-    const matchedTeacher = INITIAL_USER_ACCOUNTS.find(
-      (acc) =>
-        acc.role === 'ogretmen' &&
-        acc.emailOrPhone.toLowerCase() === identifier.trim().toLowerCase()
+    setPassword('');
+    setSuccessMsg(
+      res.user.role === 'admin'
+        ? 'Süper Admin girişi başarılı! Panel açılıyor...'
+        : 'Giriş başarılı! Hoş geldiniz, Sn. ' + res.user.name + '.'
     );
-
-    if (!matchedTeacher) {
-      setErrorMsg("Bu e-posta adresiyle kayıtlı öğretmen bulunamadı. Lütfen 'Öğretmen Kaydı' sekmesinden kaydolunuz.");
-      return;
-    }
-
-    if (matchedTeacher.password && matchedTeacher.password !== password) {
-      setErrorMsg('Girdiğiniz şifre hatalı. Lütfen kontrol edip tekrar deneyiniz.');
-      return;
-    }
-
-    setSuccessMsg('Giriş başarılı! Hoş geldiniz, Sn. ' + matchedTeacher.name + '.');
-    setTimeout(() => onLoginSuccess(matchedTeacher), 400);
+    setTimeout(() => onLoginSuccess(res.user), 400);
   };
 
   // ========================================================
-  // ÖĞRETMEN KAYIT FORMU İŞLEMİ (Yeni İstenen Özellikler)
+  // ÖĞRETMEN KAYIT FORMU İŞLEMİ
+  // Hesap, okul yönetimi (admin) onayından sonra aktifleşir.
   // ========================================================
-  const handleTeacherRegisterSubmit = (e: React.FormEvent) => {
+  const handleTeacherRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setErrorMsg(null);
+    setSuccessMsg(null);
 
     if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
       setErrorMsg('Lütfen ad soyad, e-posta ve şifre alanlarını eksiksiz doldurunuz.');
@@ -227,78 +206,42 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
-    if (regPassword.length < 6) {
-      setErrorMsg('Şifreniz güvenlik amacıyla en az 6 karakter olmalıdır.');
+    if (regPassword.length < 8) {
+      setErrorMsg('Şifreniz güvenlik amacıyla en az 8 karakter olmalıdır.');
       return;
     }
 
-    if (regPasswordConfirm && regPassword !== regPasswordConfirm) {
+    if (regPassword !== regPasswordConfirm) {
       setErrorMsg('Girdiğiniz şifreler birbiriyle uyuşmuyor.');
       return;
     }
 
-    const newTeacher: UserAccount = {
-      id: `usr-tch-${Date.now()}`,
-      role: 'ogretmen',
-      name: regName.trim(),
-      emailOrPhone: regEmail.trim(),
+    setIsSubmitting(true);
+    const res = await signUpTeacher({
+      email: regEmail,
+      password: regPassword,
+      name: regName,
+      branch: regBranch,
       city: regCity,
       district: regDistrict,
-      schoolName: regSchool.trim(),
+      school: regSchool,
       className: regClass,
-      branch: regBranch,
-      password: regPassword,
-      avatar: regName.trim().slice(0, 2).toUpperCase(),
-      title: `${regBranch} Öğretmeni (${regSchool.trim()} • ${regDistrict}/${regCity})`,
-    };
-
-    // Hafızadaki kullanıcı listesine ekle
-    INITIAL_USER_ACCOUNTS.push(newTeacher);
-    TEACHER_LIST.push({
-      id: newTeacher.id,
-      name: newTeacher.name,
-      email: newTeacher.emailOrPhone,
-      password: newTeacher.password,
-      schoolName: newTeacher.schoolName,
-      city: newTeacher.city,
-      district: newTeacher.district,
-      branch: newTeacher.branch || 'Genel',
-      homeroomClass: newTeacher.className,
-      classes: newTeacher.className && newTeacher.className !== 'Yok' ? [newTeacher.className] : [],
-      studentCount: 0,
-      phone: '',
     });
+    setIsSubmitting(false);
 
-    // Supabase Auth kaydı dene (arka planda)
-    try {
-      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pvxkyazarymowhbbhzgo.supabase.co';
-      const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_w6U3bU8s6f9mwwdCvG1gfA_Xx805Utm';
-      fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: regEmail.trim(),
-          password: regPassword,
-          data: {
-            name: regName.trim(),
-            role: 'teacher',
-            branch: regBranch,
-            city: regCity,
-            district: regDistrict,
-            school: regSchool.trim(),
-            class_name: regClass,
-          },
-        }),
-      }).catch(() => {});
-    } catch {}
+    if (!res.ok) {
+      setErrorMsg(res.error || 'Kayıt yapılamadı.');
+      return;
+    }
 
-    setSuccessMsg(`Kaydınız tamamlandı! Hoş geldiniz, Sn. ${newTeacher.name}. Öğretmen paneli açılıyor...`);
-    setTimeout(() => {
-      onLoginSuccess(newTeacher);
-    }, 500);
+    setRegPassword('');
+    setRegPasswordConfirm('');
+    setAuthMode('login');
+    setSelectedRole('ogretmen');
+    setIdentifier(regEmail.trim());
+    setSuccessMsg(
+      'Kaydınız alındı. Okul yönetimi hesabınızı onayladıktan sonra buradan giriş yapabilirsiniz.'
+    );
   };
 
   const currentDistricts = TURKEY_CITIES[regCity] || ['Merkez'];
@@ -520,7 +463,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </label>
                     <input
                       type="email"
-                      placeholder="saidyvz21@gmail.com"
+                      placeholder="ornek@okul.k12.tr"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-slate-800 focus:outline-hidden"
@@ -544,9 +487,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               {/* Giriş Butonu */}
               <button
                 type="submit"
-                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2"
+                disabled={isSubmitting}
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
-                <span>Güvenli Giriş Yap</span>
+                <span>{isSubmitting ? 'Doğrulanıyor...' : 'Güvenli Giriş Yap'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -716,7 +660,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   </label>
                   <input
                     type="password"
-                    placeholder="En az 6 karakter"
+                    placeholder="En az 8 karakter"
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
@@ -738,9 +682,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
               <button
                 type="submit"
-                className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-wait text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Öğretmen Hesabını Oluştur & Başla</span>
+                <span>{isSubmitting ? 'Kaydediliyor...' : 'Öğretmen Hesabını Oluştur'}</span>
                 <Check className="w-4 h-4" />
               </button>
 

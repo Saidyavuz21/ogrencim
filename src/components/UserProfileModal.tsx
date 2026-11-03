@@ -15,6 +15,7 @@ import {
   Sparkles
 } from './icons';
 import { UserAccount, UserRole } from '../data/portalData';
+import { changeMyPassword } from '../lib/supabaseClient';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -34,10 +35,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications'>('profile');
   
   // Güvenlik
-  const [newPin, setNewPin] = useState(currentUser.pin || '');
-  const [newPassword, setNewPassword] = useState(currentUser.password || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const isStaff = currentUser.role === 'admin' || currentUser.role === 'ogretmen';
 
   // Bildirim Ayarları
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -46,13 +50,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSaveSecurity = (e: React.FormEvent) => {
+  const handleSaveSecurity = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateUser({
-      ...currentUser,
-      pin: newPin,
-      password: newPassword,
-    });
+    setSecurityError(null);
+    if (newPassword.length < 8) {
+      setSecurityError('Yeni şifre en az 8 karakter olmalıdır.');
+      return;
+    }
+    if (newPassword !== newPasswordConfirm) {
+      setSecurityError('Şifreler birbiriyle uyuşmuyor.');
+      return;
+    }
+    setIsSaving(true);
+    const res = await changeMyPassword(newPassword);
+    setIsSaving(false);
+    if (!res.ok) {
+      setSecurityError(`Şifre değiştirilemedi: ${res.error}`);
+      return;
+    }
+    setNewPassword('');
+    setNewPasswordConfirm('');
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
   };
@@ -155,51 +172,58 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </div>
               )}
 
-              {currentUser.role === 'veli' && (
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    6 Haneli Veli Güvenlik PIN Kodu
-                  </label>
-                  <input
-                    type="password"
-                    maxLength={6}
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-center text-base font-black tracking-widest text-slate-900 focus:bg-white focus:outline-hidden"
-                  />
-                  <span className="text-[10px] text-slate-400 block mt-1">
-                    Giriş yaparken bu 6 haneli şifreyi kullanacaksınız.
-                  </span>
+              {securityError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl font-semibold">
+                  {securityError}
                 </div>
               )}
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Hesap Şifresi
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-hidden pr-9"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
-                  >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
+              {!isStaff ? (
+                <p className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 leading-relaxed">
+                  Öğrenci ve veli PIN kodu güvenlik nedeniyle yalnızca sınıf öğretmeni veya okul yönetimi tarafından değiştirilebilir.
+                </p>
+              ) : (
+                <>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Yeni Şifre</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        autoComplete="new-password"
+                        placeholder="En az 8 karakter"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-hidden pr-9"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Yeni Şifre (Tekrar)</label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={newPasswordConfirm}
+                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                      autoComplete="new-password"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
 
-              <button
-                type="submit"
-                className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-colors cursor-pointer"
-              >
-                Değişiklikleri Kaydet
-              </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="w-full py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    {isSaving ? 'Kaydediliyor...' : 'Şifreyi Değiştir'}
+                  </button>
+                </>
+              )}
             </form>
           )}
 

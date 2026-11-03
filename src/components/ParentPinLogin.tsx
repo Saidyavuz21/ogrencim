@@ -17,27 +17,29 @@ import {
 } from './icons';
 import { Student } from '../data/portalData';
 
+const PIN_LENGTH = 4;
+const EMPTY_PIN = () => Array<string>(PIN_LENGTH).fill('');
+
 interface ParentPinLoginProps {
   student: Student;
   onSuccess: () => void;
-  onCancelToRole?: (role: 'ogretmen' | 'admin') => void;
-  correctPin?: string; // Default: '123456'
+  /** PIN'i sunucuda doğrular (aynı 5 deneme / 15 dk kilit kuralı geçerlidir) */
+  verifyPin: (pin: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
   student,
   onSuccess,
-  onCancelToRole,
-  correctPin = '123456',
+  verifyPin,
 }) => {
-  const [pin, setPin] = useState<string[]>(['', '', '', '', '', '']);
+  const [pin, setPin] = useState<string[]>(EMPTY_PIN());
+  const [isVerifying, setIsVerifying] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isShake, setIsShake] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
-  const [attempts, setAttempts] = useState(0);
-
+  
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // İlk yüklemede ilk kutucuğa odaklan
@@ -45,16 +47,20 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
     inputRefs.current[0]?.focus();
   }, []);
 
-  // 6 hane tamamlandığında otomatik kontrol et
+  // Tüm haneler tamamlandığında otomatik kontrol et
   useEffect(() => {
     const fullPin = pin.join('');
-    if (fullPin.length === 6) {
+    if (fullPin.length === PIN_LENGTH && !isVerifying && !isSuccess) {
       validatePin(fullPin);
     }
   }, [pin]);
 
-  const validatePin = (inputPin: string) => {
-    if (inputPin === correctPin) {
+  const validatePin = async (inputPin: string) => {
+    setIsVerifying(true);
+    const res = await verifyPin(inputPin);
+    setIsVerifying(false);
+
+    if (res.ok) {
       setErrorMsg(null);
       setIsSuccess(true);
       setTimeout(() => {
@@ -62,11 +68,10 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
       }, 650);
     } else {
       setIsShake(true);
-      setErrorMsg('Girdiğiniz 6 haneli PIN kodu hatalıdır. Lütfen tekrar deneyiniz.');
-      setAttempts((prev) => prev + 1);
+      setErrorMsg(res.error || 'Girdiğiniz PIN kodu hatalıdır. Lütfen tekrar deneyiniz.');
       setTimeout(() => {
         setIsShake(false);
-        setPin(['', '', '', '', '', '']);
+        setPin(EMPTY_PIN());
         inputRefs.current[0]?.focus();
       }, 700);
     }
@@ -83,7 +88,7 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
     setPin(newPin);
 
     // Bir sonraki kutuya geç
-    if (digit && index < 5) {
+    if (digit && index < PIN_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -103,7 +108,7 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
       }
     } else if (e.key === 'ArrowLeft' && index > 0) {
       inputRefs.current[index - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && index < 5) {
+    } else if (e.key === 'ArrowRight' && index < PIN_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -111,16 +116,16 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
   // Yapıştırma (Paste) desteği (örn. "123456" kopyalayıp yapıştırma)
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, PIN_LENGTH);
     if (!pastedData) return;
 
-    const newPin = ['', '', '', '', '', ''];
+    const newPin = EMPTY_PIN();
     for (let i = 0; i < pastedData.length; i++) {
       newPin[i] = pastedData[i];
     }
     setPin(newPin);
     
-    const nextIdx = Math.min(pastedData.length, 5);
+    const nextIdx = Math.min(pastedData.length, PIN_LENGTH - 1);
     inputRefs.current[nextIdx]?.focus();
   };
 
@@ -132,7 +137,7 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
       const newPin = [...pin];
       newPin[firstEmptyIndex] = num;
       setPin(newPin);
-      if (firstEmptyIndex < 5) {
+      if (firstEmptyIndex < PIN_LENGTH - 1) {
         inputRefs.current[firstEmptyIndex + 1]?.focus();
       }
     }
@@ -142,7 +147,7 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
     setErrorMsg(null);
     // En son dolu olan haneyi bul ve sil
     let lastFilledIndex = -1;
-    for (let i = 5; i >= 0; i--) {
+    for (let i = PIN_LENGTH - 1; i >= 0; i--) {
       if (pin[i] !== '') {
         lastFilledIndex = i;
         break;
@@ -158,14 +163,8 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
 
   const handleKeypadClear = () => {
     setErrorMsg(null);
-    setPin(['', '', '', '', '', '']);
+    setPin(EMPTY_PIN());
     inputRefs.current[0]?.focus();
-  };
-
-  // Demo Otomatik Doldur
-  const handleQuickDemoFill = () => {
-    setErrorMsg(null);
-    setPin(correctPin.split(''));
   };
 
   return (
@@ -187,7 +186,7 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
               Veli Güvenlik Girişi
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Öğrenci karnesi ve ödev takibine erişmek için <strong>6 haneli veli PIN kodunuzu</strong> giriniz.
+              Öğrenci karnesi ve ödev takibine erişmek için <strong>4 haneli PIN kodunuzu</strong> giriniz.
             </p>
           </div>
         </div>
@@ -208,7 +207,7 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 block truncate">
-                Okul No: {student.studentNo} • Veli: Ahmet Demir
+                Okul No: {student.studentNo}
               </span>
             </div>
           </div>
@@ -218,10 +217,10 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
           </span>
         </div>
 
-        {/* 6 Haneli PIN Giriş Kutuları */}
+        {/* PIN Giriş Kutuları */}
         <div className="mt-6 space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
-            <span>6 Haneli PIN Kodu</span>
+            <span>4 Haneli PIN Kodu</span>
             <button
               type="button"
               onClick={() => setShowPin(!showPin)}
@@ -326,24 +325,6 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
           </div>
         </div>
 
-        {/* Demo Yardım Çubuğu & Otomatik Doldurma */}
-        <div className="mt-5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center justify-between gap-2 text-xs">
-          <div className="text-left">
-            <span className="font-bold text-amber-900 block">💡 Demo Veli PIN Kodu:</span>
-            <span className="text-amber-800 font-mono font-bold tracking-wider text-xs">
-              {correctPin}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleQuickDemoFill}
-            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-2xs shrink-0"
-          >
-            Tek Tıkla Giriş Yap
-          </button>
-        </div>
-
         {/* Alt Bağlantılar: PIN Unuttum & Diğer Rollere Geçiş */}
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <button
@@ -354,18 +335,6 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
             PIN Kodumu Unuttum?
           </button>
 
-          {onCancelToRole && (
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-slate-400">veya</span>
-              <button
-                type="button"
-                onClick={() => onCancelToRole('ogretmen')}
-                className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
-              >
-                Öğretmen Paneli &rarr;
-              </button>
-            </div>
-          )}
         </div>
 
       </div>
@@ -391,28 +360,17 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              Öğrenciniz <strong>{student.name}</strong> için sistemde kayıtlı veli PIN kodunuz:
+              Güvenlik nedeniyle PIN kodları sistemde şifrelenmiş olarak saklanır ve kimseye gösterilmez.
+              <strong> {student.name}</strong> için yeni bir PIN almak üzere sınıf öğretmeninize veya okul yönetimine başvurunuz.
             </p>
-
-            <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-center">
-              <span className="text-xl font-mono font-extrabold text-indigo-900 tracking-widest block">
-                {correctPin}
-              </span>
-              <span className="text-[10px] text-indigo-600 mt-0.5 block font-medium">
-                Öğrenci No (452) veya Kayıtlı GSM hattınıza tanımlıdır
-              </span>
-            </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => {
-                  setIsForgotModalOpen(false);
-                  handleQuickDemoFill();
-                }}
+                onClick={() => setIsForgotModalOpen(false)}
                 className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
-                Bu PIN ile Hemen Giriş Yap ({correctPin})
+                Anladım
               </button>
             </div>
           </div>

@@ -97,7 +97,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     <div className="space-y-4 pb-12 antialiased">
       
       {/* 1. ÖĞRENCİ KAHRAMAN BAŞLIĞI */}
-      <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-800 rounded-3xl p-5 sm:p-6 text-white shadow-sm relative overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 text-white shadow-sm relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-3.5">
             <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-xs flex items-center justify-center font-black text-xl text-white shadow-inner">

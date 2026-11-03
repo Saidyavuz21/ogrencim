@@ -34,10 +34,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
 
   const roles: { id: UserRole; label: string; roleName: string; userDesc: string }[] = [
-    { id: 'veli', label: 'Veli Girişi', roleName: 'Veli Paneli', userDesc: 'Ahmet Demir (Emre\'nin Velisi)' },
-    { id: 'ogrenci', label: 'Öğrenci Girişi', roleName: 'Öğrenci Portalı', userDesc: 'Emre Demir (No: 452 - 7-B)' },
-    { id: 'ogretmen', label: 'Öğretmen Girişi', roleName: 'Öğretmen Paneli', userDesc: 'Zehra Aydın (Türkçe & Rehberlik)' },
-    { id: 'admin', label: 'Süper Admin', roleName: 'Yönetici Paneli', userDesc: 'Okul Müdürü / Sistem Yöneticisi' },
+    { id: 'veli', label: 'Veli Girişi', roleName: 'Veli Paneli', userDesc: 'Öğrenci & Veli Takip Portalı' },
+    { id: 'ogrenci', label: 'Öğrenci Girişi', roleName: 'Öğrenci Portalı', userDesc: 'Ders, Not ve Ödev Takibi' },
+    { id: 'ogretmen', label: 'Öğretmen Girişi', roleName: 'Öğretmen Paneli', userDesc: 'Öğretmen ve Sınıf Yönetimi' },
+    { id: 'admin', label: 'Süper Admin', roleName: 'Yönetici Paneli', userDesc: 'Süper Admin & Sistem İdaresi' },
   ];
 
   const currentRoleObj = roles.find((r) => r.id === currentRole) || roles[0];

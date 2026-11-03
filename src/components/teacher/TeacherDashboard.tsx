@@ -808,7 +808,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
           <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200/80 overflow-x-auto no-scrollbar max-w-full">
             <span className="text-xs text-slate-500 px-2 font-medium shrink-0">Sınıf:</span>
-            {teacherClasses.map((cls) => (
+            {teacherClasses.length === 0 ? (
+              <span className="text-xs text-slate-400 italic px-2">Henüz sınıf eklenmedi</span>
+            ) : (
+              teacherClasses.map((cls) => (
               <button
                 key={cls.id}
                 type="button"
@@ -825,7 +828,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </span>
                 )}
               </button>
-            ))}
+            )))}
           </div>
 
           <div className="flex items-center gap-2">
@@ -1457,7 +1460,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 return (
                   <div
                     key={st.id}
-                    className={`p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 transition-colors ${isMyStudent ? 'bg-indigo-50/40 border-l-4 border-l-indigo-600' : 'hover:bg-slate-50/60'
+                    className={`p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 transition-colors ${isMyStudent ? 'bg-indigo-50/50 rounded-xl ring-1 ring-indigo-200/60' : 'hover:bg-slate-50/60'
                       }`}
                   >
                     {/* 1. ÖĞRENCİ NUMARASI VE ADI */}
@@ -2032,7 +2035,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {teacherClasses.map((cls) => {
+            {teacherClasses.length === 0 ? (
+              <div className="col-span-full p-8 text-center bg-white rounded-2xl border border-slate-200">
+                <School className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-700">Henüz kayıtlı sınıf veya şubeniz bulunmamaktadır.</p>
+                <p className="text-[11px] text-slate-400 mt-1">Ders verdiğiniz sınıfları eklemek için yukarıdaki "Yeni Sınıf Oluştur" butonunu kullanabilirsiniz.</p>
+              </div>
+            ) : (
+              teacherClasses.map((cls) => {
               const isSelected = selectedClass === cls.name;
               const occupancy = Math.round((cls.studentCount / (cls.capacity || 30)) * 100);
 
@@ -2162,7 +2172,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       )}

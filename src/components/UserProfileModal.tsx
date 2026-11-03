@@ -34,7 +34,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications'>('profile');
   
   // Güvenlik
-  const [newPin, setNewPin] = useState(currentUser.pin || '123456');
+  const [newPin, setNewPin] = useState(currentUser.pin || '');
   const [newPassword, setNewPassword] = useState(currentUser.password || '');
   const [showPassword, setShowPassword] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);

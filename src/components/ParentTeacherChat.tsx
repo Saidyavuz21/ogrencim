@@ -494,8 +494,8 @@ export const ParentTeacherChat: React.FC<ParentTeacherChatProps> = ({
                   }}
                   className={`w-full p-3.5 text-left flex items-start gap-3 transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-white border-l-4 border-emerald-600 shadow-2xs'
-                      : 'hover:bg-slate-100/70 bg-transparent'
+                      ? 'bg-emerald-50/70 border border-emerald-200/80 shadow-2xs text-slate-900 rounded-xl'
+                      : 'hover:bg-slate-100/70 bg-transparent rounded-xl'
                   }`}
                 >
                   {/* Avatar & Rozet */}
@@ -617,7 +617,7 @@ export const ParentTeacherChat: React.FC<ParentTeacherChatProps> = ({
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                   {isTeacherTyping ? (
                     <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                       Yazıyor...
                     </span>
                   ) : activeTeacher.status === 'online' ? (
@@ -861,9 +861,9 @@ export const ParentTeacherChat: React.FC<ParentTeacherChatProps> = ({
                     {activeTeacher.name} yazıyor
                   </span>
                   <div className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse" />
+                    <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse [animation-delay:200ms]" />
+                    <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse [animation-delay:400ms]" />
                   </div>
                 </div>
               </div>

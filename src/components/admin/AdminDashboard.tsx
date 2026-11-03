@@ -63,7 +63,7 @@ export const AdminDashboard: React.FC = () => {
       id: `cls-${Date.now()}`,
       name: newClassName,
       homeroomTeacher: newClassTeacher || 'Atanmadı',
-      studentCount: Number(newClassCount) || 25,
+      studentCount: Number(newClassCount) || 0,
       averageScore: 75.0,
       attendanceRate: 95.0,
     };
@@ -83,9 +83,9 @@ export const AdminDashboard: React.FC = () => {
       id: `tch-${Date.now()}`,
       name: newTeacherName,
       branch: newTeacherBranch,
-      classes: ['7-A', '7-B'],
-      studentCount: 56,
-      phone: '0532 999 88 77',
+      classes: [],
+      studentCount: 0,
+      phone: '',
     };
 
     setTeachers([...teachers, newTch]);

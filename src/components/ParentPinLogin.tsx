@@ -176,7 +176,7 @@ export const ParentPinLogin: React.FC<ParentPinLoginProps> = ({
         <div className="text-center space-y-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs">
             {isSuccess ? (
-              <Check className="w-7 h-7 text-emerald-600 animate-bounce" />
+              <Check className="w-7 h-7 text-emerald-600 scale-110 transition-transform duration-300" />
             ) : (
               <Lock className="w-7 h-7" />
             )}

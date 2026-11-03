@@ -286,9 +286,13 @@ export interface UserAccount {
   emailOrPhone: string;
   studentNo?: string;
   studentName?: string;
-  pin?: string; // Veli için 6 haneli PIN (varsayılan: 123456)
+  pin?: string; // Öğrenci / Veli için 4 haneli PIN
   password?: string;
   branch?: string;
+  city?: string;
+  district?: string;
+  schoolName?: string;
+  className?: string;
   avatar: string;
   title: string;
 }

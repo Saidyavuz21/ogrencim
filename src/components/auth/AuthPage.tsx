@@ -11,14 +11,15 @@ import {
   ArrowRight, 
   Eye, 
   EyeOff, 
-  Smartphone, 
   AlertCircle,
   School,
   Sparkles,
   BookOpen,
+  MapPin,
+  Building,
   Users
 } from '../icons';
-import { UserRole, UserAccount, INITIAL_USER_ACCOUNTS } from '../../data/portalData';
+import { UserRole, UserAccount, INITIAL_USER_ACCOUNTS, CURRENT_STUDENT } from '../../data/portalData';
 
 interface AuthPageProps {
   onLoginSuccess: (user: UserAccount) => void;
@@ -26,72 +27,156 @@ interface AuthPageProps {
   initialMode?: 'login' | 'register';
 }
 
+// Türkiye 81 İl ve İlçe Veritabanı
+const TURKEY_CITIES: { [key: string]: string[] } = {
+  'Diyarbakır': ['Kayapınar', 'Bağlar', 'Yenişehir', 'Sur', 'Bismil', 'Ergani', 'Silvan', 'Çınar', 'Dicle', 'Kulp', 'Hani', 'Hazro', 'Kocaköy', 'Lice', 'Eğil', 'Çermik', 'Çüngüş'],
+  'İstanbul': ['Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli', 'Bakırköy', 'Maltepe', 'Ataşehir', 'Ümraniye', 'Pendik', 'Kartal', 'Fatih', 'Beylikdüzü', 'Sarıyer', 'Avcılar', 'Başakşehir', 'Esenyurt', 'Küçükçekmece', 'Bağcılar', 'Bahçelievler', 'Zeytinburnu', 'Tuzla', 'Çekmeköy', 'Sancaktepe', 'Eyüpsultan', 'Kağıthane', 'Beyoğlu', 'Silivri', 'Büyükçekmece', 'Arnavutköy'],
+  'Ankara': ['Çankaya', 'Yenimahalle', 'Keçiören', 'Mamak', 'Etimesgut', 'Sincan', 'Altındağ', 'Gölbaşı', 'Pursaklar', 'Polatlı', 'Beypazarı', 'Kahramankazan', 'Çubuk', 'Elmadağ'],
+  'İzmir': ['Konak', 'Karşıyaka', 'Bornova', 'Buca', 'Çiğli', 'Gaziemir', 'Karabağlar', 'Bayraklı', 'Menemen', 'Torbalı', 'Kemalpaşa', 'Menderes', 'Aliağa', 'Ödemiş', 'Bergama', 'Tire', 'Urla', 'Çeşme', 'Seferihisar'],
+  'Adana': ['Seyhan', 'Çukurova', 'Yüreğir', 'Sarıçam', 'Ceyhan', 'Kozan', 'İmamoğlu', 'Karataş', 'Pozantı'],
+  'Adıyaman': ['Merkez', 'Kahta', 'Besni', 'Gölbaşı', 'Gerger', 'Sincik'],
+  'Afyonkarahisar': ['Merkez', 'Sandıklı', 'Dinar', 'Bolvadin', 'Emirdağ', 'Şuhut'],
+  'Ağrı': ['Merkez', 'Doğubayazıt', 'Patnos', 'Diyadin', 'Eleşkirt'],
+  'Aksaray': ['Merkez', 'Ortaköy', 'Eskil', 'Gülağaç'],
+  'Amasya': ['Merkez', 'Merzifon', 'Suluova', 'Taşova'],
+  'Antalya': ['Muratpaşa', 'Kepez', 'Konyaaltı', 'Manavgat', 'Alanya', 'Serik', 'Döşemealtı', 'Kumluca', 'Kaş', 'Korkuteli', 'Gazipaşa', 'Finike'],
+  'Ardahan': ['Merkez', 'Göle', 'Çıldır'],
+  'Artvin': ['Merkez', 'Hopa', 'Borçka', 'Arhavi', 'Yusufeli', 'Şavşat'],
+  'Aydın': ['Efeler', 'Nazilli', 'Söke', 'Kuşadası', 'Didim', 'İncirliova', 'Çine'],
+  'Balıkesir': ['Karesi', 'Altıeylül', 'Bandırma', 'Edremit', 'Gönen', 'Ayvalık', 'Burhaniye', 'Susurluk'],
+  'Bartın': ['Merkez', 'Ulus', 'Amasra'],
+  'Batman': ['Merkez', 'Kozluk', 'Sason', 'Beşiri', 'Gercüş', 'Hasankeyf'],
+  'Bayburt': ['Merkez', 'Demirözü', 'Aydıntepe'],
+  'Bilecik': ['Merkez', 'Bozüyük', 'Osmaneli', 'Söğüt'],
+  'Bingöl': ['Merkez', 'Genç', 'Solhan', 'Karlıova'],
+  'Bitlis': ['Merkez', 'Tatvan', 'Ahlat', 'Güroymak', 'Adilcevaz'],
+  'Bolu': ['Merkez', 'Gerede', 'Mudurnu', 'Göynük', 'Mengen'],
+  'Bursa': ['Osmangazi', 'Nilüfer', 'Yıldırım', 'İnegöl', 'Gemlik', 'Mudanya', 'Gürsu', 'Kestel', 'Karacabey', 'Mustafakemalpaşa'],
+  'Çanakkale': ['Merkez', 'Biga', 'Çan', 'Gelibolu', 'Ayvacık', 'Yenice'],
+  'Çankırı': ['Merkez', 'Çerkeş', 'Ilgaz'],
+  'Çorum': ['Merkez', 'Sungurlu', 'Osmancık', 'İskilip', 'Alaca'],
+  'Denizli': ['Pamukkale', 'Merkezefendi', 'Çivril', 'Acıpayam', 'Tavas', 'Honaz'],
+  'Düzce': ['Merkez', 'Akçakoca', 'Kaynaşlı', 'Gölyaka', 'Çilimli'],
+  'Edirne': ['Merkez', 'Keşan', 'Uzunköprü', 'İpsala'],
+  'Elazığ': ['Merkez', 'Kovancılar', 'Karakoçan', 'Palu', 'Baskil'],
+  'Erzincan': ['Merkez', 'Üzümlü', 'Tercan', 'İliç'],
+  'Erzurum': ['Yakutiye', 'Palandöken', 'Aziziye', 'Oltu', 'Horasan', 'Pasinler'],
+  'Eskişehir': ['Odunpazarı', 'Tepebaşı', 'Sivrihisar', 'Çifteler'],
+  'Gaziantep': ['Şahinbey', 'Şehitkamil', 'Nizip', 'İslahiye', 'Nurdağı', 'Oğuzeli'],
+  'Giresun': ['Merkez', 'Bulancak', 'Espiye', 'Görele', 'Tirebolu'],
+  'Gümüşhane': ['Merkez', 'Kelkit', 'Şiran', 'Torul'],
+  'Hakkari': ['Merkez', 'Yüksekova', 'Şemdinli', 'Çukurca'],
+  'Hatay': ['Antakya', 'İskenderun', 'Defne', 'Dörtyol', 'Samandağ', 'Kırıkhan', 'Reyhanlı', 'Arsuz'],
+  'Iğdır': ['Merkez', 'Tuzluca', 'Aralık'],
+  'Isparta': ['Merkez', 'Yalvaç', 'Eğirdir', 'Şarkikaraağaç'],
+  'Kahramanmaraş': ['Onikişubat', 'Dulkadiroğlu', 'Elbistan', 'Afşin', 'Türkoğlu', 'Pazarcık'],
+  'Karabük': ['Merkez', 'Safranbolu', 'Yenice'],
+  'Karaman': ['Merkez', 'Ermenek', 'Sarıveliler'],
+  'Kars': ['Merkez', 'Kağızman', 'Sarıkamış', 'Digor'],
+  'Kastamonu': ['Merkez', 'Tosya', 'Taşköprü', 'Cide', 'İnebolu'],
+  'Kayseri': ['Melikgazi', 'Kocasinan', 'Talas', 'Develi', 'Yahyalı', 'Bünyan'],
+  'Kilis': ['Merkez', 'Musabeyli', 'Elbeyli'],
+  'Kırıkkale': ['Merkez', 'Yahşihan', 'Keskin'],
+  'Kırklareli': ['Merkez', 'Lüleburgaz', 'Babaeski', 'Vize'],
+  'Kırşehir': ['Merkez', 'Kaman', 'Mucur'],
+  'Kocaeli': ['İzmit', 'Gebze', 'Darıca', 'Gölcük', 'Körfez', 'Derince', 'Kartepe', 'Çayırova', 'Başiskele', 'Karamürsel'],
+  'Konya': ['Selçuklu', 'Meram', 'Karatay', 'Ereğli', 'Akşehir', 'Beyşehir', 'Cihanbeyli', 'Kulu', 'Seydişehir'],
+  'Kütahya': ['Merkez', 'Tavşanlı', 'Simav', 'Gediz'],
+  'Malatya': ['Battalgazi', 'Yeşilyurt', 'Doğanşehir', 'Akçadağ', 'Darende'],
+  'Manisa': ['Yunusemre', 'Şehzadeler', 'Akhisar', 'Turgutlu', 'Salihli', 'Soma', 'Alaşehir'],
+  'Mardin': ['Artuklu', 'Kızıltepe', 'Midyat', 'Nusaybin', 'Derik', 'Mazıdağı'],
+  'Mersin': ['Yenişehir', 'Mezitli', 'Toroslar', 'Akdeniz', 'Tarsus', 'Erdemli', 'Silifke', 'Anamur'],
+  'Muğla': ['Menteşe', 'Bodrum', 'Fethiye', 'Milas', 'Marmaris', 'Seydikemer', 'Ortaca'],
+  'Muş': ['Merkez', 'Bulanık', 'Malazgirt', 'Varto'],
+  'Nevşehir': ['Merkez', 'Ürgüp', 'Avanos', 'Gülşehir'],
+  'Niğde': ['Merkez', 'Bor', 'Çiftlik'],
+  'Ordu': ['Altınordu', 'Ünye', 'Fatsa', 'Kumru', 'Korgan'],
+  'Osmaniye': ['Merkez', 'Kadirli', 'Düziçi', 'Bahçe'],
+  'Rize': ['Merkez', 'Çayeli', 'Ardeşen', 'Pazar', 'Fındıklı'],
+  'Sakarya': ['Adapazarı', 'Serdivan', 'Akyazı', 'Erenler', 'Hendek', 'Karasu', 'Sapanca'],
+  'Samsun': ['İlkadım', 'Atakum', 'Bafra', 'Çarşamba', 'Canik', 'Vezirköprü', 'Terme'],
+  'Şanlıurfa': ['Haliliye', 'Eyyübiye', 'Karaköprü', 'Siverek', 'Viranşehir', 'Suruç', 'Birecik', 'Akçakale', 'Ceylanpınar', 'Harran'],
+  'Siirt': ['Merkez', 'Kurtalan', 'Pervari', 'Baykan'],
+  'Sinop': ['Merkez', 'Boyabat', 'Gerze', 'Ayancık'],
+  'Şırnak': ['Merkez', 'Cizre', 'Silopi', 'İdil', 'Uludere'],
+  'Sivas': ['Merkez', 'Şarkışla', 'Yıldızeli', 'Suşehri', 'Zara'],
+  'Tekirdağ': ['Süleymanpaşa', 'Çorlu', 'Çerkezköy', 'Kapaklı', 'Ergene', 'Malkara'],
+  'Tokat': ['Merkez', 'Erbaa', 'Turhal', 'Niksar', 'Zile'],
+  'Trabzon': ['Ortahisar', 'Akçaabat', 'Araklı', 'Of', 'Yomra', 'Arsin', 'Vakfıkebir'],
+  'Tunceli': ['Merkez', 'Pertek', 'Mazgirt', 'Hozat'],
+  'Uşak': ['Merkez', 'Banaz', 'Eşme'],
+  'Van': ['İpekyolu', 'Tuşba', 'Edremit', 'Erciş', 'Özalp', 'Başkale', 'Muradiye'],
+  'Yalova': ['Merkez', 'Çiftlikköy', 'Çınarcık', 'Altınova'],
+  'Yozgat': ['Merkez', 'Sorgun', 'Akdağmadeni', 'Yerköy'],
+  'Zonguldak': ['Merkez', 'Ereğli', 'Çaycuma', 'Devrek', 'Kozlu', 'Kilimli']
+};
+
 export const AuthPage: React.FC<AuthPageProps> = ({
   onLoginSuccess,
-  initialRole = 'veli',
+  initialRole = 'ogrenci',
   initialMode = 'login',
 }) => {
   const [authMode, setAuthMode] = useState<'login' | 'register'>(initialMode);
-  const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole);
+  // Sadece 3 rol: ogrenci (Öğrenci & Veli), ogretmen, admin
+  const [selectedRole, setSelectedRole] = useState<UserRole>(
+    initialRole === 'veli' ? 'ogrenci' : initialRole
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Giriş Form Alanları
-  const [identifier, setIdentifier] = useState(''); // e-posta, telefon veya okul no
-  const [password, setPassword] = useState('');
-  const [pin, setPin] = useState(['', '', '', '', '', '']); // Veli için 6 haneli PIN modu
-  const [parentLoginMode, setParentLoginMode] = useState<'pin' | 'password'>('pin');
+  // 1. Öğrenci & Veli Giriş Form Alanları
+  const [studentNo, setStudentNo] = useState('');
+  const [pinDigits, setPinDigits] = useState(['', '', '', '']); // 4 Haneli PIN
 
-  // Kayıt Form Alanları (Yalnızca Öğretmen Kaydı)
+  // 2. Öğretmen & Admin Giriş Alanları
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+
+  // 3. Öğretmen Kayıt Form Alanları (Yeni İstenen Özellikler)
   const [regName, setRegName] = useState('');
-  const [regPhoneOrEmail, setRegPhoneOrEmail] = useState('');
-  const [regPhone, setRegPhone] = useState('');
+  const [regEmail, setRegEmail] = useState(''); // Normal e-posta
+  const [regCity, setRegCity] = useState('Diyarbakır');
+  const [regDistrict, setRegDistrict] = useState('Kayapınar');
+  const [regSchool, setRegSchool] = useState('Atatürk Ortaokulu');
   const [regBranch, setRegBranch] = useState('Türkçe');
   const [regClass, setRegClass] = useState('7-B');
   const [regPassword, setRegPassword] = useState('');
   const [regPasswordConfirm, setRegPasswordConfirm] = useState('');
 
-  // Şifremi Unuttum Modalı
-  const [forgotModalOpen, setForgotModalOpen] = useState(false);
-  const [forgotContact, setForgotContact] = useState('');
-  const [forgotSent, setForgotSent] = useState(false);
+  // Şehir değiştiğinde ilçeyi otomatik güncelle
+  const handleCityChange = (newCity: string) => {
+    setRegCity(newCity);
+    const districts = TURKEY_CITIES[newCity] || ['Merkez'];
+    setRegDistrict(districts[0] || 'Merkez');
+  };
 
-  // Rol tanımları ve açıklamaları
+  // 3 Sade Rol Kartı (Giriş Yap sekmesi için)
   const roleCards = [
     {
-      id: 'veli' as UserRole,
-      title: 'Veli Girişi',
-      desc: '6 Haneli PIN veya Şifre ile öğrenci takibi',
-      icon: Users,
-      badge: 'PIN Destekli',
-      color: 'border-emerald-500 bg-emerald-50/50 text-emerald-900',
-      activeColor: 'bg-emerald-600 text-white',
-    },
-    {
       id: 'ogrenci' as UserRole,
-      title: 'Öğrenci Girişi',
-      desc: 'Okul No ve Şifre ile ödev teslimi & puanlar',
+      title: 'Öğrenci & Veli',
+      desc: 'Okul No ve 4 haneli PIN ile anında giriş',
       icon: GraduationCap,
-      badge: 'Ödev Portalı',
+      badge: '4 Haneli PIN',
       color: 'border-indigo-500 bg-indigo-50/50 text-indigo-900',
       activeColor: 'bg-indigo-600 text-white',
     },
     {
       id: 'ogretmen' as UserRole,
-      title: 'Öğretmen Girişi',
-      desc: 'Ödev kontrolü, puanlama, toplu mesaj',
+      title: 'Öğretmen',
+      desc: 'E-posta ve şifre ile öğretmen paneli',
       icon: BookOpen,
-      badge: 'E-Okul Yönetimi',
+      badge: 'Öğretmen Paneli',
       color: 'border-blue-500 bg-blue-50/50 text-blue-900',
       activeColor: 'bg-blue-600 text-white',
     },
     {
       id: 'admin' as UserRole,
-      title: 'Yönetici / Admin',
-      desc: 'Okul, şube ve personel sistem idaresi',
+      title: 'Süper Admin',
+      desc: 'Sistem, okul ve personel idaresi',
       icon: ShieldCheck,
-      badge: 'Süper Yetki',
+      badge: 'Tam Yetki',
       color: 'border-slate-800 bg-slate-100 text-slate-900',
       activeColor: 'bg-slate-900 text-white',
     },
@@ -99,65 +184,109 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   // Hızlı Demo Giriş
   const handleQuickDemoLogin = (role: UserRole) => {
-    const account = INITIAL_USER_ACCOUNTS.find((a) => a.role === role) || INITIAL_USER_ACCOUNTS[0];
     setErrorMsg(null);
-    setSuccessMsg(`${account.name} (${account.title}) olarak giriş yapılıyor...`);
-    setTimeout(() => {
-      onLoginSuccess(account);
-    }, 450);
+    if (role === 'ogrenci' || role === 'veli') {
+      const demoStudent: UserAccount = {
+        id: 'usr-student-452',
+        role: 'ogrenci',
+        name: CURRENT_STUDENT.name,
+        emailOrPhone: 'emre.demir@okul.k12.tr',
+        studentNo: '452',
+        studentName: CURRENT_STUDENT.name,
+        pin: '1234',
+        avatar: CURRENT_STUDENT.avatar,
+        title: `${CURRENT_STUDENT.class} Sınıfı Öğrenci & Veli Portalı`,
+      };
+      setSuccessMsg(`${CURRENT_STUDENT.name} (Öğrenci & Veli) olarak giriş yapılıyor...`);
+      setTimeout(() => onLoginSuccess(demoStudent), 400);
+      return;
+    }
+
+    if (role === 'ogretmen') {
+      const demoTeacher: UserAccount = {
+        id: 'usr-tch-1',
+        role: 'ogretmen',
+        name: 'Zehra Aydın',
+        emailOrPhone: 'zehra.aydin@gmail.com',
+        branch: 'Türkçe',
+        avatar: 'ZA',
+        title: 'Türkçe Öğretmeni (7-B Rehberliği)',
+      };
+      setSuccessMsg('Zehra Aydın (Öğretmen) olarak giriş yapılıyor...');
+      setTimeout(() => onLoginSuccess(demoTeacher), 400);
+      return;
+    }
+
+    // Admin
+    const adminAcc = INITIAL_USER_ACCOUNTS.find((a) => a.role === 'admin') || INITIAL_USER_ACCOUNTS[0];
+    setSuccessMsg('Said Yavuz (Süper Admin) olarak giriş yapılıyor...');
+    setTimeout(() => onLoginSuccess(adminAcc), 400);
   };
 
-  // PIN girişi kutucukları
-  const handlePinChange = (idx: number, val: string) => {
+  // 4 Haneli PIN Kutucukları Mantığı
+  const handlePinDigitChange = (idx: number, val: string) => {
     const digit = val.replace(/\D/g, '').slice(-1);
-    const newPin = [...pin];
-    newPin[idx] = digit;
-    setPin(newPin);
+    const newDigits = [...pinDigits];
+    newDigits[idx] = digit;
+    setPinDigits(newDigits);
 
-    // Sonraki kutucuğa odaklan
-    if (digit && idx < 5) {
-      const nextInput = document.getElementById(`auth-pin-${idx + 1}`);
+    // Sonraki kutucuğa otomatik odaklan
+    if (digit && idx < 3) {
+      const nextInput = document.getElementById(`student-pin-${idx + 1}`);
       nextInput?.focus();
     }
   };
 
-  const handlePinKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !pin[idx] && idx > 0) {
-      const prevInput = document.getElementById(`auth-pin-${idx - 1}`);
+  const handlePinDigitKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !pinDigits[idx] && idx > 0) {
+      const prevInput = document.getElementById(`student-pin-${idx - 1}`);
       prevInput?.focus();
     }
   };
 
-  // Giriş Yap İşlemi
+  // ========================================================
+  // GİRİŞ YAP İŞLEMİ (Öğrenci & Veli PIN, Öğretmen, Admin)
+  // ========================================================
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    // Veli PIN Modu
-    if (selectedRole === 'veli' && parentLoginMode === 'pin') {
-      const enteredPin = pin.join('');
-      if (enteredPin.length !== 6) {
-        setErrorMsg('Lütfen 6 haneli güvenlik PIN kodunu eksiksiz giriniz.');
+    // 1. Öğrenci & Veli Girişi (Okul No + 4 Haneli PIN)
+    if (selectedRole === 'ogrenci' || selectedRole === 'veli') {
+      const enteredNo = studentNo.trim();
+      const enteredPin = pinDigits.join('');
+
+      if (!enteredNo) {
+        setErrorMsg('Lütfen okul numaranızı giriniz (Örn: 452).');
         return;
       }
-      const match = INITIAL_USER_ACCOUNTS.find((u) => u.role === 'veli' && u.pin === enteredPin);
-      if (match || enteredPin === '123456') {
-        const veliAccount = match || INITIAL_USER_ACCOUNTS[0];
-        setSuccessMsg('PIN doğrulandı! Veli Portalı açılıyor...');
-        setTimeout(() => onLoginSuccess(veliAccount), 400);
-      } else {
-        setErrorMsg('Hatalı PIN kodu! (Varsayılan test PIN: 123456)');
+
+      if (enteredPin.length !== 4) {
+        setErrorMsg('Lütfen 4 haneli PIN kodunuzu eksiksiz giriniz.');
+        return;
       }
+
+      // Başarılı Giriş Simülasyonu
+      const studentAccount: UserAccount = {
+        id: `usr-student-${enteredNo}`,
+        role: 'ogrenci',
+        name: enteredNo === '452' ? CURRENT_STUDENT.name : `Öğrenci No: ${enteredNo}`,
+        emailOrPhone: `${enteredNo}@okul.meb.gov.tr`,
+        studentNo: enteredNo,
+        studentName: enteredNo === '452' ? CURRENT_STUDENT.name : `Öğrenci (${enteredNo})`,
+        pin: enteredPin,
+        avatar: 'ÖV',
+        title: `${enteredNo === '452' ? '7-B' : 'Sınıfı'} Öğrenci & Veli Portalı`,
+      };
+
+      setSuccessMsg(`PIN doğrulandı! Öğrenci ve Veli Portalı açılıyor...`);
+      setTimeout(() => onLoginSuccess(studentAccount), 400);
       return;
     }
 
-    // Normal Şifreli Girişler
+    // 2. Öğretmen veya Admin Girişi (E-Posta + Şifre)
     if (!identifier.trim()) {
-      setErrorMsg(
-        selectedRole === 'ogrenci'
-          ? 'Lütfen okul numaranızı giriniz (Örn: 452).'
-          : 'Lütfen e-posta veya telefon bilginizi giriniz.'
-      );
+      setErrorMsg('Lütfen e-posta adresinizi giriniz.');
       return;
     }
 
@@ -166,48 +295,72 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
-    // Kullanıcı eşleştirme
-    const matched = INITIAL_USER_ACCOUNTS.find((acc) => {
-      if (acc.role !== selectedRole) return false;
-      if (selectedRole === 'ogrenci') {
-        return (acc.studentNo === identifier.trim() || acc.emailOrPhone === identifier.trim()) && (acc.password === password || password === '1234');
-      }
-      return (acc.emailOrPhone.toLowerCase() === identifier.trim().toLowerCase() || identifier.trim() === 'demo') && (acc.password === password || password.length >= 4);
-    });
-
-    if (matched) {
-      setSuccessMsg(`Giriş başarılı! Hoş geldiniz, ${matched.name}.`);
-      setTimeout(() => onLoginSuccess(matched), 400);
-    } else {
-      // Test kolaylığı: Uygun bir hesap simüle edelim veya hata verelim
-      if (password.length >= 4) {
-        // Otomatik mock giriş
-        const fallback = INITIAL_USER_ACCOUNTS.find((a) => a.role === selectedRole) || INITIAL_USER_ACCOUNTS[0];
-        setSuccessMsg(`Doğrulandı! Hoş geldiniz.`);
-        setTimeout(() => onLoginSuccess({ ...fallback, name: identifier }), 400);
+    // Admin Giriş Kontrolü
+    if (selectedRole === 'admin') {
+      if (
+        (identifier.trim().toLowerCase() === 'saidyvz21@gmail.com' || identifier.trim() === 'admin') &&
+        (password === 'Syv848112.' || password.length >= 4)
+      ) {
+        const adminAcc = INITIAL_USER_ACCOUNTS.find((a) => a.role === 'admin') || INITIAL_USER_ACCOUNTS[0];
+        setSuccessMsg('Süper Admin girişi başarılı! Panel açılıyor...');
+        setTimeout(() => onLoginSuccess(adminAcc), 400);
+        return;
       } else {
-        setErrorMsg('Bilgiler veya şifre hatalı. Lütfen kontrol ediniz veya Hızlı Demo Giriş butonlarını kullanınız.');
+        setErrorMsg('Yönetici e-posta veya şifresi hatalı.');
+        return;
+      }
+    }
+
+    // Öğretmen Giriş Kontrolü
+    const matchedTeacher = INITIAL_USER_ACCOUNTS.find(
+      (acc) =>
+        acc.role === 'ogretmen' &&
+        (acc.emailOrPhone.toLowerCase() === identifier.trim().toLowerCase() || identifier.trim() === 'demo') &&
+        (acc.password === password || password.length >= 4)
+    );
+
+    if (matchedTeacher) {
+      setSuccessMsg(`Giriş başarılı! Hoş geldiniz, ${matchedTeacher.name}.`);
+      setTimeout(() => onLoginSuccess(matchedTeacher), 400);
+    } else {
+      // Öğretmen kayıtlı değilse ya da test için girilmişse
+      if (password.length >= 4) {
+        const fallbackTeacher: UserAccount = {
+          id: `usr-tch-${Date.now()}`,
+          role: 'ogretmen',
+          name: identifier.split('@')[0] || 'Öğretmen',
+          emailOrPhone: identifier.trim(),
+          branch: 'Türkçe',
+          avatar: 'ÖĞ',
+          title: 'Branş Öğretmeni',
+        };
+        setSuccessMsg(`Giriş yapıldı! Hoş geldiniz.`);
+        setTimeout(() => onLoginSuccess(fallbackTeacher), 400);
+      } else {
+        setErrorMsg('Şifre veya e-posta hatalı. Lütfen kontrol ediniz veya Öğretmen Kaydı oluşturunuz.');
       }
     }
   };
 
-  // Yalnızca Öğretmen Kayıt Ol İşlemi
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  // ========================================================
+  // ÖĞRETMEN KAYIT FORMU İŞLEMİ (Yeni İstenen Özellikler)
+  // ========================================================
+  const handleTeacherRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!regName.trim() || !regPhoneOrEmail.trim() || !regPassword.trim()) {
-      setErrorMsg('Lütfen ad soyad, kurum e-postası ve şifre alanlarını eksiksiz doldurunuz.');
+    if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
+      setErrorMsg('Lütfen ad soyad, e-posta ve şifre alanlarını eksiksiz doldurunuz.');
       return;
     }
 
-    if (!regPhoneOrEmail.includes('@') || !regPhoneOrEmail.includes('.')) {
-      setErrorMsg('Lütfen geçerli bir e-posta adresi giriniz (Örn: ad.soyad@okul.meb.gov.tr).');
+    if (!regEmail.includes('@') || !regEmail.includes('.')) {
+      setErrorMsg('Lütfen geçerli bir e-posta adresi giriniz (Örn: ad.soyad@gmail.com).');
       return;
     }
 
     if (regPassword.length < 6) {
-      setErrorMsg('Şifreniz güvenlik sebebiyle en az 6 karakter olmalıdır.');
+      setErrorMsg('Şifreniz güvenlik amacıyla en az 6 karakter olmalıdır.');
       return;
     }
 
@@ -220,14 +373,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       id: `usr-tch-${Date.now()}`,
       role: 'ogretmen',
       name: regName.trim(),
-      emailOrPhone: regPhoneOrEmail.trim(),
+      emailOrPhone: regEmail.trim(),
+      city: regCity,
+      district: regDistrict,
+      schoolName: regSchool.trim(),
+      className: regClass,
       branch: regBranch,
       password: regPassword,
       avatar: regName.trim().slice(0, 2).toUpperCase(),
-      title: `${regBranch} Öğretmeni (${regClass !== 'Yok' ? `${regClass} Rehberliği` : 'Branş'})`,
+      title: `${regBranch} Öğretmeni (${regSchool.trim()} • ${regDistrict}/${regCity})`,
     };
 
-    // Bellekteki kullanıcı listesine ekle
+    // Hafızadaki kullanıcı listesine ekle
     INITIAL_USER_ACCOUNTS.push(newTeacher);
 
     // Supabase Auth kaydı dene (arka planda)
@@ -241,26 +398,32 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: regPhoneOrEmail.trim(),
+          email: regEmail.trim(),
           password: regPassword,
           data: {
             name: regName.trim(),
             role: 'teacher',
             branch: regBranch,
+            city: regCity,
+            district: regDistrict,
+            school: regSchool.trim(),
+            class_name: regClass,
           },
         }),
       }).catch(() => {});
     } catch {}
 
-    setSuccessMsg(`Öğretmen kaydınız oluşturuldu! Hoş geldiniz Sn. ${newTeacher.name}. Sisteme yönlendiriliyorsunuz...`);
+    setSuccessMsg(`Kaydınız tamamlandı! Hoş geldiniz, Sn. ${newTeacher.name}. Öğretmen paneli açılıyor...`);
     setTimeout(() => {
       onLoginSuccess(newTeacher);
     }, 500);
   };
 
+  const currentDistricts = TURKEY_CITIES[regCity] || ['Merkez'];
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 antialiased">
-      <div className="max-w-md w-full mx-auto space-y-5">
+      <div className="max-w-md w-full mx-auto space-y-4">
         
         {/* LOGO & BAŞLIK */}
         <div className="text-center space-y-1.5">
@@ -271,14 +434,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             e-Okul & Veli Bilgilendirme Portalı
           </h1>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            Ödev kontrolü, artı/eksi puanlama, canlı veli-öğretmen iletişimi ve okul başarı sistemi
+            Hızlı PIN girişi, ödev takibi, puanlama ve okul-veli iletişim sistemi
           </p>
         </div>
 
         {/* ANA KART */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-5 sm:p-7 space-y-5">
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-5 sm:p-7 space-y-4.5">
           
-          {/* 1. GİRİŞ YAP / KAYIT OL GEÇİŞİ */}
+          {/* 1. GİRİŞ YAP / ÖĞRETMEN KAYDI SEKMELERİ */}
           <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl text-xs font-bold text-slate-600">
             <button
               type="button"
@@ -313,13 +476,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </button>
           </div>
 
-          {/* 2. ROL SEÇİMİ BUTONLARI (Yalnızca Giriş Yap modunda gösterilir) */}
+          {/* 2. SADE 3 ROL KARTI (Yalnızca Giriş Yap modunda görünür) */}
           {authMode === 'login' && (
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                Giriş Rolünüzü Seçiniz
+                Giriş Yapılacak Rol
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {roleCards.map((r) => {
                   const Icon = r.icon;
                   const isSelected = selectedRole === r.id;
@@ -332,23 +495,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                         setErrorMsg(null);
                         setSuccessMsg(null);
                       }}
-                      className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`p-2 sm:p-2.5 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between ${
                         isSelected
                           ? `${r.color} ring-2 ring-indigo-500/20 shadow-2xs`
                           : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isSelected ? r.activeColor : 'bg-slate-100 text-slate-600'}`}>
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/80 border border-slate-200/60 text-slate-600">
-                          {r.badge}
-                        </span>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isSelected ? r.activeColor : 'bg-slate-100 text-slate-600'}`}>
+                        <Icon className="w-4 h-4" />
                       </div>
-                      <div className="mt-2">
-                        <span className="text-xs font-bold block">{r.title}</span>
-                        <span className="text-[10px] text-slate-500 line-clamp-1 block">{r.desc}</span>
+                      <div className="mt-1.5">
+                        <span className="text-[11px] sm:text-xs font-bold block leading-tight">{r.title}</span>
+                        <span className="text-[9px] text-slate-400 mt-0.5 block">{r.badge}</span>
                       </div>
                     </button>
                   );
@@ -376,184 +534,93 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           {authMode === 'login' ? (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               
-              {/* Veli Rolünde: PIN ile Hızlı Giriş vs Şifreli Giriş Seçeneği */}
-              {selectedRole === 'veli' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between bg-emerald-50/70 p-1 rounded-xl border border-emerald-200/70 text-[11px] font-semibold text-emerald-900">
-                    <button
-                      type="button"
-                      onClick={() => setParentLoginMode('pin')}
-                      className={`flex-1 py-1.5 rounded-lg text-center cursor-pointer transition-colors ${
-                        parentLoginMode === 'pin' ? 'bg-white shadow-2xs font-bold text-emerald-950' : 'hover:bg-emerald-100/60'
-                      }`}
-                    >
-                      🔒 6 Haneli PIN ile Giriş
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setParentLoginMode('password')}
-                      className={`flex-1 py-1.5 rounded-lg text-center cursor-pointer transition-colors ${
-                        parentLoginMode === 'password' ? 'bg-white shadow-2xs font-bold text-emerald-950' : 'hover:bg-emerald-100/60'
-                      }`}
-                    >
-                      🔑 Telefon & Şifre
-                    </button>
+              {/* 1. ÖĞRENCİ & VELİ GİRİŞ FORMU (Okul No + 4 Haneli PIN) */}
+              {(selectedRole === 'ogrenci' || selectedRole === 'veli') && (
+                <div className="space-y-3.5">
+                  <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-center">
+                    <span className="text-xs font-bold text-indigo-950 block">
+                      🎒 Öğrenci & Veli Ortak Girişi
+                    </span>
+                    <span className="text-[11px] text-indigo-800/80 block mt-0.5">
+                      Okul numaranız ve 4 haneli PIN kodunuz ile sisteme giriş yapabilirsiniz.
+                    </span>
                   </div>
 
-                  {parentLoginMode === 'pin' ? (
-                    <div className="space-y-2 text-center pt-1">
-                      <p className="text-xs text-slate-600 font-medium">
-                        Veli Güvenlik PIN Kodunuzu Giriniz
-                      </p>
-                      
-                      {/* 6 Haneli Kutu */}
-                      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                        {pin.map((digit, idx) => (
-                          <input
-                            key={idx}
-                            id={`auth-pin-${idx}`}
-                            type="password"
-                            inputMode="numeric"
-                            maxLength={1}
-                            value={digit}
-                            onChange={(e) => handlePinChange(idx, e.target.value)}
-                            onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                            className="w-10 h-12 text-center font-black text-base bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:outline-hidden"
-                          />
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 px-1">
-                        <span>Varsayılan PIN: <strong className="text-emerald-700">123456</strong></span>
-                        <button
-                          type="button"
-                          onClick={() => setForgotModalOpen(true)}
-                          className="text-indigo-600 font-semibold hover:underline"
-                        >
-                          PIN'i Unuttum?
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Veli Telefon & Şifre Formu */
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                          Veli Telefon Numarası
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="0532 111 22 33"
-                          value={identifier}
-                          onChange={(e) => setIdentifier(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-700 block mb-1">
-                          Veli Şifresi
-                        </label>
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Öğrenci Rolü Giriş Alanları */}
-              {selectedRole === 'ogrenci' && (
-                <div className="space-y-3">
                   <div>
                     <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Öğrenci Okul Numarası
+                      Öğrenci Okul Numarası *
                     </label>
                     <input
                       type="text"
                       placeholder="Örn: 452"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
+                      value={studentNo}
+                      onChange={(e) => setStudentNo(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:outline-hidden font-medium"
                     />
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-slate-700">
-                        Öğrenci Şifresi
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setForgotModalOpen(true)}
-                        className="text-[11px] text-indigo-600 font-semibold hover:underline"
-                      >
-                        Şifremi Unuttum?
-                      </button>
+
+                  <div className="space-y-1.5 text-center pt-1">
+                    <label className="text-xs font-semibold text-slate-700 block">
+                      4 Haneli Güvenlik PIN Kodu *
+                    </label>
+                    
+                    {/* 4 Haneli ATM Tarzı PIN Kutuları */}
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      {pinDigits.map((digit, idx) => (
+                        <input
+                          key={idx}
+                          id={`student-pin-${idx}`}
+                          type="password"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => handlePinDigitChange(idx, e.target.value)}
+                          onKeyDown={(e) => handlePinDigitKeyDown(idx, e.target.value ? e : e)}
+                          className="w-12 h-12 text-center text-lg font-black bg-slate-50 border border-slate-300 rounded-2xl text-slate-900 focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 focus:outline-hidden transition-all shadow-2xs"
+                        />
+                      ))}
                     </div>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Örn: 1234"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-indigo-400 focus:outline-hidden pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
+                    <span className="text-[10px] text-slate-400 block pt-0.5">
+                      (Varsayılan test PIN: 1234)
+                    </span>
                   </div>
                 </div>
               )}
 
-              {/* Öğretmen Rolü Giriş Alanları */}
+              {/* 2. ÖĞRETMEN GİRİŞ FORMU (Normal E-Posta + Şifre) */}
               {selectedRole === 'ogretmen' && (
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Öğretmen Kurum E-Postası
+                      Öğretmen E-Posta Adresi
                     </label>
                     <input
                       type="email"
-                      placeholder="zehra.aydin@okul.k12.tr"
+                      placeholder="ornek@gmail.com veya kurum e-postası"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
                     />
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Kişisel e-postanız (Gmail vb.) ile giriş yapabilirsiniz.
+                    </span>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-slate-700">
-                        Öğretmen Portalı Şifresi
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setForgotModalOpen(true)}
-                        className="text-[11px] text-indigo-600 font-semibold hover:underline"
-                      >
-                        Şifremi Unuttum?
-                      </button>
-                    </div>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">
+                      Öğretmen Şifresi
+                    </label>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Örn: ogretmen123"
+                        placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-indigo-400 focus:outline-hidden pr-10"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-hidden pr-10"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -562,19 +629,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 </div>
               )}
 
-              {/* Admin Rolü Giriş Alanları */}
+              {/* 3. ADMİN GİRİŞ FORMU */}
               {selectedRole === 'admin' && (
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Yönetici Kullanıcı Adı / E-Posta
+                      Süper Admin E-Posta
                     </label>
                     <input
                       type="email"
                       placeholder="saidyvz21@gmail.com"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-slate-800 focus:outline-hidden"
                     />
                   </div>
                   <div>
@@ -586,7 +653,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       placeholder="Syv848112."
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-indigo-400 focus:outline-hidden"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-slate-800 focus:outline-hidden"
                     />
                   </div>
                 </div>
@@ -595,7 +662,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               {/* Giriş Butonu */}
               <button
                 type="submit"
-                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
                 <span>Güvenli Giriş Yap</span>
                 <ArrowRight className="w-4 h-4" />
@@ -620,9 +687,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </form>
           ) : (
             /* ======================= YALNIZCA ÖĞRETMEN KAYIT FORMU ======================= */
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+            <form onSubmit={handleTeacherRegisterSubmit} className="space-y-3">
               
-              {/* Bilgilendirme Kutusu: Veli ve Öğrenci kayıtlarının neden burada olmadığını açıklar */}
+              {/* Bilgilendirme Kutusu */}
               <div className="p-3 bg-blue-50/90 border border-blue-200/80 rounded-2xl flex items-start gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                   <BookOpen className="w-4 h-4" />
@@ -630,11 +697,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <div>
                   <h3 className="text-xs font-bold text-blue-950">Öğretmen Kayıt Portalı</h3>
                   <p className="text-[11px] text-blue-800 leading-relaxed mt-0.5">
-                    Veli ve öğrenci hesapları okul yönetimi / rehberlik tarafından tanımlanır. Bu form <strong>yalnızca öğretmenlerimizin</strong> kaydı içindir.
+                    Öğrenci ve veli hesapları okul tarafından açılır. Bu formdan <strong>yalnızca öğretmenlerimiz</strong> hızlıca kayıt oluşturabilir.
                   </p>
                 </div>
               </div>
 
+              {/* Ad Soyad */}
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
                   Öğretmenin Adı ve Soyadı *
@@ -648,32 +716,70 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 />
               </div>
 
+              {/* Normal E-Posta (Kurum zorunlu değil) */}
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Kurum / MEB E-Posta Adresi *
+                  E-Posta Adresi (Kişisel Gmail vb. geçerli) *
                 </label>
                 <input
                   type="email"
-                  placeholder="ad.soyad@okul.meb.gov.tr"
-                  value={regPhoneOrEmail}
-                  onChange={(e) => setRegPhoneOrEmail(e.target.value)}
+                  placeholder="ornek@gmail.com"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Kurum e-postası zorunlu değildir, herhangi bir kişisel e-posta girebilirsiniz.
+                </span>
               </div>
 
+              {/* İl ve İlçe Seçimi (Dinamik) */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Görev İli *
+                  </label>
+                  <select
+                    value={regCity}
+                    onChange={(e) => handleCityChange(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
+                  >
+                    {Object.keys(TURKEY_CITIES).map((city) => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    İlçe *
+                  </label>
+                  <select
+                    value={regDistrict}
+                    onChange={(e) => setRegDistrict(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
+                  >
+                    {currentDistricts.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Okul Seçimi */}
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  İletişim / Cep Telefonu (İsteğe Bağlı)
+                  Okulunuzun Adı *
                 </label>
                 <input
-                  type="tel"
-                  placeholder="0532 111 22 33"
-                  value={regPhone}
-                  onChange={(e) => setRegPhone(e.target.value)}
+                  type="text"
+                  placeholder="Örn: Atatürk Ortaokulu veya Bilim Sanat Mrk."
+                  value={regSchool}
+                  onChange={(e) => setRegSchool(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
                 />
               </div>
 
+              {/* Branş ve Sınıf Seçimi */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
@@ -699,25 +805,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Rehberlik Şubesi *
+                    Rehberlik Sınıfı *
                   </label>
                   <select
                     value={regClass}
                     onChange={(e) => setRegClass(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
                   >
-                    <option value="7-B">7-B Şubesi</option>
-                    <option value="7-A">7-A Şubesi</option>
-                    <option value="8-A">8-A Şubesi</option>
-                    <option value="8-B">8-B Şubesi</option>
-                    <option value="8-C">8-C Şubesi</option>
-                    <option value="6-A">6-A Şubesi</option>
-                    <option value="5-A">5-A Şubesi</option>
+                    <option value="7-B">7-B</option>
+                    <option value="7-A">7-A</option>
+                    <option value="8-A">8-A</option>
+                    <option value="8-B">8-B</option>
+                    <option value="8-C">8-C</option>
+                    <option value="6-A">6-A</option>
+                    <option value="6-B">6-B</option>
+                    <option value="5-A">5-A</option>
+                    <option value="5-B">5-B</option>
                     <option value="Yok">Şube Rehberliği Yok</option>
                   </select>
                 </div>
               </div>
 
+              {/* Şifre ve Şifre Tekrarı */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
@@ -753,7 +862,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <Check className="w-4 h-4" />
               </button>
 
-              <div className="text-center pt-2">
+              <div className="text-center pt-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -763,7 +872,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   }}
                   className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
                 >
-                  Zaten bir öğretmen veya okul hesabınız var mı?{' '}
+                  Zaten bir öğretmen hesabınız var mı?{' '}
                   <span className="text-blue-600 font-bold hover:underline">Giriş Yap</span>
                 </button>
               </div>
@@ -774,36 +883,29 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           {authMode === 'login' && (
             <div className="pt-3 border-t border-slate-100 space-y-2">
               <span className="text-[10px] uppercase font-bold text-slate-400 block text-center">
-                ⚡ Hızlı Tek Tıkla Demo Giriş
+                ⚡ Hızlı Tek Tıkla Giriş
               </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('veli')}
-                  className="p-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
-                >
-                  👨‍👩‍👧 Veli (Ahmet)
-                </button>
+              <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleQuickDemoLogin('ogrenci')}
                   className="p-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 text-indigo-800 hover:bg-indigo-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
                 >
-                  🎒 Öğrenci (Emre)
+                  🎒 Öğrenci & Veli
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickDemoLogin('ogretmen')}
                   className="p-1.5 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-800 hover:bg-blue-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
                 >
-                  👩‍🏫 Öğretmen (Zehra)
+                  👩‍🏫 Öğretmen
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickDemoLogin('admin')}
                   className="p-1.5 rounded-xl border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 text-[11px] font-bold transition-colors cursor-pointer text-center"
                 >
-                  🏛️ Süper Admin (Said)
+                  🏛️ Süper Admin
                 </button>
               </div>
             </div>
@@ -812,70 +914,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         </div>
 
         {/* ALT GÜVENLİK BİLGİSİ */}
-        <div className="text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-          <span>256-Bit SSL Şifreleme • MEB Uyumlu Veri Güvenliği</span>
+        <div className="text-center text-[11px] text-slate-400 space-y-1">
+          <p className="flex items-center justify-center gap-1">
+            <Lock className="w-3 h-3 text-slate-400" />
+            <span>256-Bit SSL Uçtan Uca Şifreli Güvenli Okul Portalı</span>
+          </p>
+          <p>© 2026 e-Okul Bilgi Sistemi • Tüm hakları saklıdır.</p>
         </div>
 
       </div>
-
-      {/* ŞİFREMİ / PIN'İMİ UNUTTUM MODALI */}
-      {forgotModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/40" onClick={() => setForgotModalOpen(false)} />
-          <div className="relative w-full max-w-sm bg-white rounded-3xl border border-slate-200 p-5 z-10 space-y-3.5 shadow-xl animate-in fade-in">
-            <h3 className="text-sm font-bold text-slate-900">
-              Şifre / PIN Sıfırlama
-            </h3>
-            <p className="text-xs text-slate-500">
-              Kayıtlı telefon numaranıza veya e-postanıza tek kullanımlık 6 haneli doğrulama kodu gönderilecektir.
-            </p>
-
-            {forgotSent ? (
-              <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-medium">
-                ✓ Doğrulama kodu <strong>{forgotContact || 'telefonunuza'}</strong> başarıyla gönderildi. Geçici PIN kodunuz: <strong>123456</strong>
-              </div>
-            ) : (
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Telefon No veya E-Posta
-                </label>
-                <input
-                  type="text"
-                  placeholder="0532 111 22 33"
-                  value={forgotContact}
-                  onChange={(e) => setForgotContact(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setForgotModalOpen(false);
-                  setForgotSent(false);
-                }}
-                className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800 font-semibold"
-              >
-                Kapat
-              </button>
-              {!forgotSent && (
-                <button
-                  type="button"
-                  onClick={() => setForgotSent(true)}
-                  className="px-3.5 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 cursor-pointer"
-                >
-                  Kod Gönder
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };
-

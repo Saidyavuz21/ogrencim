@@ -73,6 +73,7 @@ import {
 import { TeacherBulkMessageSection } from './TeacherBulkMessageSection';
 
 interface TeacherDashboardProps {
+  currentUser?: UserAccount;
   assignments?: Assignment[];
   onAssignmentsChange?: (assignments: Assignment[]) => void;
   studentPoints?: { [studentId: string]: StudentPointsSummary };
@@ -86,6 +87,7 @@ interface TeacherDashboardProps {
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
+  currentUser,
   assignments: externalAssignments,
   onAssignmentsChange,
   studentPoints: externalStudentPoints,
@@ -120,7 +122,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   );
   const [pointModalStudent, setPointModalStudent] = useState<{ id: string; name: string; studentNo: string; type: PointType } | null>(null);
   const [pointReasonText, setPointReasonText] = useState('');
-  const [pointSubject, setPointSubject] = useState(CURRENT_TEACHER.branch);
+  const [pointSubject, setPointSubject] = useState(currentUser?.branch || CURRENT_TEACHER.branch);
   const [pointsFilter, setPointsFilter] = useState<'all' | 'plus' | 'minus' | 'emre'>('all');
 
   // Ders İçi Anlık Artı / Eksi Yoklama Durumları
@@ -370,8 +372,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       type,
       points: pointChange,
       reason,
-      teacherName: CURRENT_TEACHER.name,
-      subject: CURRENT_TEACHER.branch,
+      teacherName: currentUser?.name || CURRENT_TEACHER.name,
+      subject: currentUser?.branch || CURRENT_TEACHER.branch,
       date: 'Bugün ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -619,7 +621,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       title: newHwTitle.trim(),
       subject: newHwSubject,
       subjectColor: 'from-amber-600 to-orange-600',
-      teacher: CURRENT_TEACHER.name,
+      teacher: currentUser?.name || CURRENT_TEACHER.name,
       className: selectedClass,
       assignedDate: 'Bugün',
       dueDate: newHwDueDate,
@@ -692,7 +694,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         conversationId: 'tch-zehra',
         senderId: 'tch-zehra',
         senderRole: 'ogretmen',
-        senderName: CURRENT_TEACHER.name,
+        senderName: currentUser?.name || CURRENT_TEACHER.name,
         text: replyText,
         timestamp: `Bugün ${timeStr}`,
         timeOnly: timeStr,
@@ -721,7 +723,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       conversationId: teacherSelectedChatId,
       senderId: 'tch-zehra',
       senderRole: 'ogretmen',
-      senderName: CURRENT_TEACHER.name,
+      senderName: currentUser?.name || CURRENT_TEACHER.name,
       senderBadge: 'Sınıf Rehber Öğretmeni',
       text: textToSend,
       timestamp: `Bugün ${timeOnly}`,
@@ -782,22 +784,22 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-800 text-sm shrink-0">
-            {CURRENT_TEACHER.avatar}
+            {currentUser?.avatar || CURRENT_TEACHER.avatar}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                {CURRENT_TEACHER.name}
+                {currentUser?.name || CURRENT_TEACHER.name}
               </h2>
               <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">
-                {CURRENT_TEACHER.branch} Öğretmeni
+                {currentUser?.branch || CURRENT_TEACHER.branch} Öğretmeni
               </span>
               <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-medium">
                 {teacherClasses.length} Sınıf
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Rehberlik: <strong>{CURRENT_TEACHER.homeroomClass}</strong> • Toplam {totalStudents} Kayıtlı Öğrenci
+              Rehberlik: <strong>{currentUser?.className || CURRENT_TEACHER.homeroomClass}</strong> • Toplam {totalStudents} Kayıtlı Öğrenci
             </p>
           </div>
         </div>
@@ -2968,7 +2970,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100 space-y-4">
               <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs max-w-xl mx-auto space-y-4 text-xs text-slate-800">
                 <div className="border-b pb-3 flex items-center justify-between text-slate-400 text-[10px]">
-                  <span>{CURRENT_TEACHER.name} • {CURRENT_TEACHER.branch} ZÜMRESİ</span>
+                  <span>{currentUser?.name || CURRENT_TEACHER.name} • {currentUser?.branch || CURRENT_TEACHER.branch} ZÜMRESİ</span>
                   <span>Sayfa: 1 / 2</span>
                 </div>
 

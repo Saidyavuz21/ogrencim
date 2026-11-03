@@ -122,7 +122,21 @@ export const ParentTeacherChat: React.FC<ParentTeacherChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const activeTeacher = TEACHER_CONTACTS.find((t) => t.id === selectedTeacherId) || TEACHER_CONTACTS[0];
+  const fallbackContact: TeacherChatContact = {
+    id: 'none',
+    name: 'Henüz Kayıtlı Öğretmen Yok',
+    subject: 'İletişim kanalı bulunmuyor',
+    roleTitle: 'Kayıtlı Öğretmen Yok',
+    avatar: 'ÖĞ',
+    avatarBg: 'bg-slate-400',
+    status: 'offline',
+    statusText: 'İletişim için öğretmen kaydı bekleniyor',
+    phone: '',
+    officeHours: '',
+    unreadCount: 0,
+    isGroup: false,
+  };
+  const activeTeacher = TEACHER_CONTACTS.find((t) => t.id === selectedTeacherId) || TEACHER_CONTACTS[0] || fallbackContact;
 
   // Aktif sohbete ait mesajlar
   const conversationMessages = messages.filter(
@@ -460,7 +474,12 @@ export const ParentTeacherChat: React.FC<ParentTeacherChatProps> = ({
 
           {/* Sohbet Listesi */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-            {filteredTeachers.map((teacher) => {
+            {filteredTeachers.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                Henüz kayıtlı öğretmen veya sohbet kanalı bulunmamaktadır.
+              </div>
+            ) : (
+              filteredTeachers.map((teacher) => {
               const isSelected = teacher.id === selectedTeacherId;
               const teacherMsgs = messages.filter((m) => m.conversationId === teacher.id);
               const lastMsg = teacherMsgs[teacherMsgs.length - 1];
@@ -536,13 +555,7 @@ export const ParentTeacherChat: React.FC<ParentTeacherChatProps> = ({
                   </div>
                 </button>
               );
-            })}
-
-            {filteredTeachers.length === 0 && (
-              <div className="p-6 text-center text-xs text-slate-400">
-                Aradığınız kriterde sohbet bulunamadı.
-              </div>
-            )}
+            }))}
           </div>
 
           {/* Sol Kolon Altı: Güvenlik Bilgisi */}

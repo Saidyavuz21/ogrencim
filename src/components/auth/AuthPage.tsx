@@ -182,46 +182,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     },
   ];
 
-  // Hızlı Demo Giriş
-  const handleQuickDemoLogin = (role: UserRole) => {
-    setErrorMsg(null);
-    if (role === 'ogrenci' || role === 'veli') {
-      const demoStudent: UserAccount = {
-        id: 'usr-student-452',
-        role: 'ogrenci',
-        name: CURRENT_STUDENT.name,
-        emailOrPhone: 'emre.demir@okul.k12.tr',
-        studentNo: '452',
-        studentName: CURRENT_STUDENT.name,
-        pin: '1234',
-        avatar: CURRENT_STUDENT.avatar,
-        title: `${CURRENT_STUDENT.class} Sınıfı Öğrenci & Veli Portalı`,
-      };
-      setSuccessMsg(`${CURRENT_STUDENT.name} (Öğrenci & Veli) olarak giriş yapılıyor...`);
-      setTimeout(() => onLoginSuccess(demoStudent), 400);
-      return;
-    }
-
-    if (role === 'ogretmen') {
-      const demoTeacher: UserAccount = {
-        id: 'usr-tch-1',
-        role: 'ogretmen',
-        name: 'Zehra Aydın',
-        emailOrPhone: 'zehra.aydin@gmail.com',
-        branch: 'Türkçe',
-        avatar: 'ZA',
-        title: 'Türkçe Öğretmeni (7-B Rehberliği)',
-      };
-      setSuccessMsg('Zehra Aydın (Öğretmen) olarak giriş yapılıyor...');
-      setTimeout(() => onLoginSuccess(demoTeacher), 400);
-      return;
-    }
-
-    // Admin
-    const adminAcc = INITIAL_USER_ACCOUNTS.find((a) => a.role === 'admin') || INITIAL_USER_ACCOUNTS[0];
-    setSuccessMsg('Said Yavuz (Süper Admin) olarak giriş yapılıyor...');
-    setTimeout(() => onLoginSuccess(adminAcc), 400);
-  };
 
   // 4 Haneli PIN Kutucukları Mantığı
   const handlePinDigitChange = (idx: number, val: string) => {
@@ -257,7 +217,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       const enteredPin = pinDigits.join('');
 
       if (!enteredNo) {
-        setErrorMsg('Lütfen okul numaranızı giriniz (Örn: 452).');
+        setErrorMsg('Lütfen okul numaranızı giriniz (Örn: 1024).');
         return;
       }
 
@@ -266,21 +226,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         return;
       }
 
-      // Başarılı Giriş Simülasyonu
-      const studentAccount: UserAccount = {
-        id: `usr-student-${enteredNo}`,
-        role: 'ogrenci',
-        name: enteredNo === '452' ? CURRENT_STUDENT.name : `Öğrenci No: ${enteredNo}`,
-        emailOrPhone: `${enteredNo}@okul.meb.gov.tr`,
-        studentNo: enteredNo,
-        studentName: enteredNo === '452' ? CURRENT_STUDENT.name : `Öğrenci (${enteredNo})`,
-        pin: enteredPin,
-        avatar: 'ÖV',
-        title: `${enteredNo === '452' ? '7-B' : 'Sınıfı'} Öğrenci & Veli Portalı`,
-      };
+      // Kayıtlı Öğrenci / Veli Kontrolü
+      const matchedStudent = INITIAL_USER_ACCOUNTS.find(
+        (acc) =>
+          (acc.role === 'ogrenci' || acc.role === 'veli') &&
+          acc.studentNo === enteredNo &&
+          acc.pin === enteredPin
+      );
 
-      setSuccessMsg(`PIN doğrulandı! Öğrenci ve Veli Portalı açılıyor...`);
-      setTimeout(() => onLoginSuccess(studentAccount), 400);
+      if (matchedStudent) {
+        setSuccessMsg('PIN doğrulandı! Öğrenci ve Veli Portalı açılıyor...');
+        setTimeout(() => onLoginSuccess(matchedStudent), 400);
+      } else {
+        setErrorMsg('Sistemde henüz kayıtlı öğrenci bulunmamaktadır. Lütfen öğretmeninizin veya okul yönetiminin sizi sisteme kaydetmesini bekleyiniz.');
+      }
       return;
     }
 
@@ -295,13 +254,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
-    // Admin Giriş Kontrolü
+    // Admin Giriş Kontrolü (Sadece Süper Admin)
     if (selectedRole === 'admin') {
       if (
-        (identifier.trim().toLowerCase() === 'saidyvz21@gmail.com' || identifier.trim() === 'admin') &&
-        (password === 'Syv848112.' || password.length >= 4)
+        identifier.trim().toLowerCase() === 'saidyvz21@gmail.com' &&
+        password === 'Syv848112.'
       ) {
-        const adminAcc = INITIAL_USER_ACCOUNTS.find((a) => a.role === 'admin') || INITIAL_USER_ACCOUNTS[0];
+        const adminAcc = INITIAL_USER_ACCOUNTS.find((a) => a.role === 'admin') || {
+          id: 'usr-admin-said',
+          role: 'admin',
+          name: 'Said Yavuz',
+          emailOrPhone: 'saidyvz21@gmail.com',
+          avatar: 'SY',
+          title: 'Süper Admin & Sistem Yöneticisi',
+        };
         setSuccessMsg('Süper Admin girişi başarılı! Panel açılıyor...');
         setTimeout(() => onLoginSuccess(adminAcc), 400);
         return;
@@ -315,31 +281,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     const matchedTeacher = INITIAL_USER_ACCOUNTS.find(
       (acc) =>
         acc.role === 'ogretmen' &&
-        (acc.emailOrPhone.toLowerCase() === identifier.trim().toLowerCase() || identifier.trim() === 'demo') &&
-        (acc.password === password || password.length >= 4)
+        acc.emailOrPhone.toLowerCase() === identifier.trim().toLowerCase()
     );
 
-    if (matchedTeacher) {
-      setSuccessMsg(`Giriş başarılı! Hoş geldiniz, ${matchedTeacher.name}.`);
-      setTimeout(() => onLoginSuccess(matchedTeacher), 400);
-    } else {
-      // Öğretmen kayıtlı değilse ya da test için girilmişse
-      if (password.length >= 4) {
-        const fallbackTeacher: UserAccount = {
-          id: `usr-tch-${Date.now()}`,
-          role: 'ogretmen',
-          name: identifier.split('@')[0] || 'Öğretmen',
-          emailOrPhone: identifier.trim(),
-          branch: 'Türkçe',
-          avatar: 'ÖĞ',
-          title: 'Branş Öğretmeni',
-        };
-        setSuccessMsg(`Giriş yapıldı! Hoş geldiniz.`);
-        setTimeout(() => onLoginSuccess(fallbackTeacher), 400);
-      } else {
-        setErrorMsg('Şifre veya e-posta hatalı. Lütfen kontrol ediniz veya Öğretmen Kaydı oluşturunuz.');
-      }
+    if (!matchedTeacher) {
+      setErrorMsg("Bu e-posta adresiyle kayıtlı öğretmen bulunamadı. Lütfen 'Öğretmen Kaydı' sekmesinden kaydolunuz.");
+      return;
     }
+
+    if (matchedTeacher.password && matchedTeacher.password !== password) {
+      setErrorMsg('Girdiğiniz şifre hatalı. Lütfen kontrol edip tekrar deneyiniz.');
+      return;
+    }
+
+    setSuccessMsg('Giriş başarılı! Hoş geldiniz, Sn. ' + matchedTeacher.name + '.');
+    setTimeout(() => onLoginSuccess(matchedTeacher), 400);
   };
 
   // ========================================================
@@ -552,7 +508,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </label>
                     <input
                       type="text"
-                      placeholder="Örn: 452"
+                      placeholder="Örn: 1024"
                       value={studentNo}
                       onChange={(e) => setStudentNo(e.target.value.replace(/\D/g, ''))}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:outline-hidden font-medium"
@@ -581,7 +537,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       ))}
                     </div>
                     <span className="text-[10px] text-slate-400 block pt-0.5">
-                      (Varsayılan test PIN: 1234)
+                      
                     </span>
                   </div>
                 </div>
@@ -650,7 +606,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </label>
                     <input
                       type="password"
-                      placeholder="Syv848112."
+                      placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-slate-800 focus:outline-hidden"
@@ -877,38 +833,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 </button>
               </div>
             </form>
-          )}
-
-          {/* HIZLI TEST / DEMO GİRİŞ BUTONLARI (Sadece Giriş Yap Modunda Gösterilir) */}
-          {authMode === 'login' && (
-            <div className="pt-3 border-t border-slate-100 space-y-2">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block text-center">
-                ⚡ Hızlı Tek Tıkla Giriş
-              </span>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('ogrenci')}
-                  className="p-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 text-indigo-800 hover:bg-indigo-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
-                >
-                  🎒 Öğrenci & Veli
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('ogretmen')}
-                  className="p-1.5 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-800 hover:bg-blue-100 text-[11px] font-bold transition-colors cursor-pointer text-center"
-                >
-                  👩‍🏫 Öğretmen
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoLogin('admin')}
-                  className="p-1.5 rounded-xl border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200 text-[11px] font-bold transition-colors cursor-pointer text-center"
-                >
-                  🏛️ Süper Admin
-                </button>
-              </div>
-            </div>
           )}
 
         </div>

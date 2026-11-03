@@ -101,7 +101,7 @@ import {
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserAccount>(INITIAL_USER_ACCOUNTS[0]);
-  const [currentRole, setCurrentRole] = useState<UserRole>('admin');
+  const [currentRole, setCurrentRole] = useState<UserRole>('ogrenci');
   const [isParentAuthenticated, setIsParentAuthenticated] = useState<boolean>(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -485,6 +485,7 @@ export default function Home() {
         {/* ===================== ROL: ÖĞRETMEN ===================== */}
         {currentRole === 'ogretmen' && activeTab === 'dashboard' && (
           <TeacherDashboard 
+            currentUser={currentUser}
             assignments={assignments} 
             onAssignmentsChange={setAssignments}
             studentPoints={studentPoints}

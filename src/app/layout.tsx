@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Öğrenci & Veli Bilgi Portalı | 7-B Sınıfı",
-  description: "Öğretmen ödevleri, puan durumu ve sınıf başarı sıralaması veli takip sistemi",
+  title: "e-Okul Portalı | Öğrenci & Veli Bilgi Sistemi",
+  description: "Öğretmen ödevleri, puan durumu ve öğrenci başarı takip sistemi",
 };
 
 export default function RootLayout({

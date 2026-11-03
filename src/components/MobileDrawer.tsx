@@ -240,7 +240,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
         {/* Alt Bilgi */}
         <div className="p-3 border-t border-slate-100 bg-slate-50/70 text-xs text-slate-500 text-center">
-          <span>Atatürk Bilim ve Sanat Ortaokulu</span>
+          <span>{student.school || 'e-Okul Portalı'}</span>
         </div>
 
       </div>

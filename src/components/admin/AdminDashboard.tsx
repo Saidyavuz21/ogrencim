@@ -105,7 +105,7 @@ export const AdminDashboard: React.FC = () => {
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
-  const [formSchool, setFormSchool] = useState('Atatürk Bilim ve Sanat Ortaokulu');
+  const [formSchool, setFormSchool] = useState('');
   const [formCity, setFormCity] = useState('Diyarbakır');
   const [formDistrict, setFormDistrict] = useState('Kayapınar');
   const [formBranch, setFormBranch] = useState('Matematik');
@@ -140,7 +140,7 @@ export const AdminDashboard: React.FC = () => {
     setFormName('');
     setFormEmail('');
     setFormPassword('');
-    setFormSchool('Atatürk Bilim ve Sanat Ortaokulu');
+    setFormSchool('');
     setFormCity('Diyarbakır');
     setFormDistrict('Kayapınar');
     setFormBranch('Matematik');
@@ -157,7 +157,7 @@ export const AdminDashboard: React.FC = () => {
     setFormName(t.name);
     setFormEmail(t.email || '');
     setFormPassword(t.password || '');
-    setFormSchool(t.schoolName || 'Atatürk Bilim ve Sanat Ortaokulu');
+    setFormSchool(t.schoolName || '');
     setFormCity(t.city || 'Diyarbakır');
     const districts = TURKEY_CITIES[t.city || 'Diyarbakır'] || ['Merkez'];
     setFormDistrict(t.district || districts[0] || 'Merkez');

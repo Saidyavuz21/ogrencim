@@ -19,9 +19,9 @@ Amaç: Gerçek öğrenci/veli verisi girilebilecek kadar güvenli bir giriş ve 
 | Veli kilit ekranının PIN'i ekranda göstermesini kaldırmak | ✅ |
 | Herkesin menüden Admin'e geçebildiği rol değiştiriciyi kısıtlamak | ✅ |
 | Tüm tablolarda RLS politikaları | ✅ (veritabanına uygulandı) |
-| Admin paneline hesap yönetimi: öğretmen onay/red, düzenleme, pasif/aktif, silme; öğrenci ekleme, PIN sıfırlama | ✅ (pasif/silme için 2. migration uygulanmalı) |
+| Admin paneline hesap yönetimi: öğretmen onay/red, düzenleme, pasif/aktif, silme; öğrenci ekleme, PIN sıfırlama | ✅ |
 | Profilde gerçek şifre değiştirme | ✅ |
-| Supabase: Anonim girişi açmak (öğrenci girişi için gerekli) | ⏳ panelden |
+| Supabase: Anonim girişi açmak (öğrenci girişi için gerekli) | ✅ |
 | Supabase: Sızdırılmış şifre korumasını açmak | ⏳ panelden |
 | Admin şifresini değiştirmek (eski şifre git geçmişinde açık) | ⏳ kullanıcı |
 

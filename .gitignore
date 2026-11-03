@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Binaries
 *.exe
+
+# Local dependency verification cache
+/.npm-cache/

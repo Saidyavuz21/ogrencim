@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GraduationCap, ShieldCheck, Check, ArrowRight, Eye, EyeOff, AlertCircle, BookOpen } from '../icons';
 import styles from './AuthPage.module.css';
-import { UserAccount, TURKEY_CITIES } from '../../data/portalData';
+import { UserAccount, TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName } from '../../data/portalData';
+import { ClassLevelSelects } from '../ClassLevelSelects';
 import { signInStaff, signInStudent, signUpTeacher } from '../../lib/supabaseClient';
 
 type Audience = 'ogrenci' | 'ogretmen';
@@ -17,12 +18,6 @@ interface AuthPageProps {
    */
   variant?: 'public' | 'admin';
 }
-
-const BRANCHES = [
-  'Türkçe', 'Matematik', 'Fen Bilimleri', 'Sosyal Bilgiler', 'İngilizce', 'Din Kültürü ve Ahlak Bilgisi',
-  'Bilişim Teknolojileri', 'Görsel Sanatlar', 'Müzik', 'Beden Eğitimi', 'Rehberlik',
-];
-const CLASSES = ['7-B', '7-A', '8-A', '8-B', '8-C', '6-A', '6-B', '5-A', '5-B', 'Yok'];
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'public' }) => {
   const isAdminPage = variant === 'admin';
@@ -53,8 +48,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
   const [regCity, setRegCity] = useState('Diyarbakır');
   const [regDistrict, setRegDistrict] = useState('Kayapınar');
   const [regSchool, setRegSchool] = useState('');
-  const [regBranch, setRegBranch] = useState('Türkçe');
-  const [regClass, setRegClass] = useState('Yok');
+  const [regBranch, setRegBranch] = useState('Sınıf Öğretmenliği');
+  const [regClassLevel, setRegClassLevel] = useState('');
+  const [regClassSection, setRegClassSection] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regPasswordConfirm, setRegPasswordConfirm] = useState('');
   const [regStep, setRegStep] = useState<'hesap' | 'okul'>('hesap');
@@ -196,7 +192,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       city: regCity,
       district: regDistrict,
       school: regSchool,
-      className: regClass,
+      className: composeClassName(regClassLevel, regClassSection),
     });
     setIsSubmitting(false);
 
@@ -454,14 +450,27 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                     </AuthField>
                     <AuthField id="register-branch" label="Branş">
                       <select id="register-branch" name="branch" value={regBranch} onChange={(e) => setRegBranch(e.target.value)}>
-                        {BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
+                        {TEACHER_BRANCH_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
                       </select>
                     </AuthField>
-                    <AuthField id="register-class" label="Rehberlik sınıfı">
-                      <select id="register-class" name="className" value={regClass} onChange={(e) => setRegClass(e.target.value)}>
-                        {CLASSES.map((c) => <option key={c} value={c}>{c === 'Yok' ? 'Şube rehberliği yok' : c}</option>)}
-                      </select>
-                    </AuthField>
+                    <div className={styles.pair}>
+                      <ClassLevelSelects
+                        idPrefix="register-class"
+                        level={regClassLevel}
+                        section={regClassSection}
+                        onChange={({ level, section }) => {
+                          setRegClassLevel(level);
+                          setRegClassSection(section);
+                        }}
+                        allowEmpty
+                        emptyLabel="Sınıfım yok"
+                        disabled={isSubmitting}
+                        renderField={({ id, label, control }) => (
+                          <AuthField id={id} label={label === 'Sınıf seviyesi' ? 'Sınıfınız (varsa)' : label}>{control}</AuthField>
+                        )}
+                      />
+                    </div>
+                    <p className={styles.hint}>Sınıf öğretmeniyseniz okuttuğunuz sınıfı, branş öğretmeniyseniz rehberliğini yaptığınız şubeyi seçin.</p>
                   </fieldset>
                   )}
 

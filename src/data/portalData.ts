@@ -394,6 +394,62 @@ export const SCHOOL_CLASSES: SchoolClass[] = [];
 
 export const TEACHER_LIST: TeacherListItem[] = [];
 
+// ========================================================
+// OKUL KADEMELERİ, SINIF SEVİYELERİ, ŞUBELER VE BRANŞLAR (MEB)
+// Kayıt, öğrenci ekleme ve öğretmen düzenleme ekranlarında ortak kullanılır.
+// ========================================================
+export const CLASS_LEVEL_GROUPS: { label: string; levels: string[] }[] = [
+  { label: 'Okul öncesi', levels: ['Anaokulu', 'Anasınıfı'] },
+  { label: 'İlkokul', levels: ['1', '2', '3', '4'] },
+  { label: 'Ortaokul', levels: ['5', '6', '7', '8'] },
+  { label: 'Lise', levels: ['Hazırlık', '9', '10', '11', '12'] },
+];
+
+export const CLASS_SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+
+/** Seviye listesinde gösterilecek ad: '3' → '3. sınıf' */
+export const classLevelLabel = (level: string) => (/^\d+$/.test(level) ? `${level}. sınıf` : level);
+
+/** Seviye + şube → kayıtlı sınıf adı: ('3','A') → '3-A', ('Anasınıfı','B') → 'Anasınıfı-B' */
+export const composeClassName = (level: string, section: string) =>
+  level ? (section ? `${level}-${section}` : level) : '';
+
+/** Kayıtlı sınıf adını seviye ve şubeye ayırır: '3-A' → { level: '3', section: 'A' } */
+export const parseClassName = (className?: string | null) => {
+  const [level = '', section = ''] = (className || '').split('-');
+  const knownLevel = CLASS_LEVEL_GROUPS.some((g) => g.levels.includes(level));
+  return knownLevel ? { level, section: CLASS_SECTIONS.includes(section) ? section : '' } : { level: '', section: '' };
+};
+
+// MEB branşları (okul öncesi → ilkokul → ortaokul → lise)
+export const TEACHER_BRANCH_OPTIONS = [
+  'Okul Öncesi (Anaokulu)',
+  'Sınıf Öğretmenliği',
+  'Türkçe',
+  'Matematik',
+  'Fen Bilimleri',
+  'Sosyal Bilgiler',
+  'İngilizce',
+  'Almanca',
+  'Arapça',
+  'Din Kültürü ve Ahlak Bilgisi',
+  'Bilişim Teknolojileri ve Yazılım',
+  'Teknoloji ve Tasarım',
+  'Görsel Sanatlar',
+  'Müzik',
+  'Beden Eğitimi ve Spor',
+  'Rehberlik ve Psikolojik Danışmanlık',
+  'Özel Eğitim',
+  'Türk Dili ve Edebiyatı',
+  'Fizik',
+  'Kimya',
+  'Biyoloji',
+  'Tarih',
+  'Coğrafya',
+  'Felsefe',
+  'Diğer',
+];
+
 
 // Türkiye 81 İl ve İlçe Veritabanı
 export const TURKEY_CITIES: { [key: string]: string[] } = {

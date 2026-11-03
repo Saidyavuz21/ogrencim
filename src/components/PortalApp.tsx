@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import teacherStyles from './teacher/TeacherDashboard.module.css';
 import { 
   getLiveStudents, 
   getLiveMessages, 
@@ -482,7 +483,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900 pb-20 md:pb-12 flex flex-col antialiased">
+    <div className={`${currentRole === 'ogretmen' ? teacherStyles.teacherShell : ''} min-h-screen bg-slate-50/70 text-slate-900 pb-20 md:pb-12 flex flex-col antialiased`}>
       
       {/* 1. Üst Menü Çubuğu (Rol Değiştirici & Bildirimler) */}
       <Navbar

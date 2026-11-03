@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -71,6 +71,7 @@ import {
   getStudentPointsSummary
 } from '../../data/portalData';
 import { TeacherBulkMessageSection } from './TeacherBulkMessageSection';
+import styles from './TeacherDashboard.module.css';
 
 interface TeacherDashboardProps {
   currentUser?: UserAccount;
@@ -224,7 +225,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   // Aktif kontrol edilen ödev
   const activeCheckingHw = teacherAssignments.find((a) => a.id === selectedCheckHwId) || teacherAssignments[0];
-  const activeMaxPoints = activeCheckingHw.pointsPossible || 100;
+  const activeMaxPoints = activeCheckingHw?.pointsPossible || 100;
 
   // Aktif ödevin öğrenci kontrol haritası
   const currentAssignmentChecks = studentChecks[selectedCheckHwId] || INITIAL_HOMEWORK_CHECKS;
@@ -318,6 +319,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   // Kontrol çizelgesini kaydetme ve veli portalına yansıtma
   const handleSaveCheckSheet = () => {
+    if (!activeCheckingHw) return;
     const checks = currentAssignmentChecks;
     let countYapti = 0;
     let countKismen = 0;
@@ -770,7 +772,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   });
 
   return (
-    <div className="space-y-4">
+    <div className={styles.dashboard}>
 
       {/* Toast Bildirimi */}
       {toastMessage && (
@@ -780,170 +782,50 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         </div>
       )}
 
-      {/* ÖĞRETMEN BAŞLIK, SINIFLAR VE YENİ SINIF OLUŞTURMA KARTI */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-800 text-sm shrink-0">
-            {currentUser?.avatar || CURRENT_TEACHER.avatar}
-          </div>
+      <header className={styles.header}>
+        <div className={styles.heading}>
+          <span className={styles.avatar} aria-hidden="true">{currentUser?.avatar || CURRENT_TEACHER.avatar}</span>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                {currentUser?.name || CURRENT_TEACHER.name}
-              </h2>
-              <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">
-                {currentUser?.branch || CURRENT_TEACHER.branch} Öğretmeni
-              </span>
-              <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-medium">
-                {teacherClasses.length} Sınıf
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Rehberlik: <strong>{currentUser?.className || CURRENT_TEACHER.homeroomClass}</strong> • Toplam {totalStudents} Kayıtlı Öğrenci
-            </p>
+            <h1>Öğretmen paneli</h1>
+            <p>{currentUser?.name || CURRENT_TEACHER.name} · {currentUser?.branch || CURRENT_TEACHER.branch}</p>
           </div>
         </div>
-
-        {/* Hızlı Sınıf Seçici & "+ Yeni Sınıf Oluştur" Butonu */}
-        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200/80 overflow-x-auto no-scrollbar max-w-full">
-            <span className="text-xs text-slate-500 px-2 font-medium shrink-0">Sınıf:</span>
-            {teacherClasses.length === 0 ? (
-              <span className="text-xs text-slate-400 italic px-2">Henüz sınıf eklenmedi</span>
-            ) : (
-              teacherClasses.map((cls) => (
-              <button
-                key={cls.id}
-                type="button"
-                onClick={() => setSelectedClass(cls.name)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${selectedClass === cls.name
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-              >
-                <span>{cls.name}</span>
-                {cls.isHomeroom && (
-                  <span className={`text-[9px] px-1 rounded-sm ${selectedClass === cls.name ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                    Rehber
-                  </span>
-                )}
-              </button>
-            )))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('bulk_message')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-semibold transition-colors shrink-0 cursor-pointer shadow-2xs"
-            >
-              <Megaphone className="w-4 h-4 text-indigo-600" />
-              <span>Toplu Mesaj Gönder</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                generateNewJoinCode('TRK');
-                setIsNewClassModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shrink-0 cursor-pointer shadow-2xs"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Yeni Sınıf</span>
-            </button>
+        <p className={styles.intro}>Sınıfınızın gelişimini birlikte takip edelim.</p>
+        <div className={styles.classToolbar}>
+          <label className={styles.classField} htmlFor="teacher-class">Çalıştığınız sınıf
+            <select id="teacher-class" value={teacherClasses.some((cls) => cls.name === selectedClass) ? selectedClass : ''} onChange={(e) => setSelectedClass(e.target.value)} disabled={!teacherClasses.length}>
+              {!teacherClasses.length && <option value="">Henüz sınıf eklenmedi</option>}
+              {teacherClasses.map((cls) => <option key={cls.id} value={cls.name}>{cls.name}{cls.isHomeroom ? ' · Rehberlik sınıfı' : ''}</option>)}
+            </select>
+          </label>
+          <div className={styles.headerActions}>
+            <button type="button" className={styles.secondary} onClick={() => setActiveSubTab('bulk_message')}><Megaphone size={18} aria-hidden="true" />Toplu mesaj</button>
+            <button type="button" className={styles.primary} onClick={() => { generateNewJoinCode('TRK'); setIsNewClassModalOpen(true); }}><Plus size={18} aria-hidden="true" />Yeni sınıf</button>
           </div>
         </div>
+        <div className={styles.overview} aria-label="Panel özeti">
+          <span><strong>{teacherClasses.length}</strong> sınıf</span>
+          <span><strong>{totalStudents}</strong> kayıtlı öğrenci</span>
+          <button type="button" onClick={() => setActiveSubTab('grading')}><strong>{pendingSubCount}</strong> bekleyen değerlendirme<ArrowRight size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={() => setActiveSubTab('messages')}><strong>{pendingMsgCount}</strong> yeni mesaj<ArrowRight size={16} aria-hidden="true" /></button>
+        </div>
+      </header>
+
+      <div className={styles.mobileNavigation}>
+        <label htmlFor="teacher-module">Ne yapmak istersiniz?</label>
+        <select id="teacher-module" value={activeSubTab} onChange={(e) => setActiveSubTab(e.target.value as typeof activeSubTab)}>
+          {teacherModules.map((tab) => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
+        </select>
       </div>
+      <nav className={styles.modules} aria-label="Öğretmen modülleri">
+        {teacherModules.map((tab) => <button key={tab.id} type="button" aria-current={activeSubTab === tab.id ? 'page' : undefined} onClick={() => setActiveSubTab(tab.id)}><tab.icon size={18} aria-hidden="true" />{tab.label}</button>)}
+      </nav>
 
-      {/* 4 Özet Bilgi Kartı */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div
-          onClick={() => setActiveSubTab('check_sheet')}
-          className="p-3 bg-white rounded-xl border border-slate-200/90 text-left cursor-pointer hover:border-slate-300 transition-colors"
-        >
-          <span className="text-[11px] font-medium text-slate-500 block">Ödev Kontrol Çizelgesi</span>
-          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">28 Öğrenci</p>
-          <span className="text-[10px] text-emerald-600 block mt-0.5 font-medium">Yaptı / Kısmen / Yapmadı →</span>
-        </div>
-
-        <div
-          onClick={() => {
-            setActiveSubTab('assignments');
-            setIsNewHwOpen(true);
-          }}
-          className="p-3 bg-white rounded-xl border border-slate-200/90 text-left cursor-pointer hover:border-slate-300 transition-colors"
-        >
-          <span className="text-[11px] font-medium text-slate-500 block">Verilen Ödevler</span>
-          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">{teacherAssignments.length} Ödev</p>
-          <span className="text-[10px] text-indigo-600 block mt-0.5 font-medium">PDF, Resim, Not Ekle →</span>
-        </div>
-
-        <div
-          onClick={() => setActiveSubTab('classes')}
-          className="p-3 bg-white rounded-xl border border-slate-200/90 text-left cursor-pointer hover:border-slate-300 transition-colors"
-        >
-          <span className="text-[11px] font-medium text-slate-500 block">Sınıflarım</span>
-          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">{teacherClasses.length} Sınıf</p>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Katılım Kodları &rarr;</span>
-        </div>
-
-        <div
-          onClick={() => setActiveSubTab('messages')}
-          className="p-3 bg-white rounded-xl border border-slate-200/90 text-left cursor-pointer hover:border-slate-300 transition-colors"
-        >
-          <span className="text-[11px] font-medium text-slate-500 block">Veli Mesajları</span>
-          <p className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">
-            {pendingMsgCount > 0 ? (
-              <span className="text-indigo-600">{pendingMsgCount} Yeni</span>
-            ) : (
-              '0 Bekleyen'
-            )}
-          </p>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Gelen kutusu</span>
-        </div>
-      </div>
-
-      {/* Öğretmen Modül Sekmeleri */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-        {[
-          { id: 'check_sheet', label: 'Ödev Kontrolü (Yaptı / Kısmen / Yapmadı & Puan)', count: '28 Öğr.', highlight: true },
-          { id: 'plus_minus', label: 'Artı / Eksi & Davranış Puanları', count: '28 Öğr.', highlight: true },
-          { id: 'assignments', label: 'Verilen Ödevler & Gönder', count: teacherAssignments.length },
-          { id: 'grading', label: 'Yüklenen Ödev Puanlama', count: pendingSubCount > 0 ? pendingSubCount : null },
-          { id: 'classes', label: 'Sınıflarım & Katılım Kodları', count: teacherClasses.length },
-          { id: 'grade_entry', label: 'Not Girişi & Sınavlar' },
-          { id: 'messages', label: 'Veli Mesajları', count: pendingMsgCount > 0 ? pendingMsgCount : null },
-          { id: 'bulk_message', label: '📢 Velilere Toplu Mesaj', highlight: true },
-          { id: 'leaderboard', label: 'Sınıf Başarı Sıralaması' },
-        ].map((tab) => {
-          const isActive = activeSubTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveSubTab(tab.id as any)}
-              className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 ${isActive
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80'
-                }`}
-            >
-              <span>{tab.label}</span>
-              {tab.count !== undefined && tab.count !== null && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold ${isActive ? 'bg-white/20 text-white' : tab.highlight ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'
-                  }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
+      {activeSubTab === 'check_sheet' && !activeCheckingHw && <section className={styles.emptyState}><BookOpen size={32} aria-hidden="true" /><h2>Kontrol edilecek ödev yok</h2><p>Önce bir ödev oluşturun. Öğrencilerinizin durumunu burada takip edebilirsiniz.</p><button type="button" className={styles.primary} onClick={() => { setActiveSubTab('assignments'); setIsNewHwOpen(true); }}>Ödev oluştur<Plus size={18} aria-hidden="true" /></button></section>}
       {/* ========================================================================= */}
       {/* MODÜL 1: ÖDEV KONTROL ÇİZELGESİ (ÖĞRENCİ LİSTESİ + Yaptı / Kısmen / Yapmadı) */}
       {/* ========================================================================= */}
-      {activeSubTab === 'check_sheet' && (
+      {activeSubTab === 'check_sheet' && activeCheckingHw && (
         <div className="space-y-3.5">
 
           {/* Üst Bar: Kontrol Edilen Ödev Seçimi & Açıklaması */}
@@ -979,7 +861,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   Kontrol Edilen Ödev:
                 </span>
                 <select
-                  value={selectedCheckHwId}
+                  aria-label="Kontrol edilecek ödev"
+                  value={activeCheckingHw.id}
                   onChange={(e) => setSelectedCheckHwId(e.target.value)}
                   className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-hidden focus:border-indigo-400 max-w-full"
                 >
@@ -1042,7 +925,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   onClick={() => handleMarkAllStudents('yapti')}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors"
                 >
-                  ✓ Tümünü &quot;Yaptı&quot; İşaretle
+                  Tümünü &quot;Yaptı&quot; işaretle
                 </button>
                 <button
                   type="button"
@@ -1067,6 +950,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
+                  aria-label="Öğrenci adı veya okul numarası ara"
                   placeholder="Öğrenci adı veya okul no ara..."
                   value={searchStudentQuery}
                   onChange={(e) => setSearchStudentQuery(e.target.value)}
@@ -1077,7 +961,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                 <span className="text-[11px] text-slate-400 mr-1">Filtrele:</span>
                 {[
-                  { id: 'all', label: 'Tümü (28)' },
+                  { id: 'all', label: Tümü () },
                   { id: 'yapti', label: `Yaptı (${statYapti})` },
                   { id: 'kismen', label: `Kısmen (${statKismen})` },
                   { id: 'yapmadi', label: `Yapmadı (${statYapmadi})` },
@@ -1085,7 +969,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <button
                     key={f.id}
                     type="button"
-                    onClick={() => setCheckStatusFilter(f.id as any)}
+                    aria-pressed={checkStatusFilter === f.id}
+                    onClick={() => setCheckStatusFilter(f.id as typeof checkStatusFilter)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${checkStatusFilter === f.id
                         ? 'bg-slate-900 text-white'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -1098,174 +983,50 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             </div>
           </div>
 
-          {/* ÖĞRENCİ LİSTESİ, CHECKBOX VE PUAN ALANI */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
-            <div className="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-semibold gap-2">
-              <span className="flex-1">Öğrenci Bilgisi</span>
-              <span className="hidden sm:block w-72 text-center">Ödev Kontrol Durumu</span>
-              <span className="w-24 text-center">Ödev Puanı</span>
-              <span className="w-28 text-center">Artı / Eksi</span>
-              <span className="hidden lg:block w-56 text-left pl-2">Kontrol Notu</span>
-            </div>
-
-            <div className="divide-y divide-slate-100">
-              {filteredStudents.map((st) => {
-                const currentStatus = currentChecks[st.id]?.status || 'yapti';
-                const currentNote = currentChecks[st.id]?.note || '';
-                const currentScore = currentChecks[st.id]?.score ?? (currentStatus === 'yapti' ? activeMaxPoints : currentStatus === 'kismen' ? Math.round(activeMaxPoints / 2) : 0);
-                const isMyStudent = st.isCurrentUser;
-                const stPoints = studentPoints[st.id] || getStudentPointsSummary(studentPoints, st.id, st.name, st.studentNo);
-
-                return (
-                  <div
-                    key={st.id}
-                    className={`p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${isMyStudent ? 'bg-indigo-50/30' : 'hover:bg-slate-50/50'
-                      }`}
-                  >
-                    {/* 1. Öğrenci Bilgisi */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">
-                        {st.studentNo}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-xs sm:text-sm ${isMyStudent ? 'font-bold text-indigo-950' : 'font-semibold text-slate-900'}`}>
-                            {st.name}
-                          </span>
-                          {isMyStudent && (
-                            <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.2 rounded-sm">
-                              👑 Kendi Öğrenciniz (Emre)
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-slate-400 block mt-0.5">
-                          Okul No: {st.studentNo} • Başarı: #{st.rank} • Katılım: <strong className="text-emerald-700 font-semibold">+{stPoints.plusCount}</strong> / <strong className="text-rose-700 font-semibold">-{stPoints.minusCount}</strong>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 2. CHECKBOX: Yaptı / Kısmen / Yapmadı */}
-                    <div className="w-full sm:w-72 flex items-center gap-1.5 justify-start sm:justify-center">
-
-                      {/* 1. Yaptı Checkbox */}
-                      <label
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${currentStatus === 'yapti'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-2 ring-emerald-100'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={currentStatus === 'yapti'}
-                          onChange={() => handleSetStudentStatus(st.id, 'yapti')}
-                          className="w-3.5 h-3.5 text-emerald-600 rounded-sm border-slate-300 focus:ring-0 cursor-pointer"
-                        />
-                        <span className="text-emerald-700 text-[11px]">✓ Yaptı</span>
-                      </label>
-
-                      {/* 2. Kısmen Checkbox */}
-                      <label
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${currentStatus === 'kismen'
-                            ? 'bg-amber-50 text-amber-800 border-amber-300 ring-2 ring-amber-100'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={currentStatus === 'kismen'}
-                          onChange={() => handleSetStudentStatus(st.id, 'kismen')}
-                          className="w-3.5 h-3.5 text-amber-600 rounded-sm border-slate-300 focus:ring-0 cursor-pointer"
-                        />
-                        <span className="text-amber-700 text-[11px]">⚠ Kısmen</span>
-                      </label>
-
-                      {/* 3. Yapmadı Checkbox */}
-                      <label
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all ${currentStatus === 'yapmadi'
-                            ? 'bg-rose-50 text-rose-800 border-rose-300 ring-2 ring-rose-100'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={currentStatus === 'yapmadi'}
-                          onChange={() => handleSetStudentStatus(st.id, 'yapmadi')}
-                          className="w-3.5 h-3.5 text-rose-600 rounded-sm border-slate-300 focus:ring-0 cursor-pointer"
-                        />
-                        <span className="text-rose-700 text-[11px]">✕ Yapmadı</span>
-                      </label>
-
-                    </div>
-
-                    {/* 3. ÖDEV PUANI GİRİŞİ (HER ÖDEV BİR PUAN) */}
-                    <div className="w-full sm:w-24 flex items-center justify-start sm:justify-center gap-1">
-                      <input
-                        type="number"
-                        min={0}
-                        max={activeMaxPoints}
-                        value={currentScore}
-                        onChange={(e) => handleSetStudentScore(st.id, Number(e.target.value))}
-                        className={`w-14 px-1.5 py-1.5 border rounded-lg text-xs font-bold text-center focus:outline-hidden focus:border-indigo-400 ${currentScore >= activeMaxPoints * 0.8
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                            : currentScore >= activeMaxPoints * 0.5
-                              ? 'bg-amber-50 text-amber-800 border-amber-300'
-                              : 'bg-rose-50 text-rose-800 border-rose-300'
-                          }`}
-                      />
-                      <span className="text-[10px] text-slate-400 font-medium">/{activeMaxPoints}</span>
-                    </div>
-
-                    {/* 4. ARTI / EKSİ HIZLI PUANLAMA BUTONLARI */}
-                    <div className="w-full sm:w-28 flex items-center justify-start sm:justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={(e) => handleQuickAddPlus(st.id, e)}
-                        title="Öğrenciye Artı (+) Ver (+1 Puan)"
-                        className="w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-sm transition-colors"
-                      >
-                        +
-                      </button>
-
-                      <span
-                        onClick={() => {
-                          setPointModalStudent({ id: st.id, name: st.name, studentNo: st.studentNo, type: 'plus' });
-                        }}
-                        title="Detaylı Artı/Eksi İncele"
-                        className="text-[10px] font-bold px-1.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 min-w-12 text-center cursor-pointer transition-colors"
-                      >
-                        +{stPoints.plusCount}/-{stPoints.minusCount}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleQuickAddMinus(st.id, e)}
-                        title="Öğrenciye Eksi (-) Ver (-1 Puan)"
-                        className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-700 border border-rose-200 flex items-center justify-center font-bold text-sm transition-colors"
-                      >
-                        -
-                      </button>
-                    </div>
-
-                    {/* 5. Öğretmen Kontrol Notu Girişi */}
-                    <div className="w-full lg:w-56">
-                      <input
-                        type="text"
-                        placeholder="Kontrol notu..."
-                        value={currentNote}
-                        onChange={(e) => handleSetStudentNote(st.id, e.target.value)}
-                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-indigo-400"
-                      />
-                    </div>
+          {/* Öğrenci kontrolü: telefonda tek sütun, geniş ekranda rahat çalışma alanı. */}
+          <section className={styles.studentList} aria-label="Öğrenci ödev kontrolleri">
+            <div className={styles.listHeading}><h3>Öğrenciler</h3><span>{filteredStudents.length} öğrenci listeleniyor</span></div>
+            {filteredStudents.length === 0 && <div className={styles.emptyState}><Search size={28} aria-hidden="true" /><h3>Öğrenci bulunamadı</h3><p>Aramanızı veya durum filtresini değiştirebilirsiniz.</p><button type="button" className={styles.secondary} onClick={() => { setSearchStudentQuery(''); setCheckStatusFilter('all'); }}>Filtreleri temizle</button></div>}
+            {filteredStudents.map((st) => {
+              const currentStatus = currentChecks[st.id]?.status || 'yapti';
+              const currentNote = currentChecks[st.id]?.note || '';
+              const currentScore = currentChecks[st.id]?.score ?? (currentStatus === 'yapti' ? activeMaxPoints : currentStatus === 'kismen' ? Math.round(activeMaxPoints / 2) : 0);
+              const stPoints = studentPoints[st.id] || getStudentPointsSummary(studentPoints, st.id, st.name, st.studentNo);
+              return <article key={st.id} className={styles.studentRow}>
+                <div className={styles.studentIdentity}>
+                  <span className={styles.studentAvatar} aria-hidden="true">{st.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span>
+                  <div><h4>{st.name}</h4><p>Okul no: {st.studentNo} · Sıra: {st.rank}</p></div>
+                </div>
+                <fieldset className={styles.statusGroup}>
+                  <legend>Ödev durumu <span className={styles.visuallyHidden}>— {st.name}</span></legend>
+                  <div className={styles.statusChoices}>
+                    {([
+                      { value: 'yapti', label: 'Yaptı', icon: Check, style: styles.done },
+                      { value: 'kismen', label: 'Kısmen', icon: Minus, style: styles.partial },
+                      { value: 'yapmadi', label: 'Yapmadı', icon: X, style: styles.missing },
+                    ] as const).map(({ value, label, icon: StatusIcon, style }) => <label key={value} className={`${styles.statusChoice} ${currentStatus === value ? style : ''}`}>
+                      <input type="radio" name={`homework-status-${st.id}`} value={value} checked={currentStatus === value} onChange={() => handleSetStudentStatus(st.id, value)} />
+                      <StatusIcon size={16} aria-hidden="true" /><span>{label}</span>
+                    </label>)}
                   </div>
-                );
-              })}
-            </div>
-
+                </fieldset>
+                <div className={styles.rowDetails}>
+                  <label className={styles.scoreField} htmlFor={`score-${st.id}`}>Ödev puanı
+                    <span><input id={`score-${st.id}`} type="number" inputMode="numeric" min={0} max={activeMaxPoints} value={currentScore} onChange={(e) => handleSetStudentScore(st.id, Number(e.target.value))} aria-label={`${st.name} ödev puanı`} /> / {activeMaxPoints}</span>
+                  </label>
+                  <div className={styles.pointField}><span>Katılım puanı</span><div className={styles.pointActions}>
+                    <button type="button" className={styles.plusButton} aria-label={`${st.name} için artı puan ver`} onClick={(e) => handleQuickAddPlus(st.id, e)}><Plus size={20} aria-hidden="true" /></button>
+                    <button type="button" className={styles.pointDetails} aria-label={`${st.name} puan ayrıntıları`} onClick={() => setPointModalStudent({ id: st.id, name: st.name, studentNo: st.studentNo, type: 'plus' })}>+{stPoints.plusCount} / −{stPoints.minusCount}</button>
+                    <button type="button" className={styles.minusButton} aria-label={`${st.name} için eksi puan ver`} onClick={(e) => handleQuickAddMinus(st.id, e)}><Minus size={20} aria-hidden="true" /></button>
+                  </div></div>
+                </div>
+                <label className={styles.noteField} htmlFor={`note-${st.id}`}>Kontrol notu <span>(isteğe bağlı)</span><input id={`note-${st.id}`} type="text" placeholder="Öğrenciyle ilgili kısa bir not…" value={currentNote} onChange={(e) => handleSetStudentNote(st.id, e.target.value)} aria-label={`${st.name} kontrol notu`} /></label>
+              </article>;
+            })}
             {/* Alt Çubuk ve Kaydet */}
             <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <span className="text-xs text-slate-500">
-                Toplam <strong>{filteredStudents.length}</strong> öğrenci listeleniyor. Yapılan kontroller anlık veli ekranına yansıtılır.
+                Toplam <strong>{filteredStudents.length}</strong> öğrenci listeleniyor. Sonlandırmak için kontrolü kaydedin.
               </span>
 
               <button
@@ -1277,7 +1038,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <span>Ödev Kontrol Çizelgesini Kaydet</span>
               </button>
             </div>
-          </div>
+          </section>
 
         </div>
       )}
@@ -2007,7 +1768,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* MODÜL 3: SINIFLARIM & YENİ SINIF OLUŞTURMA */}
       {/* ========================================================================= */}
       {activeSubTab === 'classes' && (
-        <div className="space-y-4">
+        <div className={styles.dashboard}>
           <div className="bg-white rounded-2xl p-4 border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -3237,3 +2998,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     </div>
   );
 };
+const teacherModules = [
+  { id: 'check_sheet', label: 'Ödev kontrolü', icon: CheckSquare },
+  { id: 'plus_minus', label: 'Öğrenci puanları', icon: Star },
+  { id: 'assignments', label: 'Ödevler', icon: FileText },
+  { id: 'grading', label: 'Değerlendirme', icon: CheckCircle2 },
+  { id: 'classes', label: 'Sınıflarım', icon: Users },
+  { id: 'grade_entry', label: 'Not girişi', icon: TrendingUp },
+  { id: 'messages', label: 'Veli mesajları', icon: MessageSquare },
+  { id: 'bulk_message', label: 'Toplu mesaj', icon: Megaphone },
+  { id: 'leaderboard', label: 'Sıralama', icon: Award },
+] as const;

@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle, Edit } from '../icons';
-import { TURKEY_CITIES } from '../../data/portalData';
+import { TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName, parseClassName } from '../../data/portalData';
+import { ClassLevelSelects } from '../ClassLevelSelects';
 import {
   listProfiles,
   setTeacherApproved,
@@ -26,15 +27,16 @@ const EMPTY_EDIT_FORM = {
   school_name: '',
   city: '',
   district: '',
-  class_name: '',
+  class_level: '',
+  class_section: '',
 };
 
 const TEXT_FIELDS = [
   ['full_name', 'Ad Soyad'],
-  ['branch', 'Branş'],
   ['school_name', 'Okul'],
-  ['class_name', 'Rehber Sınıfı (örn. 7-B)'],
 ] as const;
+
+const SELECT_CLASS = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800';
 
 /**
  * Hesap yönetimi (gerçek veritabanı):
@@ -53,7 +55,8 @@ export const AccessManagement: React.FC = () => {
   // Yeni öğrenci formu
   const [newNo, setNewNo] = useState('');
   const [newName, setNewName] = useState('');
-  const [newClass, setNewClass] = useState('');
+  const [newClassLevel, setNewClassLevel] = useState('');
+  const [newClassSection, setNewClassSection] = useState('');
   const [newPin, setNewPin] = useState('');
 
   // Öğretmen düzenleme
@@ -117,13 +120,15 @@ export const AccessManagement: React.FC = () => {
 
   const openEdit = (p: ProfileRecord) => {
     setEditing(p);
+    const { level, section } = parseClassName(p.class_name);
     setEditForm({
       full_name: p.full_name || '',
       branch: p.branch || '',
       school_name: p.school_name || '',
       city: p.city || '',
       district: p.district || '',
-      class_name: p.class_name || '',
+      class_level: level,
+      class_section: section,
     });
   };
 
@@ -138,7 +143,7 @@ export const AccessManagement: React.FC = () => {
       school_name: editForm.school_name.trim() || null,
       city: editForm.city || null,
       district: editForm.district || null,
-      class_name: editForm.class_name.trim() || null,
+      class_name: composeClassName(editForm.class_level, editForm.class_section) || null,
     });
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'Kaydedilemedi.');
@@ -151,10 +156,16 @@ export const AccessManagement: React.FC = () => {
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNo.trim() || !newName.trim()) return notify('error', 'Okul numarası ve ad soyad zorunludur.');
+    if (!newClassLevel) return notify('error', 'Lütfen öğrencinin sınıf seviyesini seçiniz.');
     if (!isValidPin(newPin)) return notify('error', 'PIN tam olarak 4 rakam olmalıdır.');
 
     setBusyId('new-student');
-    const res = await createStudent({ studentNumber: newNo, name: newName, className: newClass, pin: newPin });
+    const res = await createStudent({
+      studentNumber: newNo,
+      name: newName,
+      className: composeClassName(newClassLevel, newClassSection),
+      pin: newPin,
+    });
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'Öğrenci eklenemedi.');
 
@@ -337,7 +348,7 @@ export const AccessManagement: React.FC = () => {
           PIN yalnızca şifrelenmiş saklanır; unutulursa buradan yenisi belirlenir.
         </p>
 
-        <form onSubmit={handleCreateStudent} className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <form onSubmit={handleCreateStudent} className="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
           <input
             value={newNo}
             onChange={(e) => setNewNo(e.target.value)}
@@ -352,12 +363,22 @@ export const AccessManagement: React.FC = () => {
             aria-label="Ad soyad"
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800"
           />
-          <input
-            value={newClass}
-            onChange={(e) => setNewClass(e.target.value)}
-            placeholder="Sınıf (örn. 7-B)"
-            aria-label="Sınıf"
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800"
+          <ClassLevelSelects
+            idPrefix="new-student-class"
+            level={newClassLevel}
+            section={newClassSection}
+            onChange={({ level, section }) => {
+              setNewClassLevel(level);
+              setNewClassSection(section);
+            }}
+            emptyLabel="Sınıf seviyesi"
+            selectClassName={SELECT_CLASS}
+            renderField={({ id, label, control }) => (
+              <div>
+                <label htmlFor={id} className="sr-only">{label}</label>
+                {control}
+              </div>
+            )}
           />
           <input
             value={newPin}
@@ -436,6 +457,38 @@ export const AccessManagement: React.FC = () => {
                 />
               </label>
             ))}
+
+            <label className="block">
+              <span className="font-semibold text-slate-700 block mb-1">Branş</span>
+              <select
+                value={editForm.branch}
+                onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+              >
+                <option value="">Seçiniz</option>
+                {/* Listede olmayan eski bir branş kayıtlıysa onu da göster */}
+                {editForm.branch && !TEACHER_BRANCH_OPTIONS.includes(editForm.branch) && (
+                  <option value={editForm.branch}>{editForm.branch}</option>
+                )}
+                {TEACHER_BRANCH_OPTIONS.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="grid grid-cols-2 gap-2">
+              <ClassLevelSelects
+                idPrefix="edit-teacher-class"
+                level={editForm.class_level}
+                section={editForm.class_section}
+                onChange={({ level, section }) => setEditForm({ ...editForm, class_level: level, class_section: section })}
+                allowEmpty
+                emptyLabel="Sınıfı yok"
+                selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <label className="block">

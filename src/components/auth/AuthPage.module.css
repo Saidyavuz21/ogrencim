@@ -35,6 +35,25 @@
 .modeSwitch button { min-height: 48px; border: 0; border-radius: 9px; background: transparent; color: var(--auth-muted); font-size: 14px; font-weight: 600; transition: background 150ms, color 150ms; }
 .modeSwitch button[aria-pressed='true'] { background: var(--auth-surface); color: var(--auth-primary); }
 .modeSwitch button:hover:not(:disabled) { color: var(--auth-primary); }
+.tabLabel { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* 2. seviye sekme: Öğretmen > Giriş yap / Kayıt ol (alt çizgili, birincil sekmeden daha hafif) */
+.subSwitch { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--auth-border); margin: -8px 0 24px; }
+.subSwitch button { min-height: 48px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; color: var(--auth-muted); font-size: 15px; font-weight: 600; transition: color 150ms, border-color 150ms; }
+.subSwitch button[aria-pressed='true'] { color: var(--auth-primary); border-bottom-color: var(--auth-primary); }
+.subSwitch button:hover:not(:disabled) { color: var(--auth-primary); }
+
+/* Kayıt adımları: 1. Hesap bilgileri / 2. Okul bilgileri */
+.stepTabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stepTabs button { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--auth-border); border-radius: 10px; background: white; color: var(--auth-muted); font-size: 14px; font-weight: 600; transition: background 150ms, border-color 150ms, color 150ms; }
+.stepTabs button[aria-pressed='true'] { background: var(--auth-selected); border-color: var(--auth-primary); color: var(--auth-primary); }
+.stepTabs button:hover:not(:disabled) { border-color: var(--auth-primary); }
+.stepNum { width: 22px; height: 22px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; border: 1px solid currentColor; font-size: 12px; }
+.stepTabs button[aria-pressed='true'] .stepNum { background: var(--auth-primary); border-color: var(--auth-primary); color: white; }
+.stepActions { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+.secondary { min-height: 52px; padding: 14px 20px; border: 1px solid var(--auth-border); border-radius: 10px; background: white; color: var(--auth-text); font-size: 16px; font-weight: 600; transition: background 150ms, border-color 150ms; }
+.secondary:hover:not(:disabled) { border-color: var(--auth-primary); background: #f7faf7; }
+
 .roleGroup { padding: 0; margin: 0 0 28px; border: 0; min-width: 0; }
 .roleGroup legend { font-size: 14px; font-weight: 600; padding: 0; margin-bottom: 12px; }
 .roles { display: grid; gap: 10px; }

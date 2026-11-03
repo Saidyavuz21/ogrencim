@@ -189,7 +189,11 @@ export async function signInStaff(email: string, password: string, expectedRole:
   }
   if (expectedRole === 'admin' && res.user.role !== 'admin') {
     await supabase.auth.signOut();
-    return { ok: false, error: 'Bu hesabın yönetici yetkisi yok. Lütfen "Öğretmen" sekmesinden giriş yapınız.' };
+    return { ok: false, error: 'Bu hesabın yönetici yetkisi yok. Öğretmenler ana giriş sayfasından giriş yapar.' };
+  }
+  if (expectedRole === 'ogretmen' && res.user.role === 'admin') {
+    await supabase.auth.signOut();
+    return { ok: false, error: 'Yönetici hesapları bu sayfadan değil, yönetim giriş sayfasından giriş yapar.' };
   }
   return res;
 }

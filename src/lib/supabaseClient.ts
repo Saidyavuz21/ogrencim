@@ -73,6 +73,7 @@ export interface ProfileRecord {
   school_name: string | null;
   class_name: string | null;
   approved: boolean;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -142,6 +143,9 @@ async function loadStaffAccount(userId: string): Promise<AuthResult> {
       ok: false,
       error: 'Hesabınız henüz okul yönetimi tarafından onaylanmadı. Onaylandıktan sonra giriş yapabilirsiniz.',
     };
+  }
+  if (profile.is_active === false) {
+    return { ok: false, error: 'Hesabınız okul yönetimi tarafından pasif duruma alındı. Lütfen okul yönetimiyle iletişime geçiniz.' };
   }
   return { ok: true, user: profileToAccount(profile) };
 }
@@ -370,6 +374,33 @@ export async function listProfiles(): Promise<ProfileRecord[]> {
     return [];
   }
   return (data as ProfileRecord[]) || [];
+}
+
+async function updateProfile(profileId: string, values: Partial<ProfileRecord>): Promise<{ ok: boolean; error?: string }> {
+  const { error, count } = await supabase.from('profiles').update(values, { count: 'exact' }).eq('id', profileId);
+  if (error) return { ok: false, error: error.message };
+  if (!count) return { ok: false, error: 'Güncelleme yetkiniz yok.' };
+  return { ok: true };
+}
+
+/** Admin: öğretmeni pasif/aktif yapar. Pasif öğretmen anında tüm erişimini kaybeder. */
+export function setTeacherActive(profileId: string, isActive: boolean) {
+  return updateProfile(profileId, { is_active: isActive });
+}
+
+/** Admin: öğretmen bilgilerini düzenler */
+export function updateTeacherProfile(
+  profileId: string,
+  values: Pick<ProfileRecord, 'full_name' | 'branch' | 'school_name' | 'city' | 'district' | 'class_name'>
+) {
+  return updateProfile(profileId, values);
+}
+
+/** Admin: öğretmen hesabını tamamen siler (giriş hesabı dahil) */
+export async function deleteTeacher(profileId: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('admin_delete_teacher', { p_profile_id: profileId });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 export async function setTeacherApproved(profileId: string, approved: boolean): Promise<{ ok: boolean; error?: string }> {

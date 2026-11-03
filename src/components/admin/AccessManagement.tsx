@@ -1,10 +1,14 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle } from '../icons';
+import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle, Edit } from '../icons';
+import { TURKEY_CITIES } from '../../data/portalData';
 import {
   listProfiles,
   setTeacherApproved,
+  setTeacherActive,
+  updateTeacherProfile,
+  deleteTeacher,
   getLiveStudents,
   createStudent,
   resetStudentPin,
@@ -16,9 +20,25 @@ import {
 
 const isValidPin = (pin: string) => /^[0-9]{4}$/.test(pin);
 
+const EMPTY_EDIT_FORM = {
+  full_name: '',
+  branch: '',
+  school_name: '',
+  city: '',
+  district: '',
+  class_name: '',
+};
+
+const TEXT_FIELDS = [
+  ['full_name', 'Ad Soyad'],
+  ['branch', 'Branş'],
+  ['school_name', 'Okul'],
+  ['class_name', 'Rehber Sınıfı (örn. 7-B)'],
+] as const;
+
 /**
  * Hesap yönetimi (gerçek veritabanı):
- *  - Öğretmen hesaplarını onaylama / yetkisini kaldırma
+ *  - Öğretmen hesaplarını onaylama/reddetme, düzenleme, pasif/aktif yapma, silme
  *  - Öğrenci ekleme (okul no + 4 haneli PIN), PIN sıfırlama, silme
  * PIN'ler veritabanında yalnızca hash olarak saklanır ve hiçbir yerde geri gösterilmez.
  */
@@ -35,6 +55,10 @@ export const AccessManagement: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newClass, setNewClass] = useState('');
   const [newPin, setNewPin] = useState('');
+
+  // Öğretmen düzenleme
+  const [editing, setEditing] = useState<ProfileRecord | null>(null);
+  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
 
   // PIN sıfırlama
   const [pinResetFor, setPinResetFor] = useState<StudentRecord | null>(null);
@@ -57,15 +81,73 @@ export const AccessManagement: React.FC = () => {
     setTimeout(() => setMessage(null), 4000);
   };
 
-  const handleApprove = async (p: ProfileRecord, approved: boolean) => {
+  const displayName = (p: ProfileRecord) => p.full_name || p.email || 'Öğretmen';
+
+  // ---------------- Öğretmen işlemleri ----------------
+  const handleApprove = async (p: ProfileRecord) => {
     setBusyId(p.id);
-    const res = await setTeacherApproved(p.id, approved);
+    const res = await setTeacherApproved(p.id, true);
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'İşlem başarısız.');
-    notify('ok', approved ? `${p.full_name || p.email} onaylandı.` : `${p.full_name || p.email} hesabının yetkisi kaldırıldı.`);
+    notify('ok', `${displayName(p)} onaylandı; artık giriş yapabilir.`);
     refresh();
   };
 
+  const handleToggleActive = async (p: ProfileRecord) => {
+    const makeActive = !p.is_active;
+    if (!makeActive && !window.confirm(`${displayName(p)} pasif yapılsın mı? Giriş yapamaz ve açık oturumu da hiçbir veriye erişemez.`)) return;
+    setBusyId(p.id);
+    const res = await setTeacherActive(p.id, makeActive);
+    setBusyId(null);
+    if (!res.ok) return notify('error', res.error || 'İşlem başarısız.');
+    notify('ok', makeActive ? `${displayName(p)} yeniden aktif.` : `${displayName(p)} pasif yapıldı.`);
+    refresh();
+  };
+
+  const handleDeleteTeacher = async (p: ProfileRecord) => {
+    const action = p.approved ? 'kalıcı olarak silinsin' : 'başvurusu reddedilip silinsin';
+    if (!window.confirm(`${displayName(p)} (${p.email}) hesabı ${action} mi? Bu işlem geri alınamaz.`)) return;
+    setBusyId(p.id);
+    const res = await deleteTeacher(p.id);
+    setBusyId(null);
+    if (!res.ok) return notify('error', res.error || 'Silinemedi.');
+    notify('ok', `${displayName(p)} silindi.`);
+    refresh();
+  };
+
+  const openEdit = (p: ProfileRecord) => {
+    setEditing(p);
+    setEditForm({
+      full_name: p.full_name || '',
+      branch: p.branch || '',
+      school_name: p.school_name || '',
+      city: p.city || '',
+      district: p.district || '',
+      class_name: p.class_name || '',
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    if (!editForm.full_name.trim()) return notify('error', 'Ad soyad boş olamaz.');
+    setBusyId(editing.id);
+    const res = await updateTeacherProfile(editing.id, {
+      full_name: editForm.full_name.trim(),
+      branch: editForm.branch.trim() || null,
+      school_name: editForm.school_name.trim() || null,
+      city: editForm.city || null,
+      district: editForm.district || null,
+      class_name: editForm.class_name.trim() || null,
+    });
+    setBusyId(null);
+    if (!res.ok) return notify('error', res.error || 'Kaydedilemedi.');
+    notify('ok', `${editForm.full_name.trim()} bilgileri güncellendi.`);
+    setEditing(null);
+    refresh();
+  };
+
+  // ---------------- Öğrenci işlemleri ----------------
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNo.trim() || !newName.trim()) return notify('error', 'Okul numarası ve ad soyad zorunludur.');
@@ -98,7 +180,7 @@ export const AccessManagement: React.FC = () => {
     setResetPinValue('');
   };
 
-  const handleDelete = async (s: StudentRecord) => {
+  const handleDeleteStudent = async (s: StudentRecord) => {
     if (!window.confirm(`"${s.name}" (${s.student_number}) öğrencisini ve tüm puan geçmişini silmek istediğinize emin misiniz?`)) return;
     setBusyId(s.id);
     const res = await deleteStudent(s.id);
@@ -109,7 +191,9 @@ export const AccessManagement: React.FC = () => {
   };
 
   const pendingTeachers = profiles.filter((p) => p.role === 'ogretmen' && !p.approved);
-  const otherAccounts = profiles.filter((p) => !(p.role === 'ogretmen' && !p.approved));
+  const otherAccounts = profiles
+    .filter((p) => !(p.role === 'ogretmen' && !p.approved))
+    .sort((a, b) => (a.role === b.role ? 0 : a.role === 'admin' ? -1 : 1));
 
   if (isLoading) {
     return <div className="bg-white rounded-2xl p-6 border border-slate-200/90 text-xs text-slate-500">Hesaplar yükleniyor...</div>;
@@ -119,6 +203,7 @@ export const AccessManagement: React.FC = () => {
     <div className="space-y-4">
       {message && (
         <div
+          role="status"
           className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
             message.type === 'ok' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}
@@ -135,7 +220,7 @@ export const AccessManagement: React.FC = () => {
           <h3 className="text-sm font-bold text-slate-900">Öğretmen Hesapları</h3>
         </div>
         <p className="text-xs text-slate-500">
-          Öğretmenler giriş ekranındaki “Öğretmen Kaydı” ile kendileri kayıt olur. Onaylamadığınız hesaplar giriş yapamaz ve hiçbir veriye erişemez.
+          Öğretmenler giriş ekranındaki “Öğretmen Kaydı” ile kendileri kayıt olur. Onaylanmamış veya pasif hesaplar giriş yapamaz ve hiçbir veriye erişemez.
         </p>
 
         {pendingTeachers.length > 0 && (
@@ -150,14 +235,24 @@ export const AccessManagement: React.FC = () => {
                     {p.district || p.city ? ` • ${[p.district, p.city].filter(Boolean).join('/')}` : ''}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  disabled={busyId === p.id}
-                  onClick={() => handleApprove(p, true)}
-                  className="shrink-0 inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-bold cursor-pointer"
-                >
-                  <Check className="w-3.5 h-3.5" /> Onayla
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    disabled={busyId === p.id}
+                    onClick={() => handleDeleteTeacher(p)}
+                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-600 text-xs font-semibold cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" /> Reddet
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === p.id}
+                    onClick={() => handleApprove(p)}
+                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-bold cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" /> Onayla
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -165,29 +260,69 @@ export const AccessManagement: React.FC = () => {
 
         <div className="divide-y divide-slate-100">
           {otherAccounts.length === 0 && <p className="text-xs text-slate-400 py-2">Henüz başka hesap yok.</p>}
-          {otherAccounts.map((p) => (
-            <div key={p.id} className="flex items-center justify-between gap-2 py-2">
-              <div className="min-w-0">
-                <span className="text-xs font-semibold text-slate-800 block truncate">
-                  {p.full_name || p.email}{' '}
-                  <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 rounded">
-                    {p.role === 'admin' ? 'Admin' : 'Öğretmen'}
+          {otherAccounts.map((p) => {
+            const isTeacher = p.role === 'ogretmen';
+            const isBusy = busyId === p.id;
+            return (
+              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2.5">
+                <div className="min-w-0">
+                  <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 flex-wrap">
+                    <span className={`truncate ${isTeacher && !p.is_active ? 'text-slate-400 line-through' : ''}`}>{displayName(p)}</span>
+                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 rounded">
+                      {p.role === 'admin' ? 'Admin' : 'Öğretmen'}
+                    </span>
+                    {isTeacher && (
+                      <span
+                        className={`text-[10px] font-semibold px-1.5 rounded ${
+                          p.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                        }`}
+                      >
+                        {p.is_active ? 'Aktif' : 'Pasif'}
+                      </span>
+                    )}
                   </span>
-                </span>
-                <span className="text-[11px] text-slate-500 block truncate">{p.email}</span>
+                  <span className="text-[11px] text-slate-500 block truncate">
+                    {p.email}
+                    {isTeacher && p.branch ? ` • ${p.branch}` : ''}
+                    {isTeacher && p.school_name ? ` • ${p.school_name}` : ''}
+                  </span>
+                </div>
+                {isTeacher && p.id !== myId && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => openEdit(p)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-60 text-slate-600 text-[11px] font-semibold cursor-pointer"
+                    >
+                      <Edit className="w-3.5 h-3.5" /> Düzenle
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleToggleActive(p)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border disabled:opacity-60 text-[11px] font-semibold cursor-pointer ${
+                        p.is_active
+                          ? 'border-slate-200 text-slate-600 hover:bg-amber-50 hover:text-amber-800'
+                          : 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                      }`}
+                    >
+                      {p.is_active ? 'Pasif yap' : 'Aktif yap'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => handleDeleteTeacher(p)}
+                      aria-label={`${displayName(p)} hesabını sil`}
+                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-500 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
-              {p.role === 'ogretmen' && p.id !== myId && (
-                <button
-                  type="button"
-                  disabled={busyId === p.id}
-                  onClick={() => handleApprove(p, false)}
-                  className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-600 text-[11px] font-semibold cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" /> Yetkiyi kaldır
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -207,24 +342,28 @@ export const AccessManagement: React.FC = () => {
             value={newNo}
             onChange={(e) => setNewNo(e.target.value)}
             placeholder="Okul No"
+            aria-label="Okul numarası"
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800"
           />
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Ad Soyad"
+            aria-label="Ad soyad"
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800"
           />
           <input
             value={newClass}
             onChange={(e) => setNewClass(e.target.value)}
             placeholder="Sınıf (örn. 7-B)"
+            aria-label="Sınıf"
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800"
           />
           <input
             value={newPin}
             onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
             placeholder="4 haneli PIN"
+            aria-label="4 haneli PIN"
             inputMode="numeric"
             autoComplete="off"
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-hidden focus:border-slate-800"
@@ -263,7 +402,7 @@ export const AccessManagement: React.FC = () => {
                 <button
                   type="button"
                   disabled={busyId === s.id}
-                  onClick={() => handleDelete(s)}
+                  onClick={() => handleDeleteStudent(s)}
                   aria-label={`${s.name} öğrencisini sil`}
                   className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-500 cursor-pointer"
                 >
@@ -274,6 +413,84 @@ export const AccessManagement: React.FC = () => {
           ))}
         </div>
       </section>
+
+      {/* ÖĞRETMEN DÜZENLEME MODALI */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
+          <form onSubmit={handleSaveEdit} className="bg-white rounded-2xl p-5 max-w-md w-full border border-slate-200 shadow-xl space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900">Öğretmeni düzenle</h3>
+              <button type="button" onClick={() => setEditing(null)} aria-label="Kapat" className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-slate-500">{editing.email} (e-posta değiştirilemez)</p>
+
+            {TEXT_FIELDS.map(([key, label]) => (
+              <label key={key} className="block">
+                <span className="font-semibold text-slate-700 block mb-1">{label}</span>
+                <input
+                  value={editForm[key]}
+                  onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-slate-800"
+                />
+              </label>
+            ))}
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="font-semibold text-slate-700 block mb-1">İl</span>
+                <select
+                  value={editForm.city}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, city: e.target.value, district: (TURKEY_CITIES[e.target.value] || [''])[0] })
+                  }
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+                >
+                  <option value="">Seçiniz</option>
+                  {Object.keys(TURKEY_CITIES).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="font-semibold text-slate-700 block mb-1">İlçe</span>
+                <select
+                  value={editForm.district}
+                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+                >
+                  <option value="">Seçiniz</option>
+                  {(TURKEY_CITIES[editForm.city] || (editForm.district ? [editForm.district] : [])).map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="flex-1 py-2 rounded-xl border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="submit"
+                disabled={busyId === editing.id}
+                className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold cursor-pointer"
+              >
+                Kaydet
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* PIN SIFIRLAMA MODALI */}
       {pinResetFor && (
@@ -290,6 +507,7 @@ export const AccessManagement: React.FC = () => {
               inputMode="numeric"
               autoComplete="off"
               placeholder="••••"
+              aria-label="Yeni 4 haneli PIN"
               className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono tracking-widest text-center focus:bg-white focus:outline-hidden focus:border-slate-800"
             />
             <div className="flex gap-2">

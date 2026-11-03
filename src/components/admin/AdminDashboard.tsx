@@ -471,9 +471,11 @@ export const AdminDashboard: React.FC = () => {
       {/* Sekmeler */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
         {[
-          { id: 'access', label: 'Hesaplar & Onay' },
+          { id: 'access', label: 'Öğretmen & Öğrenci Hesapları' },
           { id: 'classes', label: 'Sınıflar & Şubeler', count: classes.length },
-          { id: 'teachers', label: 'Öğretmen Kadrosu', count: teachers.length },
+          // Eski "Öğretmen Kadrosu" sekmesi kaldırıldı: yalnızca tarayıcı belleğinde çalışıyor ve
+          // öğretmen şifrelerini gösteriyordu. Gerçek hesap yönetimi "access" sekmesinde (AccessManagement).
+          // Kalan ölü kod Aşama 4'te (kod düzeni) temizlenecek.
           { id: 'announcements', label: 'Okul Geneli Duyurular', count: announcements.length },
           { id: 'settings', label: 'Dönem & Sistem Ayarları' },
         ].map((tab) => {

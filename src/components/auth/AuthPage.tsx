@@ -1,20 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  GraduationCap, 
-  ShieldCheck, 
-  Lock, 
-  Key, 
-  User, 
-  Check, 
-  ArrowRight, 
-  Eye, 
-  EyeOff, 
-  AlertCircle,
-  School,
-  BookOpen
-} from '../icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { GraduationCap, ShieldCheck, Check, ArrowRight, Eye, EyeOff, AlertCircle, BookOpen } from '../icons';
+import styles from './AuthPage.module.css';
 import { UserRole, UserAccount, TURKEY_CITIES } from '../../data/portalData';
 import { signInStaff, signInStudent, signUpTeacher } from '../../lib/supabaseClient';
 
@@ -38,6 +26,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (errorMsg || successMsg) feedbackRef.current?.focus();
+  }, [errorMsg, successMsg]);
 
   // 1. Öğrenci & Veli Giriş Form Alanları
   const [studentNo, setStudentNo] = useState('');
@@ -70,29 +63,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     {
       id: 'ogrenci' as UserRole,
       title: 'Öğrenci & Veli',
-      desc: 'Okul No ve 4 haneli PIN ile anında giriş',
       icon: GraduationCap,
-      badge: '4 Haneli PIN',
-      color: 'border-indigo-500 bg-indigo-50/50 text-indigo-900',
-      activeColor: 'bg-indigo-600 text-white',
     },
     {
       id: 'ogretmen' as UserRole,
       title: 'Öğretmen',
-      desc: 'E-posta ve şifre ile öğretmen paneli',
       icon: BookOpen,
-      badge: 'Öğretmen Paneli',
-      color: 'border-blue-500 bg-blue-50/50 text-blue-900',
-      activeColor: 'bg-blue-600 text-white',
     },
     {
       id: 'admin' as UserRole,
       title: 'Süper Admin',
-      desc: 'Sistem, okul ve personel idaresi',
       icon: ShieldCheck,
-      badge: 'Tam Yetki',
-      color: 'border-slate-800 bg-slate-100 text-slate-900',
-      activeColor: 'bg-slate-900 text-white',
     },
   ];
 
@@ -245,479 +226,123 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   const currentDistricts = TURKEY_CITIES[regCity] || ['Merkez'];
+  const changeMode = (mode: 'login' | 'register') => {
+    setAuthMode(mode);
+    if (mode === 'register') setSelectedRole('ogretmen');
+    setShowPassword(false);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 antialiased">
-      <div className="max-w-md w-full mx-auto space-y-4">
-        
-        {/* LOGO & BAŞLIK */}
-        <div className="text-center space-y-1.5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white mx-auto flex items-center justify-center shadow-xs">
-            <GraduationCap className="w-6 h-6" />
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            e-Okul & Veli Bilgilendirme Portalı
-          </h1>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            Hızlı PIN girişi, ödev takibi, puanlama ve okul-veli iletişim sistemi
-          </p>
+    <main className={styles.page}>
+      <div className={styles.shell}>
+        <header className={styles.brand}>
+          <div className={styles.brandMark}><GraduationCap size={24} aria-hidden="true" /></div>
+          <div><strong>e-Okul</strong><span>Öğrenci & Veli Bilgi Portalı</span></div>
+        </header>
+
+        <div className={styles.intro}>
+          <h1>{authMode === 'login' ? 'Yeniden merhaba.' : 'Öğretmen hesabınızı oluşturun.'}</h1>
+          <p>{authMode === 'login'
+            ? 'Ödevler, gelişim ve okuldan haberler. Hepsi bir arada.'
+            : 'Sınıfınızın gelişimini takip etmek için ilk adımı atın.'}</p>
         </div>
 
-        {/* ANA KART */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-5 sm:p-7 space-y-4.5">
-          
-          {/* 1. GİRİŞ YAP / ÖĞRETMEN KAYDI SEKMELERİ */}
-          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl text-xs font-bold text-slate-600">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('login');
-                setErrorMsg(null);
-                setSuccessMsg(null);
-              }}
-              className={`py-2 rounded-xl transition-all cursor-pointer ${
-                authMode === 'login'
-                  ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
-                  : 'hover:text-slate-900'
-              }`}
-            >
-              Giriş Yap
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('register');
-                setSelectedRole('ogretmen');
-                setErrorMsg(null);
-                setSuccessMsg(null);
-              }}
-              className={`py-2 rounded-xl transition-all cursor-pointer ${
-                authMode === 'register'
-                  ? 'bg-white text-blue-700 shadow-2xs font-extrabold'
-                  : 'hover:text-slate-900'
-              }`}
-            >
-              Öğretmen Kaydı
-            </button>
+        <section className={styles.panel} aria-label="Hesap işlemleri">
+          <div className={styles.modeSwitch} aria-label="Giriş veya kayıt">
+            <button type="button" aria-pressed={authMode === 'login'} disabled={isSubmitting} onClick={() => changeMode('login')}>Giriş yap</button>
+            <button type="button" aria-pressed={authMode === 'register'} disabled={isSubmitting} onClick={() => changeMode('register')}>Kayıt ol</button>
           </div>
 
-          {/* 2. SADE 3 ROL KARTI (Yalnızca Giriş Yap modunda görünür) */}
           {authMode === 'login' && (
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                Giriş Yapılacak Rol
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {roleCards.map((r) => {
-                  const Icon = r.icon;
-                  const isSelected = selectedRole === r.id;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedRole(r.id);
-                        setErrorMsg(null);
-                        setSuccessMsg(null);
-                      }}
-                      className={`p-2 sm:p-2.5 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between ${
-                        isSelected
-                          ? `${r.color} ring-2 ring-indigo-500/20 shadow-2xs`
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isSelected ? r.activeColor : 'bg-slate-100 text-slate-600'}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="mt-1.5">
-                        <span className="text-[11px] sm:text-xs font-bold block leading-tight">{r.title}</span>
-                        <span className="text-[9px] text-slate-400 mt-0.5 block">{r.badge}</span>
-                      </div>
-                    </button>
-                  );
-                })}
+            <fieldset className={styles.roleGroup} disabled={isSubmitting}>
+              <legend>Nasıl giriş yapmak istersiniz?</legend>
+              <div className={styles.roles}>
+                {roleCards.map(({ id, title, icon: Icon }) => (
+                  <button key={id} type="button" className={styles.role} aria-pressed={selectedRole === id} onClick={() => {
+                    setSelectedRole(id); setShowPassword(false); setErrorMsg(null); setSuccessMsg(null);
+                  }}>
+                    <span className={styles.roleIcon}><Icon size={22} aria-hidden="true" /></span>
+                    <span className={styles.roleText}><strong>{title}</strong><small>{id === 'ogrenci' ? 'Okul numarası ve 4 haneli PIN' : 'E-posta adresi ve şifre'}</small></span>
+                    <span className={styles.roleCheck} aria-hidden="true">{selectedRole === id && <Check size={14} />}</span>
+                  </button>
+                ))}
               </div>
-            </div>
+            </fieldset>
           )}
 
-          {/* BİLDİRİM / HATA KUTUSU */}
-          {errorMsg && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-700 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
+          {errorMsg && <div ref={feedbackRef} tabIndex={-1} role="alert" className={`${styles.notice} ${styles.feedback} ${styles.error}`}><AlertCircle size={20} aria-hidden="true" /><p>{errorMsg}</p></div>}
+          {successMsg && <div ref={feedbackRef} tabIndex={-1} role="status" className={`${styles.notice} ${styles.feedback} ${styles.success}`}><Check size={20} aria-hidden="true" /><p>{successMsg}</p></div>}
 
-          {successMsg && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 flex items-start gap-2">
-              <Check className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{successMsg}</span>
-            </div>
-          )}
-
-          {/* ======================= GİRİŞ YAP FORMU ======================= */}
           {authMode === 'login' ? (
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              
-              {/* 1. ÖĞRENCİ & VELİ GİRİŞ FORMU (Okul No + 4 Haneli PIN) */}
-              {(selectedRole === 'ogrenci' || selectedRole === 'veli') && (
-                <div className="space-y-3.5">
-                  <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-center">
-                    <span className="text-xs font-bold text-indigo-950 block">
-                      🎒 Öğrenci & Veli Ortak Girişi
-                    </span>
-                    <span className="text-[11px] text-indigo-800/80 block mt-0.5">
-                      Okul numaranız ve 4 haneli PIN kodunuz ile sisteme giriş yapabilirsiniz.
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Öğrenci Okul Numarası *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Örn: 1024"
-                      value={studentNo}
-                      onChange={(e) => setStudentNo(e.target.value.replace(/\D/g, ''))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:outline-hidden font-medium"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 text-center pt-1">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      4 Haneli Güvenlik PIN Kodu *
-                    </label>
-                    
-                    {/* 4 Haneli ATM Tarzı PIN Kutuları */}
-                    <div className="flex items-center justify-center gap-2 pt-1">
-                      {pinDigits.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          id={`student-pin-${idx}`}
-                          type="password"
-                          inputMode="numeric"
-                          maxLength={1}
-                          value={digit}
-                          onChange={(e) => handlePinDigitChange(idx, e.target.value)}
-                          onKeyDown={(e) => handlePinDigitKeyDown(idx, e)}
-                          className="w-12 h-12 text-center text-lg font-black bg-slate-50 border border-slate-300 rounded-2xl text-slate-900 focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 focus:outline-hidden transition-all shadow-2xs"
-                        />
-                      ))}
+            <form className={styles.form} onSubmit={handleLoginSubmit} aria-busy={isSubmitting}>
+              <fieldset disabled={isSubmitting}>
+                {(selectedRole === 'ogrenci' || selectedRole === 'veli') ? <>
+                  <AuthField label="Öğrenci okul numarası" id="student-number">
+                    <input id="student-number" name="studentNumber" type="text" inputMode="numeric" autoComplete="username" placeholder="Örn. 1024" value={studentNo} onChange={(e) => setStudentNo(e.target.value.replace(/\D/g, ''))} />
+                  </AuthField>
+                  <div className={styles.pinGroup} role="group" aria-labelledby="pin-label" aria-describedby="pin-help">
+                    <span id="pin-label" className={styles.fieldLabel}>4 haneli PIN kodu</span>
+                    <div className={styles.pinInputs}>
+                      {pinDigits.map((digit, idx) => <input key={idx} id={`student-pin-${idx}`} aria-label={`PIN ${idx + 1}. hane`} name={`pin-${idx}`} type="password" inputMode="numeric" autoComplete="off" maxLength={1} value={digit} onChange={(e) => handlePinDigitChange(idx, e.target.value)} onKeyDown={(e) => handlePinDigitKeyDown(idx, e)} onPaste={(e) => {
+                        const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+                        if (!digits) return;
+                        e.preventDefault();
+                        const next = [...pinDigits];
+                        digits.slice(0, 4 - idx).split('').forEach((value, offset) => { next[idx + offset] = value; });
+                        setPinDigits(next);
+                        document.getElementById(`student-pin-${Math.min(idx + digits.length, 3)}`)?.focus();
+                      }} />)}
                     </div>
-                    <span className="text-[10px] text-slate-400 block pt-0.5">
-                      
-                    </span>
+                    <p id="pin-help" className={styles.hint}>Okulunuzun sizinle paylaştığı PIN kodunu kullanın.</p>
                   </div>
-                </div>
-              )}
-
-              {/* 2. ÖĞRETMEN GİRİŞ FORMU (Normal E-Posta + Şifre) */}
-              {selectedRole === 'ogretmen' && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Öğretmen E-Posta Adresi
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="ornek@gmail.com veya kurum e-postası"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
-                    />
-                    <span className="text-[10px] text-slate-400 mt-1 block">
-                      Kişisel e-postanız (Gmail vb.) ile giriş yapabilirsiniz.
-                    </span>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Öğretmen Şifresi
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-hidden pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                </> : <>
+                  <AuthField label={selectedRole === 'admin' ? 'Yönetici e-posta adresi' : 'E-posta adresi'} id="login-email">
+                    <input id="login-email" name="email" type="email" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="adiniz@ornek.com" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
+                  </AuthField>
+                  <AuthField label="Şifre" id="login-password">
+                    <div className={styles.password}>
+                      <input id="login-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Şifrenizi girin" value={password} onChange={(e) => setPassword(e.target.value)} />
+                      <button type="button" aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 3. ADMİN GİRİŞ FORMU */}
-              {selectedRole === 'admin' && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Süper Admin E-Posta
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="ornek@okul.k12.tr"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-slate-800 focus:outline-hidden"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Süper Admin Şifresi
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-slate-800 focus:outline-hidden"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Giriş Butonu */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2"
-              >
-                <span>{isSubmitting ? 'Doğrulanıyor...' : 'Güvenli Giriş Yap'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              {/* Öğretmen Kaydına Yönlendirme Linki */}
-              <div className="text-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('register');
-                    setSelectedRole('ogretmen');
-                    setErrorMsg(null);
-                    setSuccessMsg(null);
-                  }}
-                  className="text-[11px] text-slate-500 hover:text-slate-800 cursor-pointer"
-                >
-                  Öğretmen misiniz ve henüz hesabınız yok mu?{' '}
-                  <span className="text-blue-600 font-bold hover:underline">Öğretmen Kaydı Açın</span>
-                </button>
-              </div>
+                  </AuthField>
+                </>}
+              </fieldset>
+              <button className={styles.submit} type="submit" disabled={isSubmitting}><span>{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}</span>{!isSubmitting && <ArrowRight size={20} aria-hidden="true" />}</button>
+              <div className={styles.alternate}><p className={styles.hint}>Henüz öğretmen hesabınız yok mu?</p><button className={styles.textButton} type="button" disabled={isSubmitting} onClick={() => changeMode('register')}>Öğretmen hesabı oluştur</button></div>
             </form>
           ) : (
-            /* ======================= YALNIZCA ÖĞRETMEN KAYIT FORMU ======================= */
-            <form onSubmit={handleTeacherRegisterSubmit} className="space-y-3">
-              
-              {/* Bilgilendirme Kutusu */}
-              <div className="p-3 bg-blue-50/90 border border-blue-200/80 rounded-2xl flex items-start gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                  <BookOpen className="w-4 h-4" />
+            <form className={styles.form} onSubmit={handleTeacherRegisterSubmit} aria-busy={isSubmitting}>
+              <div className={styles.notice}><BookOpen size={20} aria-hidden="true" /><p>Bu form öğretmenler içindir. Hesabınız okul yönetiminin onayından sonra açılır. Öğrenci ve veli hesaplarını okul oluşturur.</p></div>
+              <fieldset disabled={isSubmitting}>
+                <legend>Hesap bilgileri</legend>
+                <AuthField id="register-name" label="Ad soyad"><input id="register-name" name="name" autoComplete="name" required placeholder="Adınız ve soyadınız" value={regName} onChange={(e) => setRegName(e.target.value)} /></AuthField>
+                <AuthField id="register-email" label="E-posta adresi" hint="Kişisel e-posta adresinizi de kullanabilirsiniz."><input id="register-email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required placeholder="adiniz@ornek.com" aria-describedby="register-email-hint" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} /></AuthField>
+                <AuthField id="register-password" label="Şifre" hint="En az 8 karakter kullanın."><div className={styles.password}><input id="register-password" name="newPassword" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={8} required placeholder="Şifrenizi oluşturun" aria-describedby="register-password-hint" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} /><button type="button" aria-label={showPassword ? 'Şifreleri gizle' : 'Şifreleri göster'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div></AuthField>
+                <AuthField id="register-confirm" label="Şifre tekrarı"><input id="register-confirm" name="confirmPassword" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={8} required placeholder="Şifrenizi yeniden girin" value={regPasswordConfirm} onChange={(e) => setRegPasswordConfirm(e.target.value)} /></AuthField>
+              </fieldset>
+              <fieldset disabled={isSubmitting}>
+                <legend>Okul bilgileri</legend>
+                <div className={styles.pair}>
+                  <AuthField id="register-city" label="İl"><select id="register-city" name="city" value={regCity} onChange={(e) => handleCityChange(e.target.value)}>{Object.keys(TURKEY_CITIES).map((city) => <option key={city} value={city}>{city}</option>)}</select></AuthField>
+                  <AuthField id="register-district" label="İlçe"><select id="register-district" name="district" value={regDistrict} onChange={(e) => setRegDistrict(e.target.value)}>{currentDistricts.map((district) => <option key={district} value={district}>{district}</option>)}</select></AuthField>
                 </div>
-                <div>
-                  <h3 className="text-xs font-bold text-blue-950">Öğretmen Kayıt Portalı</h3>
-                  <p className="text-[11px] text-blue-800 leading-relaxed mt-0.5">
-                    Öğrenci ve veli hesapları okul tarafından açılır. Bu formdan <strong>yalnızca öğretmenlerimiz</strong> hızlıca kayıt oluşturabilir.
-                  </p>
-                </div>
-              </div>
-
-              {/* Ad Soyad */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Öğretmenin Adı ve Soyadı *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Örn: Zehra Aydın"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
-                />
-              </div>
-
-              {/* Normal E-Posta (Kurum zorunlu değil) */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  E-Posta Adresi (Kişisel Gmail vb. geçerli) *
-                </label>
-                <input
-                  type="email"
-                  placeholder="ornek@gmail.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  Kurum e-postası zorunlu değildir, herhangi bir kişisel e-posta girebilirsiniz.
-                </span>
-              </div>
-
-              {/* İl ve İlçe Seçimi (Dinamik) */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Görev İli *
-                  </label>
-                  <select
-                    value={regCity}
-                    onChange={(e) => handleCityChange(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
-                  >
-                    {Object.keys(TURKEY_CITIES).map((city) => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    İlçe *
-                  </label>
-                  <select
-                    value={regDistrict}
-                    onChange={(e) => setRegDistrict(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
-                  >
-                    {currentDistricts.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Okul Seçimi */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Okulunuzun Adı *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Örn: Atatürk Ortaokulu veya Bilim Sanat Mrk."
-                  value={regSchool}
-                  onChange={(e) => setRegSchool(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
-                />
-              </div>
-
-              {/* Branş ve Sınıf Seçimi */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Ders Branşınız *
-                  </label>
-                  <select
-                    value={regBranch}
-                    onChange={(e) => setRegBranch(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
-                  >
-                    <option value="Türkçe">Türkçe</option>
-                    <option value="Matematik">Matematik</option>
-                    <option value="Fen Bilimleri">Fen Bilimleri</option>
-                    <option value="Sosyal Bilgiler">Sosyal Bilgiler</option>
-                    <option value="İngilizce">İngilizce</option>
-                    <option value="Din Kültürü ve Ahlak Bilgisi">Din Kültürü</option>
-                    <option value="Bilişim Teknolojileri">Bilişim Teknolojileri</option>
-                    <option value="Görsel Sanatlar">Görsel Sanatlar</option>
-                    <option value="Müzik">Müzik</option>
-                    <option value="Beden Eğitimi">Beden Eğitimi</option>
-                    <option value="Rehberlik">Rehberlik</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Rehberlik Sınıfı *
-                  </label>
-                  <select
-                    value={regClass}
-                    onChange={(e) => setRegClass(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:border-blue-500 font-medium"
-                  >
-                    <option value="7-B">7-B</option>
-                    <option value="7-A">7-A</option>
-                    <option value="8-A">8-A</option>
-                    <option value="8-B">8-B</option>
-                    <option value="8-C">8-C</option>
-                    <option value="6-A">6-A</option>
-                    <option value="6-B">6-B</option>
-                    <option value="5-A">5-A</option>
-                    <option value="5-B">5-B</option>
-                    <option value="Yok">Şube Rehberliği Yok</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Şifre ve Şifre Tekrarı */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Giriş Şifresi *
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="En az 8 karakter"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Şifre Tekrarı *
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Şifreyi doğrulayın"
-                    value={regPasswordConfirm}
-                    onChange={(e) => setRegPasswordConfirm(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-wait text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>{isSubmitting ? 'Kaydediliyor...' : 'Öğretmen Hesabını Oluştur'}</span>
-                <Check className="w-4 h-4" />
-              </button>
-
-              <div className="text-center pt-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                    setErrorMsg(null);
-                    setSuccessMsg(null);
-                  }}
-                  className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
-                >
-                  Zaten bir öğretmen hesabınız var mı?{' '}
-                  <span className="text-blue-600 font-bold hover:underline">Giriş Yap</span>
-                </button>
-              </div>
+                <AuthField id="register-school" label="Okul adı"><input id="register-school" name="school" required placeholder="Okulunuzun adı" value={regSchool} onChange={(e) => setRegSchool(e.target.value)} /></AuthField>
+                <AuthField id="register-branch" label="Branş"><select id="register-branch" name="branch" value={regBranch} onChange={(e) => setRegBranch(e.target.value)}>{['Türkçe', 'Matematik', 'Fen Bilimleri', 'Sosyal Bilgiler', 'İngilizce', 'Din Kültürü ve Ahlak Bilgisi', 'Bilişim Teknolojileri', 'Görsel Sanatlar', 'Müzik', 'Beden Eğitimi', 'Rehberlik'].map((branch) => <option key={branch} value={branch}>{branch}</option>)}</select></AuthField>
+                <AuthField id="register-class" label="Rehberlik sınıfı"><select id="register-class" name="className" value={regClass} onChange={(e) => setRegClass(e.target.value)}>{['7-B', '7-A', '8-A', '8-B', '8-C', '6-A', '6-B', '5-A', '5-B', 'Yok'].map((className) => <option key={className} value={className}>{className === 'Yok' ? 'Şube rehberliği yok' : className}</option>)}</select></AuthField>
+              </fieldset>
+              <button className={styles.submit} type="submit" disabled={isSubmitting}><span>{isSubmitting ? 'Hesap oluşturuluyor…' : 'Öğretmen hesabı oluştur'}</span>{!isSubmitting && <ArrowRight size={20} aria-hidden="true" />}</button>
+              <div className={styles.alternate}><p className={styles.hint}>Zaten bir hesabınız var mı?</p><button className={styles.textButton} type="button" disabled={isSubmitting} onClick={() => changeMode('login')}>Giriş yap</button></div>
             </form>
           )}
-
-        </div>
-
-        {/* ALT GÜVENLİK BİLGİSİ */}
-        <div className="text-center text-[11px] text-slate-400 space-y-1">
-          <p className="flex items-center justify-center gap-1">
-            <Lock className="w-3 h-3 text-slate-400" />
-            <span>256-Bit SSL Uçtan Uca Şifreli Güvenli Okul Portalı</span>
-          </p>
-          <p>© 2026 e-Okul Bilgi Sistemi • Tüm hakları saklıdır.</p>
-        </div>
-
+        </section>
+        <footer className={styles.footer}>e-Okul Öğrenci & Veli Bilgi Portalı</footer>
       </div>
-    </div>
+    </main>
   );
 };
+
+function AuthField({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
+  return <div className={styles.field}><label className={styles.fieldLabel} htmlFor={id}>{label}</label>{children}{hint && <p id={`${id}-hint`} className={styles.hint}>{hint}</p>}</div>;
+}

@@ -69,7 +69,8 @@ import {
   StudentPointsSummary,
   PointType,
   LeaderboardStudent,
-  getStudentPointsSummary
+  getStudentPointsSummary,
+  parseClassName
 } from '../../data/portalData';
 import { TeacherBulkMessageSection } from './TeacherBulkMessageSection';
 import styles from './TeacherDashboard.module.css';
@@ -102,8 +103,31 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onAddAnnouncement,
 }) => {
   // Sınıf Yönetimi Durumları
-  const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>(INITIAL_TEACHER_CLASSES);
-  const [selectedClass, setSelectedClass] = useState<string>('7-B');
+  // Kayıtta seçilen sınıf (örn. '3-A') panel açılınca otomatik listelenir.
+  // Not: Sınıflar henüz veritabanında değil; Aşama 2'de classes tablosuna taşınacak.
+  const homeroomClassName = currentUser?.className && currentUser.className !== 'Yok' ? currentUser.className : '';
+  const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>(() =>
+    homeroomClassName
+      ? [
+          {
+            id: `homeroom-${homeroomClassName}`,
+            name: homeroomClassName,
+            grade: parseClassName(homeroomClassName).level || homeroomClassName,
+            branch: currentUser?.branch || '',
+            room: '',
+            studentCount: 0,
+            capacity: 30,
+            averageScore: 0,
+            joinCode: '',
+            description: 'Kayıt sırasında seçtiğiniz sınıf.',
+            createdAt: '',
+            isHomeroom: true,
+          },
+          ...INITIAL_TEACHER_CLASSES,
+        ]
+      : INITIAL_TEACHER_CLASSES
+  );
+  const [selectedClass, setSelectedClass] = useState<string>(homeroomClassName);
   const [activeSubTab, setActiveSubTab] = useState<'check_sheet' | 'plus_minus' | 'assignments' | 'classes' | 'grading' | 'grade_entry' | 'messages' | 'bulk_message' | 'leaderboard'>('check_sheet');
 
   // Ödev Kontrol Çizelgesi Durumları (Yaptı / Kısmen / Yapmadı & Puan)
@@ -1156,7 +1180,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     Öğrenci Listesi ile Anlık Artı / Eksi Verme
                   </h4>
                   <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-md font-bold">
-                    {sessionDate} • 7-B {sessionSubject}
+                    {sessionDate} • {selectedClass} {sessionSubject}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-0.5">
@@ -1244,7 +1268,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           )}
                         </div>
                         <span className="text-[11px] text-slate-400 block mt-0.5">
-                          7-B Sınıfı • Başarı: #{st.rank} • Genel Not: {st.average}
+                          {selectedClass} Sınıfı • Başarı: #{st.rank} • Genel Not: {st.average}
                         </span>
                       </div>
                     </div>

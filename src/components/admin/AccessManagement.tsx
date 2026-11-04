@@ -5,6 +5,7 @@ import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle, Edi
 import { TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName, parseClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker } from '../SchoolPicker';
+import { StudentSchoolSelect } from '../StudentSchoolSelect';
 import { SchoolManagement } from './SchoolManagement';
 import {
   listProfiles,
@@ -20,6 +21,7 @@ import {
   supabase,
   ProfileRecord,
   StudentRecord,
+  SchoolRecord,
 } from '../../lib/supabaseClient';
 
 const isValidPin = (pin: string) => /^[0-9]{4}$/.test(pin);
@@ -58,6 +60,7 @@ export const AccessManagement: React.FC = () => {
   const [newClassLevel, setNewClassLevel] = useState('');
   const [newClassSection, setNewClassSection] = useState('');
   const [newPin, setNewPin] = useState('');
+  const [newSchool, setNewSchool] = useState<SchoolRecord | null>(null);
 
   // Öğretmen düzenleme
   const [editing, setEditing] = useState<ProfileRecord | null>(null);
@@ -169,6 +172,7 @@ export const AccessManagement: React.FC = () => {
   // ---------------- Öğrenci işlemleri ----------------
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newSchool) return notify('error', 'Lütfen öğrencinin okulunu seçiniz.');
     if (!newNo.trim() || !newName.trim()) return notify('error', 'Okul numarası ve ad soyad zorunludur.');
     if (!newClassLevel) return notify('error', 'Lütfen öğrencinin sınıf seviyesini seçiniz.');
     if (!isValidPin(newPin)) return notify('error', 'PIN tam olarak 4 rakam olmalıdır.');
@@ -179,6 +183,7 @@ export const AccessManagement: React.FC = () => {
       name: newName,
       className: composeClassName(newClassLevel, newClassSection),
       pin: newPin,
+      schoolId: newSchool.id,
     });
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'Öğrenci eklenemedi.');
@@ -371,6 +376,9 @@ export const AccessManagement: React.FC = () => {
         </p>
 
         <form onSubmit={handleCreateStudent} className="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
+          <div className="col-span-2 sm:col-span-6">
+            <StudentSchoolSelect value={newSchool} onChange={setNewSchool} disabled={busyId === 'new-student'} />
+          </div>
           <input
             value={newNo}
             onChange={(e) => setNewNo(e.target.value)}

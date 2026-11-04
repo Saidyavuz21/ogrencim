@@ -251,11 +251,13 @@ const studentLoginErrors: Record<string, string> = {
   invalid: 'Okul numarası veya PIN hatalı.',
   locked: 'Çok fazla hatalı deneme yapıldı. Bu öğrenci hesabı 15 dakika boyunca kilitlendi.',
   too_many_attempts: 'Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyiniz.',
+  no_school: 'Lütfen önce okulunuzu seçiniz.',
   not_authenticated: 'Oturum açılamadı. Lütfen sayfayı yenileyip tekrar deneyiniz.',
 };
 
-/** Öğrenci & Veli girişi (okul no + 4 haneli PIN). PIN sunucuda doğrulanır. */
-export async function signInStudent(studentNumber: string, pin: string): Promise<AuthResult> {
+/** Öğrenci & Veli girişi (okul + okul no + 4 haneli PIN). PIN sunucuda doğrulanır. */
+export async function signInStudent(schoolId: string, studentNumber: string, pin: string): Promise<AuthResult> {
+  if (!schoolId) return { ok: false, error: studentLoginErrors.no_school };
   const { data: existing } = await supabase.auth.getSession();
   if (!existing.session || !existing.session.user.is_anonymous) {
     await supabase.auth.signOut();
@@ -266,6 +268,7 @@ export async function signInStudent(studentNumber: string, pin: string): Promise
   }
 
   const { data, error } = await supabase.rpc('student_login', {
+    p_school_id: schoolId,
     p_student_number: studentNumber.trim(),
     p_pin: pin,
   });
@@ -315,37 +318,7 @@ export async function getLiveStudents(): Promise<StudentRecord[]> {
   return (data as StudentRecord[]) || [];
 }
 
-export async function updateStudentScore(
-  studentNumber: string,
-  newPoints: number,
-  newPlusCount: number,
-  newMinusCount: number,
-  delta: number,
-  reason: string,
-  teacherName: string = 'Öğretmen'
-): Promise<StudentRecord | null> {
-  const { data, error } = await supabase
-    .from('students')
-    .update({ points: newPoints, plus_count: newPlusCount, minus_count: newMinusCount })
-    .eq('student_number', studentNumber)
-    .select('id, student_number, name, avatar, class_name, points, plus_count, minus_count')
-    .maybeSingle();
-  if (error || !data) {
-    if (error) console.error('Supabase updateStudentScore hatası:', error.message);
-    return null;
-  }
-
-  const { error: logError } = await supabase.from('points_history').insert({
-    student_id: data.id,
-    teacher_name: teacherName,
-    change_type: delta > 0 ? 'plus' : 'minus',
-    amount: delta,
-    reason: reason || (delta > 0 ? 'Derse aktif katılım' : 'Ödev eksikliği'),
-  });
-  if (logError) console.warn('Puan geçmişi log hatası:', logError.message);
-
-  return data as StudentRecord;
-}
+// Puan verme: src/lib/teacherData.ts → givePoints (sunucuda staff_give_points)
 
 /** Personel: öğrenci ekler (PIN veritabanında hash olarak saklanır) */
 export async function createStudent(input: {
@@ -353,12 +326,15 @@ export async function createStudent(input: {
   name: string;
   className: string;
   pin: string;
+  /** Yalnızca admin için: öğrencinin okulu (öğretmen her zaman kendi okuluna ekler) */
+  schoolId?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.rpc('staff_create_student', {
     p_student_number: input.studentNumber,
     p_name: input.name,
     p_class_name: input.className,
     p_pin: input.pin,
+    p_school_id: input.schoolId || null,
   });
   if (error) {
     if (error.code === '23505') return { ok: false, error: 'Bu okul numarası zaten kayıtlı.' };
@@ -374,10 +350,45 @@ export async function resetStudentPin(studentId: string, pin: string): Promise<{
   return { ok: true };
 }
 
+/** Öğrenciyi ve tüm kayıtlarını siler (admin: hepsi, öğretmen: kendi okulu). Veli mesajları da silinir. */
 export async function deleteStudent(studentId: string): Promise<{ ok: boolean; error?: string }> {
-  const { error, count } = await supabase.from('students').delete({ count: 'exact' }).eq('id', studentId);
+  const { error } = await supabase.rpc('staff_delete_student', { p_student_id: studentId });
   if (error) return { ok: false, error: error.message };
-  if (!count) return { ok: false, error: 'Öğrenci silinemedi (yalnızca admin silebilir).' };
+  return { ok: true };
+}
+
+export interface StudentListItem {
+  id: string;
+  student_number: string;
+  name: string;
+  class_name: string;
+  points: number;
+}
+
+/** Personel: öğrenci listesi (RLS: personel tüm öğrencileri görür) */
+export async function listStudents(): Promise<{ ok: boolean; students: StudentListItem[]; error?: string }> {
+  const { data, error } = await supabase
+    .from('students')
+    .select('id, student_number, name, class_name, points')
+    .order('class_name', { ascending: true })
+    .order('student_number', { ascending: true });
+  if (error) return { ok: false, students: [], error: error.message };
+  return { ok: true, students: (data as StudentListItem[]) || [] };
+}
+
+/** Personel: öğrencinin adını ve sınıfını günceller (okul numarası değiştirilemez) */
+export async function updateStudentInfo(
+  studentId: string,
+  values: { name: string; class_name: string }
+): Promise<{ ok: boolean; error?: string }> {
+  const name = values.name.trim();
+  if (!name) return { ok: false, error: 'Ad soyad boş bırakılamaz.' };
+  const { error, count } = await supabase
+    .from('students')
+    .update({ name: name.slice(0, 120), class_name: values.class_name.trim().slice(0, 20) }, { count: 'exact' })
+    .eq('id', studentId);
+  if (error) return { ok: false, error: error.message };
+  if (!count) return { ok: false, error: 'Öğrenci güncellenemedi (yetki yok).' };
   return { ok: true };
 }
 
@@ -385,6 +396,24 @@ export async function deleteStudent(studentId: string): Promise<{ ok: boolean; e
 // 1b. OKULLAR (il → ilçe → okul)
 // ========================================================
 /** Bir ilçedeki onaylı okullar (giriş yapmadan da okunabilir; kayıt ekranı için) */
+/** Okul adına göre arama (giriş ekranı; yalnızca onaylı okullar) */
+export async function searchSchools(query: string): Promise<SchoolRecord[]> {
+  const q = query.trim().replace(/[%_,()]/g, ' ').trim();
+  if (q.length < 2) return [];
+  const { data, error } = await supabase
+    .from('schools')
+    .select('id, name, city, district, status')
+    .eq('status', 'approved')
+    .ilike('name', `%${q}%`)
+    .order('name')
+    .limit(20);
+  if (error) {
+    console.error('Supabase searchSchools hatası:', error.message);
+    return [];
+  }
+  return (data as SchoolRecord[]) || [];
+}
+
 export async function listSchools(city: string, district: string): Promise<SchoolRecord[]> {
   if (!city || !district) return [];
   const { data, error } = await supabase

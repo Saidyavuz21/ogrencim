@@ -1,0 +1,22 @@
+.wrap { display: grid; gap: 8px; margin-bottom: 16px; }
+.label { font-size: 14px; font-weight: 600; color: #20352d; }
+.wrap .search { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 10px; width: 100%; min-width: 0; min-height: 52px; padding: 0 14px; border: 1px solid #a4b1a6; border-radius: 10px; background: white; color: #58665f; }
+.search:focus-within { outline: 3px solid #25634b; outline-offset: 2px; }
+.wrap .search input { width: 100%; min-width: 0; height: 50px; margin: 0; border: 0; border-radius: 0; outline: none; background: transparent; font-size: 16px; font-weight: 400; color: #20352d; padding: 10px 0; }
+.search > svg { display: block; grid-column: 1; grid-row: 1; }
+.search > input { grid-column: 2; grid-row: 1; }
+.search input::placeholder { color: #58665f; opacity: 1; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wrap select { width: 100%; min-height: 48px; padding: 8px 12px; border: 1px solid #a4b1a6; border-radius: 10px; background: white; color: #20352d; font-size: 16px; }
+.results { display: grid; gap: 6px; max-height: 260px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.results button { display: grid; gap: 2px; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #dedad0; border-radius: 10px; background: white; color: #20352d; text-align: left; cursor: pointer; }
+.results button:hover, .results button:focus-visible { border-color: #25634b; background: #f0f4ee; }
+.results strong, .selected strong { font-size: 15px; font-weight: 600; line-height: 1.35; }
+.results span, .selected span { font-size: 13px; color: #58665f; }
+.hint { margin: 0; font-size: 13px; color: #58665f; }
+.linkButton { justify-self: start; min-height: 40px; padding: 6px 2px; border: 0; background: transparent; color: #25634b; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.selected { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 14px; border: 1px solid #b8d3c0; border-radius: 12px; background: #e8f3eb; color: #216044; }
+.selected > div { display: grid; gap: 2px; flex: 1; min-width: 0; color: #20352d; }
+.selected .linkButton { flex-shrink: 0; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 380px) { .row { grid-template-columns: 1fr; } }

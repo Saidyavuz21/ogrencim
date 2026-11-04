@@ -25,159 +25,6 @@ export interface Student {
   };
 }
 
-export type HomeworkType = 'pdf' | 'resim' | 'not' | 'karma';
-export type HomeworkCheckStatus = 'yapti' | 'kismen' | 'yapmadi';
-export type PointType = 'plus' | 'minus';
-
-export interface HomeworkAttachment {
-  id: string;
-  type: 'pdf' | 'resim' | 'not';
-  name: string;
-  size?: string;
-  url?: string;
-  previewUrl?: string;
-  textContent?: string;
-}
-
-export interface StudentHomeworkCheck {
-  studentId: string;
-  studentNo: string;
-  studentName: string;
-  status: HomeworkCheckStatus;
-  score?: number; // Örn: 100, 50, 0 veya öğretmenin girdiği özel puan
-  maxScore?: number; // Örn: 100
-  note?: string;
-}
-
-export interface StudentPointRecord {
-  id: string;
-  studentId: string;
-  studentName: string;
-  studentNo: string;
-  type: PointType; // 'plus' (+) veya 'minus' (-)
-  points: number; // Örn: +1 veya -1 (Her artı +1, her eksi -1)
-  reason: string; // Örn: "Ders içi aktif katılım & soru çözümü"
-  teacherName: string;
-  subject: string;
-  date: string;
-}
-
-export interface StudentPointsSummary {
-  studentId: string;
-  studentNo: string;
-  studentName: string;
-  plusCount: number;
-  minusCount: number;
-  netScore: number;
-  history: StudentPointRecord[];
-}
-
-export interface Assignment {
-  id: string;
-  title: string;
-  subject: string;
-  subjectColor: string;
-  teacher: string;
-  className?: string;
-  assignedDate: string;
-  dueDate: string;
-  status: 'bekliyor' | 'teslim_edildi' | 'puanlandi';
-  priority: 'yuksek' | 'normal' | 'dusuk';
-  description: string;
-  homeworkType: HomeworkType;
-  attachments?: string[];
-  attachmentDetails?: HomeworkAttachment[];
-  teacherNote?: string;
-  studentCheckStatus?: HomeworkCheckStatus;
-  studentCheckNote?: string;
-  pointsPossible: number;
-  score?: number;
-  teacherFeedback?: string;
-  submittedDate?: string;
-  submittedFile?: string;
-  remainingDays?: number;
-}
-
-export interface CourseGrade {
-  id: string;
-  subject: string;
-  iconName: string;
-  color: string;
-  teacher: string;
-  exam1: number;
-  exam2?: number;
-  oral1: number;
-  oral2?: number;
-  project?: number;
-  homeworkAvg: number;
-  overallAverage: number;
-  classAverage: number;
-  trend: 'up' | 'down' | 'neutral';
-  teacherNote: string;
-}
-
-export interface LeaderboardStudent {
-  id: string;
-  rank: number;
-  name: string;
-  studentNo: string;
-  average: number;
-  isCurrentUser: boolean;
-  avatarBg: string;
-  badge?: string;
-  completedHomeworks: number;
-  homeworkPoints?: number;
-  plusCount?: number;
-  minusCount?: number;
-  netBehaviorPoints?: number;
-}
-
-export interface Announcement {
-  id: string;
-  title: string;
-  date: string;
-  sender: string;
-  content: string;
-  category: 'duyuru' | 'toplanti' | 'etkinlik';
-  priority: 'normal' | 'onemli';
-}
-
-export const CURRENT_STUDENT: Student = {
-  id: '',
-  name: 'Kayıtlı Öğrenci Yok',
-  studentNo: '---',
-  class: '---',
-  school: 'e-Okul Portalı',
-  teacher: 'Atanmadı',
-  avatar: 'ÖG',
-  gpa: 0,
-  rank: 0,
-  totalStudents: 0,
-  parentName: 'Veli',
-  term: '2026-2027 Eğitim Öğretim Yılı',
-  attendance: {
-    totalDays: 0,
-    attendedDays: 0,
-    absentDays: 0,
-    lateDays: 0,
-  },
-  homeworkSummary: {
-    total: 0,
-    completed: 0,
-    pending: 0,
-    late: 0,
-  },
-};
-
-export const ASSIGNMENTS: Assignment[] = [];
-
-export const COURSE_GRADES: CourseGrade[] = [];
-
-export const LEADERBOARD_STUDENTS: LeaderboardStudent[] = [];
-
-export const ANNOUNCEMENTS: Announcement[] = [];
-
-
 export type UserRole = 'veli' | 'ogretmen' | 'ogrenci' | 'admin';
 
 export interface UserAccount {
@@ -198,116 +45,6 @@ export interface UserAccount {
   title: string;
 }
 
-// Hesaplar artık Supabase Auth (öğretmen/admin) ve students tablosunda (öğrenci/veli) tutulur.
-// Bu dizi yalnızca eski yerel ekranlarla uyumluluk için boş bırakılmıştır; şifre/PIN EKLEMEYİN.
-export const INITIAL_USER_ACCOUNTS: UserAccount[] = [];
-
-
-export interface TeacherProfile {
-  id: string;
-  name: string;
-  branch: string;
-  classes: string[];
-  homeroomClass: string;
-  email: string;
-  avatar: string;
-}
-
-export interface StudentSubmission {
-  id: string;
-  assignmentId: string;
-  assignmentTitle: string;
-  studentId: string;
-  studentName: string;
-  studentNo: string;
-  className: string;
-  submittedDate: string;
-  submittedFile: string;
-  status: 'bekliyor' | 'puanlandi';
-  score?: number;
-  teacherFeedback?: string;
-}
-
-export interface ParentMessage {
-  id: string;
-  parentName: string;
-  studentName: string;
-  studentNo: string;
-  className: string;
-  date: string;
-  topic: string;
-  message: string;
-  status: 'yanitlandi' | 'bekliyor';
-  reply?: string;
-  replyDate?: string;
-}
-
-export interface TeacherChatContact {
-  id: string;
-  name: string;
-  subject: string;
-  roleTitle: string;
-  avatar: string;
-  avatarBg: string;
-  status: 'online' | 'offline' | 'away';
-  statusText: string;
-  phone: string;
-  officeHours: string;
-  unreadCount?: number;
-  isGroup?: boolean;
-  memberCount?: number;
-}
-
-export interface ChatMessage {
-  id: string;
-  conversationId: string; // teacherId veya 'grp-7b'
-  senderId: string; // 'parent-ahmet' veya 'tch-zehra'
-  senderRole: 'veli' | 'ogretmen';
-  senderName: string;
-  senderBadge?: string; // örn. "Sınıf Rehber Öğretmeni" veya "Emre Demir Velisi"
-  text: string;
-  timestamp: string; // örn: "Bugün 09:10"
-  timeOnly: string; // örn: "09:10"
-  isRead: boolean;
-  isDelivered: boolean;
-  attachment?: {
-    type: 'resim' | 'pdf' | 'belge';
-    name: string;
-    size?: string;
-  };
-  voiceNote?: {
-    duration: string; // örn: "0:24"
-    audioText?: string;
-  };
-  reactions?: { [emoji: string]: number };
-}
-
-export interface BulkMessage {
-  id: string;
-  senderName: string;
-  senderTitle: string;
-  className: string;
-  title: string;
-  content: string;
-  date: string;
-  recipientType: 'tum_sinif' | 'secili' | 'odev_bekleyen';
-  recipientCount: number;
-  totalRecipients: number;
-  channels: ('portal' | 'sms')[];
-  priority: 'normal' | 'onemli' | 'acil';
-  attachmentName?: string;
-  status: 'gonderildi' | 'taslak';
-}
-
-export interface SchoolClass {
-  id: string;
-  name: string;
-  homeroomTeacher: string;
-  studentCount: number;
-  averageScore: number;
-  attendanceRate: number;
-}
-
 export interface TeacherClass {
   id: string;
   name: string;
@@ -323,21 +60,17 @@ export interface TeacherClass {
   isHomeroom?: boolean;
 }
 
-export interface TeacherListItem {
+export interface TeacherProfile {
   id: string;
   name: string;
-  email?: string;
-  password?: string;
-  schoolName?: string;
-  city?: string;
-  district?: string;
   branch: string;
-  homeroomClass?: string;
   classes: string[];
-  studentCount: number;
-  phone: string;
+  homeroomClass: string;
+  email: string;
+  avatar: string;
 }
 
+/** Oturum yokken gösterilen boş öğretmen şablonu (örnek veri değil) */
 export const CURRENT_TEACHER: TeacherProfile = {
   id: '',
   name: 'Kayıtlı Öğretmen Yok',
@@ -347,52 +80,6 @@ export const CURRENT_TEACHER: TeacherProfile = {
   email: '',
   avatar: 'ÖĞ',
 };
-
-export const INITIAL_TEACHER_CLASSES: TeacherClass[] = [];
-
-export interface HomeworkCheckRecord {
-  status: HomeworkCheckStatus;
-  score?: number; // Her ödev bir puan olacak (0-100 veya özel puan)
-  maxScore?: number;
-  note?: string;
-}
-
-export const INITIAL_HOMEWORK_CHECKS: { [studentId: string]: HomeworkCheckRecord } = {};
-
-export const INITIAL_STUDENT_POINTS: { [studentId: string]: StudentPointsSummary } = {};
-
-export const getStudentPointsSummary = (
-  pointsMap: { [studentId: string]: StudentPointsSummary },
-  studentId: string,
-  name?: string,
-  no?: string
-): StudentPointsSummary => {
-  if (pointsMap[studentId]) return pointsMap[studentId];
-  return {
-    studentId,
-    studentNo: no || '---',
-    studentName: name || 'Öğrenci',
-    plusCount: 0,
-    minusCount: 0,
-    netScore: 0,
-    history: [],
-  };
-};
-
-
-export const INITIAL_SUBMISSIONS: StudentSubmission[] = [];
-
-export const INITIAL_PARENT_MESSAGES: ParentMessage[] = [];
-
-export const TEACHER_CONTACTS: TeacherChatContact[] = [];
-
-export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [];
-
-export const INITIAL_BULK_MESSAGES: BulkMessage[] = [];
-
-export const SCHOOL_CLASSES: SchoolClass[] = [];
-
-export const TEACHER_LIST: TeacherListItem[] = [];
 
 // ========================================================
 // OKUL KADEMELERİ, SINIF SEVİYELERİ, ŞUBELER VE BRANŞLAR (MEB)

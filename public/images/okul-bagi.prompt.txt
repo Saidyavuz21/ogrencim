@@ -1,0 +1,5 @@
+Generated using the built-in Imagegen tool on 2026-11-04.
+Purpose: homepage mockup illustration.
+
+Prompt:
+Create a polished flat editorial illustration for a Turkish school portal website. Landscape 3:2 composition on solid warm ivory #f7f6f2 background. Central small friendly school building with dark forest green roof, cream walls and ochre door. Three diverse friendly illustrated people around it: a female teacher holding a book on left, a schoolchild with backpack in lower center, a parent on right. Fine dotted curved connecting lines express school-family communication, with tiny paper homework sheet and pencil. Sophisticated restrained flat print illustration, crisp organic silhouettes, forest green #25634b, sage green, warm ochre, muted terracotta, ample negative space. Human, calm, welcoming, not childish clipart. No photography, no 3D, no gradients, no UI panels, no lettering, no words, no logos. Illustration only, not a website screenshot.

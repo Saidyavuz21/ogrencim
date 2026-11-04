@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { GraduationCap, ShieldCheck, Check, ArrowRight, Eye, EyeOff, AlertCircle, BookOpen } from '../icons';
+import { GraduationCap, Check, ArrowRight, Eye, EyeOff, AlertCircle, BookOpen } from '../icons';
 import styles from './AuthPage.module.css';
+import { BrandLogo } from '../BrandLogo';
 import { UserAccount, TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker, NEW_SCHOOL } from '../SchoolPicker';
-import { signInStaff, signInStudent, signUpTeacher } from '../../lib/supabaseClient';
+import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
+import { signInStaff, signInStudent, signUpTeacher, SchoolRecord } from '../../lib/supabaseClient';
 
 type Audience = 'ogrenci' | 'ogretmen';
 type TeacherMode = 'login' | 'register';
@@ -25,6 +27,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
 
   const [audience, setAudience] = useState<Audience>('ogrenci');
   const [teacherMode, setTeacherMode] = useState<TeacherMode>('login');
+  useEffect(() => {
+    if (variant !== 'public') return;
+    const openRegistration = () => {
+      if (window.location.hash === '#kayit') {
+        setAudience('ogretmen');
+        setTeacherMode('register');
+      }
+    };
+    openRegistration();
+    window.addEventListener('hashchange', openRegistration);
+    return () => window.removeEventListener('hashchange', openRegistration);
+  }, [variant]);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -35,7 +49,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     if (errorMsg || successMsg) feedbackRef.current?.focus();
   }, [errorMsg, successMsg]);
 
-  // Öğrenci & Veli
+  // Öğrenci & Veli (okul bu cihazda hatırlanır)
+  const [studentSchool, setStudentSchool] = useState<SchoolRecord | null>(() =>
+    typeof window === 'undefined' ? null : loadRememberedSchool()
+  );
   const [studentNo, setStudentNo] = useState('');
   const [pinDigits, setPinDigits] = useState(['', '', '', '']);
 
@@ -121,14 +138,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
 
     const enteredNo = studentNo.trim();
     const enteredPin = pinDigits.join('');
+    if (!studentSchool) return setErrorMsg('Lütfen önce okulunuzu seçiniz.');
     if (!enteredNo) return setErrorMsg('Lütfen okul numaranızı giriniz.');
     if (enteredPin.length !== 4) return setErrorMsg('Lütfen 4 haneli PIN kodunuzu eksiksiz giriniz.');
 
     setIsSubmitting(true);
-    const res = await signInStudent(enteredNo, enteredPin);
+    const res = await signInStudent(studentSchool.id, enteredNo, enteredPin);
     setIsSubmitting(false);
 
     if (res.ok) {
+      rememberSchool(studentSchool);
       setSuccessMsg('PIN doğrulandı. Portal açılıyor…');
       setTimeout(() => onLoginSuccess(res.user), 400);
     } else {
@@ -269,8 +288,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       <main className={styles.page}>
         <div className={styles.shell}>
           <header className={styles.brand}>
-            <div className={styles.brandMark}><ShieldCheck size={24} aria-hidden="true" /></div>
-            <div><strong>e-Okul Yönetim</strong><span>Yalnızca okul yönetimi içindir</span></div>
+            <BrandLogo height={44} priority />
+            <div><strong>Yönetim</strong><span>Yalnızca okul yönetimi içindir</span></div>
           </header>
           <div className={styles.intro}>
             <h1>Yönetim girişi</h1>
@@ -295,8 +314,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     <main className={styles.page}>
       <div className={styles.shell}>
         <header className={styles.brand}>
-          <div className={styles.brandMark}><GraduationCap size={24} aria-hidden="true" /></div>
-          <div><strong>e-Okul</strong><span>Öğrenci & Veli Bilgi Portalı</span></div>
+          <BrandLogo height={48} priority />
+          <span className={styles.brandTagline}>Öğrenci & Veli Bilgi Portalı</span>
         </header>
 
         <div className={styles.intro}>
@@ -335,6 +354,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
               {feedback}
               <form className={styles.form} onSubmit={handleStudentLogin} aria-busy={isSubmitting}>
                 <fieldset disabled={isSubmitting}>
+                  <StudentSchoolSelect value={studentSchool} onChange={setStudentSchool} disabled={isSubmitting} />
                   <AuthField label="Öğrenci okul numarası" id="student-number">
                     <input id="student-number" name="studentNumber" type="text" inputMode="numeric" autoComplete="username" placeholder="Örn. 1024" value={studentNo} onChange={(e) => setStudentNo(e.target.value.replace(/\D/g, ''))} />
                   </AuthField>

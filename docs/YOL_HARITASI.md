@@ -25,17 +25,27 @@ Amaç: Gerçek öğrenci/veli verisi girilebilecek kadar güvenli bir giriş ve 
 | Supabase: Sızdırılmış şifre korumasını açmak | ⏳ panelden |
 | Admin şifresini değiştirmek (eski şifre git geçmişinde açık) | ⏳ kullanıcı |
 
-## Aşama 2 – Gerçek veri modeli ⏳
+## Aşama 2 – Gerçek veri modeli 🔄
 
-Şu an ekranların çoğu (sınıflar, ödevler, notlar, öğretmen listesi, toplu mesajlar) yalnızca tarayıcı belleğinde çalışıyor; sayfa yenilenince kayboluyor.
+4 Kasım 2026: Bütün paneller (öğretmen, öğrenci, veli, süper admin) veritabanına bağlandı; örnek veri kaldırıldı. Migration: `supabase/migrations/20261104120000_teacher_real_data.sql`.
 
-- Veritabanı tabloları: `classes`, `teacher_classes` (öğretmen–sınıf ataması), `conversations` (öğretmen–veli birebir + sınıf grubu), `homework_submissions`, `grades`
-- Öğretmen yalnızca kendi sınıflarının öğrencilerini görür/puanlar (RLS)
-- Mesajlar konuşma bazında kısıtlanır: veli yalnızca kendi konuşmalarını görür
-- Gönderen adı sunucuda belirlenir (şu an istemciden geliyor)
-- Ödev/duyuru sınıfa bağlanır
-- `portalData.ts` içindeki sabit/yerel diziler veritabanı çağrılarıyla değiştirilir
-- 4 saniyelik yoklama (polling) yerine Supabase Realtime
+| İş | Durum |
+|---|---|
+| `teacher_classes`, `homework_checks`, `grades` tabloları; ödevler öğretmene + sınıfa bağlı | ✅ |
+| Öğrenci okula bağlı; öğretmen yalnızca kendi okulunun öğrencilerini görür/puanlar (RLS) | ✅ |
+| Puan verme sunucuda tek işlemde (`staff_give_points`), öğretmen adı sunucuda | ✅ |
+| Mesajlar konuşma bazında: `ogr:<öğrenci>` birebir, `sinif:<okul>:<sınıf>` grup; gönderen adı sunucuda | ✅ |
+| Öğretmen paneli: kartlı ana sayfa + ayrı sayfalar, hepsi veritabanından | ✅ |
+| Öğrenci/veli paneli ve süper admin paneli veritabanından | ✅ |
+| Öğrenci numarası okul bazında benzersiz; giriş okul + numara + PIN (okul cihazda hatırlanır) | ✅ |
+| Toplu öğrenci ekleme (liste yapıştır, PIN listesi CSV / yazdır) | ✅ |
+| Öğretmen yalnızca kendi sınıflarındaki öğrenciyi ekler, taşır, PIN sıfırlar, siler (veli mesajlarıyla birlikte) | ✅ |
+| Davranış puanı 0'dan başlar, eksiye düşebilir | ✅ |
+| Öğrenci → öğretmen mesajlaşması (soru:<öğrenci>, veli yazışmasından ayrı) | ✅ |
+| Ödeve PDF/resim ekleme (Storage, özel bucket, 10 MB) | ✅ |
+| Öğrencinin ödev teslimi (dosya yükleme) | ⏳ |
+| Canlı sohbet: Supabase Realtime (30 sn yedek yenileme) | ✅ |
+| SMS: yok; toplu mesaj uygulama içi sınıf grubuna gider (kullanıcı kararı) | — |
 
 ## Aşama 3 – Çalışırlık ve doğrulama ⏳
 

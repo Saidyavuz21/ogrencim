@@ -1,0 +1,50 @@
+import type React from 'react';
+import type { IconProps } from '../icons';
+import { CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Megaphone, Bell, User } from '../icons';
+
+export type TeacherPageId =
+  | 'home'
+  | 'check_sheet'
+  | 'plus_minus'
+  | 'assignments'
+  | 'grade_entry'
+  | 'students'
+  | 'leaderboard'
+  | 'classes'
+  | 'messages'
+  | 'bulk_message'
+  | 'announcements'
+  | 'profile';
+
+export type TeacherPageGroup = 'Günlük işler' | 'Öğrenciler ve sınıflar' | 'İletişim' | 'Hesap';
+
+export interface TeacherPageInfo {
+  id: Exclude<TeacherPageId, 'home'>;
+  /** Adres çubuğunda görünen ad: ?sayfa=odev-kontrol */
+  slug: string;
+  title: string;
+  description: string;
+  icon: React.FC<IconProps>;
+  group: TeacherPageGroup;
+}
+
+export const TEACHER_PAGES: TeacherPageInfo[] = [
+  { id: 'check_sheet', slug: 'odev-kontrol', title: 'Ödev kontrolü', description: 'Yaptı, kısmen, yapmadı işaretle', icon: CheckSquare, group: 'Günlük işler' },
+  { id: 'plus_minus', slug: 'puan-ver', title: 'Puan ver', description: 'Artı ve eksi puan ekle', icon: Star, group: 'Günlük işler' },
+  { id: 'assignments', slug: 'odev-gonder', title: 'Ödev gönder', description: 'Yeni ödev oluştur ve listele', icon: Send, group: 'Günlük işler' },
+  { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
+  { id: 'leaderboard', slug: 'siralama', title: 'Puan sıralaması', description: 'Sınıfın başarı sırası', icon: Award, group: 'Öğrenciler ve sınıflar' },
+  { id: 'grade_entry', slug: 'not-girisi', title: 'Not girişi', description: 'Yazılı ve sözlü notlar', icon: TrendingUp, group: 'Öğrenciler ve sınıflar' },
+  { id: 'classes', slug: 'siniflar', title: 'Sınıflarım', description: 'Sınıf ekle ve katılım kodu', icon: School, group: 'Öğrenciler ve sınıflar' },
+  { id: 'messages', slug: 'mesajlar', title: 'Veli mesajları', description: 'Birebir ve grup sohbeti', icon: MessageSquare, group: 'İletişim' },
+  { id: 'bulk_message', slug: 'toplu-mesaj', title: 'Toplu mesaj', description: 'Bütün velilere aynı anda', icon: Megaphone, group: 'İletişim' },
+  { id: 'announcements', slug: 'duyurular', title: 'Okul duyuruları', description: 'Okuldan gelen duyurular', icon: Bell, group: 'İletişim' },
+  { id: 'profile', slug: 'profil', title: 'Profilim', description: 'Bilgilerim, şifre, çıkış', icon: User, group: 'Hesap' },
+];
+
+export const TEACHER_PAGE_GROUPS: TeacherPageGroup[] = ['Günlük işler', 'Öğrenciler ve sınıflar', 'İletişim', 'Hesap'];
+
+export const getTeacherPage = (id: TeacherPageId) => TEACHER_PAGES.find((p) => p.id === id);
+
+export const pageIdFromSlug = (slug: string | null): TeacherPageId =>
+  TEACHER_PAGES.find((p) => p.slug === slug)?.id ?? 'home';

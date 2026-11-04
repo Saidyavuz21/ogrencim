@@ -1,0 +1,55 @@
+﻿.header { background: #fff; border-bottom: 1px solid #dedad0; color: #20352d; font-family: var(--font-geist-sans), Arial, sans-serif; position: relative; z-index: 30; }
+.container { max-width: 1152px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 24px 48px; }
+.brandGroup { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.mark { width: 44px; height: 44px; display: grid; place-items: center; flex-shrink: 0; border-radius: 12px; background: #e6f1e9; color: #25634b; }
+.brandTitle { display: block; font-size: 18px; font-weight: 700; line-height: 1.4; letter-spacing: -.02em; }
+.roleName { display: block; margin-top: 4px; font-size: 14px; line-height: 1.5; color: #58665f; }
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; min-width: 0; }
+.iconButton { width: 48px; height: 48px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; position: relative; padding: 0; border: 1px solid #dedad0; border-radius: 10px; background: white; color: #58665f; cursor: pointer; }
+.iconButton:hover { background: #e6f1e9; color: #25634b; }
+.mobileMenu { display: none; }
+.unread { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #a33342; border-radius: 50%; }
+.profile { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 0 8px 20px; background: transparent; border: 0; border-left: 1px solid #dedad0; text-align: left; color: #20352d; cursor: pointer; font-family: inherit; }
+.profile:hover .avatar { background: #d2e7d8; }
+.avatar { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; background: #e6f1e9; color: #25634b; border-radius: 12px; font-size: 14px; font-weight: 700; }
+.profileText { display: grid; gap: 4px; min-width: 0; }
+.profileName { font-size: 16px; line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }
+.profileTitle, .school { font-size: 13px; line-height: 1.6; color: #58665f; overflow-wrap: anywhere; }
+.school { display: block; }
+.notifications { flex-shrink: 0; }
+.rolePicker { position: relative; }
+.roleToggle, .lock { min-height: 48px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #dedad0; border-radius: 10px; background: white; color: #20352d; font: inherit; font-size: 14px; cursor: pointer; }
+.locked { color: #805217; font-size: 13px; }
+.backdrop { position: fixed; inset: 0; z-index: 40; border: 0; background: transparent; cursor: default; }
+.dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: min(300px, calc(100vw - 32px)); padding: 8px; border: 1px solid #dedad0; border-radius: 12px; background: white; z-index: 50; box-shadow: 0 8px 24px #20352d1a; }
+.dropdown button { width: 100%; min-height: 48px; padding: 12px; display: flex; justify-content: space-between; gap: 12px; background: white; border: 0; border-radius: 8px; text-align: left; color: #20352d; font: inherit; font-size: 14px; cursor: pointer; }
+.dropdown button[aria-pressed='true'], .dropdown button:hover { background: #e6f1e9; }
+.dropdown small { display: block; margin-top: 4px; color: #58665f; font-size: 13px; line-height: 1.5; }
+.header button:focus-visible, .secondaryNav button:focus-visible { outline: 3px solid #25634b; outline-offset: 3px; }
+.secondaryNav { display: none; background: white; border-bottom: 1px solid #dedad0; position: sticky; top: 0; z-index: 20; }
+.secondaryNav nav { display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 0; }
+.secondaryNav nav button { min-height: 48px; padding: 12px 18px; font-size: 15px; line-height: 1.5; }
+@media (min-width: 768px) { .secondaryNav { display: block; } }
+@media (max-width: 1023px) {
+  .container { grid-template-columns: 1fr; gap: 20px; }
+  .actions { justify-content: flex-start; }
+  .profile { flex: 1; border-left: 0; padding-left: 0; }
+}
+@media (max-width: 767px) {
+  .container { padding: 20px 16px; gap: 20px; }
+  .brandGroup { justify-content: space-between; }
+  .brand { flex: 1; }
+  .mobileMenu { display: inline-flex; }
+  .actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; border-top: 1px solid #dedad0; padding-top: 16px; }
+  .profile { grid-column: 1; grid-row: 1; padding: 0; }
+  .notifications { grid-column: 2; grid-row: 1; }
+  .rolePicker { grid-column: 1 / -1; grid-row: 2; }
+  .roleToggle { width: 100%; justify-content: space-between; }
+  .dropdown { right: auto; left: 0; }
+  .lock { grid-column: 1 / -1; justify-content: center; }
+  .profileName { font-size: 16px; }
+}
+
+.actions { flex-wrap: wrap; }
+.profile { flex: 1 1 220px; }

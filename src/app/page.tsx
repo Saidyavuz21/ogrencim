@@ -1,6 +1,6 @@
-import { PortalApp } from '../components/PortalApp';
+import HomeMockup from './ana-sayfa-mockup/page';
 
 // Ana giriş: Öğrenci & Veli / Öğretmen (giriş + kayıt)
 export default function Page() {
-  return <PortalApp variant="public" />;
+  return <HomeMockup />;
 }

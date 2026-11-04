@@ -1,6 +1,9 @@
 import path from "path";
 
 const nextConfig = {
+  // Geliştirme sırasında sol alttaki "N" göstergesi sohbet kutusunun üstüne biniyordu.
+  // Derleme/çalışma hataları yine ekranın ortasında gösterilir.
+  devIndicators: false,
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -2811,12 +2811,12 @@
   gap: 12px;
   padding: 18px;
   border: 1px solid var(--teacher-border);
-  border-top: 4px solid hsl(var(--subject-hue) 62% 48%);
   border-radius: 16px;
   background: white;
 }
 .gradeCardHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.gradeCardHead h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--teacher-text); }
+.gradeCardHead h2 { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 17px; font-weight: 700; color: var(--teacher-text); }
+.gradeCardHead h2::before { content: ''; width: 12px; height: 12px; flex-shrink: 0; border-radius: 50%; background: hsl(var(--subject-hue) 62% 48%); }
 .gradeCardAvg {
   display: inline-grid;
   justify-items: center;

@@ -6,12 +6,14 @@ import { AnnouncementRow, listAnnouncements } from '../lib/studentData';
 import { createAnnouncement, deleteAnnouncement } from '../lib/teacherData';
 import { AnnouncementsList } from './student/StudentPortal';
 import { Notice, NoticeState, formatDateTime } from './teacher/TeacherUi';
+import { useDialog } from './ConfirmDialog';
 import styles from './teacher/TeacherDashboard.module.css';
 
 /** Duyuruları veritabanından okur; canManage verilirse yeni duyuru yayınlama ve silme açılır */
 export function AnnouncementsPage({ canManage = false }: { canManage?: boolean }) {
   const [items, setItems] = useState<AnnouncementRow[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const { confirm } = useDialog();
   const [notice, setNotice] = useState<NoticeState>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -48,7 +50,14 @@ export function AnnouncementsPage({ canManage = false }: { canManage?: boolean }
   };
 
   const handleDelete = async (a: AnnouncementRow) => {
-    if (!window.confirm(`"${a.title}" duyurusu silinsin mi?`)) return;
+    const ok = await confirm({
+      title: 'Duyuruyu Sil',
+      message: `"${a.title}" duyurusu silinsin mi?\nBu işlem geri alınamaz.`,
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
     const res = await deleteAnnouncement(a.id);
     if (!res.ok) {
       setNotice({ kind: 'error', text: `Duyuru silinemedi: ${res.error}` });

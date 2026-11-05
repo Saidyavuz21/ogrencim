@@ -326,7 +326,6 @@ function RankingPage({ ranking, myId, className }: { ranking: ClassmateRank[]; m
               return (
                 <li key={s.id} className={`${styles.rankRow} ${TIER_ROW_CLASS[tier]} ${podiumRow} ${s.id === myId ? styles.rankMe : ''}`}>
                   <span className={`${styles.rankNo} ${rankBadge}`}>{rank}</span>
-                  <span className={`${styles.studentAvatar} ${TIER_CLASS[tier]}`} aria-hidden="true">{initialsOf(s.name)}</span>
                   <span className={styles.studentCardInfo}><strong>{s.name}{s.id === myId ? ' (siz)' : ''}</strong></span>
                   <strong className={`${styles.rankPoints} ${TIER_CLASS[tier]}`}>{formattedPoints}</strong>
                 </li>

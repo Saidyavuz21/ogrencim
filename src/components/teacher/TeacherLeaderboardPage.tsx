@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { CollapsiblePanel, initialsOf, useClassStudents } from './TeacherUi';
+import { CollapsiblePanel, useClassStudents } from './TeacherUi';
 import styles from './TeacherDashboard.module.css';
 
 export type PointTier = 'elite' | 'high' | 'good' | 'positive' | 'neutral' | 'warn' | 'negative';
@@ -151,7 +151,6 @@ export function TeacherLeaderboardPage({ selectedClass }: { selectedClass: strin
               return (
                 <li key={s.id} className={`${styles.rankRow} ${TIER_ROW_CLASS[tier]} ${podiumRow}`}>
                   <span className={`${styles.rankNo} ${rankBadge}`}>{rank}</span>
-                  <span className={`${styles.studentAvatar} ${TIER_CLASS[tier]}`} aria-hidden="true">{initialsOf(s.name)}</span>
                   <span className={styles.studentCardInfo}>
                     <strong>{s.name}</strong>
                     <span>No {s.student_number} · +{s.plus_count} / −{s.minus_count}</span>

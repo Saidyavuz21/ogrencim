@@ -5,6 +5,7 @@ import { Plus, Trash2, Users } from '../icons';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { composeClassName } from '../../data/portalData';
 import { addMyClass, removeMyClass, TeacherClassRow } from '../../lib/teacherData';
+import { useDialog } from '../ConfirmDialog';
 import { CollapsiblePanel, Notice, NoticeState } from './TeacherUi';
 import styles from './TeacherDashboard.module.css';
 
@@ -22,6 +23,7 @@ export function TeacherClassesPage({ homeroomClass, classes, studentCounts, sele
   const [level, setLevel] = useState('');
   const [section, setSection] = useState('');
   const [busy, setBusy] = useState(false);
+  const { confirm } = useDialog();
   const [notice, setNotice] = useState<NoticeState>(null);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -50,7 +52,14 @@ export function TeacherClassesPage({ homeroomClass, classes, studentCounts, sele
   };
 
   const handleRemove = async (row: TeacherClassRow) => {
-    if (!window.confirm(`${row.class_name} sınıfı listenizden çıkarılsın mı? Öğrenciler silinmez.`)) return;
+    const ok = await confirm({
+      title: 'Sınıfı Kaldır',
+      message: `${row.class_name} sınıfı listenizden çıkarılsın mı?\nÖğrenciler silinmez.`,
+      confirmText: 'Listeden Çıkar',
+      cancelText: 'Vazgeç',
+      variant: 'warning',
+    });
+    if (!ok) return;
     setBusy(true);
     const res = await removeMyClass(row.id);
     setBusy(false);

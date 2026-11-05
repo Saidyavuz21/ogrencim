@@ -6,6 +6,7 @@ import { TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName, parseClassName
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker } from '../SchoolPicker';
 import { CustomSelect } from '../CustomSelect';
+import { useDialog } from '../ConfirmDialog';
 import { StudentSchoolSelect } from '../StudentSchoolSelect';
 import { SchoolManagement } from './SchoolManagement';
 import {
@@ -48,6 +49,7 @@ const SELECT_CLASS = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 round
  * PIN'ler veritabanında yalnızca hash olarak saklanır ve hiçbir yerde geri gösterilmez.
  */
 export const AccessManagement: React.FC = () => {
+  const { confirm } = useDialog();
   const [profiles, setProfiles] = useState<ProfileRecord[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
@@ -116,7 +118,16 @@ export const AccessManagement: React.FC = () => {
 
   const handleToggleActive = async (p: ProfileRecord) => {
     const makeActive = !p.is_active;
-    if (!makeActive && !window.confirm(`${displayName(p)} pasif yapılsın mı? Giriş yapamaz ve açık oturumu da hiçbir veriye erişemez.`)) return;
+    if (!makeActive) {
+      const ok = await confirm({
+        title: 'Öğretmeni Pasife Al',
+        message: `${displayName(p)} pasif yapılsın mı?\nGiriş yapamaz ve açık oturumu hiçbir veriye erişemez.`,
+        confirmText: 'Pasif Yap',
+        cancelText: 'Vazgeç',
+        variant: 'warning',
+      });
+      if (!ok) return;
+    }
     setBusyId(p.id);
     const res = await setTeacherActive(p.id, makeActive);
     setBusyId(null);
@@ -127,7 +138,14 @@ export const AccessManagement: React.FC = () => {
 
   const handleDeleteTeacher = async (p: ProfileRecord) => {
     const action = p.approved ? 'kalıcı olarak silinsin' : 'başvurusu reddedilip silinsin';
-    if (!window.confirm(`${displayName(p)} (${p.email}) hesabı ${action} mi? Bu işlem geri alınamaz.`)) return;
+    const ok = await confirm({
+      title: 'Öğretmen Hesabını Sil',
+      message: `${displayName(p)} (${p.email}) hesabı ${action} mi?\nBu işlem geri alınamaz.`,
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setBusyId(p.id);
     const res = await deleteTeacher(p.id);
     setBusyId(null);
@@ -213,7 +231,14 @@ export const AccessManagement: React.FC = () => {
   };
 
   const handleDeleteStudent = async (s: StudentRecord) => {
-    if (!window.confirm(`"${s.name}" (${s.student_number}) öğrencisini ve tüm puan geçmişini silmek istediğinize emin misiniz?`)) return;
+    const ok = await confirm({
+      title: 'Öğrenciyi Sil',
+      message: `"${s.name}" (${s.student_number}) öğrencisini ve tüm puan geçmişini silmek istediğinize emin misiniz?\nBu işlem geri alınamaz.`,
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setBusyId(s.id);
     const res = await deleteStudent(s.id);
     setBusyId(null);

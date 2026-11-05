@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Building, Check, Trash2, Plus } from '../icons';
 import { TURKEY_CITIES } from '../../data/portalData';
 import { CustomSelect } from '../CustomSelect';
+import { useDialog } from '../ConfirmDialog';
 import {
   listPendingSchools,
   listSchools,
@@ -30,6 +31,7 @@ interface SchoolManagementProps {
  *  - Admin'in il → ilçe seçip okul eklemesi (tek tek veya her satıra bir okul yazarak toplu)
  */
 export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onChanged, refreshKey }) => {
+  const { confirm, prompt } = useDialog();
   const [pending, setPending] = useState<SchoolRecord[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -74,7 +76,14 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
   };
 
   const handleApprove = async (s: SchoolRecord) => {
-    const corrected = window.prompt('Okul adını kontrol edin (gerekirse düzeltin) ve onaylayın:', s.name);
+    const corrected = await prompt({
+      title: 'Okulu Onayla',
+      message: 'Okul adını kontrol edin (gerekirse düzeltin) ve onaylayın:',
+      defaultValue: s.name,
+      confirmText: 'Onayla ve Ekle',
+      cancelText: 'Vazgeç',
+      variant: 'primary',
+    });
     if (corrected === null) return;
     setBusyId(s.id);
     const res = await approveSchool(s.id, corrected);
@@ -104,7 +113,14 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
   };
 
   const handleDelete = async (s: SchoolRecord) => {
-    if (!window.confirm(`"${s.name}" silinsin mi? Bu okulu seçen öğretmenlerin okul bilgisi boşalır.`)) return;
+    const ok = await confirm({
+      title: 'Okulu Sil',
+      message: `"${s.name}" silinsin mi?\nBu okulu seçen öğretmenlerin okul bilgisi boşalır.`,
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
     setBusyId(s.id);
     const res = await deleteSchool(s.id);
     setBusyId(null);

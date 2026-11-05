@@ -45,3 +45,15 @@ next-env.d.ts
 
 # Local dependency verification cache
 /.npm-cache/
+
+# AI tool / skill folders (local only)
+/.agent/
+/.agents/
+/.claude/
+/.codex/
+/.devin/
+/.dsh/
+/.gemini/
+/.impeccable/
+/.opencode/
+/.qoder/

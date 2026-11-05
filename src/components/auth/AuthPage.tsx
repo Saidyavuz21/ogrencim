@@ -8,6 +8,7 @@ import { BrandLogo } from '../BrandLogo';
 import { UserAccount, TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker, NEW_SCHOOL } from '../SchoolPicker';
+import { CustomSelect } from '../CustomSelect';
 import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
 import { signInStaff, signInStudent, signUpTeacher, SchoolRecord } from '../../lib/supabaseClient';
 
@@ -465,14 +466,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                   <fieldset disabled={isSubmitting}>
                     <div className={styles.pair}>
                       <AuthField id="register-city" label="İl">
-                        <select id="register-city" name="city" value={regCity} onChange={(e) => handleCityChange(e.target.value)}>
-                          {Object.keys(TURKEY_CITIES).map((city) => <option key={city} value={city}>{city}</option>)}
-                        </select>
+                        <CustomSelect
+                          id="register-city"
+                          value={regCity}
+                          onChange={(val) => handleCityChange(val)}
+                          options={Object.keys(TURKEY_CITIES).map((city) => ({ value: city, label: city }))}
+                          placeholder="İl seçin"
+                        />
                       </AuthField>
                       <AuthField id="register-district" label="İlçe">
-                        <select id="register-district" name="district" value={regDistrict} onChange={(e) => { setRegDistrict(e.target.value); resetSchool(); }}>
-                          {(TURKEY_CITIES[regCity] || ['Merkez']).map((d) => <option key={d} value={d}>{d}</option>)}
-                        </select>
+                        <CustomSelect
+                          id="register-district"
+                          value={regDistrict}
+                          onChange={(val) => { setRegDistrict(val); resetSchool(); }}
+                          options={(TURKEY_CITIES[regCity] || ['Merkez']).map((d) => ({ value: d, label: d }))}
+                          placeholder="İlçe seçin"
+                        />
                       </AuthField>
                     </div>
                     <SchoolPicker
@@ -492,9 +501,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                       )}
                     />
                     <AuthField id="register-branch" label="Branş">
-                      <select id="register-branch" name="branch" value={regBranch} onChange={(e) => setRegBranch(e.target.value)}>
-                        {TEACHER_BRANCH_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
-                      </select>
+                      <CustomSelect
+                        id="register-branch"
+                        value={regBranch}
+                        onChange={(val) => setRegBranch(val)}
+                        options={TEACHER_BRANCH_OPTIONS.map((b) => ({ value: b, label: b }))}
+                        placeholder="Branş seçin"
+                      />
                     </AuthField>
                     <div className={styles.pair}>
                       <ClassLevelSelects

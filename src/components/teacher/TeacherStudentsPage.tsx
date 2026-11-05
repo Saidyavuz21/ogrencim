@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Search, UserPlus, Users, Edit, Key, Trash2, X, AlertCircle, CheckCircle2 } from '../icons';
 import { TeacherBulkStudents } from './TeacherBulkStudents';
 import { CollapsiblePanel, StudentSortToggle, sortStudents, useStudentSort } from './TeacherUi';
+import { CustomSelect } from '../CustomSelect';
 import { createStudent, deleteStudent, listStudents, resetStudentPin, updateStudentInfo, StudentListItem } from '../../lib/supabaseClient';
 import styles from './TeacherDashboard.module.css';
 
@@ -92,9 +93,13 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
   );
 
   const classSelect = (id: string, value: string, onChange: (v: string) => void) => (
-    <select id={id} value={value} onChange={(e) => onChange(e.target.value)} required>
-      {classNames.map((c) => <option key={c} value={c}>{c}</option>)}
-    </select>
+    <CustomSelect
+      id={id}
+      value={value}
+      onChange={onChange}
+      options={classNames.map((c) => ({ value: c, label: c }))}
+      placeholder="Sınıf seçin"
+    />
   );
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -204,13 +209,20 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
             <span className={styles.visuallyHidden}>Ad veya numara ara</span>
             <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ad veya numara ara" />
           </label>
-          <label className={styles.pageClassField}>
+          <div className={styles.pageClassField}>
             <span>Sınıf</span>
-            <select value={filterClass} onChange={(e) => setFilterClass(e.target.value)}>
-              {classNames.length > 1 && <option value={ALL}>Tüm sınıflarım</option>}
-              {classNames.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </label>
+            <div style={{ flex: 1, minWidth: 150, maxWidth: 240 }}>
+              <CustomSelect
+                value={filterClass}
+                onChange={(val) => setFilterClass(val)}
+                options={[
+                  ...(classNames.length > 1 ? [{ value: ALL, label: 'Tüm sınıflarım' }] : []),
+                  ...classNames.map((c) => ({ value: c, label: c }))
+                ]}
+                placeholder="Sınıf seçin"
+              />
+            </div>
+          </div>
           <StudentSortToggle />
         </div>
 

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Minus, X, Save, BookOpen, Plus } from '../icons';
 import { CheckStatus, HomeworkCheckRow, HomeworkRow, listHomeworkChecks, listMyHomeworks, saveHomeworkChecks } from '../../lib/teacherData';
 import { CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
+import { CustomSelect } from '../CustomSelect';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherCheckPageProps {
@@ -198,11 +199,20 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
             title="Kontrol edilecek ödev"
             summary={activeHw ? `${activeHw.title} · ${counts.yapti} yaptı, ${counts.bos} bekliyor` : undefined}
           >
-            <label className={styles.field}>Kontrol edilecek ödev
-              <select value={activeHw?.id || ''} onChange={(e) => { setHomeworkId(e.target.value); setNotice(null); }}>
-                {homeworks.map((h) => <option key={h.id} value={h.id}>{h.title} · {h.class_name}</option>)}
-              </select>
-            </label>
+            <div className={styles.field}>
+              <span>Kontrol edilecek ödev</span>
+              <CustomSelect
+                value={activeHw?.id || ''}
+                onChange={(val) => { setHomeworkId(val); setNotice(null); }}
+                options={homeworks.map((h) => ({
+                  value: h.id,
+                  label: h.title,
+                  badge: h.class_name || undefined,
+                  description: h.due_date ? new Date(h.due_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : undefined,
+                }))}
+                placeholder="Ödev seçin..."
+              />
+            </div>
             {activeHw && (
               <p className={styles.mutedText}>
                 {activeHw.subject} · {counts.yapti} yaptı, {counts.kismen} kısmen, {counts.yapmadi} yapmadı, {counts.bos} işaretlenmedi

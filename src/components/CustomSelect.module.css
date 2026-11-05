@@ -1,0 +1,203 @@
+.customSelectWrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  font-family: inherit;
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.selectTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  background-color: #ffffff;
+  border: 1px solid #c8d3cc;
+  border-radius: 12px;
+  color: var(--teacher-text, #20352d);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.selectTrigger:hover {
+  border-color: var(--teacher-primary, #25634b);
+  background-color: #fcfdfc;
+}
+
+.selectTrigger:focus-visible,
+.selectTrigger.open {
+  outline: none;
+  border-color: var(--teacher-primary, #25634b);
+  box-shadow: 0 0 0 3px rgba(37, 99, 75, 0.16);
+}
+
+.selectedContent {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectedLabelGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.selectedLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.placeholder {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--teacher-primary, #25634b);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rotated {
+  transform: rotate(180deg);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  list-style: none;
+  animation: dropIn 0.15s ease-out;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.optionItem:hover {
+  background-color: #f8fafc;
+}
+
+.selectedItem {
+  background-color: #e6f1e9 !important;
+}
+
+.selectedItem .optionLabel {
+  font-weight: 600;
+  color: #216044;
+}
+
+.selectedItem .badge {
+  background-color: #d1e7d8;
+  color: #1b4d37;
+}
+
+.optionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.optionMainRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.optionLabel {
+  font-size: 14px;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionDesc {
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkIcon {
+  flex-shrink: 0;
+  color: #216044;
+}
+
+.emptyOption {
+  padding: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+}
+
+
+/* Klavyeyle üzerinde durulan seçenek */
+.activeItem {
+  background: #eef4ef;
+  box-shadow: inset 3px 0 0 var(--teacher-primary, #25634b);
+}

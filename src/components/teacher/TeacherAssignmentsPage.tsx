@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, Trash2, CheckSquare, Calendar } from '../icons';
+import { Send, Trash2, CheckSquare, Calendar, MoreVertical } from '../icons';
 import { ALLOWED_FILE_TYPES, createHomework, deleteHomework, formatBytes, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, formatDate } from './TeacherUi';
+import { CustomSelect } from '../CustomSelect';
 import styles from './TeacherDashboard.module.css';
 
 /** Başlık ayrıca istenmez: "Hayat bilgisi ödevi · 6 Kasım" */
@@ -99,7 +100,20 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     reload();
   };
 
-  const visible = selectedClass ? homeworks.filter((h) => h.class_name === selectedClass) : homeworks;
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+  const tomorrowDate = new Date(`${today}T12:00:00`);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrow = tomorrowDate.toLocaleDateString('sv-SE');
+  const dueLabel = (date: string) => {
+    const day = date.slice(0, 10);
+    const prefix = day === today ? 'Bugün teslim' : day === tomorrow ? 'Yarın teslim' : day < today ? 'Teslim tarihi geçti' : 'Son teslim';
+    return `${prefix} · ${formatDate(date)}`;
+  };
+  const visible = (selectedClass ? homeworks.filter((h) => h.class_name === selectedClass) : [...homeworks])
+    .sort((a, b) => {
+      const priority = (h: HomeworkRow) => !h.due_date ? 2 : h.due_date.slice(0, 10) < today ? 1 : 0;
+      return priority(a) - priority(b) || (a.due_date || '9999').localeCompare(b.due_date || '9999') || b.created_at.localeCompare(a.created_at);
+    });
 
   return (
     <div className={styles.pageBody}>
@@ -114,19 +128,31 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
           {!loading && visible.length === 0 && <p className={styles.mutedText}>Henüz ödev göndermediniz.</p>}
           <ul className={styles.studentCards}>
             {visible.map((hw) => (
-              <li key={hw.id} className={styles.studentCard}>
+              <li key={hw.id} className={`${styles.studentCard} ${styles.assignmentRow}`}>
                 <div className={styles.assignmentContent}>
-                  <h3 className={styles.assignmentTitle}>{hw.title}</h3>
+                  <h3 className={styles.assignmentTitle}>{hw.subject || hw.title}</h3>
                   <div className={styles.assignmentMeta}>
-                    <span>{hw.subject} · {hw.class_name || 'Sınıf yok'}</span>
-                    {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />Son teslim: {formatDate(hw.due_date)}</span>}
+                    {!selectedClass && <span>{hw.class_name || 'Sınıf yok'}</span>}
+                    {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />{dueLabel(hw.due_date)}</span>}
                   </div>
                   {hw.description && <p className={styles.assignmentDescription}>{hw.description}</p>}
                   <AttachmentList attachments={hw.attachments} />
                   {hw.file_url && <a href={hw.file_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>Bağlantıyı aç</a>}
                 </div>
-                <div className={styles.formActions}>
-                  <button type="button" className={styles.secondary} onClick={() => handleDelete(hw)}><Trash2 size={16} aria-hidden="true" />Sil</button>
+                <div className={styles.assignmentActions}>
+                  <details className={styles.assignmentMenu} onKeyDown={(event) => {
+                    if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
+                  }} onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+                  }}>
+                    <summary aria-label={`${hw.subject || hw.title} ödev işlemleri`}><MoreVertical size={20} aria-hidden="true" /></summary>
+                    <div className={styles.assignmentMenuItems}>
+                      <button type="button" onClick={(event) => {
+                        event.currentTarget.closest('details')?.removeAttribute('open');
+                        handleDelete(hw);
+                      }}><Trash2 size={16} aria-hidden="true" />Ödevi sil</button>
+                    </div>
+                  </details>
                   <button type="button" className={styles.primary} onClick={() => onOpenCheck(hw.id, hw.class_name || '')}><CheckSquare size={16} aria-hidden="true" />Kontrol et</button>
                 </div>
               </li>
@@ -141,12 +167,16 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                 <label className={styles.field}>Ders
                   <input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={80} required placeholder="Örn: Hayat bilgisi" />
                 </label>
-                <label className={styles.field}>Sınıf
-                  <select value={className} onChange={(e) => setClassName(e.target.value)} required>
-                    {!classNames.length && <option value="">Önce sınıf ekleyin</option>}
-                    {classNames.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </label>
+                <div className={styles.field}>
+                  <span>Sınıf</span>
+                  <CustomSelect
+                    value={className}
+                    onChange={(val) => setClassName(val)}
+                    options={classNames.map((c) => ({ value: c, label: c }))}
+                    placeholder={classNames.length ? 'Sınıf seçin' : 'Önce sınıf ekleyin'}
+                    disabled={!classNames.length}
+                  />
+                </div>
                 <label className={styles.field}>Teslim tarihi
                   <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                 </label>

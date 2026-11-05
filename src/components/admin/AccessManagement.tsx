@@ -5,6 +5,7 @@ import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle, Edi
 import { TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName, parseClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker } from '../SchoolPicker';
+import { CustomSelect } from '../CustomSelect';
 import { StudentSchoolSelect } from '../StudentSchoolSelect';
 import { SchoolManagement } from './SchoolManagement';
 import {
@@ -489,25 +490,18 @@ export const AccessManagement: React.FC = () => {
               </label>
             ))}
 
-            <label className="block">
+            <div className="block">
               <span className="font-semibold text-slate-700 block mb-1">Branş</span>
-              <select
+              <CustomSelect
                 value={editForm.branch}
-                onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-              >
-                <option value="">Seçiniz</option>
-                {/* Listede olmayan eski bir branş kayıtlıysa onu da göster */}
-                {editForm.branch && !TEACHER_BRANCH_OPTIONS.includes(editForm.branch) && (
-                  <option value={editForm.branch}>{editForm.branch}</option>
-                )}
-                {TEACHER_BRANCH_OPTIONS.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={(val) => setEditForm({ ...editForm, branch: val })}
+                options={[
+                  ...(editForm.branch && !TEACHER_BRANCH_OPTIONS.includes(editForm.branch) ? [{ value: editForm.branch, label: editForm.branch }] : []),
+                  ...TEACHER_BRANCH_OPTIONS.map((b) => ({ value: b, label: b }))
+                ]}
+                placeholder="Seçiniz"
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <ClassLevelSelects
@@ -522,38 +516,26 @@ export const AccessManagement: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <label className="block">
+              <div className="block">
                 <span className="font-semibold text-slate-700 block mb-1">İl</span>
-                <select
+                <CustomSelect
                   value={editForm.city}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, city: e.target.value, district: (TURKEY_CITIES[e.target.value] || [''])[0], school_id: '' })
+                  onChange={(val) =>
+                    setEditForm({ ...editForm, city: val, district: (TURKEY_CITIES[val] || [''])[0], school_id: '' })
                   }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                >
-                  <option value="">Seçiniz</option>
-                  {Object.keys(TURKEY_CITIES).map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
+                  options={Object.keys(TURKEY_CITIES).map((c) => ({ value: c, label: c }))}
+                  placeholder="Seçiniz"
+                />
+              </div>
+              <div className="block">
                 <span className="font-semibold text-slate-700 block mb-1">İlçe</span>
-                <select
+                <CustomSelect
                   value={editForm.district}
-                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value, school_id: '' })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                >
-                  <option value="">Seçiniz</option>
-                  {(TURKEY_CITIES[editForm.city] || (editForm.district ? [editForm.district] : [])).map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  onChange={(val) => setEditForm({ ...editForm, district: val, school_id: '' })}
+                  options={(TURKEY_CITIES[editForm.city] || (editForm.district ? [editForm.district] : [])).map((d) => ({ value: d, label: d }))}
+                  placeholder="Seçiniz"
+                />
+              </div>
             </div>
 
             <SchoolPicker

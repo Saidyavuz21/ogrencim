@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Users, Download, Printer, X } from '../icons';
 import { createStudent } from '../../lib/supabaseClient';
 import { Notice, NoticeState } from './TeacherUi';
+import { CustomSelect } from '../CustomSelect';
 import styles from './TeacherDashboard.module.css';
 
 const MAX_ROWS = 60;
@@ -132,9 +133,14 @@ export function TeacherBulkStudents({ selectedClass, classNames, onClose, onDone
           <div className={styles.formGrid}>
             <div className={styles.field}>
               <label htmlFor="bulk-class">Sınıf</label>
-              <select id="bulk-class" value={className} onChange={(e) => setClassName(e.target.value)} disabled={busy}>
-                {classNames.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <CustomSelect
+                id="bulk-class"
+                value={className}
+                onChange={(val) => setClassName(val)}
+                options={classNames.map((c) => ({ value: c, label: c }))}
+                placeholder="Sınıf seçin"
+                disabled={busy}
+              />
             </div>
             <label className={`${styles.field} ${styles.fullRow}`}>Öğrenci listesi
               <textarea

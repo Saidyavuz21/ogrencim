@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, ChevronDown } from '../icons';
 import { TeacherClass } from '../../data/portalData';
 import { TeacherPageInfo } from './teacherPages';
+import { CustomSelect } from '../CustomSelect';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherPageHeaderProps {
@@ -50,25 +51,25 @@ export function TeacherPageHeader({ page, onBack, classes, selectedClass, onSele
         )}
       </div>
       {showClassPicker && (
-        <label
+        <div
           id="teacher-page-class-wrap"
           className={`${styles.pageClassField} ${mobileOpen ? '' : styles.pageClassFieldClosed}`}
-          htmlFor="teacher-page-class"
         >
           <span>Sınıf</span>
-          <select
-            id="teacher-page-class"
-            value={classes!.some((cls) => cls.name === selectedClass) ? selectedClass : ''}
-            onChange={(e) => {
-              onSelectClass!(e.target.value);
-              setMobileOpen(false);
-            }}
-            disabled={!classes!.length}
-          >
-            {!classes!.length && <option value="">Henüz sınıf eklenmedi</option>}
-            {classes!.map((cls) => <option key={cls.id} value={cls.name}>{cls.name}</option>)}
-          </select>
-        </label>
+          <div style={{ flex: 1, minWidth: 160, maxWidth: 280 }}>
+            <CustomSelect
+              id="teacher-page-class"
+              value={classes!.some((cls) => cls.name === selectedClass) ? selectedClass! : ''}
+              onChange={(val) => {
+                onSelectClass!(val);
+                setMobileOpen(false);
+              }}
+              options={classes!.map((cls) => ({ value: cls.name, label: cls.name }))}
+              placeholder={classes!.length ? 'Sınıf seçin' : 'Henüz sınıf eklenmedi'}
+              disabled={!classes!.length}
+            />
+          </div>
+        </div>
       )}
     </header>
   );

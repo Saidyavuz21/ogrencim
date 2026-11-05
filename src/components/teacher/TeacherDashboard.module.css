@@ -1571,7 +1571,21 @@
   min-width: 0;
 }
 
-.assignmentContent { display: grid; gap: 12px; min-width: 0; }
+.assignmentRow { gap: 12px; padding-block: 20px; }
+.assignmentContent { display: grid; gap: 8px; min-width: 0; }
+.assignmentActions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.assignmentMenu { position: relative; }
+.assignmentMenu summary { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; cursor: pointer; list-style: none; color: var(--teacher-muted); }
+.assignmentMenu summary::-webkit-details-marker { display: none; }
+.assignmentMenu summary:hover { background: #f7f6f2; }
+.assignmentMenu summary:focus-visible { outline: 3px solid #25634b; outline-offset: 3px; }
+.assignmentMenuItems { position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 5; min-width: 160px; padding: 6px; border: 1px solid var(--teacher-border); border-radius: 10px; background: #fff; }
+.assignmentMenuItems button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 10px; border: 0; border-radius: 6px; background: transparent; color: var(--teacher-text); font: inherit; cursor: pointer; }
+.assignmentMenuItems button:hover { background: #f7f6f2; }
+@media (max-width: 640px) {
+  .assignmentActions > button { flex: 1; justify-content: center; }
+  .assignmentMenuItems { right: auto; left: 0; min-width: min(160px, calc(100vw - 80px)); max-width: calc(100vw - 80px); }
+}
 .assignmentTitle { margin: 0; color: var(--teacher-text); font-size: 18px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
 .assignmentMeta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; color: var(--teacher-muted); font-size: 14px; line-height: 1.6; }
 .assignmentDue { display: inline-flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }

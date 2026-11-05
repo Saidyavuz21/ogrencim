@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Search, School } from './icons';
 import { listSchools, SchoolRecord, searchSchools } from '../lib/supabaseClient';
 import { TURKEY_CITIES } from '../data/portalData';
+import { CustomSelect } from './CustomSelect';
 import styles from './StudentSchoolSelect.module.css';
 
 const STORAGE_KEY = 'tofutr-ogrenci-okul';
@@ -123,33 +124,38 @@ export function StudentSchoolSelect({ value, onChange, disabled }: StudentSchool
       ) : (
         <>
           <div className={styles.row}>
-            <label>
+            <div>
               <span className={styles.srOnly}>İl</span>
-              <select value={city} onChange={(e) => { setCity(e.target.value); setDistrict(''); setDistrictSchools([]); }} disabled={disabled}>
-                <option value="">İl seç</option>
-                {Object.keys(TURKEY_CITIES).sort((a, b) => a.localeCompare(b, 'tr')).map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </label>
-            <label>
+              <CustomSelect
+                value={city}
+                onChange={(val) => { setCity(val); setDistrict(''); setDistrictSchools([]); }}
+                disabled={disabled}
+                placeholder="İl seç"
+                options={Object.keys(TURKEY_CITIES).sort((a, b) => a.localeCompare(b, 'tr')).map((c) => ({ value: c, label: c }))}
+              />
+            </div>
+            <div>
               <span className={styles.srOnly}>İlçe</span>
-              <select value={district} onChange={(e) => { setDistrict(e.target.value); setDistrictSchools([]); }} disabled={disabled || !city}>
-                <option value="">İlçe seç</option>
-                {(TURKEY_CITIES[city] || []).map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </label>
+              <CustomSelect
+                value={district}
+                onChange={(val) => { setDistrict(val); setDistrictSchools([]); }}
+                disabled={disabled || !city}
+                placeholder="İlçe seç"
+                options={(TURKEY_CITIES[city] || []).map((d) => ({ value: d, label: d }))}
+              />
+            </div>
           </div>
           {city && district && (
-            <label>
+            <div>
               <span className={styles.srOnly}>Okul</span>
-              <select
+              <CustomSelect
                 value=""
-                onChange={(e) => { const s = districtSchools.find((x) => x.id === e.target.value); if (s) onChange(s); }}
+                onChange={(val) => { const s = districtSchools.find((x) => x.id === val); if (s) onChange(s); }}
                 disabled={disabled || !districtSchools.length}
-              >
-                <option value="">{districtSchools.length ? 'Okul seç' : 'Bu ilçede kayıtlı okul yok'}</option>
-                {districtSchools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </label>
+                placeholder={districtSchools.length ? 'Okul seç' : 'Bu ilçede kayıtlı okul yok'}
+                options={districtSchools.map((s) => ({ value: s.id, label: s.name }))}
+              />
+            </div>
           )}
           <button type="button" className={styles.linkButton} onClick={() => setMode('search')} disabled={disabled}>Okul adıyla ara</button>
         </>

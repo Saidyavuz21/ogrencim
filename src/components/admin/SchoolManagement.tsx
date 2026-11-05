@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Building, Check, Trash2, Plus } from '../icons';
 import { TURKEY_CITIES } from '../../data/portalData';
+import { CustomSelect } from '../CustomSelect';
 import {
   listPendingSchools,
   listSchools,
@@ -195,30 +196,22 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
       <form onSubmit={handleAdd} className="space-y-2 pt-1">
         <span className="text-[11px] font-bold uppercase text-slate-500">Okul ekle</span>
         <div className="grid grid-cols-2 gap-2">
-          <select
-            aria-label="İl"
-            className={FIELD}
+          <CustomSelect
             value={city}
-            onChange={(e) => {
-              setCity(e.target.value);
+            onChange={(val) => {
+              setCity(val);
               setDistrict('');
             }}
-          >
-            <option value="">İl seçin</option>
-            {Object.keys(TURKEY_CITIES).map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <select aria-label="İlçe" className={FIELD} value={district} disabled={!city} onChange={(e) => setDistrict(e.target.value)}>
-            <option value="">İlçe seçin</option>
-            {(TURKEY_CITIES[city] || []).map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+            placeholder="İl seçin"
+            options={Object.keys(TURKEY_CITIES).map((c) => ({ value: c, label: c }))}
+          />
+          <CustomSelect
+            value={district}
+            disabled={!city}
+            onChange={(val) => setDistrict(val)}
+            placeholder="İlçe seçin"
+            options={(TURKEY_CITIES[city] || []).map((d) => ({ value: d, label: d }))}
+          />
         </div>
         <textarea
           aria-label="Okul adları"
@@ -276,14 +269,12 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
                 Bu ilçede henüz onaylı okul yok. Birleştirmek yerine okulu onaylayabilirsiniz.
               </p>
             ) : (
-              <select aria-label="Hedef okul" className={FIELD} value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>
-                <option value="">Okul seçin</option>
-                {mergeOptions.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                value={mergeTarget}
+                onChange={(val) => setMergeTarget(val)}
+                placeholder="Okul seçin"
+                options={mergeOptions.map((o) => ({ value: o.id, label: o.name }))}
+              />
             )}
             <div className="flex gap-2">
               <button

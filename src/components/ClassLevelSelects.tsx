@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CLASS_LEVEL_GROUPS, CLASS_SECTIONS, classLevelLabel } from '../data/portalData';
+import { CustomSelect } from './CustomSelect';
 
 interface ClassLevelSelectsProps {
   idPrefix: string;
@@ -36,52 +37,52 @@ export const ClassLevelSelects: React.FC<ClassLevelSelectsProps> = ({
   const levelId = `${idPrefix}-level`;
   const sectionId = `${idPrefix}-section`;
 
+  const levelOptions = [
+    ...(allowEmpty || !level ? [{ value: '', label: emptyLabel }] : []),
+    ...CLASS_LEVEL_GROUPS.flatMap((group) =>
+      group.levels.map((lv) => ({
+        value: lv,
+        label: classLevelLabel(lv),
+        badge: group.label,
+      }))
+    ),
+  ];
+
   const levelControl = (
-    <select
+    <CustomSelect
       id={levelId}
       className={selectClassName}
       value={level}
       disabled={disabled}
-      onChange={(e) => onChange({ level: e.target.value, section: e.target.value ? section || 'A' : '' })}
-    >
-      {(allowEmpty || !level) && <option value="">{emptyLabel}</option>}
-      {CLASS_LEVEL_GROUPS.map((group) => (
-        <optgroup key={group.label} label={group.label}>
-          {group.levels.map((lv) => (
-            <option key={lv} value={lv}>
-              {classLevelLabel(lv)}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+      onChange={(val) => onChange({ level: val, section: val ? section || 'A' : '' })}
+      options={levelOptions}
+      placeholder={emptyLabel}
+    />
   );
 
+  const sectionOptions = level
+    ? CLASS_SECTIONS.map((s) => ({ value: s, label: `${s} şubesi` }))
+    : [{ value: '', label: '—' }];
+
   const sectionControl = (
-    <select
+    <CustomSelect
       id={sectionId}
       className={selectClassName}
       value={section}
       disabled={disabled || !level}
-      onChange={(e) => onChange({ level, section: e.target.value })}
-    >
-      {!level && <option value="">—</option>}
-      {level &&
-        CLASS_SECTIONS.map((s) => (
-          <option key={s} value={s}>
-            {s} şubesi
-          </option>
-        ))}
-    </select>
+      onChange={(val) => onChange({ level, section: val })}
+      options={sectionOptions}
+      placeholder="Şube seçin"
+    />
   );
 
   const wrap =
     renderField ??
     (({ id, label, control }) => (
-      <label htmlFor={id} className="block">
-        <span className="font-semibold text-slate-700 block mb-1">{label}</span>
+      <div className="block">
+        <label htmlFor={id} className="font-semibold text-slate-700 block mb-1">{label}</label>
         {control}
-      </label>
+      </div>
     ));
 
   return (

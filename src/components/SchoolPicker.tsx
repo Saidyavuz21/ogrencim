@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { listSchools, SchoolRecord } from '../lib/supabaseClient';
+import { CustomSelect } from './CustomSelect';
 
 /** Listede olmayan okul için seçicide kullanılan özel değer */
 export const NEW_SCHOOL = '__yeni__';
@@ -74,30 +75,29 @@ export const SchoolPicker: React.FC<SchoolPickerProps> = ({
   const placeholder = !district
     ? 'Önce il ve ilçe seçin'
     : isLoading
-    ? 'Okullar yükleniyor…'
-    : schools.length === 0
-    ? allowNew
-      ? 'Bu ilçede kayıtlı okul yok'
-      : 'Bu ilçede okul yok'
-    : 'Okulunuzu seçin';
+      ? 'Okullar yükleniyor…'
+      : schools.length === 0
+        ? allowNew
+          ? 'Bu ilçede kayıtlı okul yok'
+          : 'Bu ilçede okul yok'
+        : 'Okulunuzu seçin';
+
+  const selectOptions = [
+    ...(showCurrentFallback ? [{ value: schoolId, label: `${currentSchoolName} (mevcut)` }] : []),
+    ...schools.map((s) => ({ value: s.id, label: s.name })),
+    ...(allowNew && district && !isLoading ? [{ value: NEW_SCHOOL, label: '➕ Okulum listede yok' }] : []),
+  ];
 
   const selectControl = (
-    <select
+    <CustomSelect
       id={selectId}
       className={selectClassName}
       value={schoolId}
       disabled={disabled || !district || isLoading}
-      onChange={(e) => onChange({ schoolId: e.target.value, newSchoolName: e.target.value === NEW_SCHOOL ? newSchoolName : '' })}
-    >
-      <option value="">{placeholder}</option>
-      {showCurrentFallback && <option value={schoolId}>{currentSchoolName} (mevcut)</option>}
-      {schools.map((s) => (
-        <option key={s.id} value={s.id}>
-          {s.name}
-        </option>
-      ))}
-      {allowNew && district && !isLoading && <option value={NEW_SCHOOL}>➕ Okulum listede yok</option>}
-    </select>
+      onChange={(val) => onChange({ schoolId: val, newSchoolName: val === NEW_SCHOOL ? newSchoolName : '' })}
+      options={selectOptions}
+      placeholder={placeholder}
+    />
   );
 
   const newSchoolControl = (
@@ -113,16 +113,24 @@ export const SchoolPicker: React.FC<SchoolPickerProps> = ({
   );
 
   return (
-    <>
-      {wrap({ id: selectId, label: 'Okul', control: selectControl })}
-      {allowNew &&
-        schoolId === NEW_SCHOOL &&
+    <div className="space-y-3">
+      {wrap({
+        id: selectId,
+        label: 'Okul',
+        control: selectControl,
+        hint:
+          allowNew && district
+            ? 'Okulunuz listede yoksa en alttaki seçeneği tıklayıp adını yazabilirsiniz.'
+            : undefined,
+      })}
+
+      {schoolId === NEW_SCHOOL &&
         wrap({
           id: inputId,
-          label: 'Okulunuzun tam adı',
+          label: 'Yeni okul adı',
           control: newSchoolControl,
-          hint: 'Okulunuz okul yönetimi onayladıktan sonra listeye eklenir.',
+          hint: 'Yönetici onaylayana kadar bu adla işlem yapılır.',
         })}
-    </>
+    </div>
   );
 };

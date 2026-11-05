@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react';
 import { AlertCircle, CheckCircle2, ChevronDown, FileText, X } from '../icons';
 import { ClassStudent, formatBytes, getAttachmentUrl, HomeworkAttachment, listClassStudents } from '../../lib/teacherData';
 import styles from './TeacherDashboard.module.css';
@@ -81,6 +81,67 @@ export function NeedClass({ onOpenClasses }: { onOpenClasses: () => void }) {
 }
 
 /** Seçili sınıfın öğrencilerini veritabanından çeker */
+// ===== Öğrenci listesi sıralaması (No / A–Z) — tercih bu cihazda hatırlanır, tüm sayfalarda ortaktır =====
+export type StudentSort = 'no' | 'name';
+const SORT_KEY = 'ogretmen-ogrenci-sirasi';
+const SORT_EVENT = 'ogrenci-sirasi-degisti';
+
+function readSort(): StudentSort {
+  try {
+    return window.localStorage.getItem(SORT_KEY) === 'name' ? 'name' : 'no';
+  } catch {
+    return 'no';
+  }
+}
+
+function subscribeSort(onChange: () => void) {
+  window.addEventListener(SORT_EVENT, onChange);
+  window.addEventListener('storage', onChange);
+  return () => {
+    window.removeEventListener(SORT_EVENT, onChange);
+    window.removeEventListener('storage', onChange);
+  };
+}
+
+export function useStudentSort(): [StudentSort, (next: StudentSort) => void] {
+  const sort = useSyncExternalStore(subscribeSort, readSort, () => 'no' as StudentSort);
+  const setSort = useCallback((next: StudentSort) => {
+    try {
+      window.localStorage.setItem(SORT_KEY, next);
+    } catch {
+      /* depolama kapalıysa yalnızca bu oturumda geçerli olmaz; sorun değil */
+    }
+    window.dispatchEvent(new Event(SORT_EVENT));
+  }, []);
+  return [sort, setSort];
+}
+
+/** Okul numarası sayı gibi sıralanır (49 < 139); adlar Türkçe alfabeye göre */
+export function sortStudents<T extends { name: string; student_number: string }>(list: T[], sort: StudentSort): T[] {
+  const byNo = (a: T, b: T) => a.student_number.localeCompare(b.student_number, 'tr', { numeric: true });
+  const byName = (a: T, b: T) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' });
+  return [...list].sort((a, b) => (sort === 'name' ? byName(a, b) || byNo(a, b) : byNo(a, b) || byName(a, b)));
+}
+
+/** Liste üstündeki sıralama seçici */
+export function StudentSortToggle() {
+  const [sort, setSort] = useStudentSort();
+  const options: { value: StudentSort; label: string; title: string }[] = [
+    { value: 'no', label: 'No', title: 'Okul numarasına göre sırala' },
+    { value: 'name', label: 'A–Z', title: 'Ada göre alfabetik sırala' },
+  ];
+  return (
+    <div className={styles.sortToggle} role="group" aria-label="Öğrenci sıralaması">
+      <span className={styles.sortToggleLabel}>Sırala</span>
+      {options.map((o) => (
+        <button key={o.value} type="button" aria-pressed={sort === o.value} title={o.title} onClick={() => setSort(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function useClassStudents(className: string) {
   const [students, setStudents] = useState<ClassStudent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +164,9 @@ export function useClassStudents(className: string) {
   }, [className, version]);
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
-  return { students, setStudents, loading, error, reload };
+  const [sort] = useStudentSort();
+  const sorted = useMemo(() => sortStudents(students, sort), [students, sort]);
+  return { students: sorted, setStudents, loading, error, reload };
 }
 
 export const initialsOf = (name: string) =>

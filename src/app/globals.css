@@ -25,5 +25,67 @@ svg {
   vertical-align: middle;
 }
 
-/* Tailwind yardımcı sınıfları en sonda: eski tarayıcı betiğindeki gibi öncelikli kalsın */
+/* Tailwind yardımcı sınıfları */
 @tailwind utilities;
+
+/* ==========================================================================
+   Genel Select & Option Tasarım Standartları
+   ========================================================================== */
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2325634b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  padding-right: 42px !important;
+  border: 1px solid #c8d3cc;
+  border-radius: 12px;
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  cursor: pointer;
+}
+
+select:hover:not(:disabled) {
+  border-color: #25634b;
+  background-color: #fcfdfc;
+}
+
+select:focus,
+select:focus-visible {
+  outline: none;
+  border-color: #25634b;
+  box-shadow: 0 0 0 3px rgba(37, 99, 75, 0.18);
+}
+
+select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+/* Option açılır liste standartları */
+select option {
+  background-color: #ffffff;
+  color: #1e293b;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+select option:checked {
+  background-color: #e6f1e9;
+  color: #216044;
+  font-weight: 600;
+}
+
+select option:disabled {
+  color: #94a3b8;
+}

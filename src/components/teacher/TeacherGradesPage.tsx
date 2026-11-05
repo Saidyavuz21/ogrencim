@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Save } from '../icons';
 import { EXAMS, ExamId, GradeRow, listGrades, saveGrades } from '../../lib/teacherData';
-import { CollapsiblePanel, Notice, NoticeState, useClassStudents } from './TeacherUi';
+import { CollapsiblePanel, Notice, NoticeState, StudentSortToggle, useClassStudents } from './TeacherUi';
 import styles from './TeacherDashboard.module.css';
 
 type Cells = Record<string, Partial<Record<ExamId, string>>>;
@@ -85,6 +85,7 @@ export function TeacherGradesPage({ selectedClass, defaultSubject }: { selectedC
           {loading && <p className={styles.mutedText}>Öğrenciler yükleniyor…</p>}
           {error && <p className={styles.noticeError}>{error}</p>}
           {!loading && !error && students.length === 0 && <p className={styles.mutedText}>{selectedClass} sınıfında kayıtlı öğrenci yok.</p>}
+          {students.length > 1 && <div className={styles.listSortBar}><StudentSortToggle /></div>}
           {students.length > 0 && (
             <div className={styles.tableScroll}>
               <table className={styles.gradeTable}>

@@ -312,11 +312,20 @@
   width: 100%;
   height: 52px;
   padding: 10px 14px;
+  padding-right: 42px !important;
   color: var(--teacher-text);
-  border: 1px solid #a4b1a6;
-  border-radius: 10px;
-  background: white;
+  border: 1px solid #c8d3cc;
+  border-radius: 12px;
+  background-color: white;
   font-size: 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.classField select:focus,
+.mobileNavigation select:focus {
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 75, 0.15);
+  outline: none;
 }
 
 .headerActions {
@@ -1293,12 +1302,20 @@
   flex: 1;
   max-width: 280px;
   height: 48px;
-  padding: 8px 12px;
+  padding: 8px 14px;
+  padding-right: 40px !important;
   color: var(--teacher-text);
-  border: 1px solid #a4b1a6;
-  border-radius: 10px;
-  background: white;
-  font-size: 16px;
+  border: 1px solid #c8d3cc;
+  border-radius: 12px;
+  background-color: white;
+  font-size: 15px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pageClassField select:focus {
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 75, 0.15);
+  outline: none;
 }
 
 /* ===== Öğrenciler ve profil sayfaları ===== */
@@ -1349,11 +1366,23 @@
 
 .field :is(input, select) {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #a4b1a6;
-  background: white;
+  padding: 10px 14px;
+  border: 1px solid #c8d3cc;
+  border-radius: 12px;
+  background-color: white;
   color: var(--teacher-text);
   font-weight: 400;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field select {
+  padding-right: 42px !important;
+}
+
+.field :is(input, select):focus {
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 75, 0.15);
+  outline: none;
 }
 
 .inlineRow {
@@ -2448,3 +2477,13 @@
 .noteRemove { display: grid; place-items: center; width: 46px; flex-shrink: 0; border: 1px solid var(--teacher-border); border-radius: 10px; background: white; color: var(--teacher-muted); cursor: pointer; transition: background-color 150ms ease-out, color 150ms ease-out; }
 .noteRemove:hover { background: #fbeaea; color: #b42318; border-color: #f0c4c0; }
 .noteRemove:focus-visible { outline: 2px solid var(--teacher-primary); outline-offset: 2px; }
+
+/* Öğrenci listesi sıralama seçici (No / A–Z) */
+.listSortBar { display: flex; justify-content: flex-end; padding: 12px 24px; border-bottom: 1px solid var(--teacher-border); }
+.panel .listSortBar { padding: 0 0 12px; border-bottom: 0; }
+.sortToggle { display: inline-flex; align-items: center; gap: 4px; }
+.sortToggleLabel { margin-right: 6px; font-size: 13px; font-weight: 500; color: var(--teacher-muted); }
+.sortToggle button { min-width: 48px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--teacher-border); border-radius: 10px; background: white; color: var(--teacher-text); font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 150ms ease-out, border-color 150ms ease-out; }
+.sortToggle button:hover { background: #f0f4ee; }
+.sortToggle button[aria-pressed='true'] { background: var(--teacher-selected); border-color: var(--teacher-primary); color: var(--teacher-primary); font-weight: 600; }
+.sortToggle button:focus-visible { outline: 2px solid var(--teacher-primary); outline-offset: 2px; }

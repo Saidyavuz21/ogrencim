@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Minus } from '../icons';
 import { givePoints, listPointHistory, PointHistoryRow } from '../../lib/teacherData';
-import { CollapsiblePanel, Notice, NoticeState, formatDateTime, initialsOf, useClassStudents } from './TeacherUi';
+import { CollapsiblePanel, Notice, NoticeState, formatDateTime, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
 import styles from './TeacherDashboard.module.css';
 
 const QUICK_REASONS = {
@@ -52,6 +52,7 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
 
       <div className={styles.pointsLayout}>
       <section className={styles.studentList} aria-label="Öğrenci puanları">
+        {students.length > 1 && <div className={styles.listSortBar}><StudentSortToggle /></div>}
         {loading && <p className={`${styles.mutedText} ${styles.listPad}`}>Öğrenciler yükleniyor…</p>}
         {error && <p className={`${styles.noticeError} ${styles.listPad}`}>{error}</p>}
         {!loading && !error && students.length === 0 && <p className={`${styles.mutedText} ${styles.listPad}`}>{selectedClass} sınıfında kayıtlı öğrenci yok.</p>}

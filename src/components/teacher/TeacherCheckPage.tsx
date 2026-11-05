@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Minus, X, Save, BookOpen, Plus } from '../icons';
 import { CheckStatus, HomeworkCheckRow, HomeworkRow, listHomeworkChecks, listMyHomeworks, saveHomeworkChecks } from '../../lib/teacherData';
-import { CollapsiblePanel, Notice, NoticeState, initialsOf, useClassStudents } from './TeacherUi';
+import { CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherCheckPageProps {
@@ -140,6 +140,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
 
       <div className={styles.pointsLayout}>
         <section className={styles.studentList} aria-label="Öğrenci kontrol listesi">
+          {students.length > 1 && <div className={styles.listSortBar}><StudentSortToggle /></div>}
           {stLoading && <p className={`${styles.mutedText} ${styles.listPad}`}>Öğrenciler yükleniyor…</p>}
           {stError && <p className={`${styles.noticeError} ${styles.listPad}`}>{stError}</p>}
           {!stLoading && !stError && students.length === 0 && (

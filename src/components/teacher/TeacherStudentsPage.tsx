@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Search, UserPlus, Users, Edit, Key, Trash2, X, AlertCircle, CheckCircle2 } from '../icons';
 import { TeacherBulkStudents } from './TeacherBulkStudents';
-import { CollapsiblePanel } from './TeacherUi';
+import { CollapsiblePanel, StudentSortToggle, sortStudents, useStudentSort } from './TeacherUi';
 import { createStudent, deleteStudent, listStudents, resetStudentPin, updateStudentInfo, StudentListItem } from '../../lib/supabaseClient';
 import styles from './TeacherDashboard.module.css';
 
@@ -44,6 +44,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
   const [editClass, setEditClass] = useState('');
   const [editPin, setEditPin] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sort] = useStudentSort();
 
   const applyList = (res: Awaited<ReturnType<typeof listStudents>>) => {
     setLoading(false);
@@ -80,10 +81,14 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
 
   // Yalnızca öğretmenin kendi sınıflarındaki öğrenciler listelenir
   const q = query.trim().toLocaleLowerCase('tr-TR');
-  const visible = students.filter((s) =>
+  const filtered = students.filter((s) =>
     classNames.includes(s.class_name) &&
     (filterClass === ALL || s.class_name === filterClass) &&
     (!q || s.name.toLocaleLowerCase('tr-TR').includes(q) || s.student_number.toLocaleLowerCase('tr-TR').includes(q))
+  );
+  // Seçilen sıralama (No / A–Z); tüm sınıflar gösterilirken önce sınıfa göre gruplanır
+  const visible = sortStudents(filtered, sort).sort((a, b) =>
+    filterClass === ALL ? a.class_name.localeCompare(b.class_name, 'tr', { numeric: true }) : 0
   );
 
   const classSelect = (id: string, value: string, onChange: (v: string) => void) => (
@@ -206,6 +211,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
               {classNames.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </label>
+          <StudentSortToggle />
         </div>
 
         {loading && <p className={styles.mutedText}>Öğrenciler yükleniyor…</p>}

@@ -2728,3 +2728,8 @@
   border-radius: 50%;
   background: hsl(var(--subject-hue) 62% 48%);
 }
+
+/* Ödev kontrolü: puan açıklaması + sıralama aynı çubukta */
+.checkListBar { justify-content: space-between; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+.checkPointsHint { margin: 0; font-size: 13px; color: var(--teacher-muted); }
+.checkPointsHint b { color: var(--teacher-text); font-weight: 600; }

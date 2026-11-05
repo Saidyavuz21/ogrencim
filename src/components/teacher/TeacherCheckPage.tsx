@@ -121,7 +121,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
       return;
     }
     setSavedIds(rows.map((r) => r.student_id));
-    setNotice({ kind: 'ok', text: `${rows.length} öğrencinin kontrolü kaydedildi (${counts.yapti} yaptı, ${counts.kismen} kısmen, ${counts.yapmadi} yapmadı)${cleared.length ? `; ${cleared.length} öğrencinin işareti kaldırıldı` : ''}.` });
+    setNotice({ kind: 'ok', text: `${rows.length} öğrencinin kontrolü kaydedildi (${counts.yapti} yaptı, ${counts.kismen} kısmen, ${counts.yapmadi} yapmadı)${cleared.length ? `; ${cleared.length} öğrencinin işareti kaldırıldı` : ''}. Davranış puanları buna göre güncellendi.` });
   };
 
   if (!hwLoading && homeworks.length === 0) {
@@ -141,7 +141,12 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
 
       <div className={styles.pointsLayout}>
         <section className={styles.studentList} aria-label="Öğrenci kontrol listesi">
-          {students.length > 1 && <div className={styles.listSortBar}><StudentSortToggle /></div>}
+          {students.length > 0 && (
+            <div className={`${styles.listSortBar} ${styles.checkListBar}`}>
+              <p className={styles.checkPointsHint}>Puan: <b>Yaptı +1</b> · Kısmen 0 · <b>Yapmadı −1</b></p>
+              {students.length > 1 && <StudentSortToggle />}
+            </div>
+          )}
           {stLoading && <p className={`${styles.mutedText} ${styles.listPad}`}>Öğrenciler yükleniyor…</p>}
           {stError && <p className={`${styles.noticeError} ${styles.listPad}`}>{stError}</p>}
           {!stLoading && !stError && students.length === 0 && (

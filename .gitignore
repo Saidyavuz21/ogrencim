@@ -57,3 +57,6 @@ next-env.d.ts
 /.impeccable/
 /.opencode/
 /.qoder/
+
+# Bu projeye ait olmayan yerel notlar
+/eduboard_roadmap.md

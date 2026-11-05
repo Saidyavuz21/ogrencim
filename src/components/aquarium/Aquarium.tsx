@@ -281,7 +281,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       {!full && (
         <ul className={styles.legend}>
           <li><span className={styles.legendEgg} aria-hidden="true" />5 puanın altı: yumurta (her puanda bir çatlak)</li>
-          <li><strong>5 puan</strong> yumurtadan çıkar; bir daha yumurta olmaz</li>
+          <li><strong>5 puanda</strong> yumurtadan çıkar; 5 puanın altına düşerse yeniden yumurta olur</li>
           <li>Her <strong>5 puanda</strong> yeni balık: {FORM_NAMES.join(' → ')}</li>
           <li>Her puanda biraz büyür · <strong>{SPARKLE_POINTS}</strong> puanda parıltı · <strong>{CROWN_POINTS}</strong> puanda taç</li>
         </ul>

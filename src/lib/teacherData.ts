@@ -72,24 +72,23 @@ export async function listClassStudents(className: string): Promise<Result<Class
   return { ok: true, data: (data as ClassStudent[]) || [] };
 }
 
-/** Sınıf akvaryumu için öğrenciler (class_leaderboard: puan + yumurtadan çıktı bilgisi) */
+/** Sınıf akvaryumu için öğrenciler (class_leaderboard; balık/yumurta yalnızca puana göre) */
 export interface AquariumStudent {
   id: string;
   name: string;
   points: number;
-  hatched: boolean;
 }
 
 export async function listClassAquarium(className: string): Promise<Result<AquariumStudent[]>> {
   if (!className) return { ok: true, data: [] };
   const { data, error } = await supabase.rpc('class_leaderboard');
   if (error) return fail(error);
-  const rows = (data as { id: string; name: string; class_name: string; points: number; hatched?: boolean }[]) || [];
+  const rows = (data as { id: string; name: string; class_name: string; points: number }[]) || [];
   return {
     ok: true,
     data: rows
       .filter((r) => r.class_name === className)
-      .map((r) => ({ id: r.id, name: r.name, points: r.points ?? 0, hatched: r.hatched ?? (r.points ?? 0) >= 5 })),
+      .map((r) => ({ id: r.id, name: r.name, points: r.points ?? 0 })),
   };
 }
 

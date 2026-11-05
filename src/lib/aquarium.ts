@@ -1,7 +1,7 @@
 // ========================================================
 // SINIF AKVARYUMU KURALLARI
 // - 5 puanın altı (eksiler dahil) yumurta; 1–4 puanda çatlaklar artar
-// - 5 puanda yumurtadan çıkar; bir kez çıkan balık bir daha yumurta olmaz, kaybolmaz
+// - 5 puanda yumurtadan çıkar; puan 5'in altına düşerse yeniden yumurta olur
 // - Her 5 puanda balığın şekli değişir (8 şekil: 5–9, 10–14, … 40+)
 // - Her puanda boy biraz artar; büyüme yavaşlayarak bir üst sınıra yaklaşır
 // - 50 puanda parıltı, 75 puanda taç
@@ -11,7 +11,6 @@ export interface AquariumInput {
   id: string;
   name: string;
   points: number;
-  hatched: boolean;
 }
 
 export const HATCH_POINTS = 5;
@@ -20,12 +19,13 @@ export const FORM_COUNT = 8;
 export const SPARKLE_POINTS = 50;
 export const CROWN_POINTS = 75;
 
-export const isFish = (s: Pick<AquariumInput, 'points' | 'hatched'>) => s.hatched || s.points >= HATCH_POINTS;
+/** Balık mı? Yalnızca şu anki puana bakılır: 5 ve üzeri balık, altı yumurta */
+export const isFish = (s: Pick<AquariumInput, 'points'>) => s.points >= HATCH_POINTS;
 
 /** Yumurtadaki çatlak sayısı: 0 puan ve eksi → 0, 1–4 puan → 1–4 */
 export const eggCracks = (points: number) => Math.max(0, Math.min(HATCH_POINTS - 1, points));
 
-/** Balık şekli 1–8 (yumurtadan çıkıp puanı 5'in altına düşen balık en küçük şekilde kalır) */
+/** Balık şekli 1–8 (5–9 puan → 1, 10–14 → 2, … 40+ → 8) */
 export const fishForm = (points: number) =>
   Math.max(1, Math.min(FORM_COUNT, Math.floor(Math.max(points, HATCH_POINTS) / FORM_STEP)));
 
@@ -36,7 +36,6 @@ const MAX_SIZE = 132;
 /**
  * Balığın genişliği (1000 birim genişlikteki akvaryuma göre).
  * Her puanda büyür ama ekranı kaplamasın diye büyüme yavaşlar.
- * Eksiye düşen (önceden çıkmış) balık en küçük boyda kalır, kaybolmaz.
  */
 export function fishSize(points: number): number {
   if (points < HATCH_POINTS) return MIN_SIZE + (HATCH_SIZE - MIN_SIZE) * Math.max(0, points) / HATCH_POINTS;

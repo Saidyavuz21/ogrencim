@@ -32,6 +32,11 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   const [savedIds, setSavedIds] = useState<string[]>([]);
   // Not kutusu açılan öğrenciler (not yoksa kutu gizli durur)
   const [openNotes, setOpenNotes] = useState<string[]>([]);
+  // Not kutusunu kapat: yazılmış not da temizlenir (kaydedince veliye gitmez)
+  const closeNote = (id: string) => {
+    setOpenNotes((prev) => prev.filter((x) => x !== id));
+    setDraft(id, { note: '' });
+  };
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<NoticeState>(null);
 
@@ -163,14 +168,22 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
                   </div>
                 </fieldset>
                 {d.note || openNotes.includes(s.id) ? (
-                  <label className={styles.noteField}>Veliye not
-                    <input
-                      value={d.note}
-                      onChange={(e) => setDraft(s.id, { note: e.target.value.slice(0, 300) })}
-                      placeholder="Örn: 3. sayfa eksik"
-                      autoFocus={!d.note}
-                    />
-                  </label>
+                  <div className={styles.noteField}>
+                    <label htmlFor={`note-${s.id}`}>Veliye not</label>
+                    <div className={styles.noteInputRow}>
+                      <input
+                        id={`note-${s.id}`}
+                        value={d.note}
+                        onChange={(e) => setDraft(s.id, { note: e.target.value.slice(0, 300) })}
+                        onKeyDown={(e) => { if (e.key === 'Escape' && !d.note) closeNote(s.id); }}
+                        placeholder="Örn: 3. sayfa eksik"
+                        autoFocus={!d.note}
+                      />
+                      <button type="button" className={styles.noteRemove} onClick={() => closeNote(s.id)} aria-label={`${s.name} için notu kaldır`} title="Notu kaldır">
+                        <X size={18} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <button type="button" className={styles.addNoteButton} onClick={() => setOpenNotes((prev) => [...prev, s.id])}>+ Not ekle</button>
                 )}

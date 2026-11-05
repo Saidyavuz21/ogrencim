@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, ChevronRight, ChevronDown } from '../icons';
 import { TeacherClass, UserAccount } from '../../data/portalData';
-import { TEACHER_PAGES, TEACHER_PAGE_GROUPS, TeacherPageId } from './teacherPages';
+import { TEACHER_PAGES, TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick } from './teacherPages';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherHomeProps {
@@ -72,7 +72,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
               {pages.map((page) => {
                 const badge = badges[page.id] || 0;
                 return (
-                  <button key={page.id} type="button" className={styles.pageCard} onClick={() => onOpenPage(page.id)}>
+                  <a key={page.id} href={teacherPageHref(page.id)} className={styles.pageCard} onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); onOpenPage(page.id); }}>
                     <span className={styles.pageCardIcon}><page.icon size={22} aria-hidden="true" /></span>
                     <span className={styles.pageCardText}>
                       <span className={styles.pageCardTitle}>{page.title}</span>
@@ -80,7 +80,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
                     </span>
                     {badge > 0 && <span className={styles.pageCardBadge} aria-label={`${badge} bekleyen`}>{badge > 99 ? '99+' : badge}</span>}
                     <ChevronRight size={18} className={styles.pageCardArrow} aria-hidden="true" />
-                  </button>
+                  </a>
                 );
               })}
             </div>

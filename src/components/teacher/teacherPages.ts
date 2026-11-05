@@ -48,3 +48,13 @@ export const getTeacherPage = (id: TeacherPageId) => TEACHER_PAGES.find((p) => p
 
 export const pageIdFromSlug = (slug: string | null): TeacherPageId =>
   TEACHER_PAGES.find((p) => p.slug === slug)?.id ?? 'home';
+
+/** Sayfanın adresi: menü ve kartlar gerçek link olur (sağ tık / orta tık ile yeni sekmede açılabilir) */
+export const teacherPageHref = (id: TeacherPageId) => {
+  const slug = getTeacherPage(id)?.slug;
+  return slug ? `/giris?sayfa=${slug}` : '/giris';
+};
+
+/** Düz sol tık mı? Ctrl/Cmd/Shift/orta tık ise tarayıcı linki kendisi (yeni sekmede) açar */
+export const isPlainLeftClick = (e: React.MouseEvent) =>
+  e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { X, LayoutDashboard } from '../icons';
-import { TEACHER_PAGES, TEACHER_PAGE_GROUPS, TeacherPageId } from './teacherPages';
+import { TEACHER_PAGES, TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick } from './teacherPages';
 import type { TeacherClass } from '../../data/portalData';
 import styles from './TeacherDashboard.module.css';
 
@@ -40,7 +40,13 @@ export function TeacherSidebar({ open, currentPage, badges, onClose, onOpenPage,
     return () => document.removeEventListener('keydown', onKey);
   }, [drawerOpen, onClose]);
 
-  const go = (page: TeacherPageId) => { onOpenPage(page); onClose(); };
+  // Düz tıklamada sayfa yenilenmeden geçilir; değiştirici tuşlu tıklamada tarayıcı yeni sekme açar
+  const go = (page: TeacherPageId) => (e: React.MouseEvent) => {
+    if (!isPlainLeftClick(e)) return;
+    e.preventDefault();
+    onOpenPage(page);
+    onClose();
+  };
 
   return (
     <>
@@ -66,21 +72,21 @@ export function TeacherSidebar({ open, currentPage, badges, onClose, onOpenPage,
               </div>
             </div>
           )}
-          <button type="button" className={styles.sidebarItem} aria-current={currentPage === 'home' ? 'page' : undefined} onClick={() => go('home')}>
+          <a href={teacherPageHref('home')} className={styles.sidebarItem} aria-current={currentPage === 'home' ? 'page' : undefined} onClick={go('home')}>
             <LayoutDashboard size={20} aria-hidden="true" />
             <span>Ana sayfa</span>
-          </button>
+          </a>
           {TEACHER_PAGE_GROUPS.map((group) => (
             <div key={group} className={styles.sidebarGroup}>
               <h2>{group}</h2>
               {TEACHER_PAGES.filter((p) => p.group === group).map((p) => {
                 const badge = badges[p.id] || 0;
                 return (
-                  <button key={p.id} type="button" className={styles.sidebarItem} aria-current={currentPage === p.id ? 'page' : undefined} onClick={() => go(p.id)}>
+                  <a key={p.id} href={teacherPageHref(p.id)} className={styles.sidebarItem} aria-current={currentPage === p.id ? 'page' : undefined} onClick={go(p.id)}>
                     <p.icon size={20} aria-hidden="true" />
                     <span>{p.title}</span>
                     {badge > 0 && <span className={styles.sidebarBadge} aria-label={`${badge} bekleyen`}>{badge > 99 ? '99+' : badge}</span>}
-                  </button>
+                  </a>
                 );
               })}
             </div>

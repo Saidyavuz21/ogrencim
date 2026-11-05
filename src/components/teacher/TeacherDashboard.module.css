@@ -2733,3 +2733,106 @@
 .checkListBar { justify-content: space-between; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
 .checkPointsHint { margin: 0; font-size: 13px; color: var(--teacher-muted); }
 .checkPointsHint b { color: var(--teacher-text); font-weight: 600; }
+
+/* ===== Not girişi: sekmeler, tek sütun not girişi, öğrenci notları ===== */
+.gradeTabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--teacher-border);
+  border-radius: 14px;
+  background: white;
+  justify-self: start;
+  max-width: 100%;
+}
+.gradeTab {
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--teacher-muted);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+.gradeTab:hover { color: var(--teacher-text); background: #f3f6f3; }
+.gradeTab[aria-selected='true'] { background: var(--teacher-primary); color: white; }
+.gradeTab:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+
+.gradeEntry { display: grid; gap: 16px; }
+.gradeEntryList { margin: 0; padding: 0; list-style: none; }
+.gradeEntryRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--teacher-border);
+}
+.gradeEntryRow:last-child { border-bottom: 0; }
+.gradeEntryName { display: grid; flex: 1; min-width: 0; cursor: pointer; }
+.gradeEntryName span { font-weight: 600; color: var(--teacher-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gradeEntryName small { font-size: 13px; color: var(--teacher-muted); }
+.gradeEntryInput {
+  width: 96px;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #c8d3cc;
+  border-radius: 12px;
+  background: white;
+  color: var(--teacher-text);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
+}
+.gradeEntryInput:focus { outline: none; border-color: var(--teacher-primary); box-shadow: 0 0 0 3px rgba(37, 99, 75, 0.15); }
+.gradeEntryChanged { border-color: #d9a400; background: #fffaeb; }
+.gradeEntry .stickyActions { justify-self: end; }
+
+.gradeViewTable { margin-top: 14px; }
+.gradeViewTable .gradeTable { min-width: 0; }
+
+/* Öğrenci paneli: ders kartları */
+.gradeCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gradeCard {
+  --subject-hue: 150;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--teacher-border);
+  border-top: 4px solid hsl(var(--subject-hue) 62% 48%);
+  border-radius: 16px;
+  background: white;
+}
+.gradeCardHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.gradeCardHead h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--teacher-text); }
+.gradeCardAvg {
+  display: inline-grid;
+  justify-items: center;
+  min-width: 58px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: hsl(var(--subject-hue) 70% 94%);
+  color: hsl(var(--subject-hue) 60% 24%);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.gradeCardAvg small { font-size: 11px; font-weight: 600; opacity: 0.8; }
+.gradeCardList { display: grid; gap: 6px; margin: 0; }
+.gradeCardList div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--teacher-border); }
+.gradeCardList div:last-child { border-bottom: 0; }
+.gradeCardList dt { color: var(--teacher-muted); }
+.gradeCardList dd { margin: 0; font-weight: 700; color: var(--teacher-text); font-variant-numeric: tabular-nums; }

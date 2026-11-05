@@ -314,8 +314,11 @@ export async function saveHomeworkChecks(rows: HomeworkCheckRow[], clear?: { hom
 export const EXAMS = [
   { id: 'yazili1', label: '1. Yazılı' },
   { id: 'yazili2', label: '2. Yazılı' },
-  { id: 'sozlu1', label: 'Sözlü' },
-  { id: 'performans1', label: 'Performans' },
+  { id: 'yazili3', label: '3. Yazılı' },
+  { id: 'sozlu1', label: '1. Sözlü' },
+  { id: 'sozlu2', label: '2. Sözlü' },
+  { id: 'performans1', label: '1. Performans' },
+  { id: 'performans2', label: '2. Performans' },
   { id: 'proje', label: 'Proje' },
 ] as const;
 export type ExamId = (typeof EXAMS)[number]['id'];
@@ -334,6 +337,17 @@ export async function listGrades(studentIds: string[], subject: string): Promise
     .select('student_id, subject, exam, score')
     .in('student_id', studentIds)
     .eq('subject', subject);
+  if (error) return fail(error);
+  return { ok: true, data: ((data as GradeRow[]) || []).map((g) => ({ ...g, score: Number(g.score) })) };
+}
+
+/** Sınıftaki öğrencilerin tüm dersteki notları ("Öğrenci notları" sekmesi ve not girişi için) */
+export async function listClassGrades(studentIds: string[]): Promise<Result<GradeRow[]>> {
+  if (!studentIds.length) return { ok: true, data: [] };
+  const { data, error } = await supabase
+    .from('grades')
+    .select('student_id, subject, exam, score')
+    .in('student_id', studentIds);
   if (error) return fail(error);
   return { ok: true, data: ((data as GradeRow[]) || []).map((g) => ({ ...g, score: Number(g.score) })) };
 }

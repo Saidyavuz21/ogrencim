@@ -5,6 +5,7 @@ import {
   Bell, ChevronRight, ChevronDown, ArrowLeft, FileText, TrendingUp, Star, Award, MessageSquare, User, Send, Users, Check, Minus, X, LogOut, Fish,
 } from '../icons';
 import { Aquarium } from '../aquarium/Aquarium';
+import { subjectHue } from '../../data/subjects';
 import { BrandLogo } from '../BrandLogo';
 import type { IconProps } from '../icons';
 import { UserAccount } from '../../data/portalData';
@@ -236,32 +237,45 @@ function HomeworksPage({ homeworks, loaded }: { homeworks: MyHomework[]; loaded:
   );
 }
 
+type CSSVars = React.CSSProperties & Record<`--${string}`, string | number>;
+const fmtGrade = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
+/** Notlar: her ders için bir kart; yalnızca girilmiş notlar ve ders ortalaması */
 function GradesPage({ grades, loaded }: { grades: MyGrade[]; loaded: boolean }) {
-  const subjects = useMemo(() => Array.from(new Set(grades.map((g) => g.subject))), [grades]);
-  if (loaded && !grades.length) return <p className={`${styles.panel} ${styles.mutedText}`}>Henüz not girilmedi.</p>;
+  const subjects = useMemo(
+    () => Array.from(new Set(grades.map((g) => g.subject))).sort((a, b) => a.localeCompare(b, 'tr')),
+    [grades]
+  );
+  if (!loaded) return <p className={styles.mutedText}>Notlar yükleniyor…</p>;
+  if (!grades.length) return <p className={`${styles.panel} ${styles.mutedText}`}>Henüz not girilmedi.</p>;
+  const order = (id: string) => EXAMS.findIndex((e) => e.id === id);
   return (
-    <section className={styles.panel}>
-      <div className={styles.tableScroll}>
-        <table className={styles.gradeTable}>
-          <thead>
-            <tr><th scope="col">Ders</th>{EXAMS.map((e) => <th key={e.id} scope="col">{e.label}</th>)}<th scope="col">Ort.</th></tr>
-          </thead>
-          <tbody>
-            {subjects.map((subject) => {
-              const rows = grades.filter((g) => g.subject === subject);
-              const avg = rows.reduce((a, g) => a + g.score, 0) / rows.length;
-              return (
-                <tr key={subject}>
-                  <th scope="row"><span>{subject}</span></th>
-                  {EXAMS.map((e) => <td key={e.id}>{rows.find((g) => g.exam === e.id)?.score ?? '—'}</td>)}
-                  <td className={styles.gradeAvg}>{avg.toFixed(1)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <div className={styles.pageBody}>
+      <ul className={styles.gradeCards}>
+        {subjects.map((subject) => {
+          const rows = grades.filter((g) => g.subject === subject).sort((x, y) => order(x.exam) - order(y.exam));
+          const avg = rows.reduce((a, g) => a + g.score, 0) / rows.length;
+          return (
+            <li key={subject} className={styles.gradeCard} style={{ '--subject-hue': subjectHue(subject) } as CSSVars}>
+              <div className={styles.gradeCardHead}>
+                <h2>{subject}</h2>
+                <span className={styles.gradeCardAvg} aria-label={`Ortalama ${fmtGrade(avg)}`}>
+                  <small>Ort.</small>{fmtGrade(avg)}
+                </span>
+              </div>
+              <dl className={styles.gradeCardList}>
+                {rows.map((g) => (
+                  <div key={g.exam}>
+                    <dt>{EXAMS.find((e) => e.id === g.exam)?.label || g.exam}</dt>
+                    <dd>{fmtGrade(g.score)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

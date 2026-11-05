@@ -2501,3 +2501,120 @@
 .sortToggle button:hover { background: #f0f4ee; }
 .sortToggle button[aria-pressed='true'] { background: var(--teacher-selected); border-color: var(--teacher-primary); color: var(--teacher-primary); font-weight: 600; }
 .sortToggle button:focus-visible { outline: 2px solid var(--teacher-primary); outline-offset: 2px; }
+
+/* ===== Ödev gönder: ders kategorileri, hızlı tarih, dosya alanı, arama ===== */
+.chipFieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.chipFieldset legend { margin-bottom: 8px; padding: 0; font-size: 14px; font-weight: 600; color: var(--teacher-text); }
+.optionalHint { font-weight: 400; color: var(--teacher-muted); }
+
+.subjectChips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.subjectChip,
+.dueChip {
+  --subject-hue: 150;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #c8d3cc;
+  border-radius: 999px;
+  background: white;
+  color: var(--teacher-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+
+.subjectChip::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: hsl(var(--subject-hue) 62% 48%);
+}
+
+.subjectChipOther::before { background: #a4b1a6; }
+.subjectChipOther[aria-pressed='true'] { border-color: var(--teacher-primary); background: var(--teacher-selected); color: var(--teacher-primary); box-shadow: inset 0 0 0 1px var(--teacher-primary); }
+
+.subjectChip:hover,
+.dueChip:hover { border-color: var(--teacher-primary); }
+
+.subjectChip[aria-pressed='true'] {
+  border-color: hsl(var(--subject-hue) 55% 38%);
+  background: hsl(var(--subject-hue) 70% 94%);
+  color: hsl(var(--subject-hue) 60% 22%);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px hsl(var(--subject-hue) 55% 38%);
+}
+
+.dueChip { flex-direction: column; align-items: flex-start; gap: 0; border-radius: 12px; padding: 6px 14px; }
+.dueChip small { font-size: 12px; font-weight: 400; color: var(--teacher-muted); }
+.dueChip[aria-pressed='true'] { border-color: var(--teacher-primary); background: var(--teacher-selected); color: var(--teacher-primary); font-weight: 700; box-shadow: inset 0 0 0 1px var(--teacher-primary); }
+.dueChip[aria-pressed='true'] small { color: var(--teacher-primary); }
+
+.subjectChip:focus-visible,
+.dueChip:focus-visible,
+.fileDropButton:focus-visible,
+.fileRemove:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+
+.dueRow { display: flex; gap: 8px; margin-top: 8px; }
+.dueRow input { flex: 1; min-width: 0; }
+
+/* Dosya alanı */
+.fileDrop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px;
+  border: 1.5px dashed #a4b1a6;
+  border-radius: 12px;
+  background: #fbfcfa;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.fileDropActive { border-color: var(--teacher-primary); background: var(--teacher-selected); }
+.fileDrop input[type='file'] { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); }
+.fileDropButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--teacher-primary);
+  border-radius: 10px;
+  background: white;
+  color: var(--teacher-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fileDropButton:hover:not(:disabled) { background: var(--teacher-selected); }
+.fileDropButton:disabled { opacity: 0.5; cursor: not-allowed; }
+.fileDropHint { font-size: 13px; font-weight: 400; color: var(--teacher-muted); }
+.fileRemove { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 0; border-radius: 8px; background: transparent; color: var(--teacher-muted); cursor: pointer; }
+.fileRemove:hover { background: #fbeaea; color: #b42318; }
+
+/* Ödev listesi: arama + ders süzgeci */
+.hwFilters { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.hwFilters .searchField { max-width: none; }
+.hwSubjectFilter { flex: 0 1 220px; min-width: 160px; }
+
+/* Ders etiketi (liste kartında) */
+.subjectTag {
+  --subject-hue: 150;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.subjectTag::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: hsl(var(--subject-hue) 62% 48%);
+}

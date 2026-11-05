@@ -2,8 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bell, ChevronRight, ChevronDown, ArrowLeft, FileText, TrendingUp, Star, Award, MessageSquare, User, Send, Users, Check, Minus, X, LogOut,
+  Bell, ChevronRight, ChevronDown, ArrowLeft, FileText, TrendingUp, Star, Award, MessageSquare, User, Send, Users, Check, Minus, X, LogOut, Fish,
 } from '../icons';
+import { Aquarium } from '../aquarium/Aquarium';
 import { BrandLogo } from '../BrandLogo';
 import type { IconProps } from '../icons';
 import { UserAccount, UserRole } from '../../data/portalData';
@@ -22,7 +23,7 @@ import {
 import { useLiveMessages } from '../../lib/useLiveMessages';
 import styles from '../teacher/TeacherDashboard.module.css';
 
-type PageId = 'home' | 'odevler' | 'notlar' | 'puanlar' | 'siralama' | 'mesajlar' | 'duyurular' | 'hesap';
+type PageId = 'home' | 'odevler' | 'notlar' | 'puanlar' | 'siralama' | 'akvaryum' | 'mesajlar' | 'duyurular' | 'hesap';
 
 interface PageInfo { id: Exclude<PageId, 'home'>; title: string; parentTitle?: string; description: string; icon: React.FC<IconProps>; parentOnly?: boolean }
 
@@ -31,6 +32,7 @@ const PAGES: PageInfo[] = [
   { id: 'notlar', title: 'Notlarım', parentTitle: 'Notlar', description: 'Yazılı, sözlü ve performans', icon: TrendingUp },
   { id: 'puanlar', title: 'Puanlarım', parentTitle: 'Davranış puanları', description: 'Artı / eksi geçmişi', icon: Star },
   { id: 'siralama', title: 'Sınıf sıralaması', description: 'Sınıftaki puan sırası', icon: Award },
+  { id: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanınla büyüyen balığın', icon: Fish },
   { id: 'mesajlar', title: 'Öğretmenime soru sor', parentTitle: 'Öğretmenle mesajlaşma', description: 'Öğretmenlere yaz, sınıf duyurularını oku', icon: MessageSquare },
   { id: 'duyurular', title: 'Duyurular', description: 'Okul duyuruları', icon: Bell },
   { id: 'hesap', title: 'Hesap', description: 'Görünüm ve çıkış', icon: User },
@@ -180,6 +182,13 @@ export function StudentPortal({ user, role, allowedRoles, onRoleChange, onLogout
       {page === 'notlar' && <GradesPage grades={grades} loaded={loaded} />}
       {page === 'puanlar' && <PointsPage me={me} points={points} loaded={loaded} />}
       {page === 'siralama' && <RankingPage ranking={ranking} myId={user.id} className={me?.class_name || ''} />}
+      {page === 'akvaryum' && (
+        <div className={styles.pageBody}>
+          {loaded
+            ? <Aquarium students={ranking} highlightId={user.id} scopeKey={`ogrenci:${user.id}`} title={`${me?.class_name || 'Sınıf'} akvaryumu`} />
+            : <p className={styles.mutedText}>Akvaryum hazırlanıyor…</p>}
+        </div>
+      )}
       {page === 'mesajlar' && me && <FamilyMessagesPage key={role} me={me} asStudent={!isParent} />}
       {page === 'duyurular' && <AnnouncementsList announcements={announcements} loaded={loaded} />}
       {page === 'hesap' && (

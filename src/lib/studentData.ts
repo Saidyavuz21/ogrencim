@@ -107,6 +107,8 @@ export interface ClassmateRank {
   id: string;
   name: string;
   points: number;
+  /** Balık bir kez yumurtadan çıktıysa true (migration öncesi: puan >= 5) */
+  hatched: boolean;
 }
 
 /** Kendi sınıfının sıralaması (RLS: class_leaderboard yalnızca aynı sınıfı döndürür) */
@@ -115,7 +117,12 @@ export async function listMyClassRanking(): Promise<Result<ClassmateRank[]>> {
   if (error) return fail(error);
   return {
     ok: true,
-    data: ((data as { id: string; name: string; points: number }[]) || []).map((s) => ({ id: s.id, name: s.name, points: s.points })),
+    data: ((data as { id: string; name: string; points: number; hatched?: boolean }[]) || []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      points: s.points,
+      hatched: s.hatched ?? s.points >= 5,
+    })),
   };
 }
 

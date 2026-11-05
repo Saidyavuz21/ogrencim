@@ -20,6 +20,7 @@ import { TeacherAssignmentsPage } from './TeacherAssignmentsPage';
 import { TeacherCheckPage } from './TeacherCheckPage';
 import { TeacherPointsPage } from './TeacherPointsPage';
 import { TeacherLeaderboardPage } from './TeacherLeaderboardPage';
+import { TeacherAquariumPage } from './TeacherAquariumPage';
 import { TeacherGradesPage } from './TeacherGradesPage';
 import { TeacherMessagesPage } from './TeacherMessagesPage';
 import { TeacherBulkMessagePage } from './TeacherBulkMessagePage';
@@ -29,9 +30,9 @@ import { TeacherClass } from '../../data/portalData';
 import styles from './TeacherDashboard.module.css';
 
 /** Seçili sınıfa göre çalışan sayfalar (üst çubukta sınıf seçici gösterilir) */
-const CLASS_PAGES: TeacherPageId[] = ['check_sheet', 'plus_minus', 'assignments', 'grade_entry', 'leaderboard', 'messages'];
+const CLASS_PAGES: TeacherPageId[] = ['check_sheet', 'plus_minus', 'assignments', 'grade_entry', 'leaderboard', 'aquarium', 'messages'];
 /** Sınıf seçilmeden açılamayan sayfalar */
-const NEEDS_CLASS: TeacherPageId[] = ['check_sheet', 'plus_minus', 'grade_entry', 'leaderboard', 'messages'];
+const NEEDS_CLASS: TeacherPageId[] = ['check_sheet', 'plus_minus', 'grade_entry', 'leaderboard', 'aquarium', 'messages'];
 
 interface TeacherDashboardProps {
   activeSection?: 'dashboard' | 'announcements';
@@ -220,6 +221,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           )}
           {page === 'plus_minus' && <TeacherPointsPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'leaderboard' && <TeacherLeaderboardPage key={effectiveClass} selectedClass={effectiveClass} />}
+          {page === 'aquarium' && <TeacherAquariumPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'grade_entry' && <TeacherGradesPage key={effectiveClass} selectedClass={effectiveClass} defaultSubject={defaultSubject} />}
           {page === 'messages' && <TeacherMessagesPage key={effectiveClass} selectedClass={effectiveClass} schoolId={schoolId} currentUserId={currentUser?.id} />}
         </>

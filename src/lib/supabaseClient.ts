@@ -123,21 +123,28 @@ async function loadStaffAccount(userId: string): Promise<AuthResult> {
   return { ok: true, user: profileToAccount(profile) };
 }
 
-/** Sayfa yenilendiğinde mevcut oturumu geri yükler. Oturum yoksa null döner. */
+/**
+ * Sayfa yenilendiğinde / tarayıcı yeniden açıldığında mevcut oturumu geri yükler.
+ * Oturum yoksa null döner. Oturum yalnızca kesin olarak geçersizse (öğrenci oturumu sona ermiş,
+ * hesap silinmiş / onaysız / pasif) kapatılır; geçici ağ hatalarında oturum korunur ve hata fırlatılır.
+ */
 export async function restoreSession(): Promise<UserAccount | null> {
   const { data } = await supabase.auth.getSession();
   const session = data.session;
   if (!session) return null;
 
   if (session.user.is_anonymous) {
-    const { data: student } = await supabase.rpc('my_student');
+    const { data: student, error } = await supabase.rpc('my_student');
+    if (error) throw new Error(error.message);
     if (student) return studentToAccount(student as StudentSessionInfo);
     await supabase.auth.signOut();
     return null;
   }
 
-  const res = await loadStaffAccount(session.user.id);
-  if (res.ok) return res.user;
+  const { data: profile, error } = await supabase.from('profiles').select('id').eq('id', session.user.id).maybeSingle();
+  if (error) throw new Error(error.message);
+  const res = profile ? await loadStaffAccount(session.user.id) : null;
+  if (res?.ok) return res.user;
   await supabase.auth.signOut();
   return null;
 }

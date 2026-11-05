@@ -4,13 +4,25 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, Lock, MessageSquare } from 'lucide-react';
-import { signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
+import { restoreSession, signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
 import styles from './HomePage.module.css';
 import { BrandLogo } from '../BrandLogo';
 import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
 
 export default function HomePage() {
   const router = useRouter();
+  // Açık oturum varsa (sekme/tarayıcı yeniden açıldığında) doğrudan panele geç
+  useEffect(() => {
+    let cancelled = false;
+    restoreSession()
+      .then((user) => {
+        if (user && !cancelled) router.replace('/giris');
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
   const [role, setRole] = useState('Öğrenci');
   // Öğrencinin okulu bu cihazda hatırlanır (sunucu çiziminden sonra okunur)
   const [school, setSchool] = useState<SchoolRecord | null>(null);

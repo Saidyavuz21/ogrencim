@@ -39,25 +39,23 @@ export const SchoolPicker: React.FC<SchoolPickerProps> = ({
   renderField,
   disabled,
 }) => {
-  const [schools, setSchools] = useState<SchoolRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // Seçili il/ilçe için gelen liste; anahtar değişince yükleniyor sayılır
+  const key = city && district ? `${city}|${district}` : '';
+  const [result, setResult] = useState<{ key: string; list: SchoolRecord[] }>({ key: '', list: [] });
 
   useEffect(() => {
+    if (!key) return;
     let cancelled = false;
-    if (!city || !district) {
-      setSchools([]);
-      return;
-    }
-    setIsLoading(true);
     listSchools(city, district).then((list) => {
-      if (cancelled) return;
-      setSchools(list);
-      setIsLoading(false);
+      if (!cancelled) setResult({ key, list });
     });
     return () => {
       cancelled = true;
     };
-  }, [city, district]);
+  }, [key, city, district]);
+
+  const schools = key && result.key === key ? result.list : [];
+  const isLoading = !!key && result.key !== key;
 
   const selectId = `${idPrefix}-school`;
   const inputId = `${idPrefix}-new-school`;

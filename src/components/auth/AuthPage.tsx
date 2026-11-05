@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { GraduationCap, Check, ArrowRight, Eye, EyeOff, AlertCircle, BookOpen } from '../icons';
 import styles from './AuthPage.module.css';
 import { BrandLogo } from '../BrandLogo';
@@ -300,7 +301,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
             {staffLoginForm}
           </section>
           <footer className={styles.footer}>
-            <a className={styles.textButton} href="/">Öğrenci, veli veya öğretmen girişine dön</a>
+            <Link className={styles.textButton} href="/">Öğrenci, veli veya öğretmen girişine dön</Link>
           </footer>
         </div>
       </main>
@@ -338,7 +339,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                 role="tab"
                 id={`tab-${id}`}
                 aria-selected={audience === id}
-                aria-pressed={audience === id}
                 aria-controls={`panel-${id}`}
                 disabled={isSubmitting}
                 onClick={() => switchAudience(id)}
@@ -407,7 +407,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                     type="button"
                     role="tab"
                     aria-selected={teacherMode === id}
-                    aria-pressed={teacherMode === id}
                     disabled={isSubmitting}
                     onClick={() => switchTeacherMode(id)}
                   >
@@ -433,7 +432,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                         type="button"
                         role="tab"
                         aria-selected={regStep === id}
-                        aria-pressed={regStep === id}
                         disabled={isSubmitting}
                         onClick={() => goToRegStep(id)}
                       >

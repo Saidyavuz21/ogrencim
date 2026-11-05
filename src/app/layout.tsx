@@ -24,25 +24,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <head>
-        <script src="/tailwind.js"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              tailwind.config = {
-                theme: {
-                  extend: {
-                    colors: {
-                      background: '#f8fafc',
-                      foreground: '#0f172a',
-                    }
-                  }
-                }
-              }
-            `,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans">
         {children}
       </body>

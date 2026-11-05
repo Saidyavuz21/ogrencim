@@ -13,7 +13,7 @@ import {
   SchoolRecord,
 } from '../../lib/supabaseClient';
 
-const FIELD = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800';
+const FIELD = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800';
 
 interface SchoolManagementProps {
   notify: (type: 'ok' | 'error', text: string) => void;
@@ -41,21 +41,27 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
   const [names, setNames] = useState('');
-  const [districtSchools, setDistrictSchools] = useState<SchoolRecord[]>([]);
+  const [fetchedSchools, setFetchedSchools] = useState<SchoolRecord[]>([]);
+  const districtSchools = city && district ? fetchedSchools : [];
 
   const loadPending = async () => setPending(await listPendingSchools());
 
   useEffect(() => {
-    loadPending();
+    let cancelled = false;
+    listPendingSchools().then((list) => {
+      if (!cancelled) setPending(list);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshKey]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!city || !district) {
-      setDistrictSchools([]);
-      return;
-    }
-    listSchools(city, district).then((list) => !cancelled && setDistrictSchools(list));
+    if (!city || !district) return;
+    listSchools(city, district).then((list) => {
+      if (!cancelled) setFetchedSchools(list);
+    });
     return () => {
       cancelled = true;
     };

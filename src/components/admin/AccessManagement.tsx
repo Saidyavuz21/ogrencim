@@ -38,7 +38,7 @@ const EMPTY_EDIT_FORM = {
 
 const TEXT_FIELDS = [['full_name', 'Ad Soyad']] as const;
 
-const SELECT_CLASS = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800';
+const SELECT_CLASS = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800';
 
 /**
  * Hesap yönetimi (gerçek veritabanı):
@@ -89,7 +89,8 @@ export const AccessManagement: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    refresh();
+    // İlk yükleme: veriler geldikten sonra state güncellenir (efekt içinde senkron setState yok)
+    queueMicrotask(refresh);
   }, [refresh]);
 
   const notify = (type: 'ok' | 'error', text: string) => {
@@ -384,14 +385,14 @@ export const AccessManagement: React.FC = () => {
             onChange={(e) => setNewNo(e.target.value)}
             placeholder="Okul No"
             aria-label="Okul numarası"
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800"
           />
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Ad Soyad"
             aria-label="Ad soyad"
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-hidden focus:border-slate-800"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800"
           />
           <ClassLevelSelects
             idPrefix="new-student-class"
@@ -417,7 +418,7 @@ export const AccessManagement: React.FC = () => {
             aria-label="4 haneli PIN"
             inputMode="numeric"
             autoComplete="off"
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-hidden focus:border-slate-800"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:border-slate-800"
           />
           <button
             type="submit"
@@ -483,7 +484,7 @@ export const AccessManagement: React.FC = () => {
                 <input
                   value={editForm[key]}
                   onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-slate-800"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-slate-800"
                 />
               </label>
             ))}
@@ -493,7 +494,7 @@ export const AccessManagement: React.FC = () => {
               <select
                 value={editForm.branch}
                 onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
               >
                 <option value="">Seçiniz</option>
                 {/* Listede olmayan eski bir branş kayıtlıysa onu da göster */}
@@ -516,7 +517,7 @@ export const AccessManagement: React.FC = () => {
                 onChange={({ level, section }) => setEditForm({ ...editForm, class_level: level, class_section: section })}
                 allowEmpty
                 emptyLabel="Sınıfı yok"
-                selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+                selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
               />
             </div>
 
@@ -528,7 +529,7 @@ export const AccessManagement: React.FC = () => {
                   onChange={(e) =>
                     setEditForm({ ...editForm, city: e.target.value, district: (TURKEY_CITIES[e.target.value] || [''])[0], school_id: '' })
                   }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                 >
                   <option value="">Seçiniz</option>
                   {Object.keys(TURKEY_CITIES).map((c) => (
@@ -543,7 +544,7 @@ export const AccessManagement: React.FC = () => {
                 <select
                   value={editForm.district}
                   onChange={(e) => setEditForm({ ...editForm, district: e.target.value, school_id: '' })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                 >
                   <option value="">Seçiniz</option>
                   {(TURKEY_CITIES[editForm.city] || (editForm.district ? [editForm.district] : [])).map((d) => (
@@ -563,7 +564,7 @@ export const AccessManagement: React.FC = () => {
               newSchoolName=""
               currentSchoolName={editing.school_id === editForm.school_id ? editing.school_name : null}
               onChange={({ schoolId }) => setEditForm({ ...editForm, school_id: schoolId })}
-              selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden"
+              selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
             />
 
             <div className="flex gap-2 pt-1">
@@ -602,7 +603,7 @@ export const AccessManagement: React.FC = () => {
               autoComplete="off"
               placeholder="••••"
               aria-label="Yeni 4 haneli PIN"
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono tracking-widest text-center focus:bg-white focus:outline-hidden focus:border-slate-800"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono tracking-widest text-center focus:bg-white focus:outline-none focus:border-slate-800"
             />
             <div className="flex gap-2">
               <button

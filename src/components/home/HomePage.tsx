@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, Lock, MessageSquare } from 'lucide-react';
 import { signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
-import styles from './page.module.css';
-import { BrandLogo } from '../../components/BrandLogo';
-import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../../components/StudentSchoolSelect';
+import styles from './HomePage.module.css';
+import { BrandLogo } from '../BrandLogo';
+import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
 
-export default function HomeMockup() {
+export default function HomePage() {
+  const router = useRouter();
   const [role, setRole] = useState('Öğrenci');
   // Öğrencinin okulu bu cihazda hatırlanır (sunucu çiziminden sonra okunur)
   const [school, setSchool] = useState<SchoolRecord | null>(null);
@@ -43,7 +46,7 @@ export default function HomeMockup() {
         : await signInStudent(school?.id || '', identifier, pin.join(''));
       if (!result.ok) { setNotice(result.error); return; }
       if (role === 'Öğrenci') rememberSchool(school);
-      window.location.assign('/giris');
+      router.push('/giris');
     } catch {
       setNotice('Sunucuya bağlanılamadı. Bağlantınızı kontrol edip tekrar deneyin.');
     } finally {
@@ -56,10 +59,10 @@ export default function HomeMockup() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <a className={styles.brand} href="/" aria-label="tofutr.com ana sayfa">
+          <Link className={styles.brand} href="/" aria-label="tofutr.com ana sayfa">
             <BrandLogo height={52} priority />
             <span className={styles.brandDescription}>Okulunla aynı yerde.</span>
-          </a>
+          </Link>
           <nav className={styles.nav} aria-label="Ana menü">
             {['Ana Sayfa', 'Sistem Hakkında', 'İletişim'].map(item => <button key={item} type="button" aria-current={section === item ? 'page' : undefined} onClick={() => setSection(item)}>{item}</button>)}
           </nav>
@@ -112,13 +115,13 @@ export default function HomeMockup() {
               </fieldset>
               {notice && <p className={styles.notice} role="alert">{notice}</p>}
             </form>
-            <div className={styles.register}><a href="/giris#kayit">Kayıt ol <ArrowRight size={16} /></a></div>
+            <div className={styles.register}><Link href="/giris#kayit">Kayıt ol <ArrowRight size={16} /></Link></div>
             <p className={styles.security}><Lock size={14} /> Size ait bilgilerle, size özel erişim.</p>
           </section>
         </div> : <section className={styles.info}>
           <h1>{section}</h1>
-          {section === 'Sistem Hakkında' ? <><p>tofutr.com; öğretmen, öğrenci ve veliyi ödev takibi, öğrenci gelişimi ve okul–aile iletişimi etrafında bir araya getiren bir okul portalıdır.</p><p>Öğrenci ve veliler okul numarası ve PIN ile, öğretmenler kendi hesaplarıyla giriş yapar.</p></> : <><p>Giriş bilgileriniz ve okulunuza ilişkin sorularınız için sınıf öğretmeninizle iletişime geçebilirsiniz.</p><p>Bu önizlemede henüz kurumsal iletişim bilgileri tanımlanmadı.</p></>}
-          <button className={styles.back} onClick={() => setSection('Ana Sayfa')}>Ana sayfaya dön <ArrowRight size={17} /></button>
+          {section === 'Sistem Hakkında' ? <><p>tofutr.com; öğretmen, öğrenci ve veliyi ödev takibi, öğrenci gelişimi ve okul–aile iletişimi etrafında bir araya getiren bir okul portalıdır.</p><p>Öğrenci ve veliler okul numarası ve PIN ile, öğretmenler kendi hesaplarıyla giriş yapar.</p></> : <><p>Giriş bilgileriniz ve okulunuza ilişkin sorularınız için sınıf öğretmeninizle iletişime geçebilirsiniz.</p><p>Hesabınızla ilgili sorunlarda okul yönetiminize başvurabilirsiniz.</p></>}
+          <button type="button" className={styles.back} onClick={() => setSection('Ana Sayfa')}>Ana sayfaya dön <ArrowRight size={17} /></button>
         </section>}
       </main>
 

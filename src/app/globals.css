@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+
 :root {
   color-scheme: light;
   --background: #f8fafc;
@@ -21,3 +24,6 @@ svg {
   display: inline-block;
   vertical-align: middle;
 }
+
+/* Tailwind yardımcı sınıfları en sonda: eski tarayıcı betiğindeki gibi öncelikli kalsın */
+@tailwind utilities;

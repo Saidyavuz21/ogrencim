@@ -26,42 +26,6 @@ export interface StudentRecord {
   minus_count: number;
 }
 
-export interface MessageRecord {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  sender_name: string;
-  sender_role: 'parent' | 'teacher' | 'admin';
-  content: string;
-  message_type: 'text' | 'audio' | 'file';
-  file_url?: string | null;
-  audio_duration?: string | null;
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface HomeworkRecord {
-  id: string;
-  subject: string;
-  teacher_name: string;
-  title: string;
-  file_type: string;
-  file_url?: string | null;
-  due_days: number;
-  points: number;
-  is_submitted: boolean;
-  created_at: string;
-}
-
-export interface AnnouncementRecord {
-  id: string;
-  teacher_name: string;
-  title: string;
-  content: string;
-  priority: 'normal' | 'urgent';
-  created_at: string;
-}
-
 export interface ProfileRecord {
   id: string;
   role: 'admin' | 'ogretmen';
@@ -279,15 +243,6 @@ export async function signInStudent(schoolId: string, studentNumber: string, pin
     return { ok: false, error: studentLoginErrors[result.error || 'invalid'] || studentLoginErrors.invalid };
   }
   return { ok: true, user: studentToAccount(result.student) };
-}
-
-/** Veli kilit ekranı: oturumdaki öğrencinin PIN'ini yeniden doğrular */
-export async function verifyMyPin(pin: string): Promise<{ ok: boolean; error?: string }> {
-  const { data, error } = await supabase.rpc('verify_my_pin', { p_pin: pin });
-  if (error || !data) return { ok: false, error: 'Doğrulama sırasında bir hata oluştu.' };
-  const result = data as { ok: boolean; error?: string };
-  if (result.ok) return { ok: true };
-  return { ok: false, error: studentLoginErrors[result.error || 'invalid'] || studentLoginErrors.invalid };
 }
 
 export async function signOutUser(): Promise<void> {
@@ -519,87 +474,4 @@ export async function setTeacherApproved(profileId: string, approved: boolean): 
   if (error) return { ok: false, error: error.message };
   if (!count) return { ok: false, error: 'Güncelleme yetkiniz yok.' };
   return { ok: true };
-}
-
-// ========================================================
-// 3. MESAJLAŞMA SERVİSLERİ
-// ========================================================
-export async function getLiveMessages(conversationId?: string): Promise<MessageRecord[]> {
-  let query = supabase.from('messages').select('*').order('created_at', { ascending: true });
-  if (conversationId) query = query.eq('conversation_id', conversationId);
-  const { data, error } = await query;
-  if (error) {
-    console.error('Supabase getLiveMessages hatası:', error.message);
-    return [];
-  }
-  return (data as MessageRecord[]) || [];
-}
-
-export async function sendLiveMessage(msg: {
-  conversation_id: string;
-  sender_name: string;
-  content: string;
-  message_type?: 'text' | 'audio' | 'file';
-  file_url?: string;
-  audio_duration?: string;
-}): Promise<MessageRecord | null> {
-  // sender_id, sender_role ve is_read sunucuda (trigger) oturuma göre belirlenir
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: msg.conversation_id,
-      sender_id: 'server',
-      sender_name: msg.sender_name,
-      sender_role: 'parent',
-      content: msg.content,
-      message_type: msg.message_type || 'text',
-      file_url: msg.file_url || null,
-      audio_duration: msg.audio_duration || null,
-    })
-    .select('*')
-    .maybeSingle();
-  if (error) {
-    console.error('Supabase sendLiveMessage hatası:', error.message);
-    return null;
-  }
-  return data as MessageRecord;
-}
-
-// ========================================================
-// 4. ÖDEVLER VE DUYURULAR
-// ========================================================
-export async function getLiveHomeworks(): Promise<HomeworkRecord[]> {
-  const { data, error } = await supabase.from('homeworks').select('*').order('created_at', { ascending: false });
-  if (error) {
-    console.error('Supabase getLiveHomeworks hatası:', error.message);
-    return [];
-  }
-  return (data as HomeworkRecord[]) || [];
-}
-
-export async function getLiveAnnouncements(): Promise<AnnouncementRecord[]> {
-  const { data, error } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
-  if (error) {
-    console.error('Supabase getLiveAnnouncements hatası:', error.message);
-    return [];
-  }
-  return (data as AnnouncementRecord[]) || [];
-}
-
-export async function postLiveAnnouncement(
-  title: string,
-  content: string,
-  teacherName: string,
-  priority: 'normal' | 'urgent' = 'normal'
-): Promise<AnnouncementRecord | null> {
-  const { data, error } = await supabase
-    .from('announcements')
-    .insert({ title, content, teacher_name: teacherName, priority })
-    .select('*')
-    .maybeSingle();
-  if (error) {
-    console.error('Supabase postLiveAnnouncement hatası:', error.message);
-    return null;
-  }
-  return data as AnnouncementRecord;
 }

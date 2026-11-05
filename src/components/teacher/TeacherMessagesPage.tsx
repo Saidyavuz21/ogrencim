@@ -9,7 +9,6 @@ import {
   MessageRow,
   sendMessage,
   studentConversationId,
-  questionConversationId,
 } from '../../lib/teacherData';
 import { useLiveMessages } from '../../lib/useLiveMessages';
 import { LiveBadge } from './TeacherUi';
@@ -33,9 +32,8 @@ export function TeacherMessagesPage({ selectedClass, schoolId, currentUserId }: 
   const groupConv = selectedClass ? classConversationId(schoolId, selectedClass) : '';
   const conversations = useMemo(
     () => [
-      ...(groupConv ? [{ id: groupConv, title: `${selectedClass} sınıf grubu`, subtitle: 'Veliler ve öğrenciler okur', isGroup: true, isQuestion: false }] : []),
-      ...students.map((s) => ({ id: studentConversationId(s.id), title: `${s.name} velisi`, subtitle: `No ${s.student_number}`, isGroup: false, isQuestion: false })),
-      ...students.map((s) => ({ id: questionConversationId(s.id), title: `${s.name} (öğrenci)`, subtitle: 'Öğrencinin soruları', isGroup: false, isQuestion: true })),
+      ...(groupConv ? [{ id: groupConv, title: `${selectedClass} sınıf grubu`, subtitle: 'Sınıftaki öğrenciler okur', isGroup: true }] : []),
+      ...students.map((s) => ({ id: studentConversationId(s.id), title: s.name, subtitle: `No ${s.student_number}`, isGroup: false })),
     ],
     [groupConv, selectedClass, students]
   );
@@ -60,7 +58,7 @@ export function TeacherMessagesPage({ selectedClass, schoolId, currentUserId }: 
 
   useEffect(() => { threadEnd.current?.scrollIntoView({ block: 'end' }); }, [thread.length, activeConv]);
 
-  // Açık konuşmaya gelen veli mesajlarını okundu yap (karşı taraf "Okundu" görür)
+  // Açık konuşmaya gelen öğrenci mesajlarını okundu yap (karşı taraf "Okundu" görür)
   const hasUnreadInThread = thread.some((m) => isFamilyRole(m.sender_role) && !m.is_read);
   useEffect(() => {
     if (activeConv && hasUnreadInThread) markConversationRead(activeConv);
@@ -114,7 +112,7 @@ export function TeacherMessagesPage({ selectedClass, schoolId, currentUserId }: 
           </div>
           <form className={styles.chatComposer} onSubmit={handleSend}>
             <label className={styles.visuallyHidden} htmlFor="teacher-chat-input">Mesaj</label>
-            <textarea id="teacher-chat-input" value={text} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} onChange={(e) => setText(e.target.value.slice(0, 2000))} rows={2} placeholder={active.isGroup ? 'Sınıf grubuna yazın' : active.isQuestion ? 'Öğrenciye yazın' : 'Veliye yazın'} />
+            <textarea id="teacher-chat-input" value={text} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} onChange={(e) => setText(e.target.value.slice(0, 2000))} rows={2} placeholder={active.isGroup ? 'Sınıf grubuna yazın' : 'Öğrenciye yazın'} />
             <button type="submit" className={styles.primary} disabled={busy || !text.trim()} aria-label="Gönder"><Send size={18} aria-hidden="true" /></button>
           </form>
         </section>
@@ -131,13 +129,12 @@ export function TeacherMessagesPage({ selectedClass, schoolId, currentUserId }: 
         {loading && <p className={styles.mutedText}>Yükleniyor…</p>}
         {error && <p className={styles.noticeError}>{error}</p>}
         {!loading && !error && students.length === 0 && (
-          <p className={styles.mutedText}>{selectedClass} sınıfında kayıtlı öğrenci yok. Veliler, öğrencinin okul numarası ve PIN&apos;i ile giriş yapıp size yazabilir.</p>
+          <p className={styles.mutedText}>{selectedClass} sınıfında kayıtlı öğrenci yok. Öğrenciler okul numarası ve PIN&apos;i ile giriş yapıp size yazabilir.</p>
         )}
         {[
           { key: 'group', title: '', items: conversations.filter((c) => c.isGroup) },
           // Öğrenci soruları yalnızca mesaj varsa listelenir
-          { key: 'questions', title: 'Öğrenci soruları', items: sortByLast(conversations.filter((c) => c.isQuestion && byConv[c.id]?.length)) },
-          { key: 'parents', title: 'Veliler', items: sortByLast(conversations.filter((c) => !c.isGroup && !c.isQuestion)) },
+          { key: 'students', title: 'Öğrenciler', items: sortByLast(conversations.filter((c) => !c.isGroup)) },
         ].filter((g) => g.items.length).map((g) => (
           <div key={g.key}>
             {g.title && <h3 className={styles.convGroupTitle}>{g.title}</h3>}

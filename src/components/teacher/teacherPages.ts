@@ -38,8 +38,8 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'aquarium', slug: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balıklar, tam ekran', icon: Fish, group: 'Öğrenciler ve sınıflar' },
   { id: 'grade_entry', slug: 'not-girisi', title: 'Not girişi', description: 'Yazılı ve sözlü notlar', icon: TrendingUp, group: 'Öğrenciler ve sınıflar' },
   { id: 'classes', slug: 'siniflar', title: 'Sınıflarım', description: 'Sınıf ekle ve katılım kodu', icon: School, group: 'Öğrenciler ve sınıflar' },
-  { id: 'messages', slug: 'mesajlar', title: 'Veli mesajları', description: 'Birebir ve grup sohbeti', icon: MessageSquare, group: 'İletişim' },
-  { id: 'bulk_message', slug: 'toplu-mesaj', title: 'Toplu mesaj', description: 'Bütün velilere aynı anda', icon: Megaphone, group: 'İletişim' },
+  { id: 'messages', slug: 'mesajlar', title: 'Mesajlar', description: 'Öğrencilerle birebir ve sınıf grubu', icon: MessageSquare, group: 'İletişim' },
+  { id: 'bulk_message', slug: 'toplu-mesaj', title: 'Toplu mesaj', description: 'Sınıf gruplarına aynı anda', icon: Megaphone, group: 'İletişim' },
   { id: 'announcements', slug: 'duyurular', title: 'Okul duyuruları', description: 'Okuldan gelen duyurular', icon: Bell, group: 'İletişim' },
   { id: 'profile', slug: 'profil', title: 'Profilim', description: 'Bilgilerim, şifre, çıkış', icon: User, group: 'Hesap' },
 ];

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { UserAccount } from '../../data/portalData';
 import {
   countStudentsByClass,
-  countUnreadParentMessages,
+  countUnreadStudentMessages,
   getMySchoolId,
   listMyClasses,
   TeacherClassRow,
@@ -69,7 +69,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   useEffect(() => {
     let alive = true;
-    Promise.all([listMyClasses(), countStudentsByClass(), getMySchoolId(), countUnreadParentMessages()]).then(
+    Promise.all([listMyClasses(), countStudentsByClass(), getMySchoolId(), countUnreadStudentMessages()]).then(
       ([classes, counts, school, unread]) => {
         if (!alive) return;
         if (classes.ok) setClassRows(classes.data);

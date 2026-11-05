@@ -208,7 +208,7 @@ export const AccessManagement: React.FC = () => {
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'Öğrenci eklenemedi.');
 
-    notify('ok', `${newName.trim()} eklendi. PIN'i öğrenciye/veliye iletin; sistem PIN'i bir daha göstermez.`);
+    notify('ok', `${newName.trim()} eklendi. PIN'i öğrenciye iletin; sistem PIN'i bir daha göstermez.`);
     setNewNo('');
     setNewName('');
     setNewPin('');
@@ -395,10 +395,10 @@ export const AccessManagement: React.FC = () => {
       <section className="bg-white rounded-2xl p-4 border border-slate-200/90 space-y-3">
         <div className="flex items-center gap-2">
           <GraduationCap className="w-4 h-4 text-slate-500" />
-          <h3 className="text-sm font-bold text-slate-900">Öğrenci & Veli Girişleri</h3>
+          <h3 className="text-sm font-bold text-slate-900">Öğrenci Girişleri</h3>
         </div>
         <p className="text-xs text-slate-500">
-          Öğrenci ve veli aynı okul numarası + 4 haneli PIN ile giriş yapar. 5 hatalı denemede hesap 15 dakika kilitlenir.
+          Öğrenciler okul numarası + 4 haneli PIN ile giriş yapar. 5 hatalı denemede hesap 15 dakika kilitlenir.
           PIN yalnızca şifrelenmiş saklanır; unutulursa buradan yenisi belirlenir.
         </p>
 

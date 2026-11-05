@@ -1,4 +1,4 @@
-// Öğrenci / veli paneli veri katmanı (Supabase, öğrenci oturumu).
+// Öğrenci paneli veri katmanı (Supabase, öğrenci oturumu).
 // Yetkiler RLS ile: öğrenci yalnızca kendi kayıtlarını ve kendi sınıfının ödevlerini görür.
 import { supabase } from './supabaseClient';
 import type { CheckStatus, ExamId, HomeworkAttachment, Result } from './teacherData';

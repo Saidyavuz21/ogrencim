@@ -158,7 +158,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
       setNotice({ kind: 'error', text: `Öğrenci eklenemedi: ${res.error}` });
       return;
     }
-    setNotice({ kind: 'ok', text: `${newName.trim()} ${newClass} sınıfına eklendi. Giriş bilgisi: okul no ${newNo.trim()}, PIN ${newPin}. Bu PIN'i veliye iletin; daha sonra tekrar gösterilmez.` });
+    setNotice({ kind: 'ok', text: `${newName.trim()} ${newClass} sınıfına eklendi. Giriş bilgisi: okul no ${newNo.trim()}, PIN ${newPin}. Bu PIN'i öğrenciye iletin; daha sonra tekrar gösterilmez.` });
     setNewNo('');
     setNewName('');
     setNewPin(randomPin());

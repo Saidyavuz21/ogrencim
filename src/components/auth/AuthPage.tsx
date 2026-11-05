@@ -18,7 +18,7 @@ type TeacherMode = 'login' | 'register';
 interface AuthPageProps {
   onLoginSuccess: (user: UserAccount) => void;
   /**
-   * public: ana giriş sayfası (Öğrenci & Veli / Öğretmen sekmeleri)
+   * public: ana giriş sayfası (Öğrenci / Öğretmen sekmeleri)
    * admin : /yonetim sayfası (yalnızca süper admin girişi)
    */
   variant?: 'public' | 'admin';
@@ -51,7 +51,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     if (errorMsg || successMsg) feedbackRef.current?.focus();
   }, [errorMsg, successMsg]);
 
-  // Öğrenci & Veli (okul bu cihazda hatırlanır)
+  // Öğrenci (okul bu cihazda hatırlanır)
   const [studentSchool, setStudentSchool] = useState<SchoolRecord | null>(() =>
     typeof window === 'undefined' ? null : loadRememberedSchool()
   );
@@ -302,7 +302,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
             {staffLoginForm}
           </section>
           <footer className={styles.footer}>
-            <Link className={styles.textButton} href="/">Öğrenci, veli veya öğretmen girişine dön</Link>
+            <Link className={styles.textButton} href="/">Öğrenci veya öğretmen girişine dön</Link>
           </footer>
         </div>
       </main>
@@ -317,7 +317,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       <div className={styles.shell}>
         <header className={styles.brand}>
           <BrandLogo height={48} priority />
-          <span className={styles.brandTagline}>Öğrenci & Veli Bilgi Portalı</span>
+          <span className={styles.brandTagline}>Öğrenci Bilgi Portalı</span>
         </header>
 
         <div className={styles.intro}>
@@ -331,7 +331,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
           {/* 1. Seviye: Kim giriş yapıyor? */}
           <div className={styles.modeSwitch} role="tablist" aria-label="Kullanıcı türü">
             {([
-              ['ogrenci', 'Öğrenci & Veli', GraduationCap],
+              ['ogrenci', 'Öğrenci', GraduationCap],
               ['ogretmen', 'Öğretmen', BookOpen],
             ] as const).map(([id, label, Icon]) => (
               <button
@@ -379,7 +379,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                         />
                       ))}
                     </div>
-                    <p id="pin-help" className={styles.hint}>Öğrenci ve veli aynı numara ve PIN ile giriş yapar.</p>
+                    <p id="pin-help" className={styles.hint}>Okul numaranızı ve PIN kodunuzu öğretmeninizden alabilirsiniz.</p>
                   </div>
                 </fieldset>
                 <button className={styles.submit} type="submit" disabled={isSubmitting}>
@@ -388,7 +388,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                 </button>
                 <div className={styles.notice}>
                   <GraduationCap size={20} aria-hidden="true" />
-                  <p>Öğrenci ve veli hesaplarını okul oluşturur; kayıt olmanıza gerek yoktur. PIN kodunuzu bilmiyorsanız sınıf öğretmeninize başvurun.</p>
+                  <p>Öğrenci hesaplarını okul oluşturur; kayıt olmanıza gerek yoktur. PIN kodunuzu bilmiyorsanız sınıf öğretmeninize başvurun.</p>
                 </div>
               </form>
             </div>
@@ -551,7 +551,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
             </div>
           )}
         </section>
-        <footer className={styles.footer}>e-Okul Öğrenci & Veli Bilgi Portalı</footer>
+        <footer className={styles.footer}>e-Okul Öğrenci Bilgi Portalı</footer>
       </div>
     </main>
   );

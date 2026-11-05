@@ -33,7 +33,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   const [savedIds, setSavedIds] = useState<string[]>([]);
   // Not kutusu açılan öğrenciler (not yoksa kutu gizli durur)
   const [openNotes, setOpenNotes] = useState<string[]>([]);
-  // Not kutusunu kapat: yazılmış not da temizlenir (kaydedince veliye gitmez)
+  // Not kutusunu kapat: yazılmış not da temizlenir (kaydedince öğrenciye gitmez)
   const closeNote = (id: string) => {
     setOpenNotes((prev) => prev.filter((x) => x !== id));
     setDraft(id, { note: '' });
@@ -171,7 +171,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
                 </fieldset>
                 {d.note || openNotes.includes(s.id) ? (
                   <div className={styles.noteField}>
-                    <label htmlFor={`note-${s.id}`}>Veliye not</label>
+                    <label htmlFor={`note-${s.id}`}>Öğrenciye not</label>
                     <div className={styles.noteInputRow}>
                       <input
                         id={`note-${s.id}`}

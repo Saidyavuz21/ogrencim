@@ -19,15 +19,8 @@ const SIGNED_OUT_USER: UserAccount = {
   title: '',
 };
 
-// Bir kullanıcının arayüzde geçebileceği roller (veri yetkisi ayrıca veritabanında RLS ile korunur)
-function allowedRolesFor(user: UserAccount): UserRole[] {
-  if (user.role === 'admin') return ['admin'];
-  if (user.role === 'ogretmen') return ['ogretmen'];
-  return ['ogrenci', 'veli'];
-}
-
 interface PortalAppProps {
-  /** public: ana giriş (öğrenci/veli/öğretmen) · admin: /yonetim (süper admin girişi) */
+  /** public: ana giriş (öğrenci/öğretmen) · admin: /yonetim (süper admin girişi) */
   variant?: 'public' | 'admin';
 }
 
@@ -86,12 +79,6 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const allowedRoles = allowedRolesFor(currentUser);
-  const handleRoleChange = (role: UserRole) => {
-    // Kullanıcı yalnızca kendi hesabının izin verdiği görünümler arasında geçebilir
-    if (allowedRoles.includes(role)) setCurrentRole(role);
-  };
-
   if (isRestoringSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 text-sm text-slate-500">
@@ -138,15 +125,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
           />
         )}
 
-        {(currentRole === 'ogrenci' || currentRole === 'veli') && (
-          <StudentPortal
-            user={currentUser}
-            role={currentRole}
-            allowedRoles={allowedRoles}
-            onRoleChange={handleRoleChange}
-            onLogout={handleLogout}
-          />
-        )}
+        {currentRole === 'ogrenci' && <StudentPortal user={currentUser} onLogout={handleLogout} />}
       </main>
     </div>
   );

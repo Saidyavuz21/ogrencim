@@ -85,7 +85,7 @@ export default function HomePage() {
         {section === 'Ana Sayfa' ? <div className={styles.hero}>
           <section className={styles.story} aria-labelledby="welcome-title">
             <h1 id="welcome-title">Okulda başlayan bağ, <span>burada devam eder.</span></h1>
-            <p>Öğretmen, öğrenci ve veli aynı yerde. Ödevleri takip edin, gelişimi birlikte destekleyin.</p>
+            <p>Öğretmen ve öğrenci aynı yerde; aileler de çocuklarının hesabından takip eder. Ödevleri takip edin, gelişimi birlikte destekleyin.</p>
             <div className={styles.illustration}>
               {/* This is an authored illustration, not a photograph or interface screenshot. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -132,7 +132,7 @@ export default function HomePage() {
           </section>
         </div> : <section className={styles.info}>
           <h1>{section}</h1>
-          {section === 'Sistem Hakkında' ? <><p>tofutr.com; öğretmen, öğrenci ve veliyi ödev takibi, öğrenci gelişimi ve okul–aile iletişimi etrafında bir araya getiren bir okul portalıdır.</p><p>Öğrenci ve veliler okul numarası ve PIN ile, öğretmenler kendi hesaplarıyla giriş yapar.</p></> : <><p>Giriş bilgileriniz ve okulunuza ilişkin sorularınız için sınıf öğretmeninizle iletişime geçebilirsiniz.</p><p>Hesabınızla ilgili sorunlarda okul yönetiminize başvurabilirsiniz.</p></>}
+          {section === 'Sistem Hakkında' ? <><p>tofutr.com; öğretmen, öğrenci ve veliyi ödev takibi, öğrenci gelişimi ve okul–aile iletişimi etrafında bir araya getiren bir okul portalıdır.</p><p>Öğrenciler okul numarası ve PIN ile, öğretmenler kendi hesaplarıyla giriş yapar.</p></> : <><p>Giriş bilgileriniz ve okulunuza ilişkin sorularınız için sınıf öğretmeninizle iletişime geçebilirsiniz.</p><p>Hesabınızla ilgili sorunlarda okul yönetiminize başvurabilirsiniz.</p></>}
           <button type="button" className={styles.back} onClick={() => setSection('Ana Sayfa')}>Ana sayfaya dön <ArrowRight size={17} /></button>
         </section>}
       </main>

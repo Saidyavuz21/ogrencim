@@ -116,7 +116,7 @@ export function TeacherBulkStudents({ selectedClass, classNames, onClose, onDone
     const win = window.open('', '_blank');
     if (!win) return setNotice({ kind: 'error', text: 'Yazdırma penceresi açılamadı. Tarayıcının açılır pencere iznini kontrol edin.' });
     const cards = rows.map((r) => `<div class="card"><b>${escapeHtml(r.name)}</b><span>Sınıf: ${escapeHtml(r.className)}</span><span>Okul No: <b>${escapeHtml(r.no)}</b></span><span>PIN: <b>${escapeHtml(r.pin)}</b></span><small>Giriş: tofutr.com · Okulunu seç, numara ve PIN'i gir.</small></div>`).join('');
-    win.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${escapeHtml(className)} PIN listesi</title><style>body{font-family:Arial,sans-serif;margin:16px;color:#20352d}h1{font-size:18px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{border:1px dashed #888;border-radius:8px;padding:12px;display:grid;gap:4px;break-inside:avoid;font-size:14px}.card small{color:#555;font-size:11px}@media print{h1{display:none}}</style></head><body><h1>${escapeHtml(className)} – öğrenci giriş bilgileri (kesip velilere dağıtın)</h1><div class="grid">${cards}</div><script>window.onload=function(){window.print()}</script></body></html>`);
+    win.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${escapeHtml(className)} PIN listesi</title><style>body{font-family:Arial,sans-serif;margin:16px;color:#20352d}h1{font-size:18px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{border:1px dashed #888;border-radius:8px;padding:12px;display:grid;gap:4px;break-inside:avoid;font-size:14px}.card small{color:#555;font-size:11px}@media print{h1{display:none}}</style></head><body><h1>${escapeHtml(className)} – öğrenci giriş bilgileri (kesip öğrencilere dağıtın)</h1><div class="grid">${cards}</div><script>window.onload=function(){window.print()}</script></body></html>`);
     win.document.close();
   };
 
@@ -152,7 +152,7 @@ export function TeacherBulkStudents({ selectedClass, classNames, onClose, onDone
               />
             </label>
           </div>
-          <p className={styles.hintText}>Her öğrenciye 4 haneli PIN otomatik üretilir. Ekleme bitince PIN listesini indirip veya yazdırıp velilere dağıtırsınız.</p>
+          <p className={styles.hintText}>Her öğrenciye 4 haneli PIN otomatik üretilir. Ekleme bitince PIN listesini indirip veya yazdırıp öğrencilere dağıtırsınız.</p>
 
           {parsed.length > 0 && (
             <div className={styles.tableScroll}>

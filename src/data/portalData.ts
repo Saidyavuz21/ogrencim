@@ -25,7 +25,7 @@ export interface Student {
   };
 }
 
-export type UserRole = 'veli' | 'ogretmen' | 'ogrenci' | 'admin';
+export type UserRole = 'ogretmen' | 'ogrenci' | 'admin';
 
 export interface UserAccount {
   id: string;
@@ -34,7 +34,7 @@ export interface UserAccount {
   emailOrPhone: string;
   studentNo?: string;
   studentName?: string;
-  pin?: string; // Öğrenci / Veli için 4 haneli PIN
+  pin?: string; // Öğrenci için 4 haneli PIN
   password?: string;
   branch?: string;
   city?: string;

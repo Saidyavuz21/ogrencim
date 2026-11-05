@@ -353,13 +353,11 @@ export async function saveGrades(subject: string, upserts: GradeRow[], deletes: 
 
 // --------------------------------------------------------
 // Mesajlar
-//   ogr:<öğrenci id>              -> öğrencinin velisi ile birebir
+//   ogr:<öğrenci id>              -> öğrenci ile öğretmenleri birebir
 //   sinif:<okul id|none>:<sınıf>  -> sınıf grubu
 // --------------------------------------------------------
 export const studentConversationId = (studentId: string) => `ogr:${studentId}`;
-/** Öğrencinin kendisinin öğretmenlerine sorduğu sorular (veli yazışmasından ayrı) */
-export const questionConversationId = (studentId: string) => `soru:${studentId}`;
-/** Aile tarafı (veli / öğrenci) mesajı mı? */
+/** Öğrenci tarafının mesajı mı? ('parent' eski kayıtlar için; migration sonrası yalnızca 'student') */
 export const isFamilyRole = (role: string) => role === 'parent' || role === 'student';
 export const classConversationId = (schoolId: string | null | undefined, className: string) =>
   `sinif:${schoolId || 'none'}:${className}`;
@@ -437,8 +435,8 @@ export async function deleteAnnouncement(id: string): Promise<Result> {
   return { ok: true, data: undefined };
 }
 
-/** Velilerden gelen okunmamış mesaj sayısı (RLS: yalnızca erişilebilen konuşmalar) */
-export async function countUnreadParentMessages(): Promise<number> {
+/** Öğrencilerden gelen okunmamış mesaj sayısı (RLS: yalnızca erişilebilen konuşmalar) */
+export async function countUnreadStudentMessages(): Promise<number> {
   const { count } = await supabase
     .from('messages')
     .select('id', { count: 'exact', head: true })
@@ -458,7 +456,7 @@ export async function countStudentsByClass(): Promise<Record<string, number>> {
   return counts;
 }
 
-/** Karşı tarafın mesajlarını okundu yapar (öğretmen: veli mesajları, veli: öğretmen mesajları) */
+/** Karşı tarafın mesajlarını okundu yapar (öğretmen: öğrenci mesajları, öğrenci: öğretmen mesajları) */
 export async function markConversationRead(conversationId: string, reader: 'staff' | 'family' = 'staff'): Promise<void> {
   const fromRoles = reader === 'staff' ? ['parent', 'student'] : ['teacher', 'admin'];
   await supabase.from('messages').update({ is_read: true }).eq('conversation_id', conversationId).in('sender_role', fromRoles).eq('is_read', false);

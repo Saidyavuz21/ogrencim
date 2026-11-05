@@ -7,13 +7,13 @@ import {
 import { Aquarium } from '../aquarium/Aquarium';
 import { BrandLogo } from '../BrandLogo';
 import type { IconProps } from '../icons';
-import { UserAccount, UserRole } from '../../data/portalData';
+import { UserAccount } from '../../data/portalData';
 import {
   AnnouncementRow, ClassmateRank, getMyStudent, listAnnouncements, listMyClassRanking, listMyGrades, listMyHomeworks, listMyPoints,
   MyGrade, MyHomework, MyPointRow, MyStudent,
 } from '../../lib/studentData';
 import {
-  classConversationId, EXAMS, isFamilyRole, markConversationRead, questionConversationId, sendMessage, studentConversationId,
+  classConversationId, EXAMS, isFamilyRole, markConversationRead, sendMessage, studentConversationId,
 } from '../../lib/teacherData';
 import { AttachmentList, CollapsiblePanel, LiveBadge, Notice, NoticeState, formatDate, formatDateTime, initialsOf } from '../teacher/TeacherUi';
 import {
@@ -25,17 +25,17 @@ import styles from '../teacher/TeacherDashboard.module.css';
 
 type PageId = 'home' | 'odevler' | 'notlar' | 'puanlar' | 'siralama' | 'akvaryum' | 'mesajlar' | 'duyurular' | 'hesap';
 
-interface PageInfo { id: Exclude<PageId, 'home'>; title: string; parentTitle?: string; description: string; icon: React.FC<IconProps>; parentOnly?: boolean }
+interface PageInfo { id: Exclude<PageId, 'home'>; title: string; description: string; icon: React.FC<IconProps> }
 
 const PAGES: PageInfo[] = [
-  { id: 'odevler', title: 'Ödevlerim', parentTitle: 'Ödevler', description: 'Verilen ödevler ve kontrol sonucu', icon: FileText },
-  { id: 'notlar', title: 'Notlarım', parentTitle: 'Notlar', description: 'Yazılı, sözlü ve performans', icon: TrendingUp },
-  { id: 'puanlar', title: 'Puanlarım', parentTitle: 'Davranış puanları', description: 'Artı / eksi geçmişi', icon: Star },
+  { id: 'odevler', title: 'Ödevler', description: 'Verilen ödevler ve kontrol sonucu', icon: FileText },
+  { id: 'notlar', title: 'Notlar', description: 'Yazılı, sözlü ve performans', icon: TrendingUp },
+  { id: 'puanlar', title: 'Puanlar', description: 'Artı / eksi geçmişi', icon: Star },
   { id: 'siralama', title: 'Sınıf sıralaması', description: 'Sınıftaki puan sırası', icon: Award },
-  { id: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanınla büyüyen balığın', icon: Fish },
-  { id: 'mesajlar', title: 'Öğretmenime soru sor', parentTitle: 'Öğretmenle mesajlaşma', description: 'Öğretmenlere yaz, sınıf duyurularını oku', icon: MessageSquare },
+  { id: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balık', icon: Fish },
+  { id: 'mesajlar', title: 'Mesajlar', description: 'Öğretmenlere yaz, sınıf duyurularını oku', icon: MessageSquare },
   { id: 'duyurular', title: 'Duyurular', description: 'Okul duyuruları', icon: Bell },
-  { id: 'hesap', title: 'Hesap', description: 'Görünüm ve çıkış', icon: User },
+  { id: 'hesap', title: 'Hesap', description: 'Çıkış', icon: User },
 ];
 
 const readPage = (): PageId => {
@@ -46,9 +46,6 @@ const readPage = (): PageId => {
 
 interface StudentPortalProps {
   user: UserAccount;
-  role: 'ogrenci' | 'veli';
-  allowedRoles: UserRole[];
-  onRoleChange: (role: UserRole) => void;
   onLogout: () => void;
 }
 
@@ -56,8 +53,7 @@ const STATUS_LABEL = { yapti: 'Yaptı', kismen: 'Kısmen', yapmadi: 'Yapmadı' }
 const STATUS_STYLE = { yapti: styles.done, kismen: styles.partial, yapmadi: styles.missing } as const;
 const STATUS_ICON = { yapti: Check, kismen: Minus, yapmadi: X } as const;
 
-export function StudentPortal({ user, role, allowedRoles, onRoleChange, onLogout }: StudentPortalProps) {
-  const isParent = role === 'veli';
+export function StudentPortal({ user, onLogout }: StudentPortalProps) {
   const [page, setPage] = useState<PageId>(readPage);
   const [me, setMe] = useState<MyStudent | null>(null);
   const [homeworks, setHomeworks] = useState<MyHomework[]>([]);
@@ -104,11 +100,11 @@ export function StudentPortal({ user, role, allowedRoles, onRoleChange, onLogout
     return () => window.removeEventListener('popstate', sync);
   }, []);
 
-  const visiblePages = PAGES.filter((p) => !p.parentOnly || isParent);
+  const visiblePages = PAGES;
   const info = visiblePages.find((p) => p.id === page);
   const myRank = ranking.findIndex((r) => r.id === user.id) + 1;
   const pendingHomeworks = homeworks.filter((h) => !h.check).length;
-  const titleOf = (p: PageInfo) => (isParent && p.parentTitle ? p.parentTitle : p.title);
+  const titleOf = (p: PageInfo) => p.title;
   const studentName = me?.name || user.name;
   const [headerOpen, setHeaderOpen] = useState(false);
 
@@ -121,12 +117,11 @@ export function StudentPortal({ user, role, allowedRoles, onRoleChange, onLogout
               <div className={styles.workspaceBrand}>
                 <BrandLogo height={32} />
               </div>
-              <span className={styles.countPill}>{isParent ? 'Veli görünümü' : 'Öğrenci görünümü'}</span>
             </div>
             <div className={styles.homeIdentity}>
               <span className={styles.homeAvatar} aria-hidden="true">{initialsOf(studentName)}</span>
               <div className={styles.homeGreeting}>
-                <h1>{isParent ? `${studentName} – veli paneli` : `Merhaba, ${studentName.split(/\s+/)[0]}`}</h1>
+                <h1>{studentName}</h1>
                 <p>No {me?.student_number || user.studentNo} · {me?.class_name || user.className || 'Sınıf atanmadı'}</p>
               </div>
               <button
@@ -189,21 +184,10 @@ export function StudentPortal({ user, role, allowedRoles, onRoleChange, onLogout
             : <p className={styles.mutedText}>Akvaryum hazırlanıyor…</p>}
         </div>
       )}
-      {page === 'mesajlar' && me && <FamilyMessagesPage key={role} me={me} asStudent={!isParent} />}
+      {page === 'mesajlar' && me && <FamilyMessagesPage me={me} />}
       {page === 'duyurular' && <AnnouncementsList announcements={announcements} loaded={loaded} />}
       {page === 'hesap' && (
         <div className={styles.pageBody}>
-          <section className={styles.panel}>
-            <h2 className={styles.panelTitle}>Görünüm</h2>
-            <p className={styles.mutedText}>Aynı giriş ile öğrenci ve veli görünümü arasında geçebilirsiniz. Öğrenci görünümünde yazılan mesaj öğretmene öğrencinin adıyla, veli görünümünde veli olarak gider.</p>
-            <div className={styles.chipRow}>
-              {allowedRoles.filter((r) => r === 'ogrenci' || r === 'veli').map((r) => (
-                <button key={r} type="button" className={`${styles.chip} ${role === r ? styles.chipActive : ''}`} aria-pressed={role === r} onClick={() => onRoleChange(r)}>
-                  {r === 'ogrenci' ? 'Öğrenci görünümü' : 'Veli görünümü'}
-                </button>
-              ))}
-            </div>
-          </section>
           <section className={styles.panel}>
             <p className={styles.mutedText}>PIN değişikliği için sınıf öğretmeninize başvurun.</p>
             <button type="button" className={styles.dangerButton} onClick={() => { window.history.replaceState(null, '', window.location.pathname); onLogout(); }}>
@@ -360,15 +344,14 @@ export function AnnouncementsList({ announcements, loaded }: { announcements: An
   );
 }
 
-/** Veli: ogr:<id> (veli olarak) · Öğrenci: soru:<id> (öğrenci olarak); ikisi de sınıf grubunu okur */
-function FamilyMessagesPage({ me, asStudent }: { me: MyStudent; asStudent: boolean }) {
-  const myRole = asStudent ? 'student' : 'parent';
-  const directConv = asStudent ? questionConversationId(me.id) : studentConversationId(me.id);
+/** Öğrenci başına tek birebir konuşma (ogr:<id>) + sınıf grubu (yalnızca okunur) */
+function FamilyMessagesPage({ me }: { me: MyStudent }) {
+  const directConv = studentConversationId(me.id);
   const groupConv = me.class_name ? classConversationId(me.school_id, me.class_name) : '';
   const convs = useMemo(() => [
-    { id: directConv, title: asStudent ? 'Öğretmenlerim' : 'Öğretmenler', subtitle: asStudent ? 'Öğretmenlerine soru sor' : 'Öğrencinizin öğretmenleriyle birebir', canWrite: true },
+    { id: directConv, title: 'Öğretmenler', subtitle: 'Öğretmenlerle birebir yazışma', canWrite: true },
     ...(groupConv ? [{ id: groupConv, title: `${me.class_name} sınıf grubu`, subtitle: 'Öğretmen duyuruları (yalnızca okunur)', canWrite: false }] : []),
-  ], [directConv, groupConv, me.class_name, asStudent]);
+  ], [directConv, groupConv, me.class_name]);
 
   const [active, setActive] = useState<string | null>(null);
   const [text, setText] = useState('');
@@ -418,7 +401,7 @@ function FamilyMessagesPage({ me, asStudent }: { me: MyStudent; asStudent: boole
           <div className={styles.chatThread}>
             {!thread.length && <p className={styles.mutedText}>Henüz mesaj yok.</p>}
             {thread.map((m) => {
-              const mine = m.sender_role === myRole;
+              const mine = isFamilyRole(m.sender_role);
               return (
                 <div key={m.id} className={`${styles.bubble} ${mine ? styles.bubbleMine : ''}`}>
                   {!mine && <strong>{m.sender_name}</strong>}
@@ -432,7 +415,7 @@ function FamilyMessagesPage({ me, asStudent }: { me: MyStudent; asStudent: boole
           {activeConv.canWrite ? (
             <form className={styles.chatComposer} onSubmit={handleSend}>
               <label className={styles.visuallyHidden} htmlFor="parent-chat-input">Mesaj</label>
-              <textarea id="parent-chat-input" value={text} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} onChange={(e) => setText(e.target.value.slice(0, 2000))} rows={2} placeholder={asStudent ? 'Sorunu yaz' : 'Öğretmene yazın'} />
+              <textarea id="parent-chat-input" value={text} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} onChange={(e) => setText(e.target.value.slice(0, 2000))} rows={2} placeholder="Öğretmene yazın" />
               <button type="submit" className={styles.primary} disabled={busy || !text.trim()} aria-label="Gönder"><Send size={18} aria-hidden="true" /></button>
             </form>
           ) : (

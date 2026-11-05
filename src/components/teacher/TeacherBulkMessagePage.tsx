@@ -12,7 +12,7 @@ interface TeacherBulkMessagePageProps {
   schoolId: string | null;
 }
 
-/** Seçilen sınıfların veli gruplarına aynı mesajı gönderir */
+/** Seçilen sınıfların gruplarına aynı mesajı gönderir */
 export function TeacherBulkMessagePage({ classNames, selectedClass, schoolId }: TeacherBulkMessagePageProps) {
   const [targets, setTargets] = useState<string[]>(selectedClass ? [selectedClass] : []);
   const [text, setText] = useState('');
@@ -41,7 +41,7 @@ export function TeacherBulkMessagePage({ classNames, selectedClass, schoolId }: 
       setNotice({ kind: 'error', text: `Gönderilemedi: ${failed.join(', ')}${sent.length ? `. Gönderilen: ${sent.join(', ')}` : ''}` });
       return;
     }
-    setNotice({ kind: 'ok', text: `Mesaj ${sent.join(', ')} veli gruplarına gönderildi. Veliler panelde "Sınıf grubu" konuşmasında görür.` });
+    setNotice({ kind: 'ok', text: `Mesaj ${sent.join(', ')} sınıf gruplarına gönderildi. Öğrenciler panelde "Mesajlar → Sınıf grubu" konuşmasında görür.` });
     setText('');
   };
 
@@ -63,7 +63,7 @@ export function TeacherBulkMessagePage({ classNames, selectedClass, schoolId }: 
             </div>
           </fieldset>
           <label className={`${styles.field} ${styles.fullRow}`}>Mesaj
-            <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 2000))} rows={5} required placeholder="Örn: Yarın veli toplantımız saat 15.00'te sınıfımızda yapılacaktır." />
+            <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 2000))} rows={5} required placeholder="Örn: Yarın gezimiz var; saat 08.30'da okulda olun." />
           </label>
           <div className={styles.formActions}>
             <span className={styles.mutedText}>{text.length}/2000</span>

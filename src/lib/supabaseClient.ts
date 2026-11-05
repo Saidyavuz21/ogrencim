@@ -226,7 +226,7 @@ const studentLoginErrors: Record<string, string> = {
   not_authenticated: 'Oturum açılamadı. Lütfen sayfayı yenileyip tekrar deneyiniz.',
 };
 
-/** Öğrenci & Veli girişi (okul + okul no + 4 haneli PIN). PIN sunucuda doğrulanır. */
+/** Öğrenci girişi (okul + okul no + 4 haneli PIN). PIN sunucuda doğrulanır. */
 export async function signInStudent(schoolId: string, studentNumber: string, pin: string): Promise<AuthResult> {
   if (!schoolId) return { ok: false, error: studentLoginErrors.no_school };
   const { data: existing } = await supabase.auth.getSession();
@@ -312,7 +312,7 @@ export async function resetStudentPin(studentId: string, pin: string): Promise<{
   return { ok: true };
 }
 
-/** Öğrenciyi ve tüm kayıtlarını siler (admin: hepsi, öğretmen: kendi okulu). Veli mesajları da silinir. */
+/** Öğrenciyi ve tüm kayıtlarını siler (admin: hepsi, öğretmen: kendi okulu). Mesajları da silinir. */
 export async function deleteStudent(studentId: string): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.rpc('staff_delete_student', { p_student_id: studentId });
   if (error) return { ok: false, error: error.message };

@@ -1,5 +1,6 @@
 .dashboard,
-.teacherShell {
+.teacherShell,
+.studentModalBackdrop {
   --teacher-bg: #f7f6f2;
   --teacher-surface: #ffffff;
   --teacher-text: #20352d;
@@ -1528,6 +1529,38 @@
 }
 
 .studentsPage .studentEditForm { min-width: 0; }
+.studentModalBackdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px; background: rgb(20 35 28 / 45%); }
+.studentModal { width: min(100%, 560px); max-height: calc(100dvh - 48px); display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; background: #fff; color: var(--teacher-text, #20352d); outline: none; }
+.studentModalHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px; border-bottom: 1px solid var(--teacher-border, #dedad0); }
+.studentModalHeader h2 { margin: 0; font-size: 22px; line-height: 1.3; }
+.studentModalHeader p { margin: 8px 0 0; color: var(--teacher-muted, #58665f); font-size: 14px; overflow-wrap: anywhere; }
+.studentModalHeader > button { flex-shrink: 0; min-width: 44px; min-height: 44px; padding: 10px; }
+.studentModalBody { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; }
+.studentModal .studentEditForm { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.studentModal .studentPinControls { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.studentModal .studentPinControls > button:last-child { grid-column: 1 / -1; }
+.studentModal .studentPinControls input { min-width: 0; width: 100%; min-height: 48px; padding: 12px; border: 1px solid #a4b1a6; border-radius: 10px; font: inherit; font-size: 16px; }
+.studentModalFooter { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 16px 24px max(16px, env(safe-area-inset-bottom)); border-top: 1px solid var(--teacher-border, #dedad0); }
+.studentModalFooter > button { min-width: 0; width: 100%; justify-content: center; padding-inline: 8px; }
+@media (max-width: 640px) {
+  .studentModalBackdrop { padding: 0; }
+  .studentModal { width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+  .studentModalHeader { padding: max(20px, env(safe-area-inset-top)) 20px 20px; }
+  .studentModalBody { flex: 1; padding: 20px; }
+  .studentModalFooter { padding-inline: 20px; }
+}
+.studentEditSection { grid-column: 1 / -1; min-width: 0; border-top: 1px solid var(--teacher-border); }
+.studentEditSection > summary { display: flex; align-items: center; gap: 10px; min-height: 48px; padding-block: 12px; color: var(--teacher-muted); cursor: pointer; list-style: none; font-size: 14px; font-weight: 600; }
+.studentEditSection > summary::-webkit-details-marker { display: none; }
+.studentEditSection > summary::after { content: '+'; margin-left: auto; font-size: 20px; font-weight: 400; }
+.studentEditSection[open] > summary::after { content: '−'; }
+.studentEditSection > summary:focus-visible { outline: 3px solid #25634b; outline-offset: 3px; border-radius: 4px; }
+.studentEditSectionBody { display: grid; gap: 12px; padding-bottom: 16px; min-width: 0; }
+.studentEditSectionBody > p { margin: 0; }
+.studentEditSectionBody > label { font-size: 14px; font-weight: 600; }
+.studentEditSectionBody > .dangerButton { justify-self: start; width: auto; }
+.studentsPage .studentEditSection .studentPinControls { max-width: 420px; }
+.studentsPage .studentEditSection .studentPinControls > input { min-height: 48px; padding: 12px 14px; border: 1px solid var(--teacher-border); border-radius: 10px; background: #fff; color: var(--teacher-text); font: inherit; font-size: 16px; letter-spacing: .15em; }
 .studentsPage .studentPinControls { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
 .studentsPage .studentPinControls > button:last-child { grid-column: 1 / -1; }
 .studentsPage .studentPinControls > input { width: 100%; min-width: 0; }
@@ -1608,6 +1641,30 @@
   font-size: 13px;
   color: var(--teacher-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Keep student identity readable independently of action button width. */
+.studentsPage .studentCardHead {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  width: 100%;
+}
+.studentsPage .studentCardHead > button { margin-left: 0; }
+@media (max-width: 767px) {
+  .studentsPage .studentCardHead {
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+  .studentsPage .studentCardHead > button {
+    grid-column: 2;
+    justify-self: start;
+    margin: 0;
+    max-width: 100%;
+    min-height: 44px;
+  }
+  .studentsPage .studentCardInfo { gap: 4px; }
+  .studentsPage .studentCardInfo strong { line-height: 1.5; }
 }
 
 .profileHead {
@@ -2598,10 +2655,63 @@
 .fileRemove { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 0; border-radius: 8px; background: transparent; color: var(--teacher-muted); cursor: pointer; }
 .fileRemove:hover { background: #fbeaea; color: #b42318; }
 
-/* Ödev listesi: arama + ders süzgeci */
-.hwFilters { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
-.hwFilters .searchField { max-width: none; }
-.hwSubjectFilter { flex: 0 1 220px; min-width: 160px; }
+/* Ödev listesi: arama + ders süzgeci tek çubukta */
+.hwSearchBar {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  margin: 4px 0 12px;
+  border: 1px solid #c8d3cc;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.hwSearchBar:focus-within {
+  border-color: var(--teacher-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 75, 0.15);
+}
+.hwSearchBar .hwSearchInput {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 14px;
+  color: var(--teacher-muted);
+}
+.hwSearchBar .hwSearchInput input {
+  flex: 1 1 0;
+  width: 0; /* tarayıcının varsayılan input genişliği çubuğu taşırmasın */
+  min-width: 0;
+  text-overflow: ellipsis;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: var(--teacher-text);
+  font-size: 15px;
+  outline: none;
+}
+/* .hwSearchBar ile birlikte yazılır: CustomSelect'in kendi width: 100% kuralını geçsin */
+.hwSearchBar .hwSubjectFilter {
+  flex: 0 0 auto;
+  width: clamp(130px, 34%, 220px);
+  min-width: 0;
+  border-left: 1px solid #e3e8e4;
+}
+.hwSearchBar .hwFilterTrigger {
+  width: 100%;
+  min-height: 46px;
+  height: 100%;
+  border: 0;
+  border-radius: 0 11px 11px 0;
+  box-shadow: none;
+  background: transparent;
+}
+.hwSearchBar .hwFilterTrigger:hover { background: #f6f8f6; }
+.hwSearchBar .hwFilterTrigger:focus-visible { box-shadow: none; background: var(--teacher-selected); }
 
 /* Ders etiketi (liste kartında) */
 .subjectTag {

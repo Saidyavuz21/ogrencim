@@ -5,6 +5,7 @@ import { Send, Trash2, CheckSquare, Calendar, MoreVertical, Search, Paperclip, X
 import { ALLOWED_FILE_TYPES, createHomework, deleteHomework, formatBytes, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, formatDate } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
+import { useDialog } from '../ConfirmDialog';
 import { branchSubject, subjectHue, subjectShortLabel, subjectsForClass } from '../../data/subjects';
 import styles from './TeacherDashboard.module.css';
 
@@ -51,6 +52,7 @@ interface TeacherAssignmentsPageProps {
 }
 
 export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubject, onOpenCheck }: TeacherAssignmentsPageProps) {
+  const { confirm } = useDialog();
   const [homeworks, setHomeworks] = useState<HomeworkRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<NoticeState>(null);
@@ -141,7 +143,14 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   };
 
   const handleDelete = async (hw: HomeworkRow) => {
-    if (!window.confirm(`"${hw.title}" ödevi silinsin mi? Kontrol kayıtları da silinir.`)) return;
+    const ok = await confirm({
+      title: 'Ödevi Sil',
+      message: `"${hw.title}" ödevi silinsin mi?\nKontrol kayıtları da kalıcı olarak silinir.`,
+      confirmText: 'Evet, Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
     const res = await deleteHomework(hw.id, hw.attachments || []);
     if (!res.ok) {
       setNotice({ kind: 'error', text: `Ödev silinemedi: ${res.error}` });
@@ -193,8 +202,8 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
             {selectedClass ? `${selectedClass} ödevleri` : 'Gönderdiğim ödevler'} <span className={styles.countPill}>{filtering ? `${visible.length} / ${classHomeworks.length}` : visible.length}</span>
           </h2>
           {classHomeworks.length > 0 && (
-            <div className={styles.hwFilters}>
-              <label className={styles.searchField}>
+            <div className={styles.hwSearchBar} role="search" aria-label="Ödev ara ve derse göre süz">
+              <label className={styles.hwSearchInput}>
                 <Search size={18} aria-hidden="true" />
                 <span className={styles.visuallyHidden}>Ödev ara</span>
                 <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ödev ara: ders, konu, dosya adı" />
@@ -206,6 +215,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   options={[{ value: '', label: 'Tüm dersler' }, ...listSubjects.map((s) => ({ value: s, label: s }))]}
                   placeholder="Tüm dersler"
                   className={styles.hwSubjectFilter}
+                  triggerClassName={styles.hwFilterTrigger}
                 />
               )}
             </div>

@@ -14,8 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "e-Okul Portalı | Öğrenci & Veli Bilgi Sistemi",
+  title: "e-Okul Portalı | Öğrenci Bilgi Sistemi",
   description: "Öğretmen ödevleri, puan durumu ve öğrenci başarı takip sistemi",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({

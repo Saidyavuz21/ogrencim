@@ -50,7 +50,7 @@ Veritabanı gerektirmez; derste her gün kullanılır. Öğretmen panelinde yeni
 
 Bizdeki ödev, EduBoard'daki "yayın"ın karşılığı. Quiz motoru da bunun üstüne kurulacak.
 
-- [x] **İyileştir:** Aynı ödevi birden çok sınıfa tek seferde verme — *K-2, K-6* · 6 Kasım 2026 · `ef590a3` (veritabanı sınırı migration'ı onay bekliyor)
+- [x] **İyileştir:** Aynı ödevi birden çok sınıfa tek seferde verme — *K-2, K-6* · 6 Kasım 2026 · `ef590a3` (veritabanında da öğretmenin kendi sınıflarıyla sınırlı)
 - [ ] **İyileştir:** Teslim tarihi doğrulaması (geçmiş tarih engeli) ve isteğe bağlı teslim saati — *K-6*
 - [ ] **Sonuçları açıklama:** öğretmen kontrol sonucunu hemen ya da "sonra açıkla" ile gösterebilsin — *K-6*
 - [ ] **Öğrenci teslimi:** öğrenci dosya/fotoğraf yükleyip teslim eder (taslak → teslim edildi) — *K-7*

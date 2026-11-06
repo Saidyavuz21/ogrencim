@@ -55,9 +55,12 @@ interface Feast {
   gulp: Record<string, number>;
 }
 const EMPTY_FEAST: Feast = { bonus: {}, eaten: {}, swallowing: {}, gulping: {}, gulp: {} };
-/** Yutma sahnesi: önce ağız yavaşça açılır (av önünde, sırtı dönük bekler), sonra av içeri çekilir */
-const GULP_MS = 1500;
-const GULP_HOLD = 0.5; // sürenin ilk yarısı: ağız açılıyor
+/** Yutma sahnesi: ağız avın boyu kadar açılır (ilk %35), sonra büyük balık öne atılıp avı ağzına alır */
+const GULP_MS = 1100;
+const GULP_OPEN = 0.35;
+/** Yutma modunda kovalamaca: av gerçekten kaçar; avcı önce az geride kalır, sonra atak yapar */
+const FEAST_FLEE = 5;
+const SWALLOW_MIN_CHASE_MS = 2200;
 /** Burun ucunun balık genişliğine oranı (sağa bakarken) */
 const MOUTH_AT = 0.88;
 
@@ -89,6 +92,9 @@ interface Mover {
   /** Şu an bu balık tarafından yutuluyor (ağza çekiliyor) */
   gulpBy?: string;
   gulpUntil?: number;
+  /** Kovalamacanın başladığı an ve kaçışın zikzak evresi */
+  chaseAt?: number;
+  wobble?: number;
 }
 
 const TANK_H = 56.25; // 16:9 → yükseklik = genişliğin %56.25'i (cqw)
@@ -361,6 +367,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       const feasting = swallowRef.current;
       big.mode = 'chase';
       big.preyId = smallId;
+      big.chaseAt = now;
+      small.wobble = Math.random() * Math.PI * 2;
       big.modeUntil = now + (feasting ? SWALLOW_CHASE_MS : CHASE_MS);
       small.mode = 'flee';
       small.modeUntil = now + (feasting ? SWALLOW_FLEE_MS : FLEE_MS);
@@ -437,6 +445,13 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       big.tx = big.x;
       big.ty = big.y;
       big.rest = GULP_MS / 1000 + 0.3;
+      // Ağız, avı tamamen içine alacak kadar açılır (avın yüksekliği / yutanın yüksekliği)
+      const gape = Math.min(4.6, Math.max(1.6, (small.h / big.h) * (92 / 18) * 1.05));
+      const el = swimmerRefs.current.get(bigId);
+      if (el) {
+        el.style.setProperty('--gape-y', gape.toFixed(2));
+        el.style.setProperty('--gape-x', Math.min(2.1, Math.max(1.5, gape * 0.5)).toFixed(2));
+      }
       busyUntil.set(bigId, now + SWALLOW_COOLDOWN_MS);
       setChase({});
       publish();
@@ -520,19 +535,30 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       const now = Date.now();
       movers.forEach((m, id) => {
         if (m.hidden) return;
-        // Yutulmakta: ağza doğru çekilir (küçülme ve solma CSS'te)
+        // Yakalandı: av çırpınarak kaçmaya devam eder; büyük balık ağzını açıp öne atılır ve avı ağzına alır.
+        // Av yutanın arkasında çizilir, açık ağzın ve başın altında kaybolur (küçülmez)
         if (m.gulpBy) {
           const eater = movers.get(m.gulpBy);
           if (eater) {
-            // Av, yutanın ağzının hemen önünde ve aynı yöne (sırtı ağza dönük) bakar;
-            // ağız açılınca geriye, ağzın içine çekilir
             const progress = 1 - Math.max(0, (m.gulpUntil || 0) - now) / GULP_MS;
-            const ahead = progress < GULP_HOLD ? m.size * 0.55 : m.size * 0.55 * (1 - (progress - GULP_HOLD) / (1 - GULP_HOLD));
-            const k = Math.min(1, dt * (progress < GULP_HOLD ? 8 : 5));
-            m.x += (mouthX(eater) + eater.face * ahead - m.size / 2 - m.x) * k;
-            m.y += (mouthY(eater) - m.h / 2 - m.y) * k;
+            const opening = progress < GULP_OPEN;
+            const b = bounds(m);
             m.face = eater.face;
+            m.x = clamp(m.x + m.face * (opening ? 4 : 1.5) * dt, b.minX, b.maxX);
+            // Ağzın hizasına gelir; son anda başın içine doğru çekilir
+            const inside = opening ? 0 : (progress - GULP_OPEN) / (1 - GULP_OPEN);
+            m.y += (mouthY(eater) - m.h / 2 - m.y) * Math.min(1, dt * (opening ? 3 : 8));
+            if (inside > 0.55) m.x += (mouthX(eater) - eater.face * m.size * 0.2 - m.size / 2 - m.x) * Math.min(1, dt * 10);
+            // Yutan: açılırken avın kuyruğuna yanaşır, sonra ağzını avın burnunun ötesine atar
+            const eb = bounds(eater);
+            const reach = opening ? cx(m) - eater.face * m.size * 0.5 : cx(m) + eater.face * m.size * 0.5;
+            const want = reach - eater.size * (eater.face > 0 ? MOUTH_AT : 1 - MOUTH_AT);
+            eater.x = clamp(eater.x + (want - eater.x) * Math.min(1, dt * (opening ? 4 : 11)), eb.minX, eb.maxX);
+            eater.y = clamp(eater.y + (m.y + m.h / 2 - eater.h * 0.55 - eater.y) * Math.min(1, dt * 6), eb.minY, eb.maxY);
+            eater.vx = 0;
+            eater.vy = 0;
             paint(id, m);
+            paint(m.gulpBy, eater);
           }
           if (now >= (m.gulpUntil || 0)) finishSwallow(id, m, now);
           return;
@@ -543,6 +569,24 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           pickTarget(m);
         }
         const b = bounds(m);
+        if (swallowRef.current && m.mode === 'flee') {
+          let hunter: Mover | undefined;
+          movers.forEach((o) => { if (o.preyId === id && o.mode === 'chase') hunter = o; });
+          if (hunter) {
+            let ax = cx(m) - cx(hunter);
+            let ay = cy(m) - cy(hunter);
+            const d = Math.hypot(ax, ay) || 1;
+            ax /= d;
+            ay /= d;
+            // Duvara sıkıştıysa yukarı ya da aşağı sıyrılıp avcının yanından geçmeye çalışır
+            const wallX = (ax < 0 && m.x - b.minX < 4) || (ax > 0 && b.maxX - m.x < 4);
+            if (wallX) { ay = m.y > (b.minY + b.maxY) / 2 ? -1 : 1; ax *= -0.5; }
+            if ((ay < 0 && m.y - b.minY < 2) || (ay > 0 && b.maxY - m.y < 2)) ay = -ay * 0.5;
+            const zig = Math.sin(now / 180 + (m.wobble || 0)) * 0.6;
+            m.tx = clamp(m.x + (ax - ay * zig) * 20, b.minX, b.maxX);
+            m.ty = clamp(m.y + (ay + ax * zig) * 20, b.minY, b.maxY);
+          }
+        }
         if (m.mode === 'chase' && m.preyId) {
           const prey = movers.get(m.preyId);
           if (prey && !prey.hidden && !prey.gulpBy) {
@@ -552,6 +596,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
               m.tx = clamp(cx(prey) - m.size * (toRight ? MOUTH_AT : 1 - MOUTH_AT), b.minX, b.maxX);
               m.ty = clamp(prey.y + prey.h / 2 - m.h * 0.55, b.minY, b.maxY);
               if (canSwallow(m.points, prey.points)
+                  && now - (m.chaseAt || 0) > SWALLOW_MIN_CHASE_MS
                   && Math.abs(cx(prey) - mouthX(m)) < Math.max(prey.size * 0.6, m.size * 0.18)
                   && Math.abs((prey.y + prey.h / 2) - mouthY(m)) < Math.max(prey.h, m.h * 0.35)) {
                 swallow(id, m, m.preyId, prey, now);
@@ -577,10 +622,15 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         }
         const boost = m.mode === 'chase' ? (swallowRef.current ? 3.6 : 2.6) : m.mode === 'flee' ? (swallowRef.current ? 1.1 : 3.6) : 1;
         // Yutma modunda büyük (yavaş) balık da avına yetişebilsin: kovalayana hız tabanı, kaçana tavan
-        const sp = m.rest > 0 ? 0
-          : swallowRef.current && m.mode === 'chase' ? Math.max(m.speed * boost, 4.5 + m.speed)
-          : swallowRef.current && m.mode === 'flee' ? Math.min(m.speed * boost, 2.6)
-          : m.speed * boost;
+        let sp = m.speed * boost;
+        if (m.rest > 0) sp = 0;
+        else if (swallowRef.current && m.mode === 'flee') sp = FEAST_FLEE + m.speed * 0.5;
+        else if (swallowRef.current && m.mode === 'chase') {
+          // Önce avın biraz gerisinde kalır (kovalamaca görünsün), sonra atak yapıp yetişir
+          const prey = m.preyId ? movers.get(m.preyId) : undefined;
+          const run = FEAST_FLEE + (prey?.speed || 0) * 0.5;
+          sp = run * (now - (m.chaseAt || 0) < SWALLOW_MIN_CHASE_MS ? 0.85 : 1.4);
+        }
         let wantVx = dist > 0.05 ? (dx / dist) * sp : 0;
         let wantVy = dist > 0.05 ? (dy / dist) * sp * 0.75 : 0;
 

@@ -327,7 +327,7 @@ function Mouth({ x, y, className }: { x: number; y: number; className?: string }
   return (
     <g transform={`translate(${x} ${y})`}>
       <g className={className}>
-        <path d="M2 -9 L-17 0 L2 9 Q6 0 2 -9 Z" fill="#5c1626" stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round" />
+        <path d="M2 -9 L-17 0 L2 9 Q6 0 2 -9 Z" fill="#5c1626" stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         <path d="M0 -7 L-4 -3 L-6 -5.5 L-9 -1.5 L-11 -3.5 Z" fill="#fff" />
         <path d="M0 7 L-4 3 L-6 5.5 L-9 1.5 L-11 3.5 Z" fill="#fff" />
       </g>

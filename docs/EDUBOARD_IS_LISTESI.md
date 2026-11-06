@@ -15,7 +15,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 |---|---|---|
 | 0 | Acil düzeltmeler | 3 / 3 ✅ |
 | 1 | Sınıf araçları | 5 / 5 ✅ |
-| 2 | Ödev sistemini güçlendirme | 0 / 8 |
+| 2 | Ödev sistemini güçlendirme | 1 / 8 |
 | 3 | Öğretmen dosyaları ve içerik düzeni | 0 / 8 |
 | 4 | Quiz motoru | 0 / 10 |
 | 5 | Analitik ve raporlama | 0 / 6 |
@@ -26,7 +26,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **8 / 101** |
+| | **Toplam** | **9 / 101** |
 
 ---
 
@@ -50,7 +50,7 @@ Veritabanı gerektirmez; derste her gün kullanılır. Öğretmen panelinde yeni
 
 Bizdeki ödev, EduBoard'daki "yayın"ın karşılığı. Quiz motoru da bunun üstüne kurulacak.
 
-- [ ] **İyileştir:** Aynı ödevi birden çok sınıfa tek seferde verme — *K-2, K-6*
+- [x] **İyileştir:** Aynı ödevi birden çok sınıfa tek seferde verme — *K-2, K-6* · 6 Kasım 2026 · `ef590a3` (veritabanı sınırı migration'ı onay bekliyor)
 - [ ] **İyileştir:** Teslim tarihi doğrulaması (geçmiş tarih engeli) ve isteğe bağlı teslim saati — *K-6*
 - [ ] **Sonuçları açıklama:** öğretmen kontrol sonucunu hemen ya da "sonra açıkla" ile gösterebilsin — *K-6*
 - [ ] **Öğrenci teslimi:** öğrenci dosya/fotoğraf yükleyip teslim eder (taslak → teslim edildi) — *K-7*
@@ -188,3 +188,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 | 6 Kasım 2026 | Kronometre (Paket 1) | `21ec5fc` |
 | 6 Kasım 2026 | Geri sayım (Paket 1) | `1118a0b` |
 | 6 Kasım 2026 | Grup oluşturucu; araçların görsel kontrolü ve akıllı tahta uyumu — Paket 1 tamam | `c241991` |
+| 6 Kasım 2026 | Ödevi birden çok sınıfa verme (Paket 2) | `ef590a3` |

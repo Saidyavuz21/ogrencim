@@ -1,64 +1,74 @@
 # e-Okul Portalı – Yol Haritası
 
-Son güncelleme: 3 Kasım 2026
+Son güncelleme: 6 Kasım 2026
 
 Durum işaretleri: ✅ bitti · 🔄 sürüyor · ⏳ bekliyor
+
+Bu belge temel sistemin (giriş, güvenlik, veri, yayına hazırlık) durumunu izler. EduBoard'dan alınacak yeni özellikler (sınıf araçları, quiz, tahta, dosyalar vb.) ayrı listede: [EDUBOARD_IS_LISTESI.md](EDUBOARD_IS_LISTESI.md).
 
 ---
 
 ## Aşama 1 – Güvenlik temeli 🔄
 
-Amaç: Gerçek öğrenci/veli verisi girilebilecek kadar güvenli bir giriş ve yetki sistemi.
+Amaç: Gerçek öğrenci verisi girilebilecek kadar güvenli bir giriş ve yetki sistemi.
 
 | İş | Durum |
 |---|---|
 | Admin şifresini kaynak koddan kaldırmak | ✅ |
-| Öğretmen/Admin girişini Supabase Auth'a taşımak (e-posta + şifre) | ✅ |
+| Öğretmen/admin girişini Supabase Auth'a taşımak (e-posta + şifre) | ✅ |
 | Öğretmen kaydında admin onayı (e-posta onayı kullanıcı isteğiyle kapalı) | ✅ |
-| Öğrenci/Veli girişi: okul no + 4 haneli PIN, sunucuda doğrulama, bcrypt hash, 5 hatada 15 dk kilit | ✅ (kod) |
-| Veli kilit ekranının PIN'i ekranda göstermesini kaldırmak | ✅ |
-| Herkesin menüden Admin'e geçebildiği rol değiştiriciyi kısıtlamak | ✅ |
-| Tüm tablolarda RLS politikaları | ✅ (veritabanına uygulandı) |
-| Admin paneline hesap yönetimi: öğretmen onay/red, düzenleme, pasif/aktif, silme; öğrenci ekleme, PIN sıfırlama | ✅ |
+| Öğretmen kaydında öğretmenlik belgesi (PDF/JPG/PNG), admin belgeyi görüp onaylar | ✅ |
+| Öğrenci girişi: okul + okul no + 4 haneli PIN, sunucuda doğrulama, bcrypt hash, 5 hatada 15 dk kilit | ✅ |
+| Öğretmen ve admin öğrenci PIN'ini görebilir (Vault anahtarıyla şifreli; kullanıcı kararı) | ✅ |
+| Tek rol: veli rolü ve görünüm geçişi kaldırıldı; her çocuğa tek öğrenci hesabı | ✅ |
+| Tüm tablolarda RLS politikaları | ✅ |
+| `/yonetim` yalnızca admin oturumunu açar | ✅ |
+| Duyurular okula göre ayrıldı; yazar adı sunucuda atanır | ✅ |
 | Profilde gerçek şifre değiştirme | ✅ |
-| Supabase: Anonim girişi açmak (öğrenci girişi için gerekli) | ✅ |
-| Supabase: Sızdırılmış şifre korumasını açmak | ⏳ panelden |
+| Supabase: anonim giriş (öğrenci girişi için) | ✅ |
+| Supabase: sızdırılmış şifre korumasını açmak | ⏳ panelden |
 | Admin şifresini değiştirmek (eski şifre git geçmişinde açık) | ⏳ kullanıcı |
 
-## Aşama 2 – Gerçek veri modeli 🔄
-
-4 Kasım 2026: Bütün paneller (öğretmen, öğrenci, veli, süper admin) veritabanına bağlandı; örnek veri kaldırıldı. Migration: `supabase/migrations/20261104120000_teacher_real_data.sql`.
+## Aşama 2 – Gerçek veri modeli ✅
 
 | İş | Durum |
 |---|---|
 | `teacher_classes`, `homework_checks`, `grades` tabloları; ödevler öğretmene + sınıfa bağlı | ✅ |
 | Öğrenci okula bağlı; öğretmen yalnızca kendi okulunun öğrencilerini görür/puanlar (RLS) | ✅ |
 | Puan verme sunucuda tek işlemde (`staff_give_points`), öğretmen adı sunucuda | ✅ |
+| Ödev kontrolü davranış puanı verir (Yaptı +1, Kısmen 0, Yapmadı −1) | ✅ |
 | Mesajlar konuşma bazında: `ogr:<öğrenci>` birebir, `sinif:<okul>:<sınıf>` grup; gönderen adı sunucuda | ✅ |
-| Öğretmen paneli: kartlı ana sayfa + ayrı sayfalar, hepsi veritabanından | ✅ |
-| Öğrenci/veli paneli ve süper admin paneli veritabanından | ✅ |
-| Öğrenci numarası okul bazında benzersiz; giriş okul + numara + PIN (okul cihazda hatırlanır) | ✅ |
+| Öğrenci numarası okul bazında benzersiz; okul cihazda hatırlanır | ✅ |
 | Toplu öğrenci ekleme (liste yapıştır, PIN listesi CSV / yazdır) | ✅ |
-| Öğretmen yalnızca kendi sınıflarındaki öğrenciyi ekler, taşır, PIN sıfırlar, siler (veli mesajlarıyla birlikte) | ✅ |
-| Davranış puanı 0'dan başlar, eksiye düşebilir | ✅ |
-| Öğrenci → öğretmen mesajlaşması (soru:<öğrenci>, veli yazışmasından ayrı) | ✅ |
+| Öğretmen yalnızca kendi sınıflarındaki öğrenciyi ekler, taşır, PIN'ini görür/sıfırlar, siler | ✅ |
+| Davranış puanı 0'dan başlar, eksiye düşebilir; sınıf akvaryumu | ✅ |
 | Ödeve PDF/resim ekleme (Storage, özel bucket, 10 MB) | ✅ |
-| Öğrencinin ödev teslimi (dosya yükleme) | ⏳ |
-| Canlı sohbet: Supabase Realtime (30 sn yedek yenileme) | ✅ |
-| SMS: yok; toplu mesaj ayrı sayfa değil, Mesajlar → sınıf grubu sohbetinde "Diğer sınıflara da gönder" (kullanıcı kararı) | — |
+| Canlı sohbet: Supabase Realtime (30 sn yedek yenileme); masaüstünde sohbet kutusu | ✅ |
+| Toplu mesaj: sınıf grubu sohbetinde "Diğer sınıflara da gönder" (ayrı sayfa yok) | ✅ |
+| 81 il ve 973 ilçenin tam listesi | ✅ |
+| Öğrencinin ödev teslimi (dosya yükleme) | ⏳ → [EduBoard listesi, Paket 2](EDUBOARD_IS_LISTESI.md#2-ödev-sistemini-güçlendirme-iyileştir) |
+| SMS | — (kullanıcı kararıyla yok) |
 
-## Aşama 3 – Çalışırlık ve doğrulama ⏳
+## Aşama 3 – Çalışırlık ve doğrulama 🔄
 
-- `npm run build` ve `npm run lint` temiz
-- Her rol için uçtan uca akış testi: kayıt → onay → giriş → puan verme → mesaj → ödev → çıkış
-- Hata/boş durum mesajlarının gözden geçirilmesi
-- Supabase güvenlik ve performans uyarılarının (advisors) sıfırlanması
+| İş | Durum |
+|---|---|
+| `tsc` ve `eslint` temiz | ✅ (her değişiklikte elle) |
+| `npm run build` temiz | ⏳ |
+| Her rol için uçtan uca akış testi: kayıt → onay → giriş → puan → mesaj → ödev → çıkış | ⏳ |
+| Hata/boş durum mesajlarının gözden geçirilmesi | ⏳ |
+| Supabase güvenlik ve performans uyarılarının (advisors) sıfırlanması | ⏳ |
 
-## Aşama 4 – Kod düzeni ⏳
+## Aşama 4 – Kod düzeni 🔄
 
-- `TeacherDashboard.tsx` (3.200+ satır), `AdminDashboard.tsx`, `ParentTeacherChat.tsx`, `page.tsx` parçalara bölünür
-- Veri erişimi tek katmanda (hooks) toplanır
-- Supabase tipleri otomatik üretilir (`generate_typescript_types`)
+| İş | Durum |
+|---|---|
+| Öğretmen paneli: kartlı ana sayfa + sol menü + her işe ayrı sayfa | ✅ |
+| Süper admin paneli: sol menü + 8 ayrı sayfa (eski tek dosya bölündü) | ✅ |
+| Öğrenci paneli: sol menü + gruplu sayfalar (eski tek dosya bölündü) | ✅ |
+| Admin ve öğrenci için ortak kabuk (`src/components/shell/PortalShell.tsx`) | ✅ |
+| Öğretmen panelini de ortak kabuğa geçirmek | ⏳ |
+| Supabase tiplerinin otomatik üretilmesi (`generate_typescript_types`) | ⏳ |
 
 ## Aşama 5 – Yayına hazırlık ⏳
 
@@ -73,3 +83,5 @@ Amaç: Gerçek öğrenci/veli verisi girilebilecek kadar güvenli bir giriş ve 
 - Aydınlatma metni ve veli açık rızası
 - Veri saklama süresi, silme talebi akışı
 - Erişim kayıtları (kim hangi öğrencinin verisini gördü/değiştirdi)
+
+Ayrıntılı iş kalemleri: [EduBoard listesi, Paket 9](EDUBOARD_IS_LISTESI.md#9-güvenlik-ve-kvkk).

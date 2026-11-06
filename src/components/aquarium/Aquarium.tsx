@@ -5,7 +5,7 @@ import { Maximize, Minimize } from '../icons';
 import { Volume2, VolumeX } from '../icons';
 import { useAquariumSound } from './useAquariumSound';
 import {
-  AquariumInput, CHASE_RATIO, CROWN_POINTS, SPARKLE_POINTS, SWALLOW_MS, SWALLOW_POINTS, canSwallow, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
+  AquariumInput, CHASE_RATIO, CROWN_POINTS, SPARKLE_POINTS, SWALLOW_POINTS, canSwallow, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
 } from '../../lib/aquarium';
 import { EggArt, FishArt, FORM_NAMES } from './FishArt';
 import styles from './Aquarium.module.css';
@@ -42,8 +42,8 @@ const SWALLOW_FLEE_MS = 7000;
 const SWALLOW_COOLDOWN_MS = 4000;
 const SWALLOW_TOGGLE_KEY = 'akvaryum-yutma';
 
-/** Geçici yutma kaydı: yutan, yutulanın o anki puanını `until` anına kadar taşır */
-interface Meal { eaterId: string; preyId: string; amount: number; until: number }
+/** Yutma kaydı: yutulan, mod kapanana kadar yutanın midesinde kalır; yutan geçici puanı taşır */
+interface Meal { eaterId: string; preyId: string; amount: number }
 /** Ekrana yansıyan yutma durumu: geçici ek puanlar ve şu an midede olanlar */
 interface Feast {
   bonus: Record<string, number>;
@@ -95,6 +95,8 @@ interface Mover {
   /** Kovalamacanın başladığı an ve kaçışın zikzak evresi */
   chaseAt?: number;
   wobble?: number;
+  /** Bu kovalamacada av kurtulacak (avcı yetişemez) */
+  miss?: boolean;
 }
 
 const TANK_H = 56.25; // 16:9 → yükseklik = genişliğin %56.25'i (cqw)
@@ -369,6 +371,17 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       big.preyId = smallId;
       big.chaseAt = now;
       small.wobble = Math.random() * Math.PI * 2;
+      // Her seferinde yakalayamaz: şekil farkı azsa av daha sık kurtulur
+      big.miss = false;
+      if (feasting) {
+        const tiers = fishForm(big.points) - fishForm(small.points);
+        big.miss = Math.random() < (tiers <= 1 ? 0.4 : tiers === 2 ? 0.3 : 0.2);
+        if (big.miss) {
+          // Avcı yetişemez, bir süre sonra pes eder; av biraz daha kaçıp sakinleşir
+          big.modeUntil = now + 3800 + Math.random() * 1200;
+          small.modeUntil = big.modeUntil + 900;
+        }
+      }
       big.modeUntil = now + (feasting ? SWALLOW_CHASE_MS : CHASE_MS);
       small.mode = 'flee';
       small.modeUntil = now + (feasting ? SWALLOW_FLEE_MS : FLEE_MS);
@@ -468,11 +481,10 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         publish();
         return;
       }
-      // Yutulanın midesindekiler kurtulur ve hemen geri gelir (yutan yalnızca 5 puan alır, onları devralmaz)
-      const freed = mealsRef.current.filter((x) => x.eaterId === smallId);
-      mealsRef.current = mealsRef.current.filter((x) => x.eaterId !== smallId);
-      for (const x of freed) { release(x.preyId); regrow(x.preyId); }
-      mealsRef.current.push({ eaterId: bigId, preyId: smallId, amount: SWALLOW_POINTS, until: now + SWALLOW_MS });
+      // Yutulanın midesindekiler yeni yutanın midesine geçer (görünmez kalırlar) ama puan getirmez:
+      // her yutuş yalnızca 5 puan
+      mealsRef.current = mealsRef.current.map((x) => (x.eaterId === smallId ? { ...x, eaterId: bigId, amount: 0 } : x));
+      mealsRef.current.push({ eaterId: bigId, preyId: smallId, amount: SWALLOW_POINTS });
       regrow(smallId);
       regrow(bigId);
       gulps = { ...gulps, [bigId]: now };
@@ -483,8 +495,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         if (at === now) { gulps = rest; publish(); }
       }, 1400));
     };
-    /** Süresi dolanları geri getir; mod kapatıldıysa herkesi hemen bırak */
-    const settleMeals = (now: number) => {
+    /** Mod kapatıldıysa yutulanların hepsini geri getir (açıkken kimse geri gelmez) */
+    const settleMeals = () => {
       if (!swallowRef.current) {
         movers.forEach((m, id) => {
           if (m.gulpBy) { m.gulpBy = undefined; m.gulpUntil = undefined; release(id); publish(); }
@@ -492,10 +504,9 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       }
       const meals = mealsRef.current;
       if (!meals.length) return;
-      const done = swallowRef.current ? meals.filter((x) => x.until <= now) : meals;
-      if (!done.length) return;
-      mealsRef.current = meals.filter((x) => !done.includes(x));
-      for (const x of done) {
+      if (swallowRef.current) return;
+      mealsRef.current = [];
+      for (const x of meals) {
         release(x.preyId);
         regrow(x.eaterId);
         regrow(x.preyId);
@@ -596,6 +607,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
               m.tx = clamp(cx(prey) - m.size * (toRight ? MOUTH_AT : 1 - MOUTH_AT), b.minX, b.maxX);
               m.ty = clamp(prey.y + prey.h / 2 - m.h * 0.55, b.minY, b.maxY);
               if (canSwallow(m.points, prey.points)
+                  && !m.miss
                   && now - (m.chaseAt || 0) > SWALLOW_MIN_CHASE_MS
                   && Math.abs(cx(prey) - mouthX(m)) < Math.max(prey.size * 0.6, m.size * 0.18)
                   && Math.abs((prey.y + prey.h / 2) - mouthY(m)) < Math.max(prey.h, m.h * 0.35)) {
@@ -629,7 +641,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           // Önce avın biraz gerisinde kalır (kovalamaca görünsün), sonra atak yapıp yetişir
           const prey = m.preyId ? movers.get(m.preyId) : undefined;
           const run = FEAST_FLEE + (prey?.speed || 0) * 0.5;
-          sp = run * (now - (m.chaseAt || 0) < SWALLOW_MIN_CHASE_MS ? 0.85 : 1.4);
+          // Kaçıracaksa atak yapsa da yetişemez
+          sp = run * (now - (m.chaseAt || 0) < SWALLOW_MIN_CHASE_MS ? 0.85 : m.miss ? 0.92 : 1.4);
         }
         let wantVx = dist > 0.05 ? (dx / dist) * sp : 0;
         let wantVy = dist > 0.05 ? (dy / dist) * sp * 0.75 : 0;
@@ -662,7 +675,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       sinceCheck += dt;
       if (sinceCheck > CHASE_CHECK_S) {
         sinceCheck = 0;
-        settleMeals(now);
+        settleMeals();
         checkChase(now);
       }
       raf = requestAnimationFrame(frame);
@@ -840,7 +853,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
             ? 'Kapalı: büyük balık küçüğü kovalar, küçük kaçar.'
             : reducedMotion
               ? 'Bu cihazda hareket azaltma açık olduğu için balıklar yüzmüyor.'
-              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve bir dakikalığına 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Yutulan balık bir dakika sonra geri gelir. Gerçek puanlar değişmez.'}
+              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Küçük balık bazen kaçıp kurtulur. Yutulan balıklar bu ayar kapatılınca geri gelir. Gerçek puanlar değişmez.'}
         </p>
       </div>
 

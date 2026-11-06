@@ -54,10 +54,10 @@ export const CHASE_RATIO = 1.8;
  * - İkisi de son şekildeyse (Ejder) puanı fazla olan diğerini yutar
  * - Yutan, yutulan kaç puanlı olursa olsun geçici olarak 5 puan alır (bir şekil büyür); böylece
  *   şekiller atlanmadan sırayla görünür ve yuta yuta daha büyükleri de yutabilir
- * - Yaklaşık 1 dakika sonra yutulan geri gelir, yutan da aldığı geçici puanı kaybeder
+ * - Yutulan, mod açık kaldıkça geri gelmez; mod kapatılınca herkes geri gelir ve geçici puanlar silinir
+ * - Büyük balık her seferinde yakalayamaz: küçük balık bazen kaçıp kurtulur (fark azsa daha sık)
  */
 export const SWALLOW_TIER_GAP = 1;
-export const SWALLOW_MS = 60_000;
 /** Her yutuşta kazanılan geçici puan (bir şekil kademesi) */
 export const SWALLOW_POINTS = FORM_STEP;
 export function canSwallow(bigPoints: number, smallPoints: number) {

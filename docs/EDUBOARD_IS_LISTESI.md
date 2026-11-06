@@ -19,15 +19,15 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 2b | Okuma yarışması (bizde ek) | 5 / 5 ✅ |
 | 3 | Öğretmen dosyaları ve içerik düzeni | 8 / 8 ✅ |
 | 4 | Quiz motoru | 10 / 10 ✅ |
-| 5 | Analitik ve raporlama | 0 / 6 |
+| 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 0 / 6 |
-| 7 | Etkileşimli tahta | 0 / 14 |
+| 7 | Etkileşimli tahta | 0 / 15 |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **39 / 106** |
+| | **Toplam** | **45 / 107** |
 
 ---
 
@@ -98,12 +98,12 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 
 ## 5. Analitik ve raporlama
 
-- [ ] **Isı haritası:** soru bazında sınıf başarı oranı — *K-8*
-- [ ] Öğretmen için sınıf karnesi: ders bazında not ortalamaları ve dağılım — *K-8*
-- [ ] Öğrenci gelişim sayfası: puan ve not değişimi zaman içinde — *K-8*
-- [ ] Not ve puan listelerini Excel/CSV olarak dışa aktarma — *K-8*
-- [ ] Rapor ve tahtayı PDF/PNG olarak dışa aktarma — *K-8*
-- [ ] Öğrencinin quiz/çözüm cevaplarını tek tek inceleme — *K-8*
+- [x] **Isı haritası:** soru bazında sınıf başarı oranı — *K-8* · 7 Kasım 2026 · `b7879b1` (Ödev kontrolü'nde quiz sonuç paneli: öğrenci × soru, sütun başında doğru oranı)
+- [x] Öğretmen için sınıf karnesi: ders bazında not ortalamaları ve dağılım — *K-8* · 7 Kasım 2026 · `b7879b1` (MEB aralıklarıyla dağılım, sınavlara göre ortalama, öğrenci özeti ve ödev yapma oranı)
+- [x] Öğrenci gelişim sayfası: puan ve not değişimi zaman içinde — *K-8* · 7 Kasım 2026 · `b7879b1` (öğrencide "Gelişimim", öğretmende karneden açılır)
+- [x] Not ve puan listelerini Excel/CSV olarak dışa aktarma — *K-8* · 7 Kasım 2026 · `b7879b1` (Türkçe Excel'de doğrudan açılan CSV; quiz sonuçları da)
+- [x] Rapor ve tahtayı PDF/PNG olarak dışa aktarma — *K-8* · 7 Kasım 2026 · `b7879b1` (raporlar: Yazdır / PDF, grafikler PNG. Tahta henüz yok; tahtanın dışa aktarımı 7. pakete ayrı iş olarak eklendi)
+- [x] Öğrencinin quiz/çözüm cevaplarını tek tek inceleme — *K-8* · 7 Kasım 2026 · `b7879b1`
 
 ## 6. Sınıf ve okul yapısı (iyileştir)
 
@@ -130,6 +130,7 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 - [ ] Tahtaya **Kronometre** parçası — *K-4*
 - [ ] Öğrenci çiziminin otomatik kaydı (30 sn) — *K-7*
 - [ ] Ortak medya çekmecesinden tahtaya sürükle-bırak — *K-3*
+- [ ] Tahtayı PDF/PNG olarak dışa aktarma (5. paketten taşındı) — *K-8*
 
 ## 8. Canlı ders
 
@@ -205,3 +206,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 | 6 Kasım 2026 | Öğrenci teslimi, teslim kilidi, otomatik kapanış, teslim özeti, dosya içeriği doğrulaması — Paket 2 tamam | `50a8def` |
 | 7 Kasım 2026 | Dosyalarım, klasörler, etiketler, Dosyalarımdan ekle, sınıfla paylaşım, kota, setler, ortak kütüphane — Paket 3 tamam | `07bec54` |
 | 7 Kasım 2026 | Quiz motoru: soru bankası, alıştırma ve sınav modu, sunucuda değerlendirme, sonuç ekranları — Paket 4 tamam | `c8a8d9e` |
+| 7 Kasım 2026 | Isı haritası, sınıf karnesi, öğrenci gelişimi, Excel/PDF/PNG dışa aktarma, quiz cevaplarını inceleme — Paket 5 tamam | `b7879b1` |

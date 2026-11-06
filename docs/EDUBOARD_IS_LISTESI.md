@@ -17,7 +17,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 1 | Sınıf araçları | 5 / 5 ✅ |
 | 2 | Ödev sistemini güçlendirme | 8 / 8 ✅ |
 | 2b | Okuma yarışması (bizde ek) | 5 / 5 ✅ |
-| 3 | Öğretmen dosyaları ve içerik düzeni | 0 / 8 |
+| 3 | Öğretmen dosyaları ve içerik düzeni | 8 / 8 ✅ |
 | 4 | Quiz motoru | 0 / 10 |
 | 5 | Analitik ve raporlama | 0 / 6 |
 | 6 | Sınıf ve okul yapısı | 0 / 6 |
@@ -27,7 +27,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **21 / 106** |
+| | **Toplam** | **29 / 106** |
 
 ---
 
@@ -72,14 +72,14 @@ Okuma hızı: öğrencinin 1 dakikada okuduğu kelime sayısı. Metin uygulamada
 
 ## 3. Öğretmen dosyaları ve içerik düzeni
 
-- [ ] **Dosyalarım** sayfası: yükle, listele, önizle (PDF, görsel), sil — *K-5, K-9*
-- [ ] Klasörler ve sürükleyerek sıralama — *K-5*
-- [ ] Etiketler: kademe, branş, konu, serbest etiket; bunlarla arama ve filtreleme — *K-5*
-- [ ] Ödeve "Dosyalarımdan ekle" (yeniden yüklemeden) — *K-9*
-- [ ] Sınıfla paylaşım; öğrenci panelinde "Ders materyalleri" — *K-5*
-- [ ] Öğretmen başına depolama kotası ve kullanım göstergesi — *K-9*
-- [ ] Setler: birden çok içeriği tek paket yapma (ör. "8. Sınıf LGS Matematik Seti") — *K-5*
-- [ ] Ortak eğitim medya kütüphanesi (bütün öğretmenlerin kullanabildiği hazır görseller, kotadan muaf) — *K-9*
+- [x] **Dosyalarım** sayfası: yükle, listele, önizle (PDF, görsel), sil — *K-5, K-9* · 7 Kasım 2026 · `07bec54` (PDF, resim, Word, PowerPoint, Excel; dosya başına 25 MB; tür ilk baytlardan doğrulanır)
+- [x] Klasörler ve sürükleyerek sıralama — *K-5* · 7 Kasım 2026 · `07bec54` (tek seviye klasör; dosyayı klasör adına bırakarak taşıma, satırı sürükleyerek sıralama; klavye için menüde yukarı/aşağı)
+- [x] Etiketler: kademe, branş, konu, serbest etiket; bunlarla arama ve filtreleme — *K-5* · 7 Kasım 2026 · `07bec54`
+- [x] Ödeve "Dosyalarımdan ekle" (yeniden yüklemeden) — *K-9* · 7 Kasım 2026 · `07bec54` (dosya sunucuda ödeve kopyalanır; Dosyalarım'dan silinse de ödevde kalır)
+- [x] Sınıfla paylaşım; öğrenci panelinde "Ders materyalleri" — *K-5* · 7 Kasım 2026 · `07bec54` (yalnızca kendi sınıflarına; isteğe bağlı not)
+- [x] Öğretmen başına depolama kotası ve kullanım göstergesi — *K-9* · 7 Kasım 2026 · `07bec54` (500 MB; hem kayıt tetikleyicisi hem depolama yükleme kuralı denetler)
+- [x] Setler: birden çok içeriği tek paket yapma (ör. "8. Sınıf LGS Matematik Seti") — *K-5* · 7 Kasım 2026 · `07bec54` (sıralı; sınıfla paylaşılır)
+- [x] Ortak eğitim medya kütüphanesi (bütün öğretmenlerin kullanabildiği hazır görseller, kotadan muaf) — *K-9* · 7 Kasım 2026 · `07bec54` (yönetici panelinde "Ortak kütüphane" sayfasından yüklenir; içerik henüz boş)
 
 ## 4. Quiz motoru
 
@@ -203,3 +203,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 | 6 Kasım 2026 | Teslim saati ve geçmiş tarih engeli (Paket 2) | `71f5852` |
 | 6 Kasım 2026 | Sonuçları açıklama: hemen / sonra açıkla (Paket 2) | `23081db` |
 | 6 Kasım 2026 | Öğrenci teslimi, teslim kilidi, otomatik kapanış, teslim özeti, dosya içeriği doğrulaması — Paket 2 tamam | `50a8def` |
+| 7 Kasım 2026 | Dosyalarım, klasörler, etiketler, Dosyalarımdan ekle, sınıfla paylaşım, kota, setler, ortak kütüphane — Paket 3 tamam | `07bec54` |

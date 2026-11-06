@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Send, Trash2, CheckSquare, Calendar, MoreVertical, Search, Paperclip, X } from '../icons';
-import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, formatBytes, homeworkIsOpen, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
+import { Send, Trash2, CheckSquare, Calendar, MoreVertical, Search, Paperclip, X, Folder } from '../icons';
+import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, formatBytes, HomeworkFilePick, homeworkIsOpen, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
+import { HomeworkFilePicker } from '../files/HomeworkFilePicker';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, formatDate } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -98,7 +99,11 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   const [submittedCounts, setSubmittedCounts] = useState<Record<string, number>>({});
   const [link, setLink] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  // Dosyalarım / ortak kütüphaneden seçilenler (gönderilince ödeve kopyalanır)
+  const [picks, setPicks] = useState<HomeworkFilePick[]>([]);
+  const [picking, setPicking] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const attachedCount = files.length + picks.length;
 
   // Dosyalar eklenerek birikir (ikinci seçimde öncekiler silinmez); aynı dosya iki kez eklenmez
   const handleFiles = (list: FileList | null) => {
@@ -109,7 +114,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     for (const f of picked) {
       if (!merged.some((m) => m.name === f.name && m.size === f.size)) merged.push(f);
     }
-    const problem = validateHomeworkFiles(merged);
+    const problem = merged.length + picks.length > MAX_FILES ? `Bir ödeve en fazla ${MAX_FILES} dosya eklenebilir.` : validateHomeworkFiles(merged);
     if (problem) {
       setNotice({ kind: 'error', text: problem });
       return;
@@ -148,7 +153,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
       setNotice({ kind: 'error', text: subjectChoice === OTHER ? 'Ders adını yazın.' : 'Ödevin hangi derse ait olduğunu seçin.' });
       return;
     }
-    if (!description.trim() && !files.length && !link.trim()) {
+    if (!description.trim() && !attachedCount && !link.trim()) {
       setNotice({ kind: 'error', text: 'Ödevin ne olduğunu yazın veya dosya / bağlantı ekleyin.' });
       return;
     }
@@ -171,7 +176,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     const failed: { cls: string; error: string }[] = [];
     for (const [i, c] of targets.entries()) {
       if (targets.length > 1) setProgress(`${c} sınıfına gönderiliyor (${i + 1}/${targets.length})…`);
-      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, resultsReleased: releaseNow, acceptsSubmissions });
+      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, picks, resultsReleased: releaseNow, acceptsSubmissions });
       if (res.ok) sent.push(c);
       else failed.push({ cls: c, error: res.error });
     }
@@ -182,7 +187,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
       setNotice({ kind: 'error', text: `Ödev gönderilemedi: ${failText}` });
       return;
     }
-    const fileNote = files.length ? ` (${files.length} dosya)` : '';
+    const fileNote = attachedCount ? ` (${attachedCount} dosya)` : '';
     if (failed.length) {
       // Form temizlenmez; yalnızca gönderilemeyen sınıflar seçili kalır, tekrar gönderilebilir
       setNotice({ kind: 'error', text: `${title} ${sent.join(', ')} sınıfına gönderildi${fileNote}. Gönderilemeyen: ${failText}. Form duruyor; tekrar gönderebilirsiniz.` });
@@ -192,6 +197,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     }
     setNotice({ kind: 'ok', text: `${title} ${sent.join(', ')} ${sent.length > 1 ? 'sınıflarına' : 'sınıfına'} gönderildi${fileNote}.` });
     setFiles([]);
+    setPicks([]);
     if (fileInput.current) fileInput.current.value = '';
     setDescription('');
     setDueDate('');
@@ -402,13 +408,13 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                 </fieldset>
                 {/* Dosya sürüklenince bölüm kendiliğinden açılır (kapalıyken de bırakılabilsin) */}
                 <details className={styles.composerDetails} onDragEnter={(e) => { e.currentTarget.open = true; }}>
-                  <summary><span>Dosya veya bağlantı ekle</span><small>{[files.length ? `${files.length} dosya` : '', link.trim() ? 'bağlantı eklendi' : ''].filter(Boolean).join(' · ') || 'İsteğe bağlı'}</small></summary>
+                  <summary><span>Dosya veya bağlantı ekle</span><small>{[attachedCount ? `${attachedCount} dosya` : '', link.trim() ? 'bağlantı eklendi' : ''].filter(Boolean).join(' · ') || 'İsteğe bağlı'}</small></summary>
                   <div className={styles.composerDetailBody}>
                     <label className={styles.field}>Bağlantı (isteğe bağlı)
                       <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." />
                     </label>
                     <div className={`${styles.field} ${styles.fullRow}`}>
-                      <span id="hw-files-label">Dosyalar <span className={styles.optionalHint}>(PDF veya resim · en fazla {MAX_FILES} · her biri 10 MB)</span></span>
+                      <span id="hw-files-label">Dosyalar <span className={styles.optionalHint}>(yüklenen: PDF veya resim, her biri 10 MB · Dosyalarımdan: Word, PowerPoint, Excel de olur · toplam en fazla {MAX_FILES})</span></span>
                       <div
                         className={`${styles.fileDrop} ${dragging ? styles.fileDropActive : ''}`}
                         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -426,12 +432,15 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                           tabIndex={-1}
                           onChange={(e) => handleFiles(e.target.files)}
                         />
-                        <button type="button" className={styles.fileDropButton} onClick={() => fileInput.current?.click()} disabled={files.length >= MAX_FILES}>
-                          <Paperclip size={18} aria-hidden="true" />{files.length ? 'Dosya ekle' : 'Dosya seç'}
+                        <button type="button" className={styles.fileDropButton} onClick={() => fileInput.current?.click()} disabled={attachedCount >= MAX_FILES}>
+                          <Paperclip size={18} aria-hidden="true" />{attachedCount ? 'Dosya ekle' : 'Dosya seç'}
                         </button>
-                        <span className={styles.fileDropHint}>{files.length >= MAX_FILES ? 'En fazla dosya sayısına ulaşıldı' : 'veya buraya sürükleyin'}</span>
+                        <button type="button" className={styles.fileDropButton} onClick={() => setPicking(true)} disabled={attachedCount >= MAX_FILES}>
+                          <Folder size={18} aria-hidden="true" />Dosyalarımdan ekle
+                        </button>
+                        <span className={styles.fileDropHint}>{attachedCount >= MAX_FILES ? 'En fazla dosya sayısına ulaşıldı' : 'veya buraya sürükleyin'}</span>
                       </div>
-                      {files.length > 0 && (
+                      {attachedCount > 0 && (
                         <ul className={styles.fileList}>
                           {files.map((f) => (
                             <li key={f.name + f.size} className={styles.fileItem}>
@@ -442,7 +451,24 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                               </button>
                             </li>
                           ))}
+                          {picks.map((p) => (
+                            <li key={`${p.bucket}/${p.path}`} className={styles.fileItem}>
+                              <span>{p.name}</span>
+                              <small>{formatBytes(p.size)} · {p.bucket === 'library' ? 'Kütüphane' : 'Dosyalarım'}</small>
+                              <button type="button" className={styles.fileRemove} onClick={() => setPicks((prev) => prev.filter((x) => x !== p))} aria-label={`${p.name} dosyasını çıkar`} title="Çıkar">
+                                <X size={16} aria-hidden="true" />
+                              </button>
+                            </li>
+                          ))}
                         </ul>
+                      )}
+                      {picking && (
+                        <HomeworkFilePicker
+                          remaining={MAX_FILES - attachedCount}
+                          already={picks}
+                          onClose={() => setPicking(false)}
+                          onPick={(chosen) => { setPicks((prev) => [...prev, ...chosen]); setPicking(false); setNotice(null); }}
+                        />
                       )}
                     </div>
                   </div>
@@ -486,7 +512,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   {progress && <span className={styles.mutedText} aria-live="polite">{progress}</span>}
                   <button type="submit" className={styles.primary} disabled={busy || !targets.length}>
                     <Send size={18} aria-hidden="true" />
-                    {busy ? (files.length ? 'Dosyalar yükleniyor…' : 'Gönderiliyor…') : targets.length > 1 ? `${targets.length} sınıfa gönder` : 'Ödevi gönder'}
+                    {busy ? (attachedCount ? 'Dosyalar ekleniyor…' : 'Gönderiliyor…') : targets.length > 1 ? `${targets.length} sınıfa gönder` : 'Ödevi gönder'}
                   </button>
                 </div>
               </form>

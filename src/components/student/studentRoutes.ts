@@ -1,8 +1,8 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { FileText, TrendingUp, Star, Award, Fish, MessageSquare, Bell, User, BookOpen } from '../icons';
+import { FileText, TrendingUp, Star, Award, Fish, MessageSquare, Bell, User, BookOpen, Folder } from '../icons';
 
-export type StudentPageId = 'home' | 'odevler' | 'notlar' | 'okuma' | 'puanlar' | 'siralama' | 'akvaryum' | 'mesajlar' | 'duyurular' | 'hesap';
+export type StudentPageId = 'home' | 'odevler' | 'materyaller' | 'notlar' | 'okuma' | 'puanlar' | 'siralama' | 'akvaryum' | 'mesajlar' | 'duyurular' | 'hesap';
 
 export type StudentPageGroup = 'Derslerim' | 'Puanlarım' | 'İletişim' | 'Hesap';
 
@@ -17,6 +17,7 @@ export interface StudentPageInfo {
 /** Adres: /giris?sayfa=<id> (sayfa kimliği aynı zamanda adres adıdır) */
 export const STUDENT_PAGES: StudentPageInfo[] = [
   { id: 'odevler', title: 'Ödevler', description: 'Verilen ödevler ve kontrol sonucu', icon: FileText, group: 'Derslerim' },
+  { id: 'materyaller', title: 'Ders materyalleri', description: 'Öğretmenlerinin paylaştığı dosyalar', icon: Folder, group: 'Derslerim' },
   { id: 'notlar', title: 'Notlar', description: 'Yazılı, sözlü ve performans', icon: TrendingUp, group: 'Derslerim' },
   { id: 'okuma', title: 'Okuma yarışması', description: 'Okuma hızın, sıran ve gelişimin', icon: BookOpen, group: 'Derslerim' },
   { id: 'puanlar', title: 'Puanlarım', description: 'Artı ve eksi puan geçmişi', icon: Star, group: 'Puanlarım' },

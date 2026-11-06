@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { UserCheck, Building, Users, GraduationCap, School, Bell, User, FileCheck2 } from '../icons';
+import { UserCheck, Building, Users, GraduationCap, School, Bell, User, FileCheck2, Library } from '../icons';
 
 export type AdminPageId =
   | 'home'
@@ -11,9 +11,10 @@ export type AdminPageId =
   | 'schools'
   | 'classes'
   | 'announcements'
+  | 'library'
   | 'account';
 
-export type AdminPageGroup = 'Onaylar' | 'Kullanıcılar' | 'Okul' | 'İletişim' | 'Hesap';
+export type AdminPageGroup = 'Onaylar' | 'Kullanıcılar' | 'Okul' | 'İçerik' | 'İletişim' | 'Hesap';
 
 export interface AdminPageInfo {
   id: Exclude<AdminPageId, 'home'>;
@@ -32,11 +33,12 @@ export const ADMIN_PAGES: AdminPageInfo[] = [
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Ekle, PIN yenile, sil', icon: GraduationCap, group: 'Kullanıcılar' },
   { id: 'schools', slug: 'okullar', title: 'Okullar', description: 'Okul listesi ve toplu okul ekleme', icon: Building, group: 'Okul' },
   { id: 'classes', slug: 'siniflar', title: 'Sınıflar', description: 'Okullara göre sınıflar ve rehber öğretmenler', icon: School, group: 'Okul' },
+  { id: 'library', slug: 'kutuphane', title: 'Ortak kütüphane', description: 'Bütün öğretmenlerin kullanacağı görsel ve belgeler', icon: Library, group: 'İçerik' },
   { id: 'announcements', slug: 'duyurular', title: 'Duyurular', description: 'Duyuru yayınla ve kaldır', icon: Bell, group: 'İletişim' },
   { id: 'account', slug: 'hesabim', title: 'Hesabım', description: 'Bilgilerim, şifre, çıkış', icon: User, group: 'Hesap' },
 ];
 
-export const ADMIN_PAGE_GROUPS: AdminPageGroup[] = ['Onaylar', 'Kullanıcılar', 'Okul', 'İletişim', 'Hesap'];
+export const ADMIN_PAGE_GROUPS: AdminPageGroup[] = ['Onaylar', 'Kullanıcılar', 'Okul', 'İçerik', 'İletişim', 'Hesap'];
 
 export const getAdminPage = (id: AdminPageId) => ADMIN_PAGES.find((p) => p.id === id);
 

@@ -818,3 +818,52 @@ export const VolumeX = createIcon('VolumeX', (
   </>
 ));
 
+
+export const Folder = createIcon('Folder', (
+  <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+));
+
+export const FolderPlus = createIcon('FolderPlus', (
+  <>
+    <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+    <path d="M12 10v6M9 13h6" />
+  </>
+));
+
+export const Tag = createIcon('Tag', (
+  <>
+    <path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42Z" />
+    <circle cx="7.5" cy="7.5" r="1" fill="currentColor" />
+  </>
+));
+
+export const Share2 = createIcon('Share2', (
+  <>
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98" />
+  </>
+));
+
+export const Layers = createIcon('Layers', (
+  <>
+    <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+    <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65M22 12.65l-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+  </>
+));
+
+export const Library = createIcon('Library', (
+  <path d="m16 6 4 14M12 6v14M8 8v12M4 4v16" />
+));
+
+export const GripVertical = createIcon('GripVertical', (
+  <>
+    <circle cx="9" cy="5" r="1" fill="currentColor" />
+    <circle cx="9" cy="12" r="1" fill="currentColor" />
+    <circle cx="9" cy="19" r="1" fill="currentColor" />
+    <circle cx="15" cy="5" r="1" fill="currentColor" />
+    <circle cx="15" cy="12" r="1" fill="currentColor" />
+    <circle cx="15" cy="19" r="1" fill="currentColor" />
+  </>
+));

@@ -239,23 +239,51 @@ export const safeFileName = (name: string) => {
   return `${Date.now().toString(36)}-${base}${ext}`;
 };
 
-/** Dosyaları yükler ve ödevin attachments alanına yazar */
-async function uploadHomeworkFiles(homeworkId: string, files: File[]): Promise<Result<HomeworkAttachment[]>> {
+/** "Dosyalarımdan ekle" / ortak kütüphaneden seçilen dosya: ödevin alanına kopyalanır */
+export interface HomeworkFilePick {
+  /** Kaynak depolama alanı (teacher-files ya da library) */
+  bucket: string;
+  path: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
+/**
+ * Dosyaları yükler, seçilenleri kopyalar ve hepsini ödevin attachments alanına yazar.
+ * Biri başarısız olursa o ana kadar eklenenler geri silinir.
+ */
+async function uploadHomeworkFiles(homeworkId: string, files: File[], picks: HomeworkFilePick[] = []): Promise<Result<HomeworkAttachment[]>> {
   const checked = await verifyFileContents(files);
   if (!checked.ok) return checked;
   const schoolId = await getMySchoolId();
   const uploaded: HomeworkAttachment[] = [];
+  const rollback = async () => {
+    if (uploaded.length) await supabase.storage.from(HOMEWORK_BUCKET).remove(uploaded.map((u) => u.path));
+  };
   for (const [i, file] of files.entries()) {
     const path = `${schoolId || 'none'}/${homeworkId}/${safeFileName(file.name)}`;
     const { error } = await supabase.storage.from(HOMEWORK_BUCKET).upload(path, file, { contentType: checked.data[i], upsert: false });
     if (error) {
-      if (uploaded.length) await supabase.storage.from(HOMEWORK_BUCKET).remove(uploaded.map((u) => u.path));
+      await rollback();
       return { ok: false, error: `"${file.name}" yüklenemedi: ${error.message}` };
     }
     uploaded.push({ path, name: file.name.slice(0, 120), size: file.size, type: checked.data[i] });
   }
+  for (const p of picks) {
+    const path = `${schoolId || 'none'}/${homeworkId}/${safeFileName(p.name)}`;
+    const { error } = await supabase.storage.from(p.bucket).copy(p.path, path, { destinationBucket: HOMEWORK_BUCKET });
+    if (error) {
+      await rollback();
+      return { ok: false, error: `"${p.name}" ödeve eklenemedi: ${error.message}` };
+    }
+    uploaded.push({ path, name: p.name.slice(0, 120), size: p.size, type: p.type });
+  }
   const { error } = await supabase.from('homeworks').update({ attachments: uploaded }).eq('id', homeworkId);
-  if (error) return fail(error);
+  if (error) {
+    await rollback();
+    return fail(error);
+  }
   return { ok: true, data: uploaded };
 }
 
@@ -277,6 +305,8 @@ export async function createHomework(input: {
   points: number;
   link: string;
   files?: File[];
+  /** Dosyalarım / ortak kütüphaneden seçilenler (ödeve kopyalanır) */
+  picks?: HomeworkFilePick[];
   /** false = sonuçlar öğretmen açıklayana kadar öğrenciden gizli (varsayılan: hemen göster) */
   resultsReleased?: boolean;
   /** true = öğrenci uygulamadan teslim eder */
@@ -286,8 +316,10 @@ export async function createHomework(input: {
   if (!title) return { ok: false, error: 'Ödev başlığı zorunludur.' };
   if (!input.className) return { ok: false, error: 'Sınıf seçin.' };
   const files = input.files || [];
+  const picks = input.picks || [];
   const fileError = validateHomeworkFiles(files);
   if (fileError) return { ok: false, error: fileError };
+  if (files.length + picks.length > 5) return { ok: false, error: 'Bir ödeve en fazla 5 dosya eklenebilir.' };
   // İçerik doğrulaması ödev kaydından önce (bozuk dosyada yarım ödev oluşmasın)
   const contents = await verifyFileContents(files);
   if (!contents.ok) return contents;
@@ -300,14 +332,14 @@ export async function createHomework(input: {
     due_time: input.dueDate && input.dueTime ? input.dueTime : null,
     points: input.points,
     file_url: input.link.trim() || null,
-    file_type: files.length ? 'Dosya' : input.link.trim() ? 'Bağlantı' : 'Metin',
+    file_type: files.length || picks.length ? 'Dosya' : input.link.trim() ? 'Bağlantı' : 'Metin',
     results_released: input.resultsReleased ?? true,
     accepts_submissions: input.acceptsSubmissions ?? false,
     teacher_name: 'server',
   }).select('id').single();
   if (error || !created) return fail(error);
-  if (files.length) {
-    const up = await uploadHomeworkFiles((created as { id: string }).id, files);
+  if (files.length || picks.length) {
+    const up = await uploadHomeworkFiles((created as { id: string }).id, files, picks);
     if (!up.ok) {
       // Dosyalar yüklenemediyse yarım ödev bırakma
       await supabase.from('homeworks').delete().eq('id', (created as { id: string }).id);

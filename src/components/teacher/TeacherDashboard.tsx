@@ -25,6 +25,7 @@ import { TeacherReadingPage } from '../reading/TeacherReadingPage';
 import { TeacherGradesPage } from './TeacherGradesPage';
 import { TeacherMessagesPage } from './TeacherMessagesPage';
 import { TeacherClassToolsPage } from './TeacherClassToolsPage';
+import { TeacherFilesPage } from '../files/TeacherFilesPage';
 import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
@@ -217,6 +218,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           onOpenCheck={(id, cls) => { setCheckHomeworkId(id); if (cls) setSelectedClass(cls); openPage('check_sheet'); }}
         />
       )}
+
+      {page === 'files' && <TeacherFilesPage classNames={classNames} />}
 
       {!missingClass && (
         <>

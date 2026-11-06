@@ -17,6 +17,7 @@ import { StudentMessagesPage } from './StudentMessagesPage';
 import { AnnouncementsList, StudentAccountPage, StudentGradesPage, StudentPointsPage, StudentRankingPage } from './StudentSections';
 import { Spinner } from '../Spinner';
 import { StudentReadingPage } from '../reading/StudentReadingPage';
+import { StudentMaterialsPage } from '../files/StudentMaterialsPage';
 import styles from '../teacher/TeacherDashboard.module.css';
 
 interface StudentPortalProps {
@@ -159,6 +160,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
             onSubmissionChange={(id, submission) => setHomeworks((prev) => prev.map((h) => (h.id === id ? { ...h, submission } : h)))}
           />
         )}
+        {page === 'materyaller' && <StudentMaterialsPage />}
         {page === 'notlar' && <StudentGradesPage grades={grades} loaded={loaded} />}
         {page === 'okuma' && <StudentReadingPage />}
         {page === 'puanlar' && <StudentPointsPage me={me} points={points} loaded={loaded} />}

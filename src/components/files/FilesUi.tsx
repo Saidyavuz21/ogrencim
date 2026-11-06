@@ -19,6 +19,7 @@ export function Modal({ title, kicker, onClose, children, wide, busy }: {
 }) {
   const titleId = useId();
   const boxRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prevFocus = document.activeElement as HTMLElement | null;
     const first = boxRef.current?.querySelector<HTMLElement>('[data-autofocus], input, select, textarea, button:not([data-close])');
@@ -31,13 +32,26 @@ export function Modal({ title, kicker, onClose, children, wide, busy }: {
     };
   }, []);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !busy) onClose(); };
+    // İç içe pencerelerde Esc yalnızca en üsttekini kapatır
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || busy) return;
+      const all = document.querySelectorAll('[data-modal-overlay]');
+      if (all[all.length - 1] !== overlayRef.current) return;
+      onClose();
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [busy, onClose]);
   // Gövdeye taşınır: bir formun içinden açılsa bile Enter o formu göndermez
   return createPortal(
-    <div className={styles.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
+    <div
+      ref={overlayRef}
+      data-modal-overlay=""
+      className={styles.overlay}
+      onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}
+      // Pencere bir formun içinden açıldıysa, penceredeki formun gönderimi dıştaki forma kabarmasın
+      onSubmit={(e) => e.stopPropagation()}
+    >
       <div ref={boxRef} className={`${styles.modal} ${wide ? styles.modalWide : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <div className={styles.modalHead}>
           <div>

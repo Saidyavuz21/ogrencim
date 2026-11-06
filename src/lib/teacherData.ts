@@ -153,6 +153,8 @@ export interface HomeworkRow {
   closed_at: string | null;
   /** Kesin teslim anı (tarih + saat, sunucu hesaplar) */
   due_at: string | null;
+  /** Quiz ise 'practice' (alıştırma) ya da 'exam' (sınav); normal ödevde null */
+  quiz_mode: 'practice' | 'exam' | null;
 }
 
 /** Teslim alınıyor mu? (sunucudaki homework_is_open ile aynı kural; asıl kilit sunucuda) */
@@ -160,7 +162,7 @@ export function homeworkIsOpen(hw: { accepts_submissions: boolean; closed_at: st
   return hw.accepts_submissions && !hw.closed_at && (!hw.due_at || new Date(hw.due_at).getTime() > now);
 }
 
-const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at';
+const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at, quiz_mode';
 
 export async function listMyHomeworks(className?: string): Promise<Result<HomeworkRow[]>> {
   const { data: auth } = await supabase.auth.getUser();
@@ -311,6 +313,8 @@ export async function createHomework(input: {
   resultsReleased?: boolean;
   /** true = öğrenci uygulamadan teslim eder */
   acceptsSubmissions?: boolean;
+  /** Quiz: mod ve bankadan seçilen sorular (sırasıyla) */
+  quiz?: { mode: 'practice' | 'exam'; questionIds: string[] };
 }): Promise<Result> {
   const title = input.title.trim();
   if (!title) return { ok: false, error: 'Ödev başlığı zorunludur.' };
@@ -320,6 +324,10 @@ export async function createHomework(input: {
   const fileError = validateHomeworkFiles(files);
   if (fileError) return { ok: false, error: fileError };
   if (files.length + picks.length > 5) return { ok: false, error: 'Bir ödeve en fazla 5 dosya eklenebilir.' };
+  if (input.quiz) {
+    if (!input.quiz.questionIds.length) return { ok: false, error: 'Quiz için en az bir soru seçin.' };
+    if (input.quiz.mode === 'exam' && !input.dueDate) return { ok: false, error: 'Sınav modunda teslim tarihi zorunludur.' };
+  }
   // İçerik doğrulaması ödev kaydından önce (bozuk dosyada yarım ödev oluşmasın)
   const contents = await verifyFileContents(files);
   if (!contents.ok) return contents;
@@ -333,16 +341,27 @@ export async function createHomework(input: {
     points: input.points,
     file_url: input.link.trim() || null,
     file_type: files.length || picks.length ? 'Dosya' : input.link.trim() ? 'Bağlantı' : 'Metin',
-    results_released: input.resultsReleased ?? true,
-    accepts_submissions: input.acceptsSubmissions ?? false,
+    // Sınav: sonuç teslim tarihine kadar gizli (tarih geçince sunucu açıklar)
+    results_released: input.quiz?.mode === 'exam' ? false : input.resultsReleased ?? true,
+    accepts_submissions: input.quiz ? false : input.acceptsSubmissions ?? false,
+    quiz_mode: input.quiz?.mode ?? null,
     teacher_name: 'server',
   }).select('id').single();
   if (error || !created) return fail(error);
+  const homeworkId = (created as { id: string }).id;
+  if (input.quiz) {
+    // Sorular dondurularak kopyalanır; olmazsa yarım quiz bırakılmaz
+    const { error: quizError } = await supabase.rpc('quiz_add_items', { p_hw: homeworkId, p_question_ids: input.quiz.questionIds });
+    if (quizError) {
+      await supabase.from('homeworks').delete().eq('id', homeworkId);
+      return fail(quizError);
+    }
+  }
   if (files.length || picks.length) {
-    const up = await uploadHomeworkFiles((created as { id: string }).id, files, picks);
+    const up = await uploadHomeworkFiles(homeworkId, files, picks);
     if (!up.ok) {
       // Dosyalar yüklenemediyse yarım ödev bırakma
-      await supabase.from('homeworks').delete().eq('id', (created as { id: string }).id);
+      await supabase.from('homeworks').delete().eq('id', homeworkId);
       return up;
     }
   }

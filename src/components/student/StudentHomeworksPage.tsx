@@ -5,6 +5,9 @@ import { Check, Minus, X } from '../icons';
 import { MyHomework } from '../../lib/studentData';
 import type { SubmissionRow } from '../../lib/teacherData';
 import { StudentSubmission } from './StudentSubmission';
+import { QuizPlayer } from '../quiz/QuizPlayer';
+import { QUIZ_MODE_LABEL } from '../../lib/quizData';
+import q from '../quiz/Quiz.module.css';
 import { AttachmentList, formatDate } from '../teacher/TeacherUi';
 import { Spinner } from '../Spinner';
 import styles from '../teacher/TeacherDashboard.module.css';
@@ -50,12 +53,15 @@ export function sortPending(list: MyHomework[]) {
   });
 }
 
-export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissionChange }: {
+export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissionChange, onQuizChange }: {
   homeworks: MyHomework[];
   loaded: boolean;
   studentId: string;
   onSubmissionChange: (homeworkId: string, submission: SubmissionRow) => void;
+  /** Quiz çözüldü/bitirildi: liste yenilenir */
+  onQuizChange?: () => void;
 }) {
+  const [playing, setPlaying] = useState<MyHomework | null>(null);
   const pending = sortPending(homeworks.filter((h) => !h.check));
   const checked = homeworks.filter((h) => h.check);
   // Seçim yapılmadıysa: bekleyen ödev varsa "Bekleyen", yoksa "Tümü"
@@ -103,6 +109,7 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
                 {h.file_url && <a href={h.file_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>Bağlantıyı aç</a>}
               </div>
               {h.accepts_submissions && <StudentSubmission homework={h} studentId={studentId} onChange={onSubmissionChange} />}
+              {h.quiz_mode && <QuizCardRow homework={h} onOpen={() => setPlaying(h)} />}
               {h.check && Icon ? (
                 <p className={`${styles.statusChoice} ${STATUS_STYLE[h.check.status]} ${styles.statusResult}`}>
                   <Icon size={16} aria-hidden="true" />{STATUS_LABEL[h.check.status]}
@@ -111,7 +118,9 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
                 </p>
               ) : (
                 <p className={styles.homeworkPending}>
-                  {!h.results_released ? 'Sonuç daha sonra açıklanacak.'
+                  {h.quiz_mode === 'exam' && h.quiz?.finished ? 'Teslim ettin; sonuç teslim tarihi geçince açıklanacak.'
+                    : h.quiz_mode && !h.quiz?.finished ? 'Quiz bitince sonuç buraya işlenir.'
+                    : !h.results_released ? 'Sonuç daha sonra açıklanacak.'
                     : h.submission?.status === 'teslim' ? 'Teslim ettin; öğretmen henüz kontrol etmedi.'
                     : 'Öğretmen henüz kontrol etmedi.'}
                 </p>
@@ -120,6 +129,36 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
           );
         })}
       </ul>
+
+      {playing && (
+        <QuizPlayer
+          homeworkId={playing.id}
+          title={playing.title}
+          onClose={(changed) => { setPlaying(null); if (changed) onQuizChange?.(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Ödev kartında quiz satırı: durum + başla / devam et / sonucu gör */
+function QuizCardRow({ homework, onOpen }: { homework: MyHomework; onOpen: () => void }) {
+  const s = homework.quiz;
+  const [now] = useState(() => Date.now());
+  const open = !homework.closed_at && (!homework.due_at || new Date(homework.due_at).getTime() > now);
+  const mode = homework.quiz_mode!;
+  const started = !!s && s.answered > 0;
+  const label = s?.finished || !open ? (s?.percent != null ? 'Sonucu gör' : mode === 'exam' && s?.finished ? 'Cevaplarımı gör' : 'Quizi aç')
+    : started ? 'Devam et' : 'Quize başla';
+  const info = [
+    `${QUIZ_MODE_LABEL[mode]} · ${s?.total ?? 0} soru`,
+    s?.finished ? (s.percent != null ? `Sonuç: %${s.percent}` : 'Teslim edildi') : started ? `${s!.answered} soru cevaplandı` : '',
+    !open && !s?.finished ? 'Süre doldu' : '',
+  ].filter(Boolean).join(' · ');
+  return (
+    <div className={q.quizCardRow}>
+      <button type="button" className={styles.primary} onClick={onOpen}>{label}</button>
+      <span className={q.quizCardInfo}>{info}</span>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle } from '../icons';
 
 export type TeacherPageId =
   | 'home'
   | 'check_sheet'
+  | 'questions'
   | 'class_tools'
   | 'plus_minus'
   | 'assignments'
@@ -34,6 +35,7 @@ export interface TeacherPageInfo {
 export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'assignments', slug: 'odev-gonder', title: 'Ödev gönder', description: 'Yeni ödev oluştur ve listele', icon: Send, group: 'Ödevler' },
   { id: 'check_sheet', slug: 'odev-kontrol', title: 'Ödev kontrolü', description: 'Yaptı, kısmen, yapmadı işaretle', icon: CheckSquare, group: 'Ödevler' },
+  { id: 'questions', slug: 'soru-bankasi', title: 'Soru bankası', description: 'Quiz soruları: yaz, düzenle, süz', icon: HelpCircle, group: 'Ödevler' },
   { id: 'plus_minus', slug: 'puan-ver', title: 'Puan ver', description: 'Artı ve eksi puan ekle', icon: Star, group: 'Puan ve ödül' },
   { id: 'leaderboard', slug: 'siralama', title: 'Puan sıralaması', description: 'Sınıfın başarı sırası', icon: Award, group: 'Puan ve ödül' },
   { id: 'aquarium', slug: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balıklar, tam ekran', icon: Fish, group: 'Puan ve ödül' },

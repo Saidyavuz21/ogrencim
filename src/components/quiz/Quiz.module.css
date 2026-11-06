@@ -1,0 +1,101 @@
+/* ===== Quiz: soru bankası, soru düzenleyici, öğrenci ekranı, sonuçlar ===== */
+
+/* Şık düzenleme */
+.choiceRows { display: grid; gap: 8px; }
+.choiceRow { display: flex; align-items: center; gap: 8px; }
+.choiceRow input[type='text'] { flex: 1; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; font: inherit; font-size: 15px; }
+.choiceRow input[type='text']:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 1px; }
+.correctToggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; min-width: 44px; height: 44px; padding: 0 10px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; background: #fff; color: var(--teacher-muted, #58665f); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.correctToggle[aria-checked='true'] { border-color: #1e7a4c; background: #e3f3ea; color: #155c38; }
+.correctToggle:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+
+/* Görsel */
+.imageBox { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.thumb { display: block; max-width: 220px; max-height: 140px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; object-fit: contain; background: #f7f6f2; }
+.questionImage { display: block; max-width: 100%; max-height: 320px; margin: 0 auto; border-radius: 14px; object-fit: contain; background: #f7f6f2; }
+
+/* Bankadaki soru kartı */
+.qCard { display: grid; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--teacher-border, #dedad0); background: #fff; }
+.qCard:last-child { border-bottom: 0; }
+.qHead { display: flex; align-items: flex-start; gap: 12px; }
+.qBody { flex: 1; min-width: 0; margin: 0; font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qChoices { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.qChoices li { display: flex; gap: 8px; align-items: baseline; font-size: 14px; line-height: 1.5; color: var(--teacher-muted, #58665f); overflow-wrap: anywhere; }
+.qChoices li b { flex-shrink: 0; width: 1.4em; color: var(--teacher-text, #20352d); }
+.qChoices li.qCorrect { color: #155c38; font-weight: 600; }
+.qChoices li.qCorrect b { color: #155c38; }
+.qThumb { flex-shrink: 0; width: 72px; height: 56px; border-radius: 8px; object-fit: cover; background: #f0eee7; }
+
+/* Quiz seçici (ödev formu) */
+.quizBox { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fbfaf7; }
+.quizList { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: q; }
+.quizList li { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 6px 8px 6px 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; background: #fff; }
+.quizList li > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.quizList li > span b { margin-right: 6px; }
+
+/* Öğrenci quiz ekranı (tam ekran) */
+.player { position: fixed; inset: 0; z-index: 110; display: grid; grid-template-rows: auto 1fr auto; background: var(--teacher-bg, #f7f6f2); color: var(--teacher-text, #20352d); }
+.playerTop { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--teacher-border, #dedad0); background: #fff; }
+.playerTop h2 { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
+.modeBadge { flex-shrink: 0; padding: 4px 10px; border-radius: 999px; background: var(--teacher-selected, #e6f1e9); color: var(--teacher-primary, #25634b); font-size: 13px; font-weight: 700; }
+.modeExam { background: #fdeee2; color: #8a3f10; }
+.playerMain { overflow: auto; padding: 16px; }
+.playerInner { display: grid; gap: 16px; width: min(100%, 720px); margin: 0 auto; }
+.progress { display: flex; flex-wrap: wrap; gap: 6px; }
+.dot { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; font-weight: 700; color: var(--teacher-muted, #58665f); cursor: pointer; }
+.dot[aria-current='step'] { border-color: var(--teacher-primary, #25634b); box-shadow: 0 0 0 2px var(--teacher-primary, #25634b) inset; color: var(--teacher-text, #20352d); }
+.dotAnswered { background: #eef3fb; color: #1f4f8f; border-color: #b9cbe6; }
+.dotCorrect { background: #e3f3ea; color: #155c38; border-color: #9fd0b3; }
+.dotWrong { background: #fbe9ea; color: #8f2232; border-color: #e3b3ba; }
+.dot:focus-visible, .choice:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+.qNumber { margin: 0; font-size: 14px; font-weight: 600; color: var(--teacher-muted, #58665f); }
+.qText { margin: 0; font-size: 19px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.choices { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.choice {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 14px;
+  border: 2px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff;
+  color: inherit; font: inherit; font-size: 16px; line-height: 1.45; text-align: left; cursor: pointer; overflow-wrap: anywhere;
+}
+.choice:hover:not(:disabled) { border-color: var(--teacher-primary, #25634b); }
+.choice:disabled { cursor: default; }
+.choiceLetter { display: grid; place-items: center; flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: #f0eee7; font-weight: 700; }
+.choiceSelected { border-color: #2a6fd6; background: #eef4fd; }
+.choiceSelected .choiceLetter { background: #2a6fd6; color: #fff; }
+.choiceCorrect { border-color: #1e7a4c; background: #e3f3ea; }
+.choiceCorrect .choiceLetter { background: #1e7a4c; color: #fff; }
+.choiceWrong { border-color: #b3283b; background: #fbe9ea; }
+.choiceWrong .choiceLetter { background: #b3283b; color: #fff; }
+.choiceMark { margin-left: auto; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; }
+.feedback { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 12px 14px; border-radius: 14px; font-size: 15px; line-height: 1.5; }
+.feedbackOk { background: #e3f3ea; color: #155c38; }
+.feedbackBad { background: #fbe9ea; color: #8f2232; }
+.feedbackInfo { background: #eef4fd; color: #1f4f8f; }
+.explanation { margin: 0; padding: 12px 14px; border-radius: 14px; background: #fffaf0; font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.playerBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--teacher-border, #dedad0); background: #fff; }
+.playerBar .spacer { flex: 1; }
+.saveState { font-size: 13px; color: var(--teacher-muted, #58665f); }
+.saveWarn { color: #8a3f10; font-weight: 600; }
+
+/* Sonuç */
+.resultHero { display: grid; justify-items: center; gap: 6px; padding: 24px 16px; border-radius: 20px; background: #fff; border: 1px solid var(--teacher-border, #dedad0); text-align: center; }
+.resultHero strong { font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums; }
+.resultHero p { margin: 0; font-size: 15px; color: var(--teacher-muted, #58665f); }
+
+/* Öğrenci ödev kartındaki quiz satırı */
+.quizCardRow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 4px; }
+.quizCardInfo { font-size: 14px; color: var(--teacher-muted, #58665f); }
+
+/* Öğretmen sonuç tablosu */
+.reportGrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th, .table td { padding: 8px 10px; border-bottom: 1px solid var(--teacher-border, #dedad0); text-align: left; vertical-align: middle; }
+.table th { font-size: 13px; font-weight: 600; color: var(--teacher-muted, #58665f); }
+.table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tableWrap { overflow-x: auto; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
+.rateBar { position: relative; height: 8px; min-width: 60px; border-radius: 999px; background: #ece9e1; overflow: hidden; }
+.rateBar span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: #2a78d6; }
+
+@media (max-width: 760px) {
+  .reportGrid { grid-template-columns: minmax(0, 1fr); }
+  .qText { font-size: 17px; }
+}

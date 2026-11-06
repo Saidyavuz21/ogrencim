@@ -20,13 +20,16 @@ const NO_FOLDER = '__none__';
  * "Dosyalarımdan ekle": öğretmenin dosyalarından ya da ortak kütüphaneden seçim.
  * Seçilenler ödev gönderilince ödeve kopyalanır (yeniden yükleme yok).
  */
-export function HomeworkFilePicker({ remaining, already, onClose, onPick }: {
+export function HomeworkFilePicker({ remaining, already, onClose, onPick, accept, title = 'Dosyalarımdan ekle' }: {
   /** Ödeve daha kaç dosya eklenebilir */
   remaining: number;
   /** Zaten seçilmiş olanlar (tekrar seçilmesin) */
   already: HomeworkFilePick[];
   onClose: () => void;
   onPick: (picks: HomeworkFilePick[]) => void;
+  /** Yalnızca bu türler listelenir (ör. soru görseli için resimler) */
+  accept?: (mime: string) => boolean;
+  title?: string;
 }) {
   const [source, setSource] = useState<Source>('mine');
   const [files, setFiles] = useState<TeacherFileRow[] | null>(null);
@@ -69,9 +72,9 @@ export function HomeworkFilePicker({ remaining, already, onClose, onPick }: {
   ));
 
   const n = normalize(q.trim());
-  const mine = useMemo(() => (files || []).filter((f) => (folder === ALL || (folder === NO_FOLDER ? !f.folder_id : f.folder_id === folder))
-    && (!n || normalize([f.name, f.topic || '', f.subject || '', f.grade || '', ...f.tags].join(' ')).includes(n))), [files, folder, n]);
-  const lib = useMemo(() => (library || []).filter((i) => !n || normalize([i.title, i.category || '', ...i.tags].join(' ')).includes(n)), [library, n]);
+  const mine = useMemo(() => (files || []).filter((f) => (!accept || accept(f.mime)) && (folder === ALL || (folder === NO_FOLDER ? !f.folder_id : f.folder_id === folder))
+    && (!n || normalize([f.name, f.topic || '', f.subject || '', f.grade || '', ...f.tags].join(' ')).includes(n))), [files, folder, n, accept]);
+  const lib = useMemo(() => (library || []).filter((i) => (!accept || accept(i.mime)) && (!n || normalize([i.title, i.category || '', ...i.tags].join(' ')).includes(n))), [library, n, accept]);
 
   const row = (key: string, pick: HomeworkFilePick, sub: string) => {
     const isTaken = taken(pick.bucket, pick.path);
@@ -92,7 +95,7 @@ export function HomeworkFilePicker({ remaining, already, onClose, onPick }: {
   };
 
   return (
-    <Modal title="Dosyalarımdan ekle" kicker={remaining > 0 ? `En fazla ${remaining} dosya daha` : 'Dosya sınırı doldu'} onClose={onClose} wide>
+    <Modal title={title} kicker={remaining > 0 ? `En fazla ${remaining} dosya daha` : 'Dosya sınırı doldu'} onClose={onClose} wide>
       <div className={styles.tabs} role="group" aria-label="Kaynak">
         <button type="button" aria-pressed={source === 'mine'} onClick={() => setSource('mine')}><Folder size={18} aria-hidden="true" />Dosyalarım</button>
         <button type="button" aria-pressed={source === 'library'} onClick={() => setSource('library')}><Library size={18} aria-hidden="true" />Ortak kütüphane</button>

@@ -29,7 +29,7 @@ export function StudentHome({ me, fallbackName, fallbackNo, fallbackClass, myRan
   const name = me?.name || fallbackName;
   const firstName = name.trim().split(/\s+/)[0];
   // Teslim edip kontrol bekleyenler "yapılacak" sayılmaz
-  const pending = sortPending(homeworks.filter((h) => !h.check && h.submission?.status !== 'teslim'));
+  const pending = sortPending(homeworks.filter((h) => !h.check && h.submission?.status !== 'teslim' && !h.quiz?.finished));
   const upcoming = pending.slice(0, 3);
 
   const link = (page: StudentPageId) => ({

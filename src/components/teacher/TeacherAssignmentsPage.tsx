@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Send, Trash2, CheckSquare, Calendar, MoreVertical, Search, Paperclip, X, Folder } from '../icons';
 import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, formatBytes, HomeworkFilePick, homeworkIsOpen, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
 import { HomeworkFilePicker } from '../files/HomeworkFilePicker';
+import { QuizComposer, QuizDraft } from '../quiz/QuizComposer';
+import { QUIZ_MODE_LABEL } from '../../lib/quizData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, formatDate } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -11,11 +13,11 @@ import { useDialog } from '../ConfirmDialog';
 import { branchSubject, subjectHue, subjectShortLabel, subjectsForClass } from '../../data/subjects';
 import styles from './TeacherDashboard.module.css';
 
-/** Başlık ayrıca istenmez: "Hayat bilgisi ödevi · 6 Kasım" */
-const autoTitle = (subject: string) => {
+/** Başlık ayrıca istenmez: "Hayat bilgisi ödevi · 6 Kasım", "Matematik quizi · 6 Kasım" */
+const autoTitle = (subject: string, quiz = false) => {
   const s = subject.trim() || 'Genel';
   const date = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
-  return `${s.charAt(0).toLocaleUpperCase('tr-TR')}${s.slice(1)} ödevi · ${date}`;
+  return `${s.charAt(0).toLocaleUpperCase('tr-TR')}${s.slice(1)} ${quiz ? 'quizi' : 'ödevi'} · ${date}`;
 };
 
 const OTHER = '__diger__';
@@ -62,6 +64,10 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   const [progress, setProgress] = useState('');
 
   const [description, setDescription] = useState('');
+  // Tür: normal ödev ya da quiz (sorular soru bankasından)
+  const [kind, setKind] = useState<'homework' | 'quiz'>('homework');
+  const [quiz, setQuiz] = useState<QuizDraft>({ mode: 'practice', questionIds: [] });
+  const isQuiz = kind === 'quiz';
   // Ödev birden çok sınıfa aynı anda verilebilir; her sınıf için ayrı ödev kaydı oluşur
   const [targets, setTargets] = useState<string[]>(() => {
     const first = selectedClass && classNames.includes(selectedClass) ? selectedClass : classNames[0];
@@ -153,7 +159,15 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
       setNotice({ kind: 'error', text: subjectChoice === OTHER ? 'Ders adını yazın.' : 'Ödevin hangi derse ait olduğunu seçin.' });
       return;
     }
-    if (!description.trim() && !attachedCount && !link.trim()) {
+    if (isQuiz && !quiz.questionIds.length) {
+      setNotice({ kind: 'error', text: 'Quiz için en az bir soru seçin ya da yazın.' });
+      return;
+    }
+    if (isQuiz && quiz.mode === 'exam' && !dueDate) {
+      setNotice({ kind: 'error', text: 'Sınav modunda teslim tarihi zorunlu: sonuçlar o tarihte açıklanır.' });
+      return;
+    }
+    if (!isQuiz && !description.trim() && !attachedCount && !link.trim()) {
       setNotice({ kind: 'error', text: 'Ödevin ne olduğunu yazın veya dosya / bağlantı ekleyin.' });
       return;
     }
@@ -169,14 +183,18 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
         return;
       }
     }
-    const title = autoTitle(subject);
+    const title = autoTitle(subject, isQuiz);
     setBusy(true);
     // Her sınıf için ayrı kayıt (kontrol, puan ve teslim sınıf bazında ayrı kalır); dosyalar her birine yüklenir
     const sent: string[] = [];
     const failed: { cls: string; error: string }[] = [];
     for (const [i, c] of targets.entries()) {
       if (targets.length > 1) setProgress(`${c} sınıfına gönderiliyor (${i + 1}/${targets.length})…`);
-      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, picks, resultsReleased: releaseNow, acceptsSubmissions });
+      const res = await createHomework({
+        title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, picks,
+        resultsReleased: releaseNow, acceptsSubmissions: isQuiz ? false : acceptsSubmissions,
+        quiz: isQuiz ? quiz : undefined,
+      });
       if (res.ok) sent.push(c);
       else failed.push({ cls: c, error: res.error });
     }
@@ -198,6 +216,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     setNotice({ kind: 'ok', text: `${title} ${sent.join(', ')} ${sent.length > 1 ? 'sınıflarına' : 'sınıfına'} gönderildi${fileNote}.` });
     setFiles([]);
     setPicks([]);
+    if (isQuiz) setQuiz((q) => ({ ...q, questionIds: [] }));
     if (fileInput.current) fileInput.current.value = '';
     setDescription('');
     setDueDate('');
@@ -302,6 +321,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />{dueLabel(hw.due_date, hw.due_time)}</span>}
                     {!hw.results_released && <span>Sonuç gizli</span>}
                     {hw.accepts_submissions && <span>{submittedCounts[hw.id] || 0} teslim · {homeworkIsOpen(hw) ? 'teslim açık' : 'kapandı'}</span>}
+                    {hw.quiz_mode && <span>Quiz · {QUIZ_MODE_LABEL[hw.quiz_mode]}</span>}
                   </div>
                   {hw.description && <p className={styles.assignmentDescription}>{hw.description}</p>}
                   <AttachmentList attachments={hw.attachments} />
@@ -355,6 +375,17 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     )}
                   </div>
                 </fieldset>
+                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                  <legend>Tür</legend>
+                  <div className={styles.subjectChips}>
+                    <button type="button" className={styles.dueChip} aria-pressed={!isQuiz} onClick={() => setKind('homework')}>
+                      Ödev<small>Metin, dosya, bağlantı</small>
+                    </button>
+                    <button type="button" className={styles.dueChip} aria-pressed={isQuiz} onClick={() => setKind('quiz')}>
+                      Quiz<small>Çoktan seçmeli, otomatik puanlanır</small>
+                    </button>
+                  </div>
+                </fieldset>
                 <div className={`${styles.field} ${styles.fullRow}`}>
                   <label htmlFor="hw-subject">Ders</label>
                   <CustomSelect
@@ -370,11 +401,22 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     <input value={customSubject} onChange={(e) => setCustomSubject(e.target.value)} maxLength={80} placeholder="Ders adını yazın" autoFocus />
                   </label>
                 )}
-                <label className={`${styles.field} ${styles.fullRow}`}>Ödev
-                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} maxLength={2000} placeholder="Öğrencinin ne yapacağını yazın. Örn: Ders kitabı sayfa 24-25'teki etkinlikleri yapın." />
+                {isQuiz && (
+                  <div className={styles.fullRow}>
+                    <QuizComposer value={quiz} onChange={setQuiz} subject={subject} />
+                  </div>
+                )}
+                <label className={`${styles.field} ${styles.fullRow}`}>{isQuiz ? <span>Açıklama <span className={styles.optionalHint}>(isteğe bağlı)</span></span> : 'Ödev'}
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={isQuiz ? 2 : 4}
+                    maxLength={2000}
+                    placeholder={isQuiz ? 'Örn. Kesirler konusunu tekrar ettikten sonra çözün.' : "Öğrencinin ne yapacağını yazın. Örn: Ders kitabı sayfa 24-25'teki etkinlikleri yapın."}
+                  />
                 </label>
                 <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-                  <legend>Teslim tarihi <span className={styles.optionalHint}>(isteğe bağlı)</span></legend>
+                  <legend>Teslim tarihi <span className={styles.optionalHint}>{isQuiz && quiz.mode === 'exam' ? '(sınavda zorunlu: sonuçlar bu tarihte açıklanır)' : '(isteğe bağlı)'}</span></legend>
                   <div className={styles.subjectChips}>
                     {dueOptions.map((o) => (
                       <button key={o.label} type="button" className={styles.dueChip} aria-pressed={dueDate === o.date} onClick={() => setDueDate(dueDate === o.date ? '' : o.date)}>
@@ -473,9 +515,11 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     </div>
                   </div>
                 </details>
+                {!(isQuiz && quiz.mode === 'exam') && (
                 <details className={styles.composerDetails}>
-                  <summary><span>Teslim ve sonuç ayarları</span><small>{acceptsSubmissions ? 'Uygulamadan teslim' : 'Sınıfta kontrol'} · {releaseNow ? 'Sonuçlar hemen görünür' : 'Sonuçlar gizli'}</small></summary>
+                  <summary><span>{isQuiz ? 'Sonuç ayarı' : 'Teslim ve sonuç ayarları'}</span><small>{isQuiz ? '' : `${acceptsSubmissions ? 'Uygulamadan teslim' : 'Sınıfta kontrol'} · `}{releaseNow ? 'Sonuçlar hemen görünür' : 'Sonuçlar gizli'}</small></summary>
                   <div className={styles.composerDetailBody}>
+                    {!isQuiz && (
                     <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
                       <legend>Teslim şekli</legend>
                       <div className={styles.subjectChips}>
@@ -492,6 +536,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                         </p>
                       )}
                     </fieldset>
+                    )}
                     <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
                       <legend>Kontrol sonucu</legend>
                       <div className={styles.subjectChips}>
@@ -508,11 +553,12 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     </fieldset>
                   </div>
                 </details>
+                )}
                 <div className={styles.formActions}>
                   {progress && <span className={styles.mutedText} aria-live="polite">{progress}</span>}
                   <button type="submit" className={styles.primary} disabled={busy || !targets.length}>
                     <Send size={18} aria-hidden="true" />
-                    {busy ? (attachedCount ? 'Dosyalar ekleniyor…' : 'Gönderiliyor…') : targets.length > 1 ? `${targets.length} sınıfa gönder` : 'Ödevi gönder'}
+                    {busy ? (attachedCount ? 'Dosyalar ekleniyor…' : 'Gönderiliyor…') : targets.length > 1 ? `${targets.length} sınıfa gönder` : isQuiz ? 'Quizi gönder' : 'Ödevi gönder'}
                   </button>
                 </div>
               </form>

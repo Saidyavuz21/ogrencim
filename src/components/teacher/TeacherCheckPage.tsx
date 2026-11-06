@@ -10,6 +10,8 @@ import { AttachmentList, CollapsiblePanel, Notice, NoticeState, initialsOf, Stud
 import { useDialog } from '../ConfirmDialog';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
+import { settleQuiz } from '../../lib/quizData';
+import { QuizReport } from '../quiz/QuizReport';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherCheckPageProps {
@@ -84,11 +86,12 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
     return () => { alive = false; setSubmissions({}); };
   }, [activeHwId, acceptsSubmissions]);
 
-  // Seçili ödevin kayıtlı kontrollerini çek
+  // Seçili ödevin kayıtlı kontrollerini çek (quizde önce süresi dolduysa kapat: girmeyenler "yapmadı" olur)
+  const activeQuiz = !!activeHw?.quiz_mode;
   useEffect(() => {
     if (!activeHwId) return;
     let alive = true;
-    listHomeworkChecks(activeHwId).then((res) => {
+    (activeQuiz ? settleQuiz(activeHwId) : Promise.resolve()).then(() => listHomeworkChecks(activeHwId)).then((res) => {
       if (!alive) return;
       if (!res.ok) {
         setNotice({ kind: 'error', text: `Kontrol kayıtları alınamadı: ${res.error}` });
@@ -103,7 +106,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
       setLoadedFor(activeHwId);
     });
     return () => { alive = false; };
-  }, [activeHwId]);
+  }, [activeHwId, activeQuiz]);
 
   const counts = useMemo(() => {
     const c = { yapti: 0, kismen: 0, yapmadi: 0, bos: 0 };
@@ -252,6 +255,9 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   return (
     <div className={styles.pageBody}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
+      {activeHw?.quiz_mode && loadedFor === activeHw.id && (
+        <QuizReport key={activeHw.id} homeworkId={activeHw.id} mode={activeHw.quiz_mode} dueAt={activeHw.due_at} students={students} />
+      )}
 
       <div className={styles.pointsLayout}>
         <section className={styles.studentList} aria-label="Öğrenci kontrol listesi">

@@ -1,6 +1,7 @@
 // Öğrenci paneli veri katmanı (Supabase, öğrenci oturumu).
 // Yetkiler RLS ile: öğrenci yalnızca kendi kayıtlarını ve kendi sınıfının ödevlerini görür.
 import { supabase } from './supabaseClient';
+import { listMyQuizzes, type MyQuizSummary } from './quizData';
 import type { CheckStatus, ExamId, HomeworkAttachment, Result, SubmissionRow } from './teacherData';
 import {
   MAX_FILE_BYTES, SUBMISSION_BUCKET, SUBMISSION_COLUMNS, safeFileName, validateHomeworkFiles, verifyFileContents,
@@ -69,18 +70,23 @@ export interface MyHomework {
   due_at: string | null;
   check: { status: CheckStatus; score: number | null; note: string | null } | null;
   submission: SubmissionRow | null;
+  /** Quiz ise mod ve öğrencinin durumu */
+  quiz_mode: 'practice' | 'exam' | null;
+  quiz: MyQuizSummary | null;
 }
 
 /** Sınıfın ödevleri + bu öğrencinin kontrol sonucu */
 export async function listMyHomeworks(studentId: string): Promise<Result<MyHomework[]>> {
-  const [hw, checks, subs] = await Promise.all([
+  const [hw, checks, subs, quizzes] = await Promise.all([
     supabase
       .from('homeworks')
-      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at')
+      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at, quiz_mode')
       .order('created_at', { ascending: false }),
     supabase.from('homework_checks').select('homework_id, status, score, note').eq('student_id', studentId),
     supabase.from('homework_submissions').select(SUBMISSION_COLUMNS).eq('student_id', studentId),
+    listMyQuizzes(),
   ]);
+  const quizByHw = new Map((quizzes.ok ? quizzes.data : []).map((q) => [q.homework_id, q]));
   if (hw.error) return fail(hw.error);
   if (checks.error) return fail(checks.error);
   // Teslim tablosu henüz kurulmamışsa ödevler yine görünsün
@@ -90,9 +96,14 @@ export async function listMyHomeworks(studentId: string): Promise<Result<MyHomew
   );
   return {
     ok: true,
-    data: ((hw.data as Omit<MyHomework, 'check' | 'submission'>[]) || []).map((h) => {
+    data: ((hw.data as Omit<MyHomework, 'check' | 'submission' | 'quiz'>[]) || []).map((h) => {
       const c = byHw.get(h.id);
-      return { ...h, check: c ? { status: c.status, score: c.score, note: c.note } : null, submission: subsByHw.get(h.id) ?? null };
+      return {
+        ...h,
+        check: c ? { status: c.status, score: c.score, note: c.note } : null,
+        submission: subsByHw.get(h.id) ?? null,
+        quiz: quizByHw.get(h.id) ?? null,
+      };
     }),
   };
 }

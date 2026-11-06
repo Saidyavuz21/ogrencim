@@ -26,6 +26,7 @@ import { TeacherGradesPage } from './TeacherGradesPage';
 import { TeacherMessagesPage } from './TeacherMessagesPage';
 import { TeacherClassToolsPage } from './TeacherClassToolsPage';
 import { TeacherFilesPage } from '../files/TeacherFilesPage';
+import { QuestionBankPage } from '../quiz/QuestionBankPage';
 import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
@@ -220,6 +221,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       )}
 
       {page === 'files' && <TeacherFilesPage classNames={classNames} />}
+      {page === 'questions' && <QuestionBankPage />}
 
       {!missingClass && (
         <>

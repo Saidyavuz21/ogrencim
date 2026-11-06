@@ -93,7 +93,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
   const info = getStudentPage(page);
   const myRank = ranking.findIndex((r) => r.id === user.id) + 1;
-  const pendingHomeworks = homeworks.filter((h) => !h.check).length;
+  const pendingHomeworks = homeworks.filter((h) => !h.check && !h.quiz?.finished).length;
   const newAnnouncements = seenAnnouncement
     ? announcements.filter((a) => a.created_at > seenAnnouncement).length
     : Math.min(announcements.length, 3);
@@ -158,6 +158,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
             loaded={loaded}
             studentId={user.id}
             onSubmissionChange={(id, submission) => setHomeworks((prev) => prev.map((h) => (h.id === id ? { ...h, submission } : h)))}
+            onQuizChange={() => { listMyHomeworks(user.id).then((res) => { if (res.ok) setHomeworks(res.data); }); }}
           />
         )}
         {page === 'materyaller' && <StudentMaterialsPage />}

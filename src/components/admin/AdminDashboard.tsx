@@ -1,113 +1,105 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Users, School, Bell, LogOut, User } from '../icons';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { UserAccount } from '../../data/portalData';
 import { TeacherProfilePage } from '../teacher/TeacherProfilePage';
-import { BrandLogo } from '../BrandLogo';
-import { AccessManagement } from './AccessManagement';
 import { AnnouncementsPage } from '../AnnouncementsPage';
-import { countStudentsByClass } from '../../lib/teacherData';
-import { listProfiles } from '../../lib/supabaseClient';
+import { AdminTopBar, AdminSidebar, AdminPageHeader } from './AdminShell';
+import { AdminHome } from './AdminHome';
+import { AdminTeacherRequestsPage } from './AdminTeacherRequestsPage';
+import { AdminSchoolRequestsPage } from './AdminSchoolRequestsPage';
+import { AdminTeachersPage } from './AdminTeachersPage';
+import { AdminStudentsPage } from './AdminStudentsPage';
+import { AdminSchoolsPage } from './AdminSchoolsPage';
+import { AdminClassesPage } from './AdminClassesPage';
+import { AdminNotice, useAdminData, useNotify } from './adminShared';
+import { AdminPageId, adminPageIdFromSlug, getAdminPage } from './adminPages';
 import styles from '../teacher/TeacherDashboard.module.css';
-import adminStyles from './AdminDashboard.module.css';
-
-type AdminTab = 'access' | 'classes' | 'announcements' | 'account';
-
-const TABS: { id: AdminTab; label: string; icon: typeof Users }[] = [
-  { id: 'access', label: 'Hesaplar ve okullar', icon: Users },
-  { id: 'classes', label: 'Sınıflar', icon: School },
-  { id: 'announcements', label: 'Duyurular', icon: Bell },
-  { id: 'account', label: 'Hesabım', icon: User },
-];
 
 interface AdminDashboardProps {
   onLogout?: () => void;
   currentUser?: UserAccount;
 }
 
-/** Süper admin paneli: bütün sekmeler doğrudan veritabanından çalışır */
+const readPageFromUrl = (): AdminPageId =>
+  typeof window === 'undefined' ? 'home' : adminPageIdFromSlug(new URLSearchParams(window.location.search).get('sayfa'));
+
+/** Süper admin paneli: solda menü, her işe ayrı sayfa (/yonetim?sayfa=...) */
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }) => {
-  const [tab, setTab] = useState<AdminTab>('access');
+  const data = useAdminData();
+  const [message, notify, clearMessage] = useNotify();
+  const [page, setPage] = useState<AdminPageId>(readPageFromUrl);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  const openPage = useCallback((next: AdminPageId) => {
+    setPage(next);
+    clearMessage();
+    const info = getAdminPage(next);
+    const url = new URL(window.location.href);
+    if (info) url.searchParams.set('sayfa', info.slug);
+    else url.searchParams.delete('sayfa');
+    if (url.href !== window.location.href) window.history.pushState(null, '', url);
+    window.scrollTo({ top: 0 });
+  }, [clearMessage]);
+
+  // Tarayıcının / telefonun geri tuşu
+  useEffect(() => {
+    const sync = () => setPage(readPageFromUrl());
+    window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
+  }, []);
+
+  // Başka sayfadan genel bakışa dönüşte sayılar tazelenir (ilk yüklemeyi useAdminData yapar)
+  const { refresh } = data;
+  const prevPage = useRef(page);
+  useEffect(() => {
+    if (page === 'home' && prevPage.current !== 'home') refresh();
+    prevPage.current = page;
+  }, [page, refresh]);
+
+  const pendingTeachers = data.profiles.filter((p) => p.role === 'ogretmen' && !p.approved).length;
+  const pendingSchools = data.schools.filter((s) => s.status === 'pending').length;
+  const badges: Partial<Record<AdminPageId, number>> = { teacher_requests: pendingTeachers, school_requests: pendingSchools };
+
+  const pageInfo = getAdminPage(page);
+  const handleLogout = onLogout && (() => {
+    // Çıkışta adresteki ?sayfa= temizlenir; sonraki giriş genel bakıştan başlar
+    window.history.replaceState(null, '', window.location.pathname);
+    onLogout();
+  });
 
   return (
-    <div className={styles.dashboard}>
-      <header className={adminStyles.header}>
-        <div className={adminStyles.topRow}>
-          <div className={adminStyles.brand}>
-            <BrandLogo height={36} />
-            <span className={adminStyles.badge}>Süper Admin</span>
-          </div>
-          {onLogout && (
-            <button type="button" className={adminStyles.logout} onClick={onLogout}><LogOut size={18} aria-hidden="true" />Çıkış</button>
-          )}
-        </div>
-        <nav className={adminStyles.nav} aria-label="Yönetim sekmeleri">
-          {TABS.map((t) => (
-            <button key={t.id} type="button" className={adminStyles.navButton} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
-              <t.icon size={16} aria-hidden="true" />{t.label}
-            </button>
-          ))}
-        </nav>
-      </header>
+    <div className={styles.dashboardShell}>
+      <AdminTopBar
+        user={currentUser}
+        menuOpen={menuOpen}
+        isAccount={page === 'account'}
+        onMenu={() => setMenuOpen(true)}
+        onHome={() => openPage('home')}
+        onAccount={() => openPage('account')}
+      />
+      <AdminSidebar open={menuOpen} currentPage={page} badges={badges} onClose={closeMenu} onOpenPage={openPage} />
+      <div className={styles.dashboard}>
+        {page === 'home' || !pageInfo ? (
+          <AdminHome user={currentUser} data={data} badges={badges} onOpenPage={openPage} />
+        ) : (
+          <AdminPageHeader page={pageInfo} onBack={() => openPage('home')} />
+        )}
 
-      {tab === 'access' && <div className={adminStyles.intro}>
-        <h1>Hesaplar ve okullar</h1>
-        <p>Öğretmen başvurularını inceleyin, okulları ve öğrenci girişlerini yönetin.</p>
-      </div>}
+        <AdminNotice message={message} onClose={clearMessage} />
 
-      {tab === 'access' && <AccessManagement />}
-      {tab === 'classes' && <AdminClasses />}
-      {tab === 'announcements' && <AnnouncementsPage canManage />}
-      {tab === 'account' && <TeacherProfilePage user={currentUser} onLogout={onLogout} />}
+        {page === 'teacher_requests' && (
+          <AdminTeacherRequestsPage data={data} notify={notify} onOpenSchoolRequests={() => openPage('school_requests')} />
+        )}
+        {page === 'school_requests' && <AdminSchoolRequestsPage data={data} notify={notify} />}
+        {page === 'teachers' && <AdminTeachersPage data={data} notify={notify} />}
+        {page === 'students' && <AdminStudentsPage data={data} notify={notify} />}
+        {page === 'schools' && <AdminSchoolsPage data={data} notify={notify} />}
+        {page === 'classes' && <AdminClassesPage data={data} />}
+        {page === 'announcements' && <AnnouncementsPage canManage />}
+        {page === 'account' && <TeacherProfilePage user={currentUser} onLogout={handleLogout} />}
+      </div>
     </div>
   );
 };
-
-/** Öğrenci kayıtlarından türetilen sınıf listesi ve sınıf öğretmenleri */
-function AdminClasses() {
-  const [counts, setCounts] = useState<Record<string, number> | null>(null);
-  const [homerooms, setHomerooms] = useState<Record<string, string[]>>({});
-
-  useEffect(() => {
-    let alive = true;
-    Promise.all([countStudentsByClass(), listProfiles()]).then(([c, profiles]) => {
-      if (!alive) return;
-      setCounts(c);
-      const map: Record<string, string[]> = {};
-      profiles
-        .filter((p) => p.role === 'ogretmen' && p.class_name)
-        .forEach((p) => { (map[p.class_name as string] ||= []).push(p.full_name || p.email || 'Öğretmen'); });
-      setHomerooms(map);
-    });
-    return () => { alive = false; };
-  }, []);
-
-  const names = Array.from(new Set([...Object.keys(counts || {}), ...Object.keys(homerooms)]))
-    .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, 'tr', { numeric: true }));
-  const noClass = counts?.[''] || 0;
-
-  return (
-    <section className={styles.panel} aria-labelledby="admin-classes-title">
-      <h2 id="admin-classes-title" className={styles.panelTitle}>Sınıflar <span className={styles.countPill}>{names.length}</span></h2>
-      <p className={styles.mutedText}>Sınıflar, öğrenci kayıtlarından ve öğretmenlerin rehberlik sınıflarından otomatik oluşur.</p>
-      {counts === null && <p className={styles.mutedText}>Yükleniyor…</p>}
-      {counts !== null && !names.length && <p className={styles.mutedText}>Henüz sınıf yok. Öğrenci eklendikçe burada görünür.</p>}
-      <ul className={styles.studentCards}>
-        {names.map((n) => (
-          <li key={n} className={styles.studentCard}>
-            <div className={styles.studentCardHead}>
-              <span className={styles.studentAvatar} aria-hidden="true">{n}</span>
-              <div className={styles.studentCardInfo}>
-                <strong>{n}</strong>
-                <span>{counts?.[n] || 0} öğrenci · Rehber: {homerooms[n]?.join(', ') || 'atanmadı'}</span>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {noClass > 0 && <p className={styles.mutedText}>{noClass} öğrencinin sınıfı girilmemiş.</p>}
-    </section>
-  );
-}

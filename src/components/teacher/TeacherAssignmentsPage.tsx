@@ -57,21 +57,31 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<NoticeState>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState('');
 
   const [description, setDescription] = useState('');
-  const [className, setClassName] = useState(selectedClass || classNames[0] || '');
-  // Ders kategorisi: sınıf seviyesine göre liste; branş öğretmenine kendi dersi hazır gelir
+  // Ödev birden çok sınıfa aynı anda verilebilir; her sınıf için ayrı ödev kaydı oluşur
+  const [targets, setTargets] = useState<string[]>(() => {
+    const first = selectedClass && classNames.includes(selectedClass) ? selectedClass : classNames[0];
+    return first ? [first] : [];
+  });
+  // Ders listesi ilk seçilen sınıfın seviyesine göre; branş öğretmenine kendi dersi hazır gelir
+  const className = targets[0] || '';
   const [subjectChoice, setSubjectChoice] = useState(() => branchSubject(defaultSubject, selectedClass || classNames[0] || ''));
   const [customSubject, setCustomSubject] = useState('');
   const subjectOptions = useMemo(() => subjectsForClass(className), [className]);
   const subject = subjectChoice === OTHER ? customSubject.trim() : subjectChoice;
-  const changeClass = (next: string) => {
-    setClassName(next);
-    // Yeni sınıfın seviyesinde bu ders yoksa seçim sıfırlanır (branş dersi varsa o gelir)
-    if (subjectChoice !== OTHER && !subjectsForClass(next).includes(subjectChoice)) {
-      setSubjectChoice(branchSubject(defaultSubject, next));
+  const setTargetList = (next: string[]) => {
+    // Sınıflar sınıf listesindeki sırayla tutulur
+    const ordered = classNames.filter((x) => next.includes(x));
+    setTargets(ordered);
+    // İlk sınıf değiştiyse ve o seviyede bu ders yoksa seçim sıfırlanır (branş dersi varsa o gelir)
+    const first = ordered[0];
+    if (first && subjectChoice !== OTHER && !subjectsForClass(first).includes(subjectChoice)) {
+      setSubjectChoice(branchSubject(defaultSubject, first));
     }
   };
+  const toggleTarget = (c: string) => setTargetList(targets.includes(c) ? targets.filter((x) => x !== c) : [...targets, c]);
 
   // Ödev listesi: arama ve ders süzgeci
   const [query, setQuery] = useState('');
@@ -125,15 +135,37 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
       setNotice({ kind: 'error', text: 'Ödevin ne olduğunu yazın veya dosya / bağlantı ekleyin.' });
       return;
     }
-    const title = autoTitle(subject);
-    setBusy(true);
-    const res = await createHomework({ title, subject, description, className, dueDate, points: 100, link, files });
-    setBusy(false);
-    if (!res.ok) {
-      setNotice({ kind: 'error', text: `Ödev gönderilemedi: ${res.error}` });
+    if (!targets.length) {
+      setNotice({ kind: 'error', text: 'Ödevin gideceği en az bir sınıf seçin.' });
       return;
     }
-    setNotice({ kind: 'ok', text: `${title} ${className} sınıfına gönderildi${files.length ? ` (${files.length} dosya)` : ''}.` });
+    const title = autoTitle(subject);
+    setBusy(true);
+    // Her sınıf için ayrı kayıt (kontrol, puan ve teslim sınıf bazında ayrı kalır); dosyalar her birine yüklenir
+    const sent: string[] = [];
+    const failed: { cls: string; error: string }[] = [];
+    for (const [i, c] of targets.entries()) {
+      if (targets.length > 1) setProgress(`${c} sınıfına gönderiliyor (${i + 1}/${targets.length})…`);
+      const res = await createHomework({ title, subject, description, className: c, dueDate, points: 100, link, files });
+      if (res.ok) sent.push(c);
+      else failed.push({ cls: c, error: res.error });
+    }
+    setProgress('');
+    setBusy(false);
+    const failText = failed.map((f) => `${f.cls} (${f.error})`).join(', ');
+    if (!sent.length) {
+      setNotice({ kind: 'error', text: `Ödev gönderilemedi: ${failText}` });
+      return;
+    }
+    const fileNote = files.length ? ` (${files.length} dosya)` : '';
+    if (failed.length) {
+      // Form temizlenmez; yalnızca gönderilemeyen sınıflar seçili kalır, tekrar gönderilebilir
+      setNotice({ kind: 'error', text: `${title} ${sent.join(', ')} sınıfına gönderildi${fileNote}. Gönderilemeyen: ${failText}. Form duruyor; tekrar gönderebilirsiniz.` });
+      setTargetList(failed.map((f) => f.cls));
+      reload();
+      return;
+    }
+    setNotice({ kind: 'ok', text: `${title} ${sent.join(', ')} ${sent.length > 1 ? 'sınıflarına' : 'sınıfına'} gönderildi${fileNote}.` });
     setFiles([]);
     if (fileInput.current) fileInput.current.value = '';
     setDescription('');
@@ -263,19 +295,32 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
         </section>
 
         <aside className={styles.pointsAside}>
-            <CollapsiblePanel title="Yeni ödev" summary={className ? `${className} sınıfına gönder` : undefined}>
+            <CollapsiblePanel title="Yeni ödev" summary={targets.length ? `${targets.join(', ')} ${targets.length > 1 ? 'sınıflarına' : 'sınıfına'} gönder` : undefined}>
               <form className={styles.formGrid} onSubmit={handleCreate}>
                 <h2 className={styles.panelTitle}>Yeni ödev</h2>
-                <div className={styles.field}>
-                  <span>Sınıf</span>
-                  <CustomSelect
-                    value={className}
-                    onChange={changeClass}
-                    options={classNames.map((c) => ({ value: c, label: c }))}
-                    placeholder={classNames.length ? 'Sınıf seçin' : 'Önce sınıf ekleyin'}
-                    disabled={!classNames.length}
-                  />
-                </div>
+                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                  <legend>
+                    {classNames.length > 1 ? 'Sınıflar' : 'Sınıf'}{' '}
+                    {classNames.length > 1 && <span className={styles.optionalHint}>(birden çok seçilebilir)</span>}
+                  </legend>
+                  {!classNames.length && <p className={styles.mutedText}>Önce Sınıflarım sayfasından sınıf ekleyin.</p>}
+                  <div className={styles.subjectChips}>
+                    {classNames.map((c) => (
+                      <button key={c} type="button" className={styles.dueChip} aria-pressed={targets.includes(c)} onClick={() => toggleTarget(c)}>
+                        {c}
+                      </button>
+                    ))}
+                    {classNames.length > 2 && (
+                      <button
+                        type="button"
+                        className={`${styles.subjectChip} ${styles.subjectChipOther}`}
+                        onClick={() => setTargetList(targets.length === classNames.length ? classNames.slice(0, 1) : [...classNames])}
+                      >
+                        {targets.length === classNames.length ? 'Yalnızca ilki' : 'Hepsi'}
+                      </button>
+                    )}
+                  </div>
+                </fieldset>
                 <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
                   <legend>Ders</legend>
                   <div className={styles.subjectChips}>
@@ -370,7 +415,11 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   )}
                 </div>
                 <div className={styles.formActions}>
-                  <button type="submit" className={styles.primary} disabled={busy || !classNames.length}><Send size={18} aria-hidden="true" />{busy ? (files.length ? 'Dosyalar yükleniyor…' : 'Gönderiliyor…') : 'Ödevi gönder'}</button>
+                  {progress && <span className={styles.mutedText} aria-live="polite">{progress}</span>}
+                  <button type="submit" className={styles.primary} disabled={busy || !targets.length}>
+                    <Send size={18} aria-hidden="true" />
+                    {busy ? (files.length ? 'Dosyalar yükleniyor…' : 'Gönderiliyor…') : targets.length > 1 ? `${targets.length} sınıfa gönder` : 'Ödevi gönder'}
+                  </button>
                 </div>
               </form>
         </CollapsiblePanel>

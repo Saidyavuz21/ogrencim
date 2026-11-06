@@ -37,8 +37,8 @@ const SEPARATION = 12;
 const CHASE_GAP = SPACE_X + 2;
 
 /** Yutma modu: kovalamaca daha uzun, av daha yavaş kaçar; büyük balık ağzını avın üstüne getirince yutar */
-const SWALLOW_CHASE_MS = 3600;
-const SWALLOW_FLEE_MS = 3600;
+const SWALLOW_CHASE_MS = 7000;
+const SWALLOW_FLEE_MS = 7000;
 const SWALLOW_COOLDOWN_MS = 4000;
 const SWALLOW_TOGGLE_KEY = 'akvaryum-yutma';
 
@@ -480,7 +480,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
             m.ty = clamp(prey.y + (prey.h - m.h) / 2, b.minY, b.maxY);
             // Yutma modu: avın ortası büyük balığın gövdesine girince yutulur
             if (swallowRef.current && canSwallow(m.points, prey.points)
-                && Math.abs(cx(prey) - cx(m)) < m.size * 0.32 && Math.abs((prey.y + prey.h / 2) - (m.y + m.h / 2)) < m.h * 0.4) {
+                && Math.abs(cx(prey) - cx(m)) < m.size * 0.4 && Math.abs((prey.y + prey.h / 2) - (m.y + m.h / 2)) < m.h * 0.5) {
               swallow(id, m, m.preyId, prey, now);
               return;
             }
@@ -499,8 +499,12 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
             else pickTarget(m);
           }
         }
-        const boost = m.mode === 'chase' ? (swallowRef.current ? 3 : 2.6) : m.mode === 'flee' ? (swallowRef.current ? 1.7 : 3.6) : 1;
-        const sp = m.rest > 0 ? 0 : m.speed * boost;
+        const boost = m.mode === 'chase' ? (swallowRef.current ? 3.6 : 2.6) : m.mode === 'flee' ? (swallowRef.current ? 1.1 : 3.6) : 1;
+        // Yutma modunda büyük (yavaş) balık da avına yetişebilsin: kovalayana hız tabanı, kaçana tavan
+        const sp = m.rest > 0 ? 0
+          : swallowRef.current && m.mode === 'chase' ? Math.max(m.speed * boost, 4.5 + m.speed)
+          : swallowRef.current && m.mode === 'flee' ? Math.min(m.speed * boost, 2.6)
+          : m.speed * boost;
         let wantVx = dist > 0.05 ? (dx / dist) * sp : 0;
         let wantVy = dist > 0.05 ? (dy / dist) * sp * 0.75 : 0;
 

@@ -1,8 +1,8 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { FileText, TrendingUp, Star, Award, Fish, MessageSquare, Bell, User } from '../icons';
+import { FileText, TrendingUp, Star, Award, Fish, MessageSquare, Bell, User, BookOpen } from '../icons';
 
-export type StudentPageId = 'home' | 'odevler' | 'notlar' | 'puanlar' | 'siralama' | 'akvaryum' | 'mesajlar' | 'duyurular' | 'hesap';
+export type StudentPageId = 'home' | 'odevler' | 'notlar' | 'okuma' | 'puanlar' | 'siralama' | 'akvaryum' | 'mesajlar' | 'duyurular' | 'hesap';
 
 export type StudentPageGroup = 'Derslerim' | 'Puanlarım' | 'İletişim' | 'Hesap';
 
@@ -18,6 +18,7 @@ export interface StudentPageInfo {
 export const STUDENT_PAGES: StudentPageInfo[] = [
   { id: 'odevler', title: 'Ödevler', description: 'Verilen ödevler ve kontrol sonucu', icon: FileText, group: 'Derslerim' },
   { id: 'notlar', title: 'Notlar', description: 'Yazılı, sözlü ve performans', icon: TrendingUp, group: 'Derslerim' },
+  { id: 'okuma', title: 'Okuma yarışması', description: 'Okuma hızın, sıran ve gelişimin', icon: BookOpen, group: 'Derslerim' },
   { id: 'puanlar', title: 'Puanlarım', description: 'Artı ve eksi puan geçmişi', icon: Star, group: 'Puanlarım' },
   { id: 'siralama', title: 'Sınıf sıralaması', description: 'Sınıftaki puan sıran', icon: Award, group: 'Puanlarım' },
   { id: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balığın', icon: Fish, group: 'Puanlarım' },

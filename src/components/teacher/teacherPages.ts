@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -8,6 +8,7 @@ export type TeacherPageId =
   | 'class_tools'
   | 'plus_minus'
   | 'assignments'
+  | 'reading'
   | 'grade_entry'
   | 'students'
   | 'leaderboard'
@@ -34,6 +35,7 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'plus_minus', slug: 'puan-ver', title: 'Puan ver', description: 'Artı ve eksi puan ekle', icon: Star, group: 'Günlük işler' },
   { id: 'class_tools', slug: 'sinif-araclari', title: 'Sınıf araçları', description: 'Rastgele seçici, grup, kronometre, geri sayım', icon: Shuffle, group: 'Günlük işler' },
   { id: 'assignments', slug: 'odev-gonder', title: 'Ödev gönder', description: 'Yeni ödev oluştur ve listele', icon: Send, group: 'Günlük işler' },
+  { id: 'reading', slug: 'okuma-yarismasi', title: 'Okuma yarışması', description: '1 dakikada okunan kelime, sıralama, gelişim', icon: BookOpen, group: 'Günlük işler' },
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
   { id: 'leaderboard', slug: 'siralama', title: 'Puan sıralaması', description: 'Sınıfın başarı sırası', icon: Award, group: 'Öğrenciler ve sınıflar' },
   { id: 'aquarium', slug: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balıklar, tam ekran', icon: Fish, group: 'Öğrenciler ve sınıflar' },

@@ -16,6 +16,7 @@ import { StudentHomeworksPage } from './StudentHomeworksPage';
 import { StudentMessagesPage } from './StudentMessagesPage';
 import { AnnouncementsList, StudentAccountPage, StudentGradesPage, StudentPointsPage, StudentRankingPage } from './StudentSections';
 import { Spinner } from '../Spinner';
+import { StudentReadingPage } from '../reading/StudentReadingPage';
 import styles from '../teacher/TeacherDashboard.module.css';
 
 interface StudentPortalProps {
@@ -159,6 +160,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
           />
         )}
         {page === 'notlar' && <StudentGradesPage grades={grades} loaded={loaded} />}
+        {page === 'okuma' && <StudentReadingPage />}
         {page === 'puanlar' && <StudentPointsPage me={me} points={points} loaded={loaded} />}
         {page === 'siralama' && <StudentRankingPage ranking={ranking} myId={user.id} className={me?.class_name || ''} />}
         {page === 'akvaryum' && (

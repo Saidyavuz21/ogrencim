@@ -55,7 +55,7 @@ const fmt = (ms: number) => {
 };
 
 /** Ses dosyası olmadan kısa uyarı: üç bip, iki kez */
-function playAlarm(ctx: AudioContext | null) {
+export function playAlarm(ctx: AudioContext | null) {
   if (!ctx) return;
   const start = ctx.currentTime + 0.05;
   for (let round = 0; round < 2; round++) {

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, Trash2 } from './icons';
 import { AnnouncementRow, listAnnouncements } from '../lib/studentData';
 import { createAnnouncement, deleteAnnouncement } from '../lib/teacherData';
-import { AnnouncementsList } from './student/StudentPortal';
+import { AnnouncementsList } from './student/StudentSections';
 import { Notice, NoticeState, formatDateTime } from './teacher/TeacherUi';
 import { useDialog } from './ConfirmDialog';
 import styles from './teacher/TeacherDashboard.module.css';

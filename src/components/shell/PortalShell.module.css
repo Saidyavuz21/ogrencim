@@ -1,0 +1,8 @@
+/* Ortak kabuk eklentileri (öğretmen paneli stillerinin üstüne) */
+.roleBadge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 6px; background: var(--teacher-selected); color: var(--teacher-primary); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.pageDescription { margin: 4px 0 0; color: var(--teacher-muted); font-size: 14px; line-height: 1.5; }
+
+@media (max-width: 640px) {
+  .roleBadge { display: none; }
+  .pageDescription { display: none; }
+}

@@ -6,7 +6,7 @@ import type { UserAccount } from '../../data/portalData';
 import { ADMIN_PAGES, ADMIN_PAGE_GROUPS, AdminPageId, adminPageHref } from './adminPages';
 import { isPlainLeftClick } from '../teacher/teacherPages';
 import { AdminData, displayName, formatDate } from './adminShared';
-import styles from '../teacher/TeacherDashboard.module.css';
+import { PortalPageCards } from '../shell/PortalShell';
 import adminStyles from './AdminDashboard.module.css';
 
 interface Props {
@@ -79,31 +79,7 @@ export function AdminHome({ user, data, badges, onOpenPage }: Props) {
         </section>
       )}
 
-      {ADMIN_PAGE_GROUPS.map((group) => {
-        const pages = ADMIN_PAGES.filter((p) => p.group === group);
-        const headingId = `admin-group-${group.replace(/\s+/g, '-')}`;
-        return (
-          <section key={group} className={styles.cardGroup} aria-labelledby={headingId}>
-            <h2 id={headingId}>{group}</h2>
-            <div className={styles.cardGrid}>
-              {pages.map((page) => {
-                const badge = badges[page.id] || 0;
-                return (
-                  <a key={page.id} {...link(page.id)} className={styles.pageCard}>
-                    <span className={styles.pageCardIcon}><page.icon size={22} aria-hidden="true" /></span>
-                    <span className={styles.pageCardText}>
-                      <span className={styles.pageCardTitle}>{page.title}</span>
-                      <span className={styles.pageCardDesc}>{page.description}</span>
-                    </span>
-                    {badge > 0 && <span className={styles.pageCardBadge} aria-label={`${badge} bekleyen`}>{badge > 99 ? '99+' : badge}</span>}
-                    <ChevronRight size={18} className={styles.pageCardArrow} aria-hidden="true" />
-                  </a>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
+      <PortalPageCards pages={ADMIN_PAGES} groups={ADMIN_PAGE_GROUPS} badges={badges} hrefFor={adminPageHref} onOpenPage={onOpenPage} idPrefix="admin" />
     </>
   );
 }

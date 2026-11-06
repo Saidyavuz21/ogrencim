@@ -1,6 +1,4 @@
 /* ===== Süper admin kabuğu: öğretmen panelinin sol menü + üst çubuk yapısını kullanır ===== */
-.roleBadge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 6px; background: var(--teacher-selected); color: var(--teacher-primary); font-size: 13px; font-weight: 600; white-space: nowrap; }
-.pageDescription { margin: 4px 0 0; color: var(--teacher-muted); font-size: 14px; line-height: 1.5; }
 
 /* Genel bakış */
 .homeIntro h1 { margin: 0; color: var(--teacher-text); font-size: clamp(24px, 4vw, 30px); line-height: 1.3; letter-spacing: -.025em; }
@@ -31,7 +29,6 @@
 .statCard:focus-visible, .recentAll:focus-visible, .recentList a:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
 
 @media (max-width: 640px) {
-  .roleBadge { display: none; }
   .statGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .statCard { padding: 14px 16px; }
   .statCard strong { font-size: 26px; }

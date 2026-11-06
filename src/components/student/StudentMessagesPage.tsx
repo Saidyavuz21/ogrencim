@@ -1,0 +1,145 @@
+'use client';
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, MessageSquare, Send, Users } from '../icons';
+import { MyStudent } from '../../lib/studentData';
+import { classConversationId, isFamilyRole, markConversationRead, sendMessage, studentConversationId } from '../../lib/teacherData';
+import { useLiveMessages } from '../../lib/useLiveMessages';
+import { LiveBadge, Notice, NoticeState, formatDateTime } from '../teacher/TeacherUi';
+import { useFitToViewport } from '../shell/PortalShell';
+import styles from '../teacher/TeacherDashboard.module.css';
+
+/**
+ * Öğrencinin mesajları: öğretmenlerle tek birebir konuşma (ogr:<id>) + sınıf grubu (yalnızca okunur).
+ * Masaüstünde liste ve sohbet yan yana; dar ekranda önce liste, dokununca sohbet.
+ */
+export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: () => void }) {
+  const directConv = studentConversationId(me.id);
+  const groupConv = me.class_name ? classConversationId(me.school_id, me.class_name) : '';
+  const convs = useMemo(() => [
+    { id: directConv, title: 'Öğretmenlerim', subtitle: 'Öğretmenlerinle birebir yazışma', canWrite: true },
+    ...(groupConv ? [{ id: groupConv, title: `${me.class_name} sınıf grubu`, subtitle: 'Öğretmen duyuruları (yalnızca okunur)', canWrite: false }] : []),
+  ], [directConv, groupConv, me.class_name]);
+
+  const [active, setActive] = useState<string | null>(null);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<NoticeState>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const splitRef = useRef<HTMLDivElement>(null);
+  useFitToViewport(splitRef);
+
+  const convIds = useMemo(() => convs.map((c) => c.id), [convs]);
+  const { messages, error: msgError, live, refresh } = useLiveMessages(convIds);
+
+  const thread = messages.filter((m) => m.conversation_id === active);
+  const activeConv = convs.find((c) => c.id === active);
+
+  // Yalnızca mesaj alanını aşağı kaydır (scrollIntoView tüm sayfayı da kaydırır)
+  useEffect(() => {
+    const box = endRef.current?.parentElement;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [thread.length, active]);
+
+  // Açık birebir konuşmadaki öğretmen mesajlarını okundu yap.
+  // Sınıf grubu bütün sınıfta ortaktır: bir öğrencinin açması herkes için "okundu" yapmasın diye işaretlenmez.
+  const hasUnreadInThread = thread.some((m) => !isFamilyRole(m.sender_role) && !m.is_read);
+  useEffect(() => {
+    if (active && active === directConv && hasUnreadInThread) {
+      markConversationRead(active, 'family').then(() => onRead?.());
+    }
+  }, [active, directConv, hasUnreadInThread, onRead]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!active || !text.trim()) return;
+    setBusy(true);
+    const res = await sendMessage(active, text);
+    setBusy(false);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: `Mesaj gönderilemedi: ${res.error}` });
+      return;
+    }
+    setText('');
+    refresh();
+  };
+
+  return (
+    <div className={styles.pageBody}>
+      <Notice notice={notice} onClose={() => setNotice(null)} />
+      <div ref={splitRef} className={styles.messagesSplit} data-active={activeConv ? 'true' : 'false'}>
+        <section className={`${styles.panel} ${styles.convPane}`} aria-label="Konuşmalar">
+          <div className={styles.listToolbar}><h2 className={styles.panelTitle}>Konuşmalar</h2><LiveBadge live={live} /></div>
+          {msgError && <p className={styles.noticeError}>Mesajlar alınamadı: {msgError}</p>}
+          <ul className={styles.convList}>
+            {convs.map((c) => {
+              const list = messages.filter((m) => m.conversation_id === c.id);
+              const last = list[list.length - 1];
+              const unread = c.canWrite ? list.filter((m) => !isFamilyRole(m.sender_role) && !m.is_read).length : 0;
+              return (
+                <li key={c.id}>
+                  <button type="button" className={styles.convItem} aria-current={c.id === active ? 'true' : undefined} onClick={() => { setActive(c.id); setNotice(null); }}>
+                    <span className={styles.studentAvatar} aria-hidden="true">{c.canWrite ? <MessageSquare size={18} /> : <Users size={18} />}</span>
+                    <span className={styles.studentCardInfo}>
+                      <strong>{c.title}</strong>
+                      <span>{last ? `${isFamilyRole(last.sender_role) ? 'Sen' : last.sender_name}: ${last.content}` : c.subtitle}</span>
+                    </span>
+                    {unread > 0 && <span className={styles.pageCardBadge} aria-label={`${unread} okunmamış`}>{unread}</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {activeConv ? (
+          <section className={styles.chatPanel} aria-label={activeConv.title}>
+            <div className={styles.chatHeader}>
+              <button type="button" className={styles.backButton} onClick={() => setActive(null)}><ArrowLeft size={20} aria-hidden="true" /><span>Konuşmalar</span></button>
+              <div><strong>{activeConv.title}</strong><span>{activeConv.subtitle}</span></div>
+              <LiveBadge live={live} />
+            </div>
+            <div className={styles.chatThread}>
+              {!thread.length && (
+                <p className={styles.mutedText}>{activeConv.canWrite ? 'Henüz mesaj yok. Sorunu öğretmenine buradan yazabilirsin.' : 'Henüz duyuru yok.'}</p>
+              )}
+              {thread.map((m) => {
+                const mine = isFamilyRole(m.sender_role);
+                return (
+                  <div key={m.id} className={`${styles.bubble} ${mine ? styles.bubbleMine : ''}`}>
+                    {!mine && <strong>{m.sender_name}</strong>}
+                    <p>{m.content}</p>
+                    <span>{formatDateTime(m.created_at)}{mine ? (m.is_read ? ' · Okundu' : ' · İletildi') : ''}</span>
+                  </div>
+                );
+              })}
+              <div ref={endRef} />
+            </div>
+            {activeConv.canWrite ? (
+              <form className={styles.chatComposer} onSubmit={handleSend}>
+                <label className={styles.visuallyHidden} htmlFor="student-chat-input">Mesaj</label>
+                <textarea
+                  id="student-chat-input"
+                  value={text}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
+                  onChange={(e) => setText(e.target.value.slice(0, 2000))}
+                  rows={2}
+                  placeholder="Öğretmenine yaz"
+                />
+                <button type="submit" className={styles.primary} disabled={busy || !text.trim()} aria-label="Gönder"><Send size={18} aria-hidden="true" /></button>
+              </form>
+            ) : (
+              <p className={`${styles.mutedText} ${styles.listPad}`}>Bu grupta yalnızca öğretmenler yazar.</p>
+            )}
+          </section>
+        ) : (
+          <section className={styles.chatEmpty} aria-label="Sohbet">
+            <MessageSquare size={28} aria-hidden="true" />
+            <strong>Bir konuşma seç</strong>
+            <span>Soldaki listeden öğretmenlerinle yazışmayı ya da sınıf grubunu aç.</span>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}

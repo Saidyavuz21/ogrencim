@@ -14,6 +14,7 @@ export interface MyStudent {
   name: string;
   class_name: string | null;
   school_id: string | null;
+  school_name: string | null;
   points: number;
   plus_count: number;
   minus_count: number;
@@ -22,12 +23,26 @@ export interface MyStudent {
 export async function getMyStudent(studentId: string): Promise<Result<MyStudent>> {
   const { data, error } = await supabase
     .from('students')
-    .select('id, student_number, name, class_name, school_id, points, plus_count, minus_count')
+    .select('id, student_number, name, class_name, school_id, points, plus_count, minus_count, schools(name)')
     .eq('id', studentId)
     .maybeSingle();
   if (error) return fail(error);
   if (!data) return { ok: false, error: 'Öğrenci kaydı bulunamadı.' };
-  return { ok: true, data: data as MyStudent };
+  const { schools, ...rest } = data as unknown as Omit<MyStudent, 'school_name'> & { schools: { name: string } | { name: string }[] | null };
+  const school_name = Array.isArray(schools) ? schools[0]?.name ?? null : schools?.name ?? null;
+  return { ok: true, data: { ...rest, school_name } };
+}
+
+/** Öğretmenlerden gelen, henüz okunmamış birebir mesaj sayısı (sınıf grubu herkesçe ortak okunduğu için sayılmaz) */
+export async function countMyUnreadMessages(conversationId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('conversation_id', conversationId)
+    .in('sender_role', ['teacher', 'admin'])
+    .eq('is_read', false);
+  if (error) return 0;
+  return count || 0;
 }
 
 export interface MyHomework {

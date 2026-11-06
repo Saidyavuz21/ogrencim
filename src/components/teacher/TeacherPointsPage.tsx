@@ -6,6 +6,48 @@ import { givePoints, listPointHistory, PointHistoryRow } from '../../lib/teacher
 import { CollapsiblePanel, Notice, NoticeState, formatDateTime, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
 import { Spinner } from '../Spinner';
 import styles from './TeacherDashboard.module.css';
+import pStyles from './TeacherPoints.module.css';
+
+type PointAnimation = {
+  id: string;
+  studentId: string;
+  delta: 1 | -1;
+};
+
+/** Puan verildiğinde hafif, hoş bir ses efekti çalar (Web Audio API) */
+function playPointSound(delta: 1 | -1) {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (delta > 0) {
+      // Çift tonlu neşeli 'ding' (E5 -> G5)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    } else {
+      // Düşük yumuşak ton (G4 -> E4)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(392.00, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(329.63, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    }
+  } catch {
+    // Ses desteği yoksa sessizce devam et
+  }
+}
 
 const QUICK_REASONS = {
   plus: ['Derse aktif katılım', 'Ödevini eksiksiz yaptı', 'Arkadaşına yardım etti', 'Düzenli ve özenli çalıştı'],
@@ -19,6 +61,7 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
+  const [animations, setAnimations] = useState<PointAnimation[]>([]);
 
   const studentIdsKey = students.map((s) => s.id).join(',');
   useEffect(() => {
@@ -33,6 +76,15 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
   const handleGive = async (studentId: string, delta: 1 | -1) => {
     const student = students.find((s) => s.id === studentId);
     if (!student) return;
+
+    // Görsel animasyonu ve sesi anında başlat
+    playPointSound(delta);
+    const animId = `${studentId}-${Date.now()}`;
+    setAnimations((prev) => [...prev.filter((a) => a.studentId !== studentId), { id: animId, studentId, delta }]);
+    setTimeout(() => {
+      setAnimations((prev) => prev.filter((a) => a.id !== animId));
+    }, 850);
+
     setBusyId(studentId);
     const res = await givePoints(studentId, delta, reason);
     setBusyId(null);
@@ -52,26 +104,60 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={styles.pointsLayout}>
-      <section className={styles.studentList} aria-label="Öğrenci puanları">
-        {students.length > 1 && <div className={styles.listSortBar}><StudentSortToggle /></div>}
+      <section className={pStyles.pointsContainer} aria-label="Öğrenci puanları">
+        {students.length > 1 && <div className={pStyles.sortBar}><StudentSortToggle /></div>}
         {loading && <Spinner center label="Öğrenciler yükleniyor…" />}
         {error && <p className={`${styles.noticeError} ${styles.listPad}`}>{error}</p>}
         {!loading && !error && students.length === 0 && <p className={`${styles.mutedText} ${styles.listPad}`}>{selectedClass} sınıfında kayıtlı öğrenci yok.</p>}
-        {students.map((s) => (
-          <div key={s.id} className={styles.pointRow}>
-            <div className={styles.studentIdentity}>
-              <span className={styles.studentAvatar} aria-hidden="true">{initialsOf(s.name)}</span>
-              <div>
-                <h4>{s.name}</h4>
-                <p>No {s.student_number} · {s.points} puan · +{s.plus_count} / −{s.minus_count}</p>
+        <div className={pStyles.grid}>
+          {students.map((s) => {
+            const anim = animations.find((a) => a.studentId === s.id);
+            const pulseClass = anim ? (anim.delta > 0 ? pStyles.cardPulsePlus : pStyles.cardPulseMinus) : '';
+
+            return (
+              <div key={s.id} className={`${pStyles.card} ${pulseClass}`}>
+                {anim && (
+                  <span
+                    key={anim.id}
+                    className={`${pStyles.floatBadge} ${anim.delta > 0 ? pStyles.floatPlus : pStyles.floatMinus}`}
+                    aria-hidden="true"
+                  >
+                    {anim.delta > 0 ? '+1' : '−1'}
+                  </span>
+                )}
+                <div className={pStyles.studentInfo}>
+                  <span className={pStyles.avatar} aria-hidden="true">{initialsOf(s.name)}</span>
+                  <div className={pStyles.details}>
+                    <h4 className={pStyles.name} title={s.name}>{s.name}</h4>
+                    <p className={pStyles.subText}>
+                      No {s.student_number} · <strong className={pStyles.pointsBadge}>{s.points} puan</strong> · +{s.plus_count} / −{s.minus_count}
+                    </p>
+                  </div>
+                </div>
+                <div className={pStyles.actions}>
+                  <button
+                    type="button"
+                    className={pStyles.btnMinus}
+                    disabled={busyId === s.id}
+                    onClick={() => handleGive(s.id, -1)}
+                    aria-label={`${s.name} eksi puan`}
+                  >
+                    <Minus size={16} aria-hidden="true" /> 1
+                  </button>
+                  <button
+                    type="button"
+                    className={pStyles.btnPlus}
+                    disabled={busyId === s.id}
+                    onClick={() => handleGive(s.id, 1)}
+                    aria-label={`${s.name} artı puan`}
+                  >
+                    <Plus size={16} aria-hidden="true" /> 1
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className={styles.pointActions}>
-              <button type="button" className={styles.minusButton} disabled={busyId === s.id} onClick={() => handleGive(s.id, -1)} aria-label={`${s.name} eksi puan`}><Minus size={18} aria-hidden="true" />1</button>
-              <button type="button" className={styles.plusButton} disabled={busyId === s.id} onClick={() => handleGive(s.id, 1)} aria-label={`${s.name} artı puan`}><Plus size={18} aria-hidden="true" />1</button>
-            </div>
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </section>
 
       <aside className={styles.pointsAside}>

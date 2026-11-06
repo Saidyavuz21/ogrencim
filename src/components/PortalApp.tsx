@@ -54,7 +54,8 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
       .then((user) => {
         if (cancelled) return;
         setRestoreFailed(false);
-        if (user) handleLoginSuccess(user);
+        // /yonetim yalnızca admin oturumunu açar; tarayıcıda öğrenci/öğretmen oturumu varsa giriş formu gösterilir
+        if (user && (variant !== 'admin' || user.role === 'admin')) handleLoginSuccess(user);
       })
       .catch((err) => {
         console.error('Oturum geri yüklenemedi:', err);
@@ -66,7 +67,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
     return () => {
       cancelled = true;
     };
-  }, [handleLoginSuccess, restoreAttempt]);
+  }, [handleLoginSuccess, restoreAttempt, variant]);
 
   // Başka sekmede çıkış yapıldığında veya oturum yenilenemediğinde paneli kapat
   useEffect(() => {

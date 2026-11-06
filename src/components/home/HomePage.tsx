@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, Lock, MessageSquare } from 'lucide-react';
+import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, MessageSquare } from 'lucide-react';
 import { restoreSession, signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
 import styles from './HomePage.module.css';
 import { BrandLogo } from '../BrandLogo';
@@ -127,8 +127,7 @@ export default function HomePage() {
               </fieldset>
               {notice && <p className={styles.notice} role="alert">{notice}</p>}
             </form>
-            <div className={styles.register}><Link href="/giris#kayit">Kayıt ol <ArrowRight size={16} /></Link></div>
-            <p className={styles.security}><Lock size={14} /> Size ait bilgilerle, size özel erişim.</p>
+            {role === 'Öğretmen' && <div className={styles.register}><Link href="/giris#kayit">Kayıt ol <ArrowRight size={16} /></Link></div>}
           </section>
         </div> : <section className={styles.info}>
           <h1>{section}</h1>

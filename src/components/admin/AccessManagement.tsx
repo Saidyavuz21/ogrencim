@@ -1,7 +1,8 @@
 'use client';
 
+import styles from './AdminManagement.module.css';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle, Edit } from '../icons';
+import { Check, X, Key, Trash2, UserPlus, Users, GraduationCap, AlertCircle, Edit, FileText } from '../icons';
 import { TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName, parseClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker } from '../SchoolPicker';
@@ -16,6 +17,7 @@ import {
   setTeacherActive,
   updateTeacherProfile,
   deleteTeacher,
+  getTeacherDocumentUrl,
   getLiveStudents,
   createStudent,
   resetStudentPin,
@@ -40,7 +42,7 @@ const EMPTY_EDIT_FORM = {
 
 const TEXT_FIELDS = [['full_name', 'Ad Soyad']] as const;
 
-const SELECT_CLASS = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800';
+const SELECT_CLASS = styles.input;
 
 /**
  * Hesap yönetimi (gerçek veritabanı):
@@ -112,6 +114,23 @@ export const AccessManagement: React.FC = () => {
     const schoolNote = p.school_id && pendingSchoolIds.has(p.school_id) ? ' Okulu hâlâ onay bekliyor (Okullar bölümü).' : '';
     notify('ok', `${displayName(p)} onaylandı; artık giriş yapabilir.${schoolNote}`);
     refresh();
+  };
+
+  const handleViewDocument = async (p: ProfileRecord) => {
+    if (!p.verification_doc) return;
+    // Pencere tıklama anında açılır; await sonrası açılan pencereyi tarayıcı engelleyebilir
+    const win = window.open('', '_blank');
+    const url = await getTeacherDocumentUrl(p.verification_doc);
+    if (!url) {
+      win?.close();
+      return notify('error', 'Belge açılamadı. Lütfen tekrar deneyin.');
+    }
+    if (win) {
+      win.opener = null;
+      win.location.href = url;
+    } else {
+      window.location.assign(url);
+    }
   };
 
   const handleDeleteTeacherAndRefreshSchools = () => setSchoolsRefreshKey((k) => k + 1);
@@ -253,66 +272,78 @@ export const AccessManagement: React.FC = () => {
     .sort((a, b) => (a.role === b.role ? 0 : a.role === 'admin' ? -1 : 1));
 
   if (isLoading) {
-    return <div className="bg-white rounded-2xl p-6 border border-slate-200/90 text-xs text-slate-500">Hesaplar yükleniyor...</div>;
+    return <div className={styles.section}>Hesaplar yükleniyor...</div>;
   }
 
   return (
-    <div className="space-y-4">
+    <div className={styles.stack}>
       {message && (
         <div
           role="status"
-          className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
-            message.type === 'ok' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
-          }`}
+          className={message.type === 'ok' ? styles.successNotice : styles.errorNotice}
         >
-          {message.type === 'ok' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+          {message.type === 'ok' ? <Check className={styles.icon} /> : <AlertCircle className={styles.icon} />}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* ÖĞRETMEN HESAPLARI */}
-      <section className="bg-white rounded-2xl p-4 border border-slate-200/90 space-y-3">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-slate-500" />
-          <h3 className="text-sm font-bold text-slate-900">Öğretmen Hesapları</h3>
+      <section className={styles.section}>
+        <div className={styles.sectionHeading}>
+          <Users className={styles.icon} />
+          <h3 className={styles.sectionTitle}>Öğretmen Hesapları</h3>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className={styles.muted}>
           Öğretmenler giriş ekranındaki “Öğretmen Kaydı” ile kendileri kayıt olur. Onaylanmamış veya pasif hesaplar giriş yapamaz ve hiçbir veriye erişemez.
         </p>
 
         {pendingTeachers.length > 0 && (
-          <div className="space-y-2">
-            <span className="text-[11px] font-bold uppercase text-amber-700">Onay bekleyen ({pendingTeachers.length})</span>
+          <div className={styles.formStack}>
+            <span className={styles.pendingTitle}>Onay bekleyen ({pendingTeachers.length})</span>
             {pendingTeachers.map((p) => (
-              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-amber-200 bg-amber-50/60">
-                <div className="min-w-0">
-                  <span className="text-xs font-semibold text-slate-900 block truncate">{p.full_name || '(isimsiz)'}</span>
-                  <span className="text-[11px] text-slate-500 block truncate">
+              <div key={p.id} className={styles.pendingRow}>
+                <div className={styles.details}>
+                  <span className={styles.name}>{p.full_name || '(isimsiz)'}</span>
+                  <span className={styles.muted}>
                     {p.email} • {p.branch || 'Branş yok'} • {p.school_name || 'Okul yok'}
                     {p.district || p.city ? ` • ${[p.district, p.city].filter(Boolean).join('/')}` : ''}
                   </span>
                   {p.school_id && pendingSchoolIds.has(p.school_id) && (
-                    <span className="mt-1 inline-block text-[10px] font-semibold px-1.5 rounded bg-amber-100 text-amber-800">
+                    <span className={styles.warningBadge}>
                       Yeni okul — aşağıdaki “Okullar” bölümünden onaylayın veya birleştirin
                     </span>
                   )}
+                  {!p.verification_doc && (
+                    <span className={styles.errorBadge}>
+                      Belge yüklenmemiş
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className={styles.actions}>
+                  {p.verification_doc && (
+                    <button
+                      type="button"
+                      onClick={() => handleViewDocument(p)}
+                      className={styles.button}
+                    >
+                      <FileText className={styles.icon} /> Belgeyi gör
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={busyId === p.id}
                     onClick={() => handleDeleteTeacher(p)}
-                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-600 text-xs font-semibold cursor-pointer"
+                    className={styles.danger}
                   >
-                    <X className="w-3.5 h-3.5" /> Reddet
+                    <X className={styles.icon} /> Reddet
                   </button>
                   <button
                     type="button"
                     disabled={busyId === p.id}
                     onClick={() => handleApprove(p)}
-                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-bold cursor-pointer"
+                    className={styles.primary}
                   >
-                    <Check className="w-3.5 h-3.5" /> Onayla
+                    <Check className={styles.icon} /> Onayla
                   </button>
                 </div>
               </div>
@@ -320,54 +351,48 @@ export const AccessManagement: React.FC = () => {
           </div>
         )}
 
-        <div className="divide-y divide-slate-100">
-          {otherAccounts.length === 0 && <p className="text-xs text-slate-400 py-2">Henüz başka hesap yok.</p>}
+        <div className={styles.list}>
+          {otherAccounts.length === 0 && <p className={styles.muted}>Henüz başka hesap yok.</p>}
           {otherAccounts.map((p) => {
             const isTeacher = p.role === 'ogretmen';
             const isBusy = busyId === p.id;
             return (
-              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2.5">
-                <div className="min-w-0">
-                  <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 flex-wrap">
-                    <span className={`truncate ${isTeacher && !p.is_active ? 'text-slate-400 line-through' : ''}`}>{displayName(p)}</span>
-                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 rounded">
+              <div key={p.id} className={styles.row}>
+                <div className={styles.details}>
+                  <span className={styles.identity}>
+                    <span className={isTeacher && !p.is_active ? styles.inactiveName : styles.name}>{displayName(p)}</span>
+                    <span className={styles.badge}>
                       {p.role === 'admin' ? 'Admin' : 'Öğretmen'}
                     </span>
                     {isTeacher && (
                       <span
-                        className={`text-[10px] font-semibold px-1.5 rounded ${
-                          p.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                        }`}
+                        className={p.is_active ? styles.activeBadge : styles.errorBadge}
                       >
                         {p.is_active ? 'Aktif' : 'Pasif'}
                       </span>
                     )}
                   </span>
-                  <span className="text-[11px] text-slate-500 block truncate">
+                  <span className={styles.muted}>
                     {p.email}
                     {isTeacher && p.branch ? ` • ${p.branch}` : ''}
                     {isTeacher && p.school_name ? ` • ${p.school_name}` : ''}
                   </span>
                 </div>
                 {isTeacher && p.id !== myId && (
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className={styles.actions}>
                     <button
                       type="button"
                       disabled={isBusy}
                       onClick={() => openEdit(p)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-60 text-slate-600 text-[11px] font-semibold cursor-pointer"
+                      className={styles.button}
                     >
-                      <Edit className="w-3.5 h-3.5" /> Düzenle
+                      <Edit className={styles.icon} /> Düzenle
                     </button>
                     <button
                       type="button"
                       disabled={isBusy}
                       onClick={() => handleToggleActive(p)}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border disabled:opacity-60 text-[11px] font-semibold cursor-pointer ${
-                        p.is_active
-                          ? 'border-slate-200 text-slate-600 hover:bg-amber-50 hover:text-amber-800'
-                          : 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
-                      }`}
+                      className={styles.button}
                     >
                       {p.is_active ? 'Pasif yap' : 'Aktif yap'}
                     </button>
@@ -376,9 +401,9 @@ export const AccessManagement: React.FC = () => {
                       disabled={isBusy}
                       onClick={() => handleDeleteTeacher(p)}
                       aria-label={`${displayName(p)} hesabını sil`}
-                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-500 cursor-pointer"
+                      className={styles.danger}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className={styles.icon} />
                     </button>
                   </div>
                 )}
@@ -392,34 +417,40 @@ export const AccessManagement: React.FC = () => {
       <SchoolManagement notify={notify} onChanged={refresh} refreshKey={schoolsRefreshKey} />
 
       {/* ÖĞRENCİ HESAPLARI */}
-      <section className="bg-white rounded-2xl p-4 border border-slate-200/90 space-y-3">
-        <div className="flex items-center gap-2">
-          <GraduationCap className="w-4 h-4 text-slate-500" />
-          <h3 className="text-sm font-bold text-slate-900">Öğrenci Girişleri</h3>
+      <section className={styles.section}>
+        <div className={styles.sectionHeading}>
+          <GraduationCap className={styles.icon} />
+          <h3 className={styles.sectionTitle}>Öğrenci Girişleri</h3>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className={styles.muted}>
           Öğrenciler okul numarası + 4 haneli PIN ile giriş yapar. 5 hatalı denemede hesap 15 dakika kilitlenir.
           PIN yalnızca şifrelenmiş saklanır; unutulursa buradan yenisi belirlenir.
         </p>
 
-        <form onSubmit={handleCreateStudent} className="grid grid-cols-2 sm:grid-cols-6 gap-2 items-end">
-          <div className="col-span-2 sm:col-span-6">
+        <form onSubmit={handleCreateStudent} className={styles.studentForm}>
+          <div className={styles.fullWidth}>
             <StudentSchoolSelect value={newSchool} onChange={setNewSchool} disabled={busyId === 'new-student'} />
           </div>
-          <input
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Okul numarası</span>
+            <input
             value={newNo}
             onChange={(e) => setNewNo(e.target.value)}
             placeholder="Okul No"
             aria-label="Okul numarası"
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800"
+            className={styles.input}
           />
-          <input
+          </label>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Ad soyad</span>
+            <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Ad Soyad"
             aria-label="Ad soyad"
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800"
+            className={styles.input}
           />
+          </label>
           <ClassLevelSelects
             idPrefix="new-student-class"
             level={newClassLevel}
@@ -432,59 +463,62 @@ export const AccessManagement: React.FC = () => {
             selectClassName={SELECT_CLASS}
             renderField={({ id, label, control }) => (
               <div>
-                <label htmlFor={id} className="sr-only">{label}</label>
+                <label htmlFor={id} className={styles.fieldLabel}>{label}</label>
                 {control}
               </div>
             )}
           />
-          <input
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>4 haneli PIN</span>
+            <input
             value={newPin}
             onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
             placeholder="4 haneli PIN"
             aria-label="4 haneli PIN"
             inputMode="numeric"
             autoComplete="off"
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:bg-white focus:outline-none focus:border-slate-800"
+            className={styles.input}
           />
+          </label>
           <button
             type="submit"
             disabled={busyId === 'new-student'}
-            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white text-xs font-bold cursor-pointer"
+            className={styles.primary}
           >
-            <UserPlus className="w-3.5 h-3.5" /> Öğrenci Ekle
+            <UserPlus className={styles.icon} /> Öğrenci Ekle
           </button>
         </form>
 
-        <div className="divide-y divide-slate-100">
-          {students.length === 0 && <p className="text-xs text-slate-400 py-2">Henüz kayıtlı öğrenci yok.</p>}
+        <div className={styles.list}>
+          {students.length === 0 && <p className={styles.muted}>Henüz kayıtlı öğrenci yok.</p>}
           {students.map((s) => (
-            <div key={s.id} className="flex items-center justify-between gap-2 py-2">
-              <div className="min-w-0">
-                <span className="text-xs font-semibold text-slate-800 block truncate">{s.name}</span>
-                <span className="text-[11px] text-slate-500 block truncate">
+            <div key={s.id} className={styles.row}>
+              <div className={styles.details}>
+                <span className={styles.name}>{s.name}</span>
+                <span className={styles.muted}>
                   No: {s.student_number}
                   {s.class_name ? ` • ${s.class_name}` : ''}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className={styles.actions}>
                 <button
                   type="button"
                   onClick={() => {
                     setPinResetFor(s);
                     setResetPinValue('');
                   }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 text-[11px] font-semibold cursor-pointer"
+                  className={styles.button}
                 >
-                  <Key className="w-3.5 h-3.5" /> Yeni PIN
+                  <Key className={styles.icon} /> Yeni PIN
                 </button>
                 <button
                   type="button"
                   disabled={busyId === s.id}
                   onClick={() => handleDeleteStudent(s)}
                   aria-label={`${s.name} öğrencisini sil`}
-                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-500 cursor-pointer"
+                  className={styles.danger}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className={styles.icon} />
                 </button>
               </div>
             </div>
@@ -494,29 +528,29 @@ export const AccessManagement: React.FC = () => {
 
       {/* ÖĞRETMEN DÜZENLEME MODALI */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-          <form onSubmit={handleSaveEdit} className="bg-white rounded-2xl p-5 max-w-md w-full border border-slate-200 shadow-xl space-y-3 text-xs">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">Öğretmeni düzenle</h3>
-              <button type="button" onClick={() => setEditing(null)} aria-label="Kapat" className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
-                <X className="w-4 h-4" />
+        <div className={styles.backdrop}>
+          <form onSubmit={handleSaveEdit} className={styles.dialog}>
+            <div className={styles.between}>
+              <h3 className={styles.sectionTitle}>Öğretmeni düzenle</h3>
+              <button type="button" onClick={() => setEditing(null)} aria-label="Kapat" className={styles.muted}>
+                <X className={styles.icon} />
               </button>
             </div>
-            <p className="text-slate-500">{editing.email} (e-posta değiştirilemez)</p>
+            <p className={styles.muted}>{editing.email} (e-posta değiştirilemez)</p>
 
             {TEXT_FIELDS.map(([key, label]) => (
-              <label key={key} className="block">
-                <span className="font-semibold text-slate-700 block mb-1">{label}</span>
+              <label key={key} className={styles.field}>
+                <span className={styles.fieldLabel}>{label}</span>
                 <input
                   value={editForm[key]}
                   onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-slate-800"
+                  className={styles.input}
                 />
               </label>
             ))}
 
-            <div className="block">
-              <span className="font-semibold text-slate-700 block mb-1">Branş</span>
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Branş</span>
               <CustomSelect
                 value={editForm.branch}
                 onChange={(val) => setEditForm({ ...editForm, branch: val })}
@@ -528,7 +562,7 @@ export const AccessManagement: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className={styles.pair}>
               <ClassLevelSelects
                 idPrefix="edit-teacher-class"
                 level={editForm.class_level}
@@ -536,13 +570,13 @@ export const AccessManagement: React.FC = () => {
                 onChange={({ level, section }) => setEditForm({ ...editForm, class_level: level, class_section: section })}
                 allowEmpty
                 emptyLabel="Sınıfı yok"
-                selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                selectClassName={styles.input}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="block">
-                <span className="font-semibold text-slate-700 block mb-1">İl</span>
+            <div className={styles.pair}>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>İl</span>
                 <CustomSelect
                   value={editForm.city}
                   onChange={(val) =>
@@ -552,8 +586,8 @@ export const AccessManagement: React.FC = () => {
                   placeholder="Seçiniz"
                 />
               </div>
-              <div className="block">
-                <span className="font-semibold text-slate-700 block mb-1">İlçe</span>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>İlçe</span>
                 <CustomSelect
                   value={editForm.district}
                   onChange={(val) => setEditForm({ ...editForm, district: val, school_id: '' })}
@@ -571,21 +605,21 @@ export const AccessManagement: React.FC = () => {
               newSchoolName=""
               currentSchoolName={editing.school_id === editForm.school_id ? editing.school_name : null}
               onChange={({ schoolId }) => setEditForm({ ...editForm, school_id: schoolId })}
-              selectClassName="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+              selectClassName={styles.input}
             />
 
-            <div className="flex gap-2 pt-1">
+            <div className={styles.actions}>
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="flex-1 py-2 rounded-xl border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className={styles.button}
               >
                 Vazgeç
               </button>
               <button
                 type="submit"
                 disabled={busyId === editing.id}
-                className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold cursor-pointer"
+                className={styles.primary}
               >
                 Kaydet
               </button>
@@ -596,10 +630,10 @@ export const AccessManagement: React.FC = () => {
 
       {/* PIN SIFIRLAMA MODALI */}
       {pinResetFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-          <form onSubmit={handleResetPin} className="bg-white rounded-2xl p-5 max-w-sm w-full border border-slate-200 shadow-xl space-y-3">
-            <h3 className="text-sm font-bold text-slate-900">Yeni PIN belirle</h3>
-            <p className="text-xs text-slate-600">
+        <div className={styles.backdrop}>
+          <form onSubmit={handleResetPin} className={styles.dialog}>
+            <h3 className={styles.sectionTitle}>Yeni PIN belirle</h3>
+            <p className={styles.muted}>
               <strong>{pinResetFor.name}</strong> ({pinResetFor.student_number}) için yeni 4 haneli PIN. Eski PIN ve açık oturumlar geçersiz olur.
             </p>
             <input
@@ -610,20 +644,20 @@ export const AccessManagement: React.FC = () => {
               autoComplete="off"
               placeholder="••••"
               aria-label="Yeni 4 haneli PIN"
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono tracking-widest text-center focus:bg-white focus:outline-none focus:border-slate-800"
+              className={styles.pinInput}
             />
-            <div className="flex gap-2">
+            <div className={styles.actions}>
               <button
                 type="button"
                 onClick={() => setPinResetFor(null)}
-                className="flex-1 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className={styles.button}
               >
                 Vazgeç
               </button>
               <button
                 type="submit"
                 disabled={busyId === pinResetFor.id}
-                className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white text-xs font-bold cursor-pointer"
+                className={styles.primary}
               >
                 Kaydet
               </button>

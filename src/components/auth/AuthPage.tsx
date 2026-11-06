@@ -2,23 +2,21 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { GraduationCap, Check, ArrowRight, Eye, EyeOff, AlertCircle, BookOpen } from '../icons';
+import { Check, ArrowRight, Eye, EyeOff, AlertCircle, FileText, Upload, X } from '../icons';
 import styles from './AuthPage.module.css';
 import { BrandLogo } from '../BrandLogo';
 import { UserAccount, TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker, NEW_SCHOOL } from '../SchoolPicker';
 import { CustomSelect } from '../CustomSelect';
-import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
-import { signInStaff, signInStudent, signUpTeacher, SchoolRecord } from '../../lib/supabaseClient';
+import { signInStaff, signUpTeacher, teacherDocumentError } from '../../lib/supabaseClient';
 
-type Audience = 'ogrenci' | 'ogretmen';
 type TeacherMode = 'login' | 'register';
 
 interface AuthPageProps {
   onLoginSuccess: (user: UserAccount) => void;
   /**
-   * public: ana giriş sayfası (Öğrenci / Öğretmen sekmeleri)
+   * public: öğretmen kaydı ve öğretmen girişi
    * admin : /yonetim sayfası (yalnızca süper admin girişi)
    */
   variant?: 'public' | 'admin';
@@ -27,20 +25,7 @@ interface AuthPageProps {
 export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'public' }) => {
   const isAdminPage = variant === 'admin';
 
-  const [audience, setAudience] = useState<Audience>('ogrenci');
-  const [teacherMode, setTeacherMode] = useState<TeacherMode>('login');
-  useEffect(() => {
-    if (variant !== 'public') return;
-    const openRegistration = () => {
-      if (window.location.hash === '#kayit') {
-        setAudience('ogretmen');
-        setTeacherMode('register');
-      }
-    };
-    openRegistration();
-    window.addEventListener('hashchange', openRegistration);
-    return () => window.removeEventListener('hashchange', openRegistration);
-  }, [variant]);
+  const [teacherMode, setTeacherMode] = useState<TeacherMode>('register');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -50,13 +35,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
   useEffect(() => {
     if (errorMsg || successMsg) feedbackRef.current?.focus();
   }, [errorMsg, successMsg]);
-
-  // Öğrenci (okul bu cihazda hatırlanır)
-  const [studentSchool, setStudentSchool] = useState<SchoolRecord | null>(() =>
-    typeof window === 'undefined' ? null : loadRememberedSchool()
-  );
-  const [studentNo, setStudentNo] = useState('');
-  const [pinDigits, setPinDigits] = useState(['', '', '', '']);
 
   // Öğretmen & Admin girişi
   const [identifier, setIdentifier] = useState('');
@@ -72,6 +50,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
   const [regBranch, setRegBranch] = useState('Sınıf Öğretmenliği');
   const [regClassLevel, setRegClassLevel] = useState('');
   const [regClassSection, setRegClassSection] = useState('');
+  const [regDocument, setRegDocument] = useState<File | null>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
   const [regPassword, setRegPassword] = useState('');
   const [regPasswordConfirm, setRegPasswordConfirm] = useState('');
   const [regStep, setRegStep] = useState<'hesap' | 'okul'>('hesap');
@@ -79,12 +59,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
   const clearFeedback = () => {
     setErrorMsg(null);
     setSuccessMsg(null);
-  };
-
-  const switchAudience = (next: Audience) => {
-    setAudience(next);
-    setShowPassword(false);
-    clearFeedback();
   };
 
   const switchTeacherMode = (next: TeacherMode) => {
@@ -103,59 +77,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     const districts = TURKEY_CITIES[newCity] || ['Merkez'];
     setRegDistrict(districts[0] || 'Merkez');
     resetSchool();
-  };
-
-  // ---------------- PIN kutucukları ----------------
-  const handlePinDigitChange = (idx: number, val: string) => {
-    const digit = val.replace(/\D/g, '').slice(-1);
-    const next = [...pinDigits];
-    next[idx] = digit;
-    setPinDigits(next);
-    if (digit && idx < 3) document.getElementById(`student-pin-${idx + 1}`)?.focus();
-  };
-
-  const handlePinDigitKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !pinDigits[idx] && idx > 0) {
-      document.getElementById(`student-pin-${idx - 1}`)?.focus();
-    }
-  };
-
-  const handlePinPaste = (idx: number, e: React.ClipboardEvent<HTMLInputElement>) => {
-    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
-    if (!digits) return;
-    e.preventDefault();
-    const next = [...pinDigits];
-    digits.slice(0, 4 - idx).split('').forEach((value, offset) => {
-      next[idx + offset] = value;
-    });
-    setPinDigits(next);
-    document.getElementById(`student-pin-${Math.min(idx + digits.length, 3)}`)?.focus();
-  };
-
-  // ---------------- Gönderimler (tüm doğrulama sunucuda) ----------------
-  const handleStudentLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-    clearFeedback();
-
-    const enteredNo = studentNo.trim();
-    const enteredPin = pinDigits.join('');
-    if (!studentSchool) return setErrorMsg('Lütfen önce okulunuzu seçiniz.');
-    if (!enteredNo) return setErrorMsg('Lütfen okul numaranızı giriniz.');
-    if (enteredPin.length !== 4) return setErrorMsg('Lütfen 4 haneli PIN kodunuzu eksiksiz giriniz.');
-
-    setIsSubmitting(true);
-    const res = await signInStudent(studentSchool.id, enteredNo, enteredPin);
-    setIsSubmitting(false);
-
-    if (res.ok) {
-      rememberSchool(studentSchool);
-      setSuccessMsg('PIN doğrulandı. Portal açılıyor…');
-      setTimeout(() => onLoginSuccess(res.user), 400);
-    } else {
-      setPinDigits(['', '', '', '']);
-      setErrorMsg(res.error);
-    }
   };
 
   const handleStaffLogin = async (e: React.FormEvent) => {
@@ -214,6 +135,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     if (regSchoolId === NEW_SCHOOL && regNewSchool.trim().length < 3) {
       return setErrorMsg('Lütfen okulunuzun tam adını yazınız.');
     }
+    const docErr = teacherDocumentError(regDocument);
+    if (docErr || !regDocument) return setErrorMsg(docErr || 'Lütfen belgenizi yükleyiniz.');
 
     setIsSubmitting(true);
     const res = await signUpTeacher({
@@ -226,6 +149,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       schoolId: regSchoolId === NEW_SCHOOL ? undefined : regSchoolId,
       newSchoolName: regSchoolId === NEW_SCHOOL ? regNewSchool : undefined,
       className: composeClassName(regClassLevel, regClassSection),
+      document: regDocument,
     });
     setIsSubmitting(false);
 
@@ -233,11 +157,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
 
     setRegPassword('');
     setRegPasswordConfirm('');
+    setRegDocument(null);
     setIdentifier(regEmail.trim());
     setRegStep('hesap');
     setTeacherMode('login');
     setShowPassword(false);
-    setSuccessMsg('Kaydınız alındı. Okul yönetimi hesabınızı onayladıktan sonra buradan giriş yapabilirsiniz.');
+    if (res.docWarning) {
+      setErrorMsg(res.docWarning);
+    } else {
+      setSuccessMsg('Kaydınız alındı. Okul yönetimi belgenizi inceleyip hesabınızı onayladıktan sonra buradan giriş yapabilirsiniz.');
+    }
   };
 
   // ---------------- Görünüm parçaları ----------------
@@ -290,7 +219,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       <main className={styles.page}>
         <div className={styles.shell}>
           <header className={styles.brand}>
-            <BrandLogo height={44} priority />
+            <Link href="/" className={styles.brandLink} aria-label="tofutr.com ana sayfasına git">
+              <BrandLogo height={44} priority />
+            </Link>
             <div><strong>Yönetim</strong><span>Yalnızca okul yönetimi içindir</span></div>
           </header>
           <div className={styles.intro}>
@@ -309,113 +240,27 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     );
   }
 
-  // ================= ANA GİRİŞ SAYFASI =================
-  const isRegister = audience === 'ogretmen' && teacherMode === 'register';
+  // ================= ÖĞRETMEN KAYIT SAYFASI =================
+  const isRegister = teacherMode === 'register';
 
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
         <header className={styles.brand}>
-          <BrandLogo height={48} priority />
+          <Link href="/" className={styles.brandLink} aria-label="tofutr.com ana sayfasına git">
+            <BrandLogo height={48} priority />
+          </Link>
           <span className={styles.brandTagline}>Öğrenci Bilgi Portalı</span>
         </header>
 
         <div className={styles.intro}>
-          <h1>{isRegister ? 'Öğretmen hesabınızı oluşturun.' : 'Yeniden merhaba.'}</h1>
+          <h1>{isRegister ? 'Öğretmen hesabı oluştur' : 'Öğretmen girişi'}</h1>
           <p>{isRegister
             ? 'Hesabınız okul yönetiminin onayından sonra açılır.'
             : 'Ödevler, gelişim ve okuldan haberler. Hepsi bir arada.'}</p>
         </div>
 
         <section className={styles.panel} aria-label="Hesap işlemleri">
-          {/* 1. Seviye: Kim giriş yapıyor? */}
-          <div className={styles.modeSwitch} role="tablist" aria-label="Kullanıcı türü">
-            {([
-              ['ogrenci', 'Öğrenci', GraduationCap],
-              ['ogretmen', 'Öğretmen', BookOpen],
-            ] as const).map(([id, label, Icon]) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                id={`tab-${id}`}
-                aria-selected={audience === id}
-                aria-controls={`panel-${id}`}
-                disabled={isSubmitting}
-                onClick={() => switchAudience(id)}
-              >
-                <span className={styles.tabLabel}><Icon size={18} aria-hidden="true" />{label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* ---------- ÖĞRENCİ & VELİ ---------- */}
-          {audience === 'ogrenci' && (
-            <div id="panel-ogrenci" role="tabpanel" aria-labelledby="tab-ogrenci">
-              {feedback}
-              <form className={styles.form} onSubmit={handleStudentLogin} aria-busy={isSubmitting}>
-                <fieldset disabled={isSubmitting}>
-                  <StudentSchoolSelect value={studentSchool} onChange={setStudentSchool} disabled={isSubmitting} />
-                  <AuthField label="Öğrenci okul numarası" id="student-number">
-                    <input id="student-number" name="studentNumber" type="text" inputMode="numeric" autoComplete="username" placeholder="Örn. 1024" value={studentNo} onChange={(e) => setStudentNo(e.target.value.replace(/\D/g, ''))} />
-                  </AuthField>
-                  <div className={styles.pinGroup} role="group" aria-labelledby="pin-label" aria-describedby="pin-help">
-                    <span id="pin-label" className={styles.fieldLabel}>4 haneli PIN kodu</span>
-                    <div className={styles.pinInputs}>
-                      {pinDigits.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          id={`student-pin-${idx}`}
-                          aria-label={`PIN ${idx + 1}. hane`}
-                          name={`pin-${idx}`}
-                          type="password"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          maxLength={1}
-                          value={digit}
-                          onChange={(e) => handlePinDigitChange(idx, e.target.value)}
-                          onKeyDown={(e) => handlePinDigitKeyDown(idx, e)}
-                          onPaste={(e) => handlePinPaste(idx, e)}
-                        />
-                      ))}
-                    </div>
-                    <p id="pin-help" className={styles.hint}>Okul numaranızı ve PIN kodunuzu öğretmeninizden alabilirsiniz.</p>
-                  </div>
-                </fieldset>
-                <button className={styles.submit} type="submit" disabled={isSubmitting}>
-                  <span>{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}</span>
-                  {!isSubmitting && <ArrowRight size={20} aria-hidden="true" />}
-                </button>
-                <div className={styles.notice}>
-                  <GraduationCap size={20} aria-hidden="true" />
-                  <p>Öğrenci hesaplarını okul oluşturur; kayıt olmanıza gerek yoktur. PIN kodunuzu bilmiyorsanız sınıf öğretmeninize başvurun.</p>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* ---------- ÖĞRETMEN ---------- */}
-          {audience === 'ogretmen' && (
-            <div id="panel-ogretmen" role="tabpanel" aria-labelledby="tab-ogretmen">
-              {/* 2. Seviye: Giriş / Kayıt */}
-              <div className={styles.subSwitch} role="tablist" aria-label="Giriş veya kayıt">
-                {([
-                  ['login', 'Giriş yap'],
-                  ['register', 'Kayıt ol'],
-                ] as const).map(([id, label]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    aria-selected={teacherMode === id}
-                    disabled={isSubmitting}
-                    onClick={() => switchTeacherMode(id)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
               {feedback}
 
               {teacherMode === 'login' ? (
@@ -527,6 +372,47 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                       />
                     </div>
                     <p className={styles.hint}>Sınıf öğretmeniyseniz okuttuğunuz sınıfı, branş öğretmeniyseniz rehberliğini yaptığınız şubeyi seçin.</p>
+                    <div className={styles.field}>
+                      <span className={styles.fieldLabel} id="register-doc-label">Öğretmenlik belgesi</span>
+                      <input
+                        ref={docInputRef}
+                        id="register-doc"
+                        type="file"
+                        accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+                        className={styles.fileInput}
+                        aria-labelledby="register-doc-label"
+                        aria-describedby="register-doc-hint"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          e.target.value = '';
+                          if (!file) return;
+                          const err = teacherDocumentError(file);
+                          if (err) { setRegDocument(null); return setErrorMsg(err); }
+                          clearFeedback();
+                          setRegDocument(file);
+                        }}
+                      />
+                      {regDocument ? (
+                        <div className={styles.fileChosen}>
+                          <FileText size={20} aria-hidden="true" />
+                          <span className={styles.fileName}>
+                            <strong>{regDocument.name}</strong>
+                            <small>{(regDocument.size / 1024 / 1024).toFixed(2)} MB</small>
+                          </span>
+                          <button type="button" aria-label="Belgeyi kaldır" onClick={() => setRegDocument(null)}>
+                            <X size={18} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label htmlFor="register-doc" className={styles.fileDrop}>
+                          <Upload size={20} aria-hidden="true" />
+                          <span>Belge seçin <small>PDF, JPG veya PNG · en fazla 5 MB</small></span>
+                        </label>
+                      )}
+                      <p id="register-doc-hint" className={styles.hint}>
+                        MEBBİS ekran görüntüsü, görev yeri belgesi veya öğretmenlik belgesi gibi öğretmen olduğunuzu gösteren bir belge. Yalnızca okul yönetimi görür.
+                      </p>
+                    </div>
                   </fieldset>
                   )}
 
@@ -548,8 +434,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                   )}
                 </form>
               )}
-            </div>
-          )}
+          <p className={styles.accountPrompt}>
+            {isRegister ? 'Zaten hesabınız var mı?' : 'Henüz hesabınız yok mu?'}{' '}
+            <button className={styles.textButton} type="button" disabled={isSubmitting} onClick={() => switchTeacherMode(isRegister ? 'login' : 'register')}>
+              {isRegister ? 'Giriş yap' : 'Hesap oluştur'}
+            </button>
+          </p>
         </section>
         <footer className={styles.footer}>e-Okul Öğrenci Bilgi Portalı</footer>
       </div>

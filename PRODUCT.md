@@ -21,7 +21,7 @@ Kullanıcının belirttiği ana kullanım ortamı telefon ekranıdır. Tasarım 
 ## Capabilities and Constraints
 
 - Mevcut teknoloji: Next.js, React, TypeScript ve Supabase. Arayüz Türkçe.
-- Öğretmen panelinde ödev kontrolü, artı/eksi puan, ödev oluşturma, teslim değerlendirme, sınıf yönetimi, not girişi, veli mesajları, toplu mesaj ve sıralama bulunuyor.
+- Öğretmen panelinde ödev kontrolü, artı/eksi puan, ödev oluşturma, teslim değerlendirme, sınıf yönetimi, not girişi, öğrenci mesajları (sınıf grubu mesajı birden çok sınıfa gönderilebilir) ve sıralama bulunuyor.
 - Tasarım geliştirmesinde giriş, yetki ve rol sınırları korunmalı.
 - docs/YOL_HARITASI.md birçok ekranda yerel/örnek veri kullanımının sürdüğünü kaydediyor. Kaydedildi veya iletildi bildirimi gerçek işlem sonucu doğrulanmadan verilmemeli.
 

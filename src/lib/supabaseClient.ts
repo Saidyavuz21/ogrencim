@@ -39,6 +39,8 @@ export interface ProfileRecord {
   class_name: string | null;
   approved: boolean;
   is_active: boolean;
+  /** teacher-documents bucket'ındaki doğrulama belgesinin yolu */
+  verification_doc: string | null;
   created_at: string;
 }
 
@@ -191,8 +193,13 @@ export async function signUpTeacher(input: {
   /** "Okulum listede yok" ile yazılan okul adı (onay bekleyen okul olarak eklenir) */
   newSchoolName?: string;
   className: string;
-}): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.auth.signUp({
+  /** Öğretmenliği gösteren belge (PDF / JPG / PNG) */
+  document: File;
+}): Promise<{ ok: boolean; error?: string; docWarning?: string }> {
+  const docError = teacherDocumentError(input.document);
+  if (docError) return { ok: false, error: docError };
+
+  const { data, error } = await supabase.auth.signUp({
     email: input.email.trim(),
     password: input.password,
     options: {
@@ -207,15 +214,53 @@ export async function signUpTeacher(input: {
       },
     },
   });
-  // Kayıt sonrası oluşan oturumu kapat: admin onayı beklenir
-  await supabase.auth.signOut();
   if (error) {
+    await supabase.auth.signOut();
     if (error.message.toLowerCase().includes('already registered')) {
       return { ok: false, error: 'Bu e-posta adresiyle zaten bir hesap var.' };
     }
     return { ok: false, error: `Kayıt yapılamadı: ${error.message}` };
   }
-  return { ok: true };
+
+  // Belge, kayıtla açılan oturumla öğretmenin kendi klasörüne yüklenir
+  let docWarning: string | undefined;
+  const userId = data.user?.id;
+  if (!data.session || !userId) {
+    docWarning = 'Belgeniz yüklenemedi (oturum açılamadı). Lütfen belgenizi okul yönetimine ayrıca iletiniz.';
+  } else {
+    const ext = input.document.type === 'application/pdf' ? 'pdf' : input.document.type === 'image/png' ? 'png' : 'jpg';
+    const path = `${userId}/ogretmen-belgesi-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from(TEACHER_DOC_BUCKET)
+      .upload(path, input.document, { contentType: input.document.type, upsert: false });
+    const { data: saved } = upErr ? { data: false } : await supabase.rpc('set_my_verification_doc', { p_path: path });
+    if (upErr || !saved) {
+      docWarning = 'Hesabınız oluşturuldu ancak belgeniz yüklenemedi. Lütfen belgenizi okul yönetimine ayrıca iletiniz.';
+    }
+  }
+  // Kayıt sonrası oluşan oturumu kapat: admin onayı beklenir
+  await supabase.auth.signOut();
+  return { ok: true, docWarning };
+}
+
+// ---------------- Öğretmen doğrulama belgesi ----------------
+const TEACHER_DOC_BUCKET = 'teacher-documents';
+export const TEACHER_DOC_MAX_BYTES = 5 * 1024 * 1024;
+export const TEACHER_DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+
+/** Belge seçimi geçerli mi? Değilse hata mesajını döner. */
+export function teacherDocumentError(file: File | null | undefined): string | null {
+  if (!file) return 'Lütfen öğretmen olduğunuzu gösteren bir belge yükleyiniz.';
+  if (!TEACHER_DOC_TYPES.includes(file.type)) return 'Belge PDF, JPG veya PNG biçiminde olmalıdır.';
+  if (file.size > TEACHER_DOC_MAX_BYTES) return 'Belge en fazla 5 MB olabilir.';
+  return null;
+}
+
+/** Admin: doğrulama belgesi için 10 dakikalık görüntüleme bağlantısı */
+export async function getTeacherDocumentUrl(path: string): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(TEACHER_DOC_BUCKET).createSignedUrl(path, 600);
+  if (error || !data) return null;
+  return data.signedUrl;
 }
 
 const studentLoginErrors: Record<string, string> = {
@@ -468,6 +513,11 @@ export function updateTeacherProfile(
 
 /** Admin: öğretmen hesabını tamamen siler (giriş hesabı dahil) */
 export async function deleteTeacher(profileId: string): Promise<{ ok: boolean; error?: string }> {
+  // Doğrulama belgelerini önce temizle (hesap silindikten sonra klasör sahipsiz kalır)
+  const { data: docs } = await supabase.storage.from(TEACHER_DOC_BUCKET).list(profileId);
+  if (docs?.length) {
+    await supabase.storage.from(TEACHER_DOC_BUCKET).remove(docs.map((d) => `${profileId}/${d.name}`));
+  }
   const { error } = await supabase.rpc('admin_delete_teacher', { p_profile_id: profileId });
   if (error) return { ok: false, error: error.message };
   return { ok: true };

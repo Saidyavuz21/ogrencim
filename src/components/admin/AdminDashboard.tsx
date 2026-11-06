@@ -10,6 +10,7 @@ import { AnnouncementsPage } from '../AnnouncementsPage';
 import { countStudentsByClass } from '../../lib/teacherData';
 import { listProfiles } from '../../lib/supabaseClient';
 import styles from '../teacher/TeacherDashboard.module.css';
+import adminStyles from './AdminDashboard.module.css';
 
 type AdminTab = 'access' | 'classes' | 'announcements' | 'account';
 
@@ -31,24 +32,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
 
   return (
     <div className={styles.dashboard}>
-      <header className={styles.homeHeader}>
-        <div className={styles.homeTopRow}>
-          <div className={styles.workspaceBrand}>
+      <header className={adminStyles.header}>
+        <div className={adminStyles.topRow}>
+          <div className={adminStyles.brand}>
             <BrandLogo height={36} />
-            <span className={styles.countPill}>Süper Admin</span>
+            <span className={adminStyles.badge}>Süper Admin</span>
           </div>
           {onLogout && (
-            <button type="button" className={styles.secondary} onClick={onLogout}><LogOut size={18} aria-hidden="true" />Çıkış</button>
+            <button type="button" className={adminStyles.logout} onClick={onLogout}><LogOut size={18} aria-hidden="true" />Çıkış</button>
           )}
         </div>
-        <nav className={styles.chipRow} aria-label="Yönetim sekmeleri">
+        <nav className={adminStyles.nav} aria-label="Yönetim sekmeleri">
           {TABS.map((t) => (
-            <button key={t.id} type="button" className={`${styles.chip} ${tab === t.id ? styles.chipActive : ''}`} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
-              <t.icon size={16} aria-hidden="true" />&nbsp;{t.label}
+            <button key={t.id} type="button" className={adminStyles.navButton} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
+              <t.icon size={16} aria-hidden="true" />{t.label}
             </button>
           ))}
         </nav>
       </header>
+
+      {tab === 'access' && <div className={adminStyles.intro}>
+        <h1>Hesaplar ve okullar</h1>
+        <p>Öğretmen başvurularını inceleyin, okulları ve öğrenci girişlerini yönetin.</p>
+      </div>}
 
       {tab === 'access' && <AccessManagement />}
       {tab === 'classes' && <AdminClasses />}

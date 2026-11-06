@@ -2836,3 +2836,43 @@
 .gradeCardList div:last-child { border-bottom: 0; }
 .gradeCardList dt { color: var(--teacher-muted); }
 .gradeCardList dd { margin: 0; font-weight: 700; color: var(--teacher-text); font-variant-numeric: tabular-nums; }
+
+/* ===== Öğretmen mesajları: masaüstünde sohbet kutusu (liste + açık konuşma) ===== */
+.messagesSplit { display: grid; gap: 16px; min-width: 0; }
+.chatEmpty { display: none; }
+@media (max-width: 1023px) {
+  .messagesSplit[data-active='true'] .convPane { display: none; }
+}
+@media (min-width: 1024px) {
+  .messagesSplit {
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    height: clamp(440px, var(--split-height, calc(100dvh - 320px)), 680px);
+  }
+  .messagesSplit .convPane { align-content: start; gap: 8px; padding: 16px 12px; overflow-y: auto; overscroll-behavior: contain; }
+  .messagesSplit .convPane .listToolbar { padding: 0 8px; }
+  .messagesSplit .convPane .convGroupTitle { padding: 0 8px; }
+  .messagesSplit .convItem { padding: 10px 8px; }
+  .messagesSplit .convItem[aria-current='true'] { background: var(--teacher-selected); }
+  .messagesSplit .convList li+li { border-top: 0; }
+  .messagesSplit .chatPanel { height: auto; min-height: 0; }
+  .messagesSplit .chatHeader { padding: 12px 16px; min-height: 64px; }
+  .messagesSplit .chatHeader > div { flex: 1; }
+  .messagesSplit .backButton { display: none; }
+  .chatEmpty {
+    display: grid; place-content: center; justify-items: center; gap: 8px; padding: 24px;
+    background: white; border: 1px solid var(--teacher-border); border-radius: 16px;
+    color: var(--teacher-muted); text-align: center;
+  }
+  .chatEmpty svg { color: var(--teacher-primary); }
+  .chatEmpty strong { color: var(--teacher-text); font-size: 16px; }
+  .chatEmpty span { max-width: 36ch; font-size: 14px; line-height: 1.5; }
+}
+
+/* ===== Sınıf grubu: aynı mesajı diğer sınıflara da gönder ===== */
+.alsoSend { display: grid; gap: 8px; padding: 10px 12px 0; border-top: 1px solid var(--teacher-border); background: white; }
+.alsoSend + .chatComposer { border-top: 0; }
+.alsoSendToggle { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--teacher-primary); font-size: 14px; font-weight: 600; cursor: pointer; }
+.alsoSendToggle:hover { text-decoration: underline; }
+.alsoSend .chipRow { gap: 6px; }
+.dashboard .alsoSend .chip { min-height: 32px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
+.chipLocked { opacity: .7; cursor: default; }

@@ -23,7 +23,6 @@ import { TeacherLeaderboardPage } from './TeacherLeaderboardPage';
 import { TeacherAquariumPage } from './TeacherAquariumPage';
 import { TeacherGradesPage } from './TeacherGradesPage';
 import { TeacherMessagesPage } from './TeacherMessagesPage';
-import { TeacherBulkMessagePage } from './TeacherBulkMessagePage';
 import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
@@ -223,10 +222,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           {page === 'leaderboard' && <TeacherLeaderboardPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'aquarium' && <TeacherAquariumPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'grade_entry' && <TeacherGradesPage key={effectiveClass} selectedClass={effectiveClass} defaultSubject={defaultSubject} />}
-          {page === 'messages' && <TeacherMessagesPage key={effectiveClass} selectedClass={effectiveClass} schoolId={schoolId} currentUserId={currentUser?.id} />}
+          {page === 'messages' && <TeacherMessagesPage key={effectiveClass} selectedClass={effectiveClass} classNames={classNames} schoolId={schoolId} currentUserId={currentUser?.id} />}
         </>
       )}
-      {page === 'bulk_message' && <TeacherBulkMessagePage classNames={classNames} selectedClass={effectiveClass} schoolId={schoolId} />}
       </div>
     </div>
   );

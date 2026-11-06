@@ -45,7 +45,7 @@ Amaç: Gerçek öğrenci/veli verisi girilebilecek kadar güvenli bir giriş ve 
 | Ödeve PDF/resim ekleme (Storage, özel bucket, 10 MB) | ✅ |
 | Öğrencinin ödev teslimi (dosya yükleme) | ⏳ |
 | Canlı sohbet: Supabase Realtime (30 sn yedek yenileme) | ✅ |
-| SMS: yok; toplu mesaj uygulama içi sınıf grubuna gider (kullanıcı kararı) | — |
+| SMS: yok; toplu mesaj ayrı sayfa değil, Mesajlar → sınıf grubu sohbetinde "Diğer sınıflara da gönder" (kullanıcı kararı) | — |
 
 ## Aşama 3 – Çalışırlık ve doğrulama ⏳
 

@@ -1,5 +1,6 @@
 'use client';
 
+import styles from './AdminManagement.module.css';
 import React, { useEffect, useState } from 'react';
 import { Building, Check, Trash2, Plus } from '../icons';
 import { TURKEY_CITIES } from '../../data/portalData';
@@ -14,8 +15,6 @@ import {
   deleteSchool,
   SchoolRecord,
 } from '../../lib/supabaseClient';
-
-const FIELD = 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-slate-800';
 
 interface SchoolManagementProps {
   notify: (type: 'ok' | 'error', text: string) => void;
@@ -154,43 +153,43 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
   };
 
   return (
-    <section className="bg-white rounded-2xl p-4 border border-slate-200/90 space-y-3">
-      <div className="flex items-center gap-2">
-        <Building className="w-4 h-4 text-slate-500" />
-        <h3 className="text-sm font-bold text-slate-900">Okullar</h3>
+    <section className={styles.section}>
+      <div className={styles.sectionHeading}>
+        <Building className={styles.icon} />
+        <h3 className={styles.sectionTitle}>Okullar</h3>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className={styles.muted}>
         Öğretmenler kayıtta il ve ilçeye göre okul seçer. Listede olmayan okullar burada onayınızı bekler.
         Yazım farkıyla tekrar eklenmiş bir okulu mevcut okulla birleştirebilirsiniz.
       </p>
 
       {/* ONAY BEKLEYEN OKULLAR */}
       {pending.length > 0 && (
-        <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase text-amber-700">Onay bekleyen okullar ({pending.length})</span>
+        <div className={styles.formStack}>
+          <span className={styles.pendingTitle}>Onay bekleyen okullar ({pending.length})</span>
           {pending.map((s) => (
-            <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-amber-200 bg-amber-50/60">
-              <div className="min-w-0">
-                <span className="text-xs font-semibold text-slate-900 block truncate">{s.name}</span>
-                <span className="text-[11px] text-slate-500 block truncate">
+            <div key={s.id} className={styles.pendingRow}>
+              <div className={styles.details}>
+                <span className={styles.name}>{s.name}</span>
+                <span className={styles.muted}>
                   {s.district} / {s.city}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className={styles.actions}>
                 <button
                   type="button"
                   disabled={busyId === s.id}
                   onClick={() => handleDelete(s)}
                   aria-label={`${s.name} okulunu sil`}
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60 text-slate-500 cursor-pointer"
+                  className={styles.danger}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className={styles.icon} />
                 </button>
                 <button
                   type="button"
                   disabled={busyId === s.id}
                   onClick={() => openMerge(s)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-60 text-slate-700 text-xs font-semibold cursor-pointer"
+                  className={styles.button}
                 >
                   Birleştir
                 </button>
@@ -198,9 +197,9 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
                   type="button"
                   disabled={busyId === s.id}
                   onClick={() => handleApprove(s)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-bold cursor-pointer"
+                  className={styles.primary}
                 >
-                  <Check className="w-3.5 h-3.5" /> Onayla
+                  <Check className={styles.icon} /> Onayla
                 </button>
               </div>
             </div>
@@ -209,9 +208,9 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
       )}
 
       {/* OKUL EKLE */}
-      <form onSubmit={handleAdd} className="space-y-2 pt-1">
-        <span className="text-[11px] font-bold uppercase text-slate-500">Okul ekle</span>
-        <div className="grid grid-cols-2 gap-2">
+      <form onSubmit={handleAdd} className={styles.formStack}>
+        <span className={styles.fieldLabel}>Okul ekle</span>
+        <div className={styles.pair}>
           <CustomSelect
             value={city}
             onChange={(val) => {
@@ -231,38 +230,38 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
         </div>
         <textarea
           aria-label="Okul adları"
-          className={`${FIELD} min-h-20`}
+          className={styles.textarea}
           value={names}
           onChange={(e) => setNames(e.target.value)}
           placeholder={'Okul adı (toplu eklemek için her satıra bir okul yazın)\nÖrn. Atatürk Ortaokulu\nCumhuriyet İlkokulu'}
         />
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-500">
+        <div className={styles.between}>
+          <span className={styles.muted}>
             {city && district ? `${district} ilçesinde ${districtSchools.length} kayıtlı okul var.` : ''}
           </span>
           <button
             type="submit"
             disabled={busyId === 'add'}
-            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white text-xs font-bold cursor-pointer shrink-0"
+            className={styles.primary}
           >
-            <Plus className="w-3.5 h-3.5" /> {busyId === 'add' ? 'Ekleniyor…' : 'Ekle'}
+            <Plus className={styles.icon} /> {busyId === 'add' ? 'Ekleniyor…' : 'Ekle'}
           </button>
         </div>
         {districtSchools.length > 0 && (
-          <details className="text-xs text-slate-600">
-            <summary className="cursor-pointer text-slate-500">Bu ilçedeki okulları göster</summary>
-            <ul className="mt-2 divide-y divide-slate-100">
+          <details className={styles.muted}>
+            <summary className={styles.muted}>Bu ilçedeki okulları göster</summary>
+            <ul className={styles.list}>
               {districtSchools.map((s) => (
-                <li key={s.id} className="flex items-center justify-between py-1.5">
-                  <span className="truncate">{s.name}</span>
+                <li key={s.id} className={styles.row}>
+                  <span className={styles.details}>{s.name}</span>
                   <button
                     type="button"
                     disabled={busyId === s.id}
                     onClick={() => handleDelete(s)}
                     aria-label={`${s.name} okulunu sil`}
-                    className="p-1 rounded-md hover:bg-rose-50 hover:text-rose-700 text-slate-400 cursor-pointer"
+                    className={styles.danger}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className={styles.icon} />
                   </button>
                 </li>
               ))}
@@ -273,15 +272,15 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
 
       {/* BİRLEŞTİRME MODALI */}
       {mergeFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-          <form onSubmit={handleMerge} className="bg-white rounded-2xl p-5 max-w-sm w-full border border-slate-200 shadow-xl space-y-3 text-xs">
-            <h3 className="text-sm font-bold text-slate-900">Okulu birleştir</h3>
-            <p className="text-slate-600">
+        <div className={styles.backdrop}>
+          <form onSubmit={handleMerge} className={styles.dialog}>
+            <h3 className={styles.sectionTitle}>Okulu birleştir</h3>
+            <p className={styles.muted}>
               <strong>{mergeFor.name}</strong> ({mergeFor.district}/{mergeFor.city}) aslında listedeki hangi okul? Bu okulu seçen öğretmenler
               seçtiğiniz okula taşınır ve bu kayıt silinir.
             </p>
             {mergeOptions.length === 0 ? (
-              <p className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600">
+              <p className={styles.muted}>
                 Bu ilçede henüz onaylı okul yok. Birleştirmek yerine okulu onaylayabilirsiniz.
               </p>
             ) : (
@@ -292,18 +291,18 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({ notify, onCh
                 options={mergeOptions.map((o) => ({ value: o.id, label: o.name }))}
               />
             )}
-            <div className="flex gap-2">
+            <div className={styles.actions}>
               <button
                 type="button"
                 onClick={() => setMergeFor(null)}
-                className="flex-1 py-2 rounded-xl border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className={styles.button}
               >
                 Vazgeç
               </button>
               <button
                 type="submit"
                 disabled={!mergeTarget || busyId === mergeFor.id}
-                className="flex-1 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold cursor-pointer"
+                className={styles.primary}
               >
                 Birleştir
               </button>

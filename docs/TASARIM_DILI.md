@@ -73,7 +73,7 @@ Portal çoğunlukla telefondan kontrol edilecek. Mobil kullanım ve ferah yerle�
 ## İlk uygulama: Öğretmen / Ödev Kontrolü
 
 1. Öğretmen bilgisi ve etiketli sınıf seçimi.
-2. Kısa modül adları: Ödev kontrolü, Öğrenci puanları, Ödevler, Değerlendirme, Sınıflar, Not girişi, Mesajlar, Toplu mesaj, Sıralama.
+2. Kısa modül adları: Ödev kontrolü, Öğrenci puanları, Ödevler, Değerlendirme, Sınıflar, Not girişi, Mesajlar, Sıralama.
 3. Çalışma bağlamı: seçili ödev, ders, teslim tarihi. Filtre etkilediği listenin yanında bulunur.
 4. Sonuç özeti gerçek listeden hesaplanır. Tamamlandı, kısmen, eksik ve kontrol edilmedi ayrı durumlardır.
 5. Öğrenci satırında ad, durum, açık etiketli durum seçimi ve gerekiyorsa puan bulunur. Arama sonucu yoksa filtreyi temizleme eylemi sunulur.

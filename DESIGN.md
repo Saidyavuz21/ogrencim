@@ -90,7 +90,7 @@ Kontroller yumuşak köşeli; ana panel daha geniş köşelidir. Daire yalnızca
 
 ## Components
 
-- Öğretmen başlığı: kimlik, sınıf seçici, yeni sınıf ve toplu mesaj; gerçek kaynak dizilerinden özet sayılar.
+- Öğretmen başlığı: kimlik, sınıf seçici, yeni sınıf; gerçek kaynak dizilerinden özet sayılar.
 - Öğretmen modülleri: mobil select ve masaüstü nav; aynı dokuz hedef, etkin modülde aria-current.
 - Öğrenci ödev satırı: isim, numara, aynı gruba ait üç radio durum seçimi, etiketli puan ve kontrol notu; artı/eksi ve ayrıntı düğmeleri erişilebilir ad taşır.
 - Ödev yok: kontrol alanı yerine ödev oluşturma yönlendirmesi. Filtre sonucu boş: filtreleri temizleme eylemi.

@@ -1,0 +1,60 @@
+.stack { display: grid; gap: 24px; min-width: 0; }
+.section { padding: 28px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; min-width: 0; color: #20352d; }
+.section > * + * { margin-top: 20px; }
+.sectionHeading { display: flex; align-items: center; gap: 10px; }
+.sectionHeading > svg { color: #25634b; width: 22px; height: 22px; }
+.sectionTitle { margin: 0; font-size: 19px; line-height: 1.4; font-weight: 700; letter-spacing: -.02em; }
+.muted { display: block; color: #58665f; font-size: 14px; line-height: 1.65; margin-bottom: 0; overflow-wrap: anywhere; }
+.section > .muted { margin-top: 8px; max-width: 85ch; }
+.list { display: grid; padding: 0; margin-bottom: 0; list-style: none; }
+.list > * + * { border-top: 1px solid #e7e5dd; }
+.row, .pendingRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; min-width: 0; }
+.pendingRow { background: #fff9ec; border: 1px solid #e5d4ab; border-radius: 12px; padding: 16px; }
+.details { min-width: 0; overflow-wrap: anywhere; }
+.name { display: block; color: #20352d; font-size: 15px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.inactiveName { composes: name; color: #58665f; text-decoration: line-through; }
+.identity { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.badge, .activeBadge, .warningBadge, .errorBadge { display: inline-flex; align-items: center; width: fit-content; padding: 3px 8px; border-radius: 6px; font-size: 12px; line-height: 1.5; font-weight: 600; background: #f0eee7; color: #58665f; }
+.activeBadge { background: #e6f1e9; color: #25634b; }
+.warningBadge { background: #fff0cc; color: #775516; margin-top: 8px; }
+.errorBadge { background: #fbecee; color: #943747; margin-top: 4px; }
+.pendingTitle { display: block; font-size: 14px; font-weight: 700; color: #775516; }
+.formStack { display: grid; gap: 14px; }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.between { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.button, .primary, .danger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #c8d3cc; border-radius: 10px; background: #fff; color: #20352d; font: inherit; font-size: 14px; line-height: 1.4; font-weight: 600; cursor: pointer; transition: background 150ms, border-color 150ms; }
+.primary { background: #25634b; border-color: #25634b; color: #fff; }
+.danger { color: #943747; }
+.button:hover:not(:disabled) { background: #f0f5f1; border-color: #25634b; }
+.primary:hover:not(:disabled) { background: #1d503d; }
+.danger:hover:not(:disabled) { background: #fbecee; border-color: #943747; }
+.button:disabled, .primary:disabled, .danger:disabled { opacity: .6; cursor: not-allowed; }
+.icon { width: 18px; height: 18px; flex-shrink: 0; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.studentForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 16px; padding: 20px; border: 1px solid #e7e5dd; background: #fafaf7; border-radius: 12px; }
+.fullWidth { grid-column: 1 / -1; }
+.input, .textarea, .pinInput { width: 100%; min-width: 0; min-height: 48px; padding: 12px 14px; border: 1px solid #a4b1a6; border-radius: 10px; background: #fff; color: #20352d; font: inherit; font-size: 15px; line-height: 1.5; }
+.input::placeholder, .textarea::placeholder { color: #58665f; opacity: 1; }
+.textarea { min-height: 130px; resize: vertical; }
+.pinInput { text-align: center; letter-spacing: .2em; }
+.field { display: grid; gap: 8px; min-width: 0; }
+.fieldLabel { display: block; font-size: 14px; font-weight: 600; color: #20352d; margin-bottom: 8px; }
+.backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgb(20 35 28 / 48%); }
+.dialog { display: grid; gap: 16px; width: min(100%, 520px); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 24px; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgb(20 35 28 / 20%); }
+.dialog p { margin: 0; }
+.dialog .actions > button { flex: 1; }
+.successNotice, .errorNotice { display: flex; align-items: center; gap: 10px; padding: 16px; border: 1px solid #b6d5be; border-radius: 12px; background: #e6f1e9; color: #25634b; font-size: 14px; line-height: 1.6; }
+.errorNotice { background: #fbecee; border-color: #e6bbc3; color: #943747; }
+.stack :is(button, input, textarea, select, summary):focus-visible, .backdrop :is(button, input, textarea, select):focus-visible { outline: 3px solid #25634b; outline-offset: 3px; }
+@media (min-width: 1000px) {
+  .studentForm { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .section { padding: 20px 16px; }
+  .row, .pendingRow { align-items: stretch; flex-direction: column; gap: 12px; }
+  .row .actions, .pendingRow .actions { justify-content: flex-start; }
+  .pair, .studentForm { grid-template-columns: minmax(0, 1fr); }
+  .studentForm { padding: 16px; }
+  .between { flex-wrap: wrap; }
+  .sectionTitle { font-size: 18px; }
+}

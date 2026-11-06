@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Megaphone, Bell, User, Fish } from '../icons';
+import { CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -13,7 +13,6 @@ export type TeacherPageId =
   | 'aquarium'
   | 'classes'
   | 'messages'
-  | 'bulk_message'
   | 'announcements'
   | 'profile';
 
@@ -39,7 +38,6 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'grade_entry', slug: 'not-girisi', title: 'Not girişi', description: 'Yazılı ve sözlü notlar', icon: TrendingUp, group: 'Öğrenciler ve sınıflar' },
   { id: 'classes', slug: 'siniflar', title: 'Sınıflarım', description: 'Sınıf ekle ve katılım kodu', icon: School, group: 'Öğrenciler ve sınıflar' },
   { id: 'messages', slug: 'mesajlar', title: 'Mesajlar', description: 'Öğrencilerle birebir ve sınıf grubu', icon: MessageSquare, group: 'İletişim' },
-  { id: 'bulk_message', slug: 'toplu-mesaj', title: 'Toplu mesaj', description: 'Sınıf gruplarına aynı anda', icon: Megaphone, group: 'İletişim' },
   { id: 'announcements', slug: 'duyurular', title: 'Okul duyuruları', description: 'Okuldan gelen duyurular', icon: Bell, group: 'İletişim' },
   { id: 'profile', slug: 'profil', title: 'Profilim', description: 'Bilgilerim, şifre, çıkış', icon: User, group: 'Hesap' },
 ];

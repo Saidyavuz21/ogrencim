@@ -16,6 +16,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 0 | Acil düzeltmeler | 3 / 3 ✅ |
 | 1 | Sınıf araçları | 5 / 5 ✅ |
 | 2 | Ödev sistemini güçlendirme | 8 / 8 ✅ |
+| 2b | Okuma yarışması (bizde ek) | 5 / 5 ✅ |
 | 3 | Öğretmen dosyaları ve içerik düzeni | 0 / 8 |
 | 4 | Quiz motoru | 0 / 10 |
 | 5 | Analitik ve raporlama | 0 / 6 |
@@ -26,7 +27,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **16 / 101** |
+| | **Toplam** | **21 / 106** |
 
 ---
 
@@ -58,6 +59,16 @@ Bizdeki ödev, EduBoard'daki "yayın"ın karşılığı. Quiz motoru da bunun ü
 - [x] **Otomatik kapanış:** teslim tarihi gelince ödev kendiliğinden kapanır (zamanlanmış görev) — *K-7* · 6 Kasım 2026 · `50a8def` (zamanlanmış görev yerine her yazmada sunucuda `due_at > now()` denetlenir, gecikmesiz; öğretmen ayrıca elle kapatıp açabilir)
 - [x] Öğretmene teslim durumu özeti: kaç kişi teslim etti, kim etmedi — *K-8* · 6 Kasım 2026 · `50a8def` (kontrol sayfasında özet + öğrenci bazında dosyalar; ödev listesinde teslim sayısı)
 - [x] **İyileştir:** Dosya türünü içeriğe bakarak doğrulama (yalnızca uzantı/MIME değil) — *K-9* · 6 Kasım 2026 · `50a8def` (ilk baytlara bakılır, gerçek tür ile yüklenir; sunucuda bucket MIME listesi. Tam sunucu taraflı içerik denetimi için ileride Edge Function gerekir)
+
+## 2b. Okuma yarışması (bizde ek)
+
+Okuma hızı: öğrencinin 1 dakikada okuduğu kelime sayısı. Metin uygulamada yok; öğretmen kendi kitabından okutur.
+
+- [x] "Okuma yarışması oluştur": tarih bugün, sıra ve ad otomatik ("N. Okuma Yarışması", sınıf başına) · 7 Kasım 2026 · `ed1ffd2`
+- [x] Ölçüm: sınıf listesinden öğrenci seç → pencerede "Süreyi başlat" (60 sn, bip) → okunan kelime sayısı · 7 Kasım 2026 · `ed1ffd2`
+- [x] "Okuma yarışmasını bitir": o günün sıralaması kesinleşir; ölçülmeyenler sonradan eklenir ("sonradan" etiketi, madalya almaz) · 7 Kasım 2026 · `ed1ffd2`
+- [x] Sıralamalar: en hızlılar ve en çok gelişenler (bir önceki yarışmaya göre); öğretmende gelişim tablosu · 7 Kasım 2026 · `ed1ffd2`
+- [x] Öğrenci paneli "Okuma yarışması": kendi sonucu ve sırası, ilk 10, en çok gelişenler, gelişim grafiği · 7 Kasım 2026 · `ed1ffd2`
 
 ## 3. Öğretmen dosyaları ve içerik düzeni
 

@@ -58,3 +58,11 @@
     transform: translateY(-34px) scale(0.85);
   }
 }
+@media (max-width: 767px) {
+  .floatBadge {
+    top: 6px;
+    right: 14px;
+    padding: 3px 10px;
+    font-size: 13px;
+  }
+}

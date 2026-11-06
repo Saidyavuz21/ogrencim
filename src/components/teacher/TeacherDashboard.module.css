@@ -2312,12 +2312,72 @@
 
 @media (max-width: 767px) {
   .pointRow {
-    padding: 14px 16px;
-    flex-wrap: wrap;
+    padding: 12px 14px;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .pointRow .studentIdentity {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 10px;
+  }
+
+  .pointRow .studentAvatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  .pointRow .studentIdentity > div {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .pointRow .studentIdentity h4 {
+    font-size: 14.5px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pointRow .studentIdentity p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .pointRow .pointActions {
-    margin-left: 56px;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .pointRow .pointActions button {
+    min-width: 50px;
+    min-height: 38px;
+    height: 38px;
+    padding: 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 9px;
+  }
+
+  .pointRow .pointActions button svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
   }
 
   .rankRow {

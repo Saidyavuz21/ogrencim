@@ -1,7 +1,10 @@
 // Öğrenci paneli veri katmanı (Supabase, öğrenci oturumu).
 // Yetkiler RLS ile: öğrenci yalnızca kendi kayıtlarını ve kendi sınıfının ödevlerini görür.
 import { supabase } from './supabaseClient';
-import type { CheckStatus, ExamId, HomeworkAttachment, Result } from './teacherData';
+import type { CheckStatus, ExamId, HomeworkAttachment, Result, SubmissionRow } from './teacherData';
+import {
+  MAX_FILE_BYTES, SUBMISSION_BUCKET, SUBMISSION_COLUMNS, safeFileName, validateHomeworkFiles, verifyFileContents,
+} from './teacherData';
 
 const fail = (error: { message: string } | null | undefined): { ok: false; error: string } => ({
   ok: false,
@@ -60,30 +63,132 @@ export interface MyHomework {
   created_at: string;
   /** false = öğretmen sonucu henüz açıklamadı (kontrol satırı RLS ile gizli) */
   results_released: boolean;
+  /** true = uygulamadan teslim istenir */
+  accepts_submissions: boolean;
+  closed_at: string | null;
+  due_at: string | null;
   check: { status: CheckStatus; score: number | null; note: string | null } | null;
+  submission: SubmissionRow | null;
 }
 
 /** Sınıfın ödevleri + bu öğrencinin kontrol sonucu */
 export async function listMyHomeworks(studentId: string): Promise<Result<MyHomework[]>> {
-  const [hw, checks] = await Promise.all([
+  const [hw, checks, subs] = await Promise.all([
     supabase
       .from('homeworks')
-      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at, results_released')
+      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at')
       .order('created_at', { ascending: false }),
     supabase.from('homework_checks').select('homework_id, status, score, note').eq('student_id', studentId),
+    supabase.from('homework_submissions').select(SUBMISSION_COLUMNS).eq('student_id', studentId),
   ]);
   if (hw.error) return fail(hw.error);
   if (checks.error) return fail(checks.error);
+  // Teslim tablosu henüz kurulmamışsa ödevler yine görünsün
+  const subsByHw = new Map(((subs.data as SubmissionRow[] | null) || []).map((r) => [r.homework_id, r]));
   const byHw = new Map(
     ((checks.data as { homework_id: string; status: CheckStatus; score: number | null; note: string | null }[]) || []).map((c) => [c.homework_id, c])
   );
   return {
     ok: true,
-    data: ((hw.data as Omit<MyHomework, 'check'>[]) || []).map((h) => {
+    data: ((hw.data as Omit<MyHomework, 'check' | 'submission'>[]) || []).map((h) => {
       const c = byHw.get(h.id);
-      return { ...h, check: c ? { status: c.status, score: c.score, note: c.note } : null };
+      return { ...h, check: c ? { status: c.status, score: c.score, note: c.note } : null, submission: subsByHw.get(h.id) ?? null };
     }),
   };
+}
+
+// --------------------------------------------------------
+// Ödev teslimi (taslak → teslim). Kilit kuralları sunucuda: süre dolunca ya da teslimden sonra değişiklik reddedilir.
+// --------------------------------------------------------
+export const MAX_SUBMISSION_FILES = 5;
+
+/** Taslağı getirir; yoksa oluşturur */
+async function ensureDraft(homeworkId: string, studentId: string): Promise<Result<SubmissionRow>> {
+  const found = await supabase
+    .from('homework_submissions')
+    .select(SUBMISSION_COLUMNS)
+    .eq('homework_id', homeworkId)
+    .eq('student_id', studentId)
+    .maybeSingle();
+  if (found.error) return fail(found.error);
+  if (found.data) return { ok: true, data: found.data as SubmissionRow };
+  const created = await supabase
+    .from('homework_submissions')
+    .insert({ homework_id: homeworkId, student_id: studentId })
+    .select(SUBMISSION_COLUMNS)
+    .single();
+  if (created.error || !created.data) return fail(created.error);
+  return { ok: true, data: created.data as SubmissionRow };
+}
+
+/** Dosyaları yükleyip taslağa ekler */
+export async function addSubmissionFiles(homeworkId: string, studentId: string, files: File[]): Promise<Result<SubmissionRow>> {
+  if (!files.length) return { ok: false, error: 'Dosya seçilmedi.' };
+  const draft = await ensureDraft(homeworkId, studentId);
+  if (!draft.ok) return draft;
+  if (draft.data.status === 'teslim') return { ok: false, error: 'Ödev teslim edildi; dosya eklenemez.' };
+  const existing = draft.data.files || [];
+  if (existing.length + files.length > MAX_SUBMISSION_FILES) {
+    return { ok: false, error: `En fazla ${MAX_SUBMISSION_FILES} dosya eklenebilir (şu an ${existing.length}).` };
+  }
+  const sizeError = validateHomeworkFiles(files);
+  if (sizeError) return { ok: false, error: sizeError };
+  const checked = await verifyFileContents(files);
+  if (!checked.ok) return checked;
+
+  const uploaded: HomeworkAttachment[] = [];
+  for (const [i, file] of files.entries()) {
+    if (file.size > MAX_FILE_BYTES) return { ok: false, error: `"${file.name}" 10 MB'tan büyük.` };
+    const path = `${homeworkId}/${studentId}/${safeFileName(file.name)}`;
+    const { error } = await supabase.storage.from(SUBMISSION_BUCKET).upload(path, file, { contentType: checked.data[i], upsert: false });
+    if (error) {
+      if (uploaded.length) await supabase.storage.from(SUBMISSION_BUCKET).remove(uploaded.map((u) => u.path));
+      return { ok: false, error: `"${file.name}" yüklenemedi: ${error.message}` };
+    }
+    uploaded.push({ path, name: file.name.slice(0, 120), size: file.size, type: checked.data[i] });
+  }
+  const { data, error } = await supabase
+    .from('homework_submissions')
+    .update({ files: [...existing, ...uploaded] })
+    .eq('homework_id', homeworkId)
+    .eq('student_id', studentId)
+    .select(SUBMISSION_COLUMNS)
+    .single();
+  if (error || !data) {
+    await supabase.storage.from(SUBMISSION_BUCKET).remove(uploaded.map((u) => u.path));
+    return fail(error);
+  }
+  return { ok: true, data: data as SubmissionRow };
+}
+
+/** Taslaktan bir dosyayı çıkarır (kayıttan ve depodan) */
+export async function removeSubmissionFile(homeworkId: string, studentId: string, current: SubmissionRow, path: string): Promise<Result<SubmissionRow>> {
+  const { data, error } = await supabase
+    .from('homework_submissions')
+    .update({ files: (current.files || []).filter((f) => f.path !== path) })
+    .eq('homework_id', homeworkId)
+    .eq('student_id', studentId)
+    .select(SUBMISSION_COLUMNS)
+    .single();
+  if (error || !data) return fail(error);
+  // Kayıt güncellendiyse dosyayı da sil (silinemezse yalnızca depoda kalır, öğretmene görünmez)
+  await supabase.storage.from(SUBMISSION_BUCKET).remove([path]);
+  return { ok: true, data: data as SubmissionRow };
+}
+
+/** Taslağı kaydeder ya da teslim eder */
+export async function saveSubmission(homeworkId: string, studentId: string, note: string, submit: boolean): Promise<Result<SubmissionRow>> {
+  const draft = await ensureDraft(homeworkId, studentId);
+  if (!draft.ok) return draft;
+  const { data, error } = await supabase
+    .from('homework_submissions')
+    .update({ note: note.trim().slice(0, 500) || null, status: submit ? 'teslim' : 'taslak' })
+    .eq('homework_id', homeworkId)
+    .eq('student_id', studentId)
+    .select(SUBMISSION_COLUMNS)
+    .single();
+  if (error || !data) return fail(error);
+  return { ok: true, data: data as SubmissionRow };
 }
 
 export interface MyGrade {

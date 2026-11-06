@@ -2,8 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Minus, X, Save, BookOpen, Plus, Eye, EyeOff } from '../icons';
-import { CheckStatus, HomeworkCheckRow, HomeworkRow, listHomeworkChecks, listMyHomeworks, saveHomeworkChecks, setHomeworkResultsReleased } from '../../lib/teacherData';
-import { CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
+import {
+  CheckStatus, HomeworkCheckRow, homeworkIsOpen, HomeworkRow, listHomeworkChecks, listHomeworkSubmissions, listMyHomeworks,
+  returnSubmission, saveHomeworkChecks, setHomeworkClosed, setHomeworkResultsReleased, SUBMISSION_BUCKET, SubmissionRow,
+} from '../../lib/teacherData';
+import { AttachmentList, CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
+import { useDialog } from '../ConfirmDialog';
 import { CustomSelect } from '../CustomSelect';
 import styles from './TeacherDashboard.module.css';
 
@@ -40,6 +44,11 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   };
   const [busy, setBusy] = useState(false);
   const [releasing, setReleasing] = useState(false);
+  // Öğrenci teslimleri (yalnızca "uygulamadan teslim" ödevlerinde)
+  const [submissions, setSubmissions] = useState<Record<string, SubmissionRow>>({});
+  const [closing, setClosing] = useState(false);
+  const [returning, setReturning] = useState('');
+  const { confirm } = useDialog();
   const [notice, setNotice] = useState<NoticeState>(null);
 
   const { students, loading: stLoading, error: stError } = useClassStudents(selectedClass);
@@ -57,6 +66,22 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
 
   const activeHw = homeworks.find((h) => h.id === homeworkId) || homeworks[0];
   const activeHwId = activeHw?.id;
+  const acceptsSubmissions = !!activeHw?.accepts_submissions;
+
+  // Seçili ödevin teslimleri
+  useEffect(() => {
+    if (!activeHwId || !acceptsSubmissions) return;
+    let alive = true;
+    listHomeworkSubmissions(activeHwId).then((res) => {
+      if (!alive) return;
+      if (!res.ok) {
+        setNotice({ kind: 'error', text: `Teslimler alınamadı: ${res.error}` });
+        return;
+      }
+      setSubmissions(Object.fromEntries(res.data.map((r) => [r.student_id, r])));
+    });
+    return () => { alive = false; setSubmissions({}); };
+  }, [activeHwId, acceptsSubmissions]);
 
   // Seçili ödevin kayıtlı kontrollerini çek
   useEffect(() => {
@@ -88,6 +113,20 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
     });
     return c;
   }, [students, drafts]);
+
+  const submissionCounts = useMemo(() => {
+    const c = { teslim: 0, taslak: 0, yok: 0, missing: [] as string[] };
+    students.forEach((s) => {
+      const st = submissions[s.id]?.status;
+      if (st === 'teslim') c.teslim++;
+      else {
+        if (st === 'taslak') c.taslak++;
+        else c.yok++;
+        c.missing.push(s.name);
+      }
+    });
+    return c;
+  }, [students, submissions]);
 
   const setDraft = (studentId: string, patch: Partial<Draft>) =>
     setDrafts((prev) => ({ ...prev, [studentId]: { ...(prev[studentId] ?? EMPTY_DRAFT), ...patch } }));
@@ -145,6 +184,57 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
         ? `Sonuçlar açıklandı. Öğrenciler kayıtlı kontrolleri görüyor; bekleyen davranış puanları işlendi.`
         : 'Sonuçlar yeniden gizlendi. Önceden işlenen puanlar kalır; bundan sonraki değişiklikler açıklayınca işlenir.',
     });
+  };
+
+  const toggleClosed = async () => {
+    if (!activeHw) return;
+    const close = !activeHw.closed_at;
+    if (close) {
+      const ok = await confirm({
+        title: 'Ödevi Kapat',
+        message: 'Ödev kapatılınca öğrenciler teslim edemez ve taslaklarını değiştiremez. Kapatılsın mı?',
+        confirmText: 'Evet, Kapat',
+        cancelText: 'Vazgeç',
+        variant: 'warning',
+      });
+      if (!ok) return;
+    }
+    setClosing(true);
+    const res = await setHomeworkClosed(activeHw.id, close);
+    setClosing(false);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: `Değiştirilemedi: ${res.error}` });
+      return;
+    }
+    const closed_at = close ? new Date().toISOString() : null;
+    setHomeworks((prev) => prev.map((h) => (h.id === activeHw.id ? { ...h, closed_at } : h)));
+    const stillOpen = homeworkIsOpen({ ...activeHw, closed_at });
+    setNotice({
+      kind: 'ok',
+      text: close ? 'Ödev kapatıldı; artık teslim alınmıyor.'
+        : stillOpen ? 'Ödev yeniden açıldı; öğrenciler teslim edebilir.'
+        : 'Kapatma kaldırıldı, ancak teslim tarihi geçtiği için ödev yine kapalı.',
+    });
+  };
+
+  const handleReturn = async (studentId: string, name: string) => {
+    if (!activeHw) return;
+    const ok = await confirm({
+      title: 'Teslimi İade Et',
+      message: `${name} adlı öğrencinin teslimi taslağa döner; öğrenci düzeltip yeniden teslim edebilir${homeworkIsOpen(activeHw) ? '' : ' (ödev kapalı olduğu için önce ödevi yeniden açmanız gerekir)'}. İade edilsin mi?`,
+      confirmText: 'Evet, İade Et',
+      cancelText: 'Vazgeç',
+    });
+    if (!ok) return;
+    setReturning(studentId);
+    const res = await returnSubmission(activeHw.id, studentId);
+    setReturning('');
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: `İade edilemedi: ${res.error}` });
+      return;
+    }
+    setSubmissions((prev) => ({ ...prev, [studentId]: { ...prev[studentId], status: 'taslak', submitted_at: null } }));
+    setNotice({ kind: 'ok', text: `${name} adlı öğrencinin teslimi iade edildi.` });
   };
 
   if (!hwLoading && homeworks.length === 0) {
@@ -217,6 +307,30 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
                 ) : (
                   <button type="button" className={styles.addNoteButton} onClick={() => setOpenNotes((prev) => [...prev, s.id])}>+ Not ekle</button>
                 )}
+                {acceptsSubmissions && (() => {
+                  const sub = submissions[s.id];
+                  const delivered = sub?.status === 'teslim';
+                  return (
+                    <div className={styles.submissionBlock}>
+                      <p className={`${styles.submissionBadge} ${delivered ? styles.submissionDone : sub ? styles.submissionDraft : styles.submissionNone}`}>
+                        {delivered
+                          ? `Teslim etti${sub.submitted_at ? ` · ${new Date(sub.submitted_at).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}`
+                          : sub ? 'Taslakta, teslim etmedi' : 'Teslim etmedi'}
+                      </p>
+                      {delivered && (
+                        <>
+                          <AttachmentList attachments={sub.files} bucket={SUBMISSION_BUCKET} label={`${s.name} teslim dosyaları`} />
+                          {sub.note && <p className={styles.assignmentDescription}>{sub.note}</p>}
+                          <div>
+                            <button type="button" className={styles.addNoteButton} disabled={returning === s.id} onClick={() => handleReturn(s.id, s.name)}>
+                              {returning === s.id ? 'İade ediliyor…' : 'Teslimi iade et'}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
@@ -249,6 +363,23 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
             <div className={styles.inlineRow}>
               <button type="button" className={styles.secondary} onClick={() => markAll('yapti')}>Hepsini &quot;Yaptı&quot; yap</button>
             </div>
+            {activeHw && acceptsSubmissions && (
+              <div className={styles.field}>
+                <span>Teslim durumu</span>
+                <p className={styles.mutedText}>
+                  <b>{submissionCounts.teslim}</b> teslim etti · {submissionCounts.taslak} taslakta · {submissionCounts.yok} başlamadı
+                  {' · '}{homeworkIsOpen(activeHw) ? 'teslim açık' : activeHw.closed_at ? 'elle kapatıldı' : 'süre doldu, kapandı'}
+                </p>
+                {submissionCounts.missing.length > 0 && students.length > 0 && (
+                  <p className={styles.mutedText}>Teslim etmeyenler: {submissionCounts.missing.join(', ')}</p>
+                )}
+                <div className={styles.inlineRow}>
+                  <button type="button" className={styles.secondary} disabled={closing} onClick={toggleClosed}>
+                    {closing ? 'Değiştiriliyor…' : activeHw.closed_at ? 'Ödevi yeniden aç' : 'Ödevi kapat'}
+                  </button>
+                </div>
+              </div>
+            )}
             {activeHw && (
               <div className={styles.field}>
                 <span>Öğrenciye sonuç</span>

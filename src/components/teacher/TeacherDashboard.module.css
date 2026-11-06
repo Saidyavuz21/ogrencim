@@ -468,6 +468,13 @@
   border-bottom: 1px solid var(--teacher-border);
 }
 
+/* Öğrenci teslimi (kontrol satırında) */
+.submissionBlock { grid-column: 1 / -1; display: grid; gap: 8px; min-width: 0; }
+.submissionBadge { justify-self: start; margin: 0; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.submissionDone { background: var(--teacher-selected); color: var(--teacher-primary); }
+.submissionDraft { background: #fff0cc; color: #775516; }
+.submissionNone { background: #f0eee7; color: var(--teacher-muted); }
+
 .studentIdentity {
   display: flex;
   gap: 12px;

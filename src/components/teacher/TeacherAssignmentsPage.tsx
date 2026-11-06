@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Send, Trash2, CheckSquare, Calendar, MoreVertical, Search, Paperclip, X } from '../icons';
-import { ALLOWED_FILE_TYPES, createHomework, deleteHomework, formatBytes, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
+import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, formatBytes, homeworkIsOpen, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, formatDate } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
 import { useDialog } from '../ConfirmDialog';
@@ -91,6 +91,10 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   const [dueTime, setDueTime] = useState('');
   // Kontrol sonucu öğrenciye hemen mi görünsün, yoksa öğretmen sonra mı açıklasın (seçim gönderimler arasında korunur)
   const [releaseNow, setReleaseNow] = useState(true);
+  // Öğrenci uygulamadan dosya/fotoğraf ile teslim etsin mi (yoksa ödev sınıfta kontrol edilir)
+  const [acceptsSubmissions, setAcceptsSubmissions] = useState(false);
+  // Teslim alan ödevlerde teslim eden öğrenci sayısı
+  const [submittedCounts, setSubmittedCounts] = useState<Record<string, number>>({});
   const [link, setLink] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -128,6 +132,14 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     return () => { alive = false; };
   }, []);
 
+  const submissionIds = homeworks.filter((h) => h.accepts_submissions).map((h) => h.id).join(',');
+  useEffect(() => {
+    if (!submissionIds) return;
+    let alive = true;
+    countSubmitted(submissionIds.split(',')).then((res) => { if (alive && res.ok) setSubmittedCounts(res.data); });
+    return () => { alive = false; };
+  }, [submissionIds]);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setNotice(null);
@@ -158,7 +170,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     const failed: { cls: string; error: string }[] = [];
     for (const [i, c] of targets.entries()) {
       if (targets.length > 1) setProgress(`${c} sınıfına gönderiliyor (${i + 1}/${targets.length})…`);
-      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, resultsReleased: releaseNow });
+      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, resultsReleased: releaseNow, acceptsSubmissions });
       if (res.ok) sent.push(c);
       else failed.push({ cls: c, error: res.error });
     }
@@ -282,6 +294,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     {!selectedClass && <span>{hw.class_name || 'Sınıf yok'}</span>}
                     {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />{dueLabel(hw.due_date, hw.due_time)}</span>}
                     {!hw.results_released && <span>Sonuç gizli</span>}
+                    {hw.accepts_submissions && <span>{submittedCounts[hw.id] || 0} teslim · {homeworkIsOpen(hw) ? 'teslim açık' : 'kapandı'}</span>}
                   </div>
                   {hw.description && <p className={styles.assignmentDescription}>{hw.description}</p>}
                   <AttachmentList attachments={hw.attachments} />
@@ -396,6 +409,22 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   {dueDate && (
                     <p className={styles.mutedText}>
                       {dueTime ? `Teslim: ${shortDate(dueDate)} saat ${dueTime}.` : `Saat seçilmezse teslim ${shortDate(dueDate)} gün sonudur (23:59).`}
+                    </p>
+                  )}
+                </fieldset>
+                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                  <legend>Teslim şekli</legend>
+                  <div className={styles.subjectChips}>
+                    <button type="button" className={styles.dueChip} aria-pressed={!acceptsSubmissions} onClick={() => setAcceptsSubmissions(false)}>
+                      Sınıfta kontrol<small>Öğrenci bir şey yüklemez</small>
+                    </button>
+                    <button type="button" className={styles.dueChip} aria-pressed={acceptsSubmissions} onClick={() => setAcceptsSubmissions(true)}>
+                      Uygulamadan teslim<small>Öğrenci dosya ya da fotoğraf yükler</small>
+                    </button>
+                  </div>
+                  {acceptsSubmissions && (
+                    <p className={styles.mutedText}>
+                      {dueDate ? 'Teslim tarihi gelince ödev kendiliğinden kapanır; teslim eden öğrenci sonradan değişiklik yapamaz.' : 'Teslim tarihi seçmezseniz ödev siz "Ödevi kapat" diyene kadar açık kalır.'}
                     </p>
                   )}
                 </fieldset>

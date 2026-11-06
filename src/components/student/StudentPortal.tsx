@@ -149,7 +149,14 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
         {loadError && <Notice notice={{ kind: 'error', text: `Bazı bilgiler alınamadı: ${loadError}` }} />}
         {!loaded && page === 'home' && <p className={styles.mutedText}>Bilgiler yükleniyor…</p>}
 
-        {page === 'odevler' && <StudentHomeworksPage homeworks={homeworks} loaded={loaded} />}
+        {page === 'odevler' && (
+          <StudentHomeworksPage
+            homeworks={homeworks}
+            loaded={loaded}
+            studentId={user.id}
+            onSubmissionChange={(id, submission) => setHomeworks((prev) => prev.map((h) => (h.id === id ? { ...h, submission } : h)))}
+          />
+        )}
         {page === 'notlar' && <StudentGradesPage grades={grades} loaded={loaded} />}
         {page === 'puanlar' && <StudentPointsPage me={me} points={points} loaded={loaded} />}
         {page === 'siralama' && <StudentRankingPage ranking={ranking} myId={user.id} className={me?.class_name || ''} />}

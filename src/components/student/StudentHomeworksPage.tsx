@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Check, Minus, X } from '../icons';
 import { MyHomework } from '../../lib/studentData';
+import type { SubmissionRow } from '../../lib/teacherData';
+import { StudentSubmission } from './StudentSubmission';
 import { AttachmentList, formatDate } from '../teacher/TeacherUi';
 import styles from '../teacher/TeacherDashboard.module.css';
 import s from './StudentPortal.module.css';
@@ -47,7 +49,12 @@ export function sortPending(list: MyHomework[]) {
   });
 }
 
-export function StudentHomeworksPage({ homeworks, loaded }: { homeworks: MyHomework[]; loaded: boolean }) {
+export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissionChange }: {
+  homeworks: MyHomework[];
+  loaded: boolean;
+  studentId: string;
+  onSubmissionChange: (homeworkId: string, submission: SubmissionRow) => void;
+}) {
   const pending = sortPending(homeworks.filter((h) => !h.check));
   const checked = homeworks.filter((h) => h.check);
   // Seçim yapılmadıysa: bekleyen ödev varsa "Bekleyen", yoksa "Tümü"
@@ -84,7 +91,7 @@ export function StudentHomeworksPage({ homeworks, loaded }: { homeworks: MyHomew
               <div className={styles.assignmentContent}>
                 <div className={s.homeworkHead}>
                   <h2 className={styles.assignmentTitle}>{h.title}</h2>
-                  {!h.check && <DueLabel due={h.due_date} time={h.due_time} />}
+                  {!h.check && h.submission?.status !== 'teslim' && <DueLabel due={h.due_date} time={h.due_time} />}
                 </div>
                 <div className={styles.assignmentMeta}>
                   <span>{h.subject} · {h.teacher_name}</span>
@@ -94,6 +101,7 @@ export function StudentHomeworksPage({ homeworks, loaded }: { homeworks: MyHomew
                 <AttachmentList attachments={h.attachments} />
                 {h.file_url && <a href={h.file_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>Bağlantıyı aç</a>}
               </div>
+              {h.accepts_submissions && <StudentSubmission homework={h} studentId={studentId} onChange={onSubmissionChange} />}
               {h.check && Icon ? (
                 <p className={`${styles.statusChoice} ${STATUS_STYLE[h.check.status]} ${styles.statusResult}`}>
                   <Icon size={16} aria-hidden="true" />{STATUS_LABEL[h.check.status]}
@@ -101,7 +109,11 @@ export function StudentHomeworksPage({ homeworks, loaded }: { homeworks: MyHomew
                   {h.check.note && ` · ${h.check.note}`}
                 </p>
               ) : (
-                <p className={styles.homeworkPending}>{h.results_released ? 'Öğretmen henüz kontrol etmedi.' : 'Sonuç daha sonra açıklanacak.'}</p>
+                <p className={styles.homeworkPending}>
+                  {!h.results_released ? 'Sonuç daha sonra açıklanacak.'
+                    : h.submission?.status === 'teslim' ? 'Teslim ettin; öğretmen henüz kontrol etmedi.'
+                    : 'Öğretmen henüz kontrol etmedi.'}
+                </p>
               )}
             </li>
           );

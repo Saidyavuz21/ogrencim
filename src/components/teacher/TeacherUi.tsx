@@ -24,7 +24,15 @@ export function Notice({ notice, onClose }: { notice: NoticeState; onClose?: () 
 }
 
 /** Ödev dosyaları: tıklanınca 10 dakikalık özel bağlantıyla açılır */
-export function AttachmentList({ attachments }: { attachments: HomeworkAttachment[] | null | undefined }) {
+export function AttachmentList({ attachments, bucket, label = 'Ödev dosyaları', onRemove, disabled }: {
+  attachments: HomeworkAttachment[] | null | undefined;
+  /** Varsayılan: öğretmenin ödev dosyaları bucket'ı */
+  bucket?: string;
+  label?: string;
+  /** Verilirse her dosyada "Çıkar" düğmesi çıkar (öğrenci taslağı) */
+  onRemove?: (a: HomeworkAttachment) => void;
+  disabled?: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   if (!attachments?.length) return null;
 
@@ -32,7 +40,7 @@ export function AttachmentList({ attachments }: { attachments: HomeworkAttachmen
     setError(null);
     // Açılır pencere engelini aşmak için pencere tıklama anında açılır, adres sonra verilir
     const win = window.open('', '_blank');
-    const res = await getAttachmentUrl(a.path);
+    const res = await getAttachmentUrl(a.path, bucket);
     if (!res.ok) {
       win?.close();
       setError(`"${a.name}" açılamadı: ${res.error}`);
@@ -44,13 +52,18 @@ export function AttachmentList({ attachments }: { attachments: HomeworkAttachmen
 
   return (
     <div>
-      <ul className={styles.fileList} aria-label="Ödev dosyaları">
+      <ul className={styles.fileList} aria-label={label}>
         {attachments.map((a) => (
           <li key={a.path} className={styles.fileItem}>
             <FileText size={18} aria-hidden="true" />
             <span title={a.name}>{a.name}</span>
             <small>{formatBytes(a.size)}</small>
             <button type="button" className={`${styles.secondary} ${styles.fileButton}`} onClick={() => open(a)}>Aç</button>
+            {onRemove && (
+              <button type="button" className={styles.fileRemove} disabled={disabled} onClick={() => onRemove(a)} aria-label={`${a.name} dosyasını çıkar`} title="Çıkar">
+                <X size={16} aria-hidden="true" />
+              </button>
+            )}
           </li>
         ))}
       </ul>

@@ -28,7 +28,8 @@ interface Props {
 export function StudentHome({ me, fallbackName, fallbackNo, fallbackClass, myRank, classSize, homeworks, unreadMessages, loaded, badges, onOpenPage }: Props) {
   const name = me?.name || fallbackName;
   const firstName = name.trim().split(/\s+/)[0];
-  const pending = sortPending(homeworks.filter((h) => !h.check));
+  // Teslim edip kontrol bekleyenler "yapılacak" sayılmaz
+  const pending = sortPending(homeworks.filter((h) => !h.check && h.submission?.status !== 'teslim'));
   const upcoming = pending.slice(0, 3);
 
   const link = (page: StudentPageId) => ({

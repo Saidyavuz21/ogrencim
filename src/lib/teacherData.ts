@@ -147,9 +147,20 @@ export interface HomeworkRow {
   created_at: string;
   /** false = "sonra açıkla": öğrenci kontrol sonucunu göremez, davranış puanı bekler */
   results_released: boolean;
+  /** true = öğrenci uygulamadan dosya/açıklama ile teslim eder */
+  accepts_submissions: boolean;
+  /** Öğretmenin elle kapattığı an (null = açık) */
+  closed_at: string | null;
+  /** Kesin teslim anı (tarih + saat, sunucu hesaplar) */
+  due_at: string | null;
 }
 
-const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at, results_released';
+/** Teslim alınıyor mu? (sunucudaki homework_is_open ile aynı kural; asıl kilit sunucuda) */
+export function homeworkIsOpen(hw: { accepts_submissions: boolean; closed_at: string | null; due_at: string | null }, now = Date.now()) {
+  return hw.accepts_submissions && !hw.closed_at && (!hw.due_at || new Date(hw.due_at).getTime() > now);
+}
+
+const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at';
 
 export async function listMyHomeworks(className?: string): Promise<Result<HomeworkRow[]>> {
   const { data: auth } = await supabase.auth.getUser();
@@ -178,6 +189,36 @@ export interface HomeworkAttachment {
 export const formatBytes = (n: number) =>
   n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`;
 
+/**
+ * Dosyanın gerçek türünü ilk baytlarından bulur (uzantısı/MIME'ı değiştirilmiş dosyaları yakalar).
+ * Desteklenmeyen içerikte null döner.
+ */
+export async function detectFileType(file: File): Promise<string | null> {
+  const b = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const ascii = (from: number, to: number) => String.fromCharCode(...Array.from(b.slice(from, to)));
+  if (ascii(0, 5) === '%PDF-') return 'application/pdf';
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b[0] === 0x89 && ascii(1, 4) === 'PNG' && b[4] === 0x0d && b[5] === 0x0a) return 'image/png';
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'image/webp';
+  if (ascii(4, 8) === 'ftyp') {
+    const brand = ascii(8, 12);
+    if (['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis'].includes(brand)) return 'image/heic';
+    if (['mif1', 'msf1', 'heif'].includes(brand)) return 'image/heif';
+  }
+  return null;
+}
+
+/** Dosyaların içeriğini doğrular; her dosyanın gerçek türünü (yükleme için) ya da hatayı döndürür */
+export async function verifyFileContents(files: File[]): Promise<Result<string[]>> {
+  const types: string[] = [];
+  for (const f of files) {
+    const type = await detectFileType(f).catch(() => null);
+    if (!type) return { ok: false, error: `"${f.name}" geçerli bir PDF ya da resim değil (içeriği uzantısıyla uyuşmuyor ya da dosya bozuk).` };
+    types.push(type);
+  }
+  return { ok: true, data: types };
+}
+
 /** Seçilen dosyaları denetler; hata varsa açıklamasını döndürür */
 export function validateHomeworkFiles(files: File[]): string | null {
   for (const f of files) {
@@ -188,7 +229,7 @@ export function validateHomeworkFiles(files: File[]): string | null {
   return null;
 }
 
-const safeFileName = (name: string) => {
+export const safeFileName = (name: string) => {
   const dot = name.lastIndexOf('.');
   const ext = dot > 0 ? name.slice(dot).toLowerCase().replace(/[^.a-z0-9]/g, '') : '';
   const base = (dot > 0 ? name.slice(0, dot) : name)
@@ -200,16 +241,18 @@ const safeFileName = (name: string) => {
 
 /** Dosyaları yükler ve ödevin attachments alanına yazar */
 async function uploadHomeworkFiles(homeworkId: string, files: File[]): Promise<Result<HomeworkAttachment[]>> {
+  const checked = await verifyFileContents(files);
+  if (!checked.ok) return checked;
   const schoolId = await getMySchoolId();
   const uploaded: HomeworkAttachment[] = [];
-  for (const file of files) {
+  for (const [i, file] of files.entries()) {
     const path = `${schoolId || 'none'}/${homeworkId}/${safeFileName(file.name)}`;
-    const { error } = await supabase.storage.from(HOMEWORK_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+    const { error } = await supabase.storage.from(HOMEWORK_BUCKET).upload(path, file, { contentType: checked.data[i], upsert: false });
     if (error) {
       if (uploaded.length) await supabase.storage.from(HOMEWORK_BUCKET).remove(uploaded.map((u) => u.path));
       return { ok: false, error: `"${file.name}" yüklenemedi: ${error.message}` };
     }
-    uploaded.push({ path, name: file.name.slice(0, 120), size: file.size, type: file.type });
+    uploaded.push({ path, name: file.name.slice(0, 120), size: file.size, type: checked.data[i] });
   }
   const { error } = await supabase.from('homeworks').update({ attachments: uploaded }).eq('id', homeworkId);
   if (error) return fail(error);
@@ -217,8 +260,8 @@ async function uploadHomeworkFiles(homeworkId: string, files: File[]): Promise<R
 }
 
 /** Özel dosya için 10 dakikalık bağlantı üretir */
-export async function getAttachmentUrl(path: string): Promise<Result<string>> {
-  const { data, error } = await supabase.storage.from(HOMEWORK_BUCKET).createSignedUrl(path, 600);
+export async function getAttachmentUrl(path: string, bucket: string = HOMEWORK_BUCKET): Promise<Result<string>> {
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 600);
   if (error || !data) return fail(error);
   return { ok: true, data: data.signedUrl };
 }
@@ -236,6 +279,8 @@ export async function createHomework(input: {
   files?: File[];
   /** false = sonuçlar öğretmen açıklayana kadar öğrenciden gizli (varsayılan: hemen göster) */
   resultsReleased?: boolean;
+  /** true = öğrenci uygulamadan teslim eder */
+  acceptsSubmissions?: boolean;
 }): Promise<Result> {
   const title = input.title.trim();
   if (!title) return { ok: false, error: 'Ödev başlığı zorunludur.' };
@@ -243,6 +288,9 @@ export async function createHomework(input: {
   const files = input.files || [];
   const fileError = validateHomeworkFiles(files);
   if (fileError) return { ok: false, error: fileError };
+  // İçerik doğrulaması ödev kaydından önce (bozuk dosyada yarım ödev oluşmasın)
+  const contents = await verifyFileContents(files);
+  if (!contents.ok) return contents;
   const { data: created, error } = await supabase.from('homeworks').insert({
     title: title.slice(0, 200),
     subject: input.subject.trim().slice(0, 80) || 'Genel',
@@ -254,6 +302,7 @@ export async function createHomework(input: {
     file_url: input.link.trim() || null,
     file_type: files.length ? 'Dosya' : input.link.trim() ? 'Bağlantı' : 'Metin',
     results_released: input.resultsReleased ?? true,
+    accepts_submissions: input.acceptsSubmissions ?? false,
     teacher_name: 'server',
   }).select('id').single();
   if (error || !created) return fail(error);
@@ -270,6 +319,10 @@ export async function createHomework(input: {
 
 export async function deleteHomework(id: string, attachments: HomeworkAttachment[] = []): Promise<Result> {
   if (attachments.length) await supabase.storage.from(HOMEWORK_BUCKET).remove(attachments.map((a) => a.path));
+  // Öğrenci teslim dosyaları (kayıtlar cascade ile silinir, dosyaları elle temizlenir)
+  const subs = await supabase.from('homework_submissions').select('files').eq('homework_id', id);
+  const subPaths = ((subs.data as { files: HomeworkAttachment[] }[] | null) || []).flatMap((r) => (r.files || []).map((f) => f.path));
+  if (subPaths.length) await supabase.storage.from(SUBMISSION_BUCKET).remove(subPaths);
   const { error, count } = await supabase.from('homeworks').delete({ count: 'exact' }).eq('id', id);
   if (error) return fail(error);
   if (!count) return { ok: false, error: 'Ödev silinemedi (yalnızca kendi ödevinizi silebilirsiniz).' };
@@ -284,6 +337,67 @@ export async function setHomeworkResultsReleased(id: string, released: boolean):
   const { error, count } = await supabase.from('homeworks').update({ results_released: released }, { count: 'exact' }).eq('id', id);
   if (error) return fail(error);
   if (!count) return { ok: false, error: 'Ödev bulunamadı ya da bu ödevi değiştirme yetkiniz yok.' };
+  return { ok: true, data: undefined };
+}
+
+/** Ödevi elle kapatır (öğrenci teslim/değişiklik yapamaz) ya da yeniden açar (teslim anı geçmediyse) */
+export async function setHomeworkClosed(id: string, closed: boolean): Promise<Result> {
+  const { error, count } = await supabase
+    .from('homeworks')
+    .update({ closed_at: closed ? new Date().toISOString() : null }, { count: 'exact' })
+    .eq('id', id);
+  if (error) return fail(error);
+  if (!count) return { ok: false, error: 'Ödev bulunamadı ya da bu ödevi değiştirme yetkiniz yok.' };
+  return { ok: true, data: undefined };
+}
+
+// --------------------------------------------------------
+// Öğrenci teslimleri (Storage: homework-submissions, yol <ödev>/<öğrenci>/<dosya>)
+// --------------------------------------------------------
+export const SUBMISSION_BUCKET = 'homework-submissions';
+export type SubmissionStatus = 'taslak' | 'teslim';
+
+export interface SubmissionRow {
+  homework_id: string;
+  student_id: string;
+  status: SubmissionStatus;
+  files: HomeworkAttachment[];
+  note: string | null;
+  submitted_at: string | null;
+  updated_at: string;
+}
+
+export const SUBMISSION_COLUMNS = 'homework_id, student_id, status, files, note, submitted_at, updated_at';
+
+export async function listHomeworkSubmissions(homeworkId: string): Promise<Result<SubmissionRow[]>> {
+  const { data, error } = await supabase.from('homework_submissions').select(SUBMISSION_COLUMNS).eq('homework_id', homeworkId);
+  if (error) return fail(error);
+  return { ok: true, data: (data as SubmissionRow[]) || [] };
+}
+
+/** Ödev başına teslim eden öğrenci sayısı (ödev listesindeki özet için) */
+export async function countSubmitted(homeworkIds: string[]): Promise<Result<Record<string, number>>> {
+  if (!homeworkIds.length) return { ok: true, data: {} };
+  const { data, error } = await supabase
+    .from('homework_submissions')
+    .select('homework_id')
+    .in('homework_id', homeworkIds)
+    .eq('status', 'teslim');
+  if (error) return fail(error);
+  const out: Record<string, number> = {};
+  ((data as { homework_id: string }[]) || []).forEach((r) => { out[r.homework_id] = (out[r.homework_id] || 0) + 1; });
+  return { ok: true, data: out };
+}
+
+/** Teslimi öğrenciye iade eder (teslim → taslak); ödev açıksa öğrenci düzeltip yeniden teslim eder */
+export async function returnSubmission(homeworkId: string, studentId: string): Promise<Result> {
+  const { error, count } = await supabase
+    .from('homework_submissions')
+    .update({ status: 'taslak' }, { count: 'exact' })
+    .eq('homework_id', homeworkId)
+    .eq('student_id', studentId);
+  if (error) return fail(error);
+  if (!count) return { ok: false, error: 'Teslim bulunamadı.' };
   return { ok: true, data: undefined };
 }
 

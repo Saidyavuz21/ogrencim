@@ -146,7 +146,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
   }
 
   return (
-    <div className={`${teacherStyles.teacherShell} min-h-screen pb-12 flex flex-col antialiased`}>
+    <div className={`${teacherStyles.teacherShell} min-h-screen ${currentRole === 'ogretmen' ? '' : 'pb-12'} flex flex-col antialiased`}>
       <main className="w-full flex-1">
         {currentRole === 'admin' && <AdminDashboard onLogout={handleLogout} currentUser={currentUser} />}
 

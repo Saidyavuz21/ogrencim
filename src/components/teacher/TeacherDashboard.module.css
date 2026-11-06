@@ -27,6 +27,7 @@
 
 .dashboard {
   display: grid;
+  align-content: start;
   gap: 24px;
   width: 100%;
   max-width: 1152px;
@@ -2576,13 +2577,52 @@
 
 /* ===== Geniş ekran: iki kolonlu yapı (solda menü, sağda içerik) ===== */
 @media (min-width: 1024px) {
-  .dashboardShell { display: grid; grid-template-columns: 280px minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+  .dashboardShell {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
   .dashboardShell > .topBar { grid-column: 1 / -1; }
-  .dashboardShell > .sidebar { position: sticky; top: 0; z-index: 1; height: 100vh; width: auto; transform: none; visibility: visible; border-right: 1px solid var(--teacher-border); background: white; }
-  .dashboardShell > .dashboard { grid-column: 2; padding: 24px; }
+  .dashboardShell > .sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    z-index: 1;
+    min-height: 100%;
+    height: 100%;
+    width: auto;
+    transform: none;
+    visibility: visible;
+    border-right: 1px solid var(--teacher-border);
+    background: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboardShell > .sidebar .sidebarHead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: white;
+    padding-top: 20px;
+  }
+  .dashboardShell > .sidebar .sidebarNav {
+    position: sticky;
+    top: 64px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+  .dashboardShell > .dashboard {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 24px;
+    align-content: start;
+  }
   .sidebarBackdrop { display: none; }
   .sidebarClose, .topBar .menuButton { display: none; }
-  .sidebarHead { padding-top: 20px; }
 }
 
 /* ===== Toplu öğrenci tablosu durum renkleri ===== */

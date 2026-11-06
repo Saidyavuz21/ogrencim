@@ -2,13 +2,14 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, UserPlus, Users, Edit, Key, Trash2, X, AlertCircle, CheckCircle2 } from '../icons';
+import { Search, UserPlus, Users, Edit, Key, Trash2, X, AlertCircle, CheckCircle2, Eye, EyeOff } from '../icons';
 import { TeacherBulkStudents } from './TeacherBulkStudents';
 import { CollapsiblePanel, StudentSortToggle, sortStudents, useStudentSort } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
 import { useDialog } from '../ConfirmDialog';
-import { createStudent, deleteStudent, listStudents, resetStudentPin, updateStudentInfo, StudentListItem } from '../../lib/supabaseClient';
+import { createStudent, deleteStudent, listStudentPins, listStudents, resetStudentPin, updateStudentInfo, StudentListItem } from '../../lib/supabaseClient';
 import styles from './TeacherDashboard.module.css';
+import pinStyles from './StudentPin.module.css';
 
 interface TeacherStudentsPageProps {
   /** Varsayılan filtre ve yeni öğrencinin varsayılan sınıfı */
@@ -85,6 +86,21 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
   const [busy, setBusy] = useState(false);
   const [sort] = useStudentSort();
 
+  // Giriş PIN'leri: varsayılan gizli, "PIN'leri göster" ile kartlarda görünür
+  const [pins, setPins] = useState<Record<string, string | null>>({});
+  const [pinsError, setPinsError] = useState<string | null>(null);
+  const [showPins, setShowPins] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    listStudentPins(students.map((st) => st.id)).then((res) => {
+      if (!alive) return;
+      if (res.ok) { setPins(res.pins); setPinsError(null); }
+      else setPinsError(res.error);
+    });
+    return () => { alive = false; };
+  }, [students]);
+  const pinText = (id: string) => (pins[id] ? pins[id] : 'bilinmiyor');
+
   const applyList = (res: Awaited<ReturnType<typeof listStudents>>) => {
     setLoading(false);
     if (!res.ok) {
@@ -158,7 +174,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
       setNotice({ kind: 'error', text: `Öğrenci eklenemedi: ${res.error}` });
       return;
     }
-    setNotice({ kind: 'ok', text: `${newName.trim()} ${newClass} sınıfına eklendi. Giriş bilgisi: okul no ${newNo.trim()}, PIN ${newPin}. Bu PIN'i öğrenciye iletin; daha sonra tekrar gösterilmez.` });
+    setNotice({ kind: 'ok', text: `${newName.trim()} ${newClass} sınıfına eklendi. Giriş bilgisi: okul no ${newNo.trim()}, PIN ${newPin}. PIN'i daha sonra da öğrenci listesinden görebilirsiniz.` });
     setNewNo('');
     setNewName('');
     setNewPin(randomPin());
@@ -204,6 +220,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
       return;
     }
     setNotice({ kind: 'ok', text: `${s.name} için yeni PIN: ${editPin}. Açık oturumları kapatıldı.` });
+    setPins((prev) => ({ ...prev, [s.id]: editPin }));
     setEditPin('');
   };
 
@@ -265,6 +282,12 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
             </div>
           </div>
           <StudentSortToggle />
+          {!pinsError && (
+            <button type="button" className={styles.secondary} aria-pressed={showPins} onClick={() => setShowPins((v) => !v)}>
+              {showPins ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              {showPins ? "PIN'leri gizle" : "PIN'leri göster"}
+            </button>
+          )}
         </div>
 
         {loading && <p className={styles.mutedText}>Öğrenciler yükleniyor…</p>}
@@ -281,6 +304,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
                 <div className={styles.studentCardInfo}>
                   <strong>{s.name}</strong>
                   <span>No {s.student_number} · {s.class_name || 'Sınıf yok'} · {s.points} puan</span>
+                  {showPins && <span className={pins[s.id] ? pinStyles.pinShown : pinStyles.pinUnknown}>PIN: {pinText(s.id)}</span>}
                 </div>
                 {editingId !== s.id && (
                   <button type="button" className={styles.secondary} onClick={() => startEdit(s)} aria-label={`${s.name} düzenle`}>
@@ -309,8 +333,11 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
                     {classSelect(`edit-class-${s.id}`, editClass, setEditClass)}
                   </div>
                   <details className={styles.studentEditSection}>
-                    <summary><Key size={16} aria-hidden="true" />Giriş PIN’ini sıfırla</summary>
+                    <summary><Key size={16} aria-hidden="true" />Giriş PIN’i</summary>
                     <div className={styles.studentEditSectionBody}>
+                    {!pinsError && (pins[s.id]
+                      ? <p className={pinStyles.pinCurrent}>Mevcut PIN: <strong>{pins[s.id]}</strong></p>
+                      : <p className={styles.mutedText}>Bu öğrencinin mevcut PIN&apos;i bilinmiyor (PIN gösterimi açılmadan önce verilmiş). Yeni PIN verirseniz burada görünür.</p>)}
                     <p className={styles.mutedText}>Öğrencinin giriş yapması için yeni bir 4 haneli PIN belirleyin.</p>
                     <label htmlFor={`pin-${s.id}`}>Yeni PIN</label>
                     <div className={`${styles.inlineRow} ${styles.studentPinControls}`}>

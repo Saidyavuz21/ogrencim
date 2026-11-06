@@ -1,0 +1,5 @@
+/* Öğrenci listesi: giriş PIN'i gösterimi (çift sınıf: kart bilgi satırının renginin önüne geçer) */
+.pinShown.pinShown { color: var(--teacher-primary); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.pinUnknown.pinUnknown { color: var(--teacher-muted); font-style: italic; }
+.pinCurrent { margin: 0; padding: 10px 14px; border-radius: 10px; background: var(--teacher-selected); color: var(--teacher-text); font-size: 15px; }
+.pinCurrent strong { color: var(--teacher-primary); font-size: 18px; letter-spacing: .12em; font-variant-numeric: tabular-nums; }

@@ -357,6 +357,19 @@ export async function resetStudentPin(studentId: string, pin: string): Promise<{
   return { ok: true };
 }
 
+/**
+ * Personel: öğrencilerin giriş PIN'leri (öğretmen yalnızca kendi sınıflarındakileri, admin hepsini görür).
+ * PIN'i bilinmeyen (PIN gösterimi açılmadan önce belirlenmiş) öğrenciler null döner.
+ */
+export async function listStudentPins(studentIds: string[]): Promise<{ ok: true; pins: Record<string, string | null> } | { ok: false; error: string }> {
+  if (!studentIds.length) return { ok: true, pins: {} };
+  const { data, error } = await supabase.rpc('staff_list_student_pins', { p_student_ids: studentIds });
+  if (error) return { ok: false, error: error.message };
+  const pins: Record<string, string | null> = {};
+  ((data as { student_id: string; pin: string | null }[]) || []).forEach((r) => { pins[r.student_id] = r.pin; });
+  return { ok: true, pins };
+}
+
 /** Öğrenciyi ve tüm kayıtlarını siler (admin: hepsi, öğretmen: kendi okulu). Mesajları da silinir. */
 export async function deleteStudent(studentId: string): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.rpc('staff_delete_student', { p_student_id: studentId });

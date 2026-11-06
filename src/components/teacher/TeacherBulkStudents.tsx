@@ -94,7 +94,7 @@ export function TeacherBulkStudents({ selectedClass, classNames, onClose, onDone
     setResults(out);
     const okCount = out.filter((r) => r.ok).length;
     setNotice(okCount === out.length
-      ? { kind: 'ok', text: `${okCount} öğrenci eklendi. PIN listesini şimdi indirin veya yazdırın; PIN'ler daha sonra tekrar gösterilmez.` }
+      ? { kind: 'ok', text: `${okCount} öğrenci eklendi. PIN listesini şimdi indirebilir veya yazdırabilirsiniz; PIN'leri daha sonra Öğrenciler listesinde "PIN'leri göster" ile de görebilirsiniz.` }
       : { kind: 'error', text: `${okCount} öğrenci eklendi, ${out.length - okCount} öğrenci eklenemedi (aşağıda nedenleri var). Eklenenlerin PIN listesini şimdi alın.` });
     if (okCount) onDone();
   };

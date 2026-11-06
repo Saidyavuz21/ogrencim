@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styles from './AdminManagement.module.css';
-import { Key, Trash2, UserPlus, X } from '../icons';
+import { Key, Trash2, UserPlus, X, Eye, EyeOff } from '../icons';
 import { composeClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { CustomSelect } from '../CustomSelect';
 import { StudentSchoolSelect } from '../StudentSchoolSelect';
 import { useDialog } from '../ConfirmDialog';
-import { createStudent, resetStudentPin, deleteStudent, SchoolRecord } from '../../lib/supabaseClient';
+import { createStudent, resetStudentPin, deleteStudent, listStudentPins, SchoolRecord } from '../../lib/supabaseClient';
 import { AdminStudentRecord } from '../../lib/adminData';
 import { AdminData, EmptyState, FilterBar, Notify, SearchInput, matchesQuery } from './adminShared';
 
@@ -23,7 +23,7 @@ const byClass = (a: string, b: string) => a.localeCompare(b, 'tr', { numeric: tr
 
 /**
  * Öğrenciler: okul + sınıf filtresi, arama, ekleme, PIN yenileme, silme.
- * PIN'ler veritabanında yalnızca hash olarak saklanır ve hiçbir yerde geri gösterilmez.
+ * Giriş PIN'i hash ile doğrulanır; ayrıca şifreli saklanır ve "PIN'leri göster" ile admin tarafından görülebilir.
  */
 export function AdminStudentsPage({ data, notify }: Props) {
   const { confirm } = useDialog();
@@ -44,6 +44,20 @@ export function AdminStudentsPage({ data, notify }: Props) {
   // PIN yenileme
   const [pinFor, setPinFor] = useState<AdminStudentRecord | null>(null);
   const [pinValue, setPinValue] = useState('');
+
+  // Giriş PIN'leri: varsayılan gizli
+  const [pins, setPins] = useState<Record<string, string | null>>({});
+  const [pinsReady, setPinsReady] = useState(false);
+  const [showPins, setShowPins] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    listStudentPins(data.students.map((st) => st.id)).then((res) => {
+      if (!alive) return;
+      setPinsReady(res.ok);
+      if (res.ok) setPins(res.pins);
+    });
+    return () => { alive = false; };
+  }, [data.students]);
 
   const schoolOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -75,7 +89,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
     });
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'Öğrenci eklenemedi.');
-    notify('ok', `${newName.trim()} eklendi. PIN'i öğrenciye iletin; sistem PIN'i bir daha göstermez.`);
+    notify('ok', `${newName.trim()} eklendi. Giriş: okul no ${newNo.trim()}, PIN ${newPin}.`);
     setNewNo('');
     setNewName('');
     setNewPin('');
@@ -90,7 +104,8 @@ export function AdminStudentsPage({ data, notify }: Props) {
     const res = await resetStudentPin(pinFor.id, pinValue);
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'PIN yenilenemedi.');
-    notify('ok', `${pinFor.name} için yeni PIN kaydedildi; açık oturumları kapatıldı.`);
+    notify('ok', `${pinFor.name} için yeni PIN: ${pinValue}. Açık oturumları kapatıldı.`);
+    setPins((prev) => ({ ...prev, [pinFor.id]: pinValue }));
     setPinFor(null);
     setPinValue('');
   };
@@ -186,6 +201,12 @@ export function AdminStudentsPage({ data, notify }: Props) {
               />
             </div>
           )}
+          {pinsReady && (
+            <button type="button" className={styles.button} aria-pressed={showPins} onClick={() => setShowPins((v) => !v)}>
+              {showPins ? <EyeOff className={styles.icon} /> : <Eye className={styles.icon} />}
+              {showPins ? "PIN'leri gizle" : "PIN'leri göster"}
+            </button>
+          )}
           {classOptions.length > 1 && (
             <div className={styles.filterSelect}>
               <CustomSelect
@@ -211,6 +232,9 @@ export function AdminStudentsPage({ data, notify }: Props) {
                   <span className={styles.muted}>
                     {[`No ${s.student_number}`, s.class_name || 'Sınıfı yok', showSchool ? s.school_name : null, `${s.points} puan`].filter(Boolean).join(' • ')}
                   </span>
+                  {showPins && (
+                    <span className={pins[s.id] ? styles.pinShown : styles.pinUnknown}>PIN: {pins[s.id] || 'bilinmiyor'}</span>
+                  )}
                 </div>
                 <div className={styles.actions}>
                   <button type="button" onClick={() => { setPinFor(s); setPinValue(''); }} className={styles.button}>
@@ -233,6 +257,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
             <p className={styles.muted}>
               <strong>{pinFor.name}</strong> ({pinFor.student_number}) için yeni 4 haneli PIN. Eski PIN ve açık oturumlar geçersiz olur.
             </p>
+            {pins[pinFor.id] && <p className={styles.muted}>Mevcut PIN: <strong>{pins[pinFor.id]}</strong></p>}
             <input
               autoFocus
               value={pinValue}

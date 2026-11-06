@@ -14,7 +14,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | # | Paket | Bitti / Toplam |
 |---|---|---|
 | 0 | Acil düzeltmeler | 3 / 3 ✅ |
-| 1 | Sınıf araçları | 0 / 5 |
+| 1 | Sınıf araçları | 1 / 5 |
 | 2 | Ödev sistemini güçlendirme | 0 / 8 |
 | 3 | Öğretmen dosyaları ve içerik düzeni | 0 / 8 |
 | 4 | Quiz motoru | 0 / 10 |
@@ -26,7 +26,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **3 / 101** |
+| | **Toplam** | **4 / 101** |
 
 ---
 
@@ -40,7 +40,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 
 Veritabanı gerektirmez; derste her gün kullanılır. Öğretmen panelinde yeni "Sınıf araçları" sayfası, tam ekran açılabilir.
 
-- [ ] **Rastgele öğrenci seçici** — seçilen sınıftan; aynı turda tekrar seçmeme (herkes bir kez seçilene kadar), "yok" işaretlenen öğrenciyi atlama, akıcı çekiliş animasyonu — *K-4, K-11*
+- [x] **Rastgele öğrenci seçici** — seçilen sınıftan; aynı turda tekrar seçmeme (herkes bir kez seçilene kadar), "yok" işaretlenen öğrenciyi atlama, akıcı çekiliş animasyonu — *K-4, K-11* · 6 Kasım 2026 · `fc2a2ca`
 - [ ] **Kronometre** — başlat / duraklat / sıfırla, tur zamanları, tam ekran büyük rakamlar — *K-4*
 - [ ] **Geri sayım** — hazır süreler (1, 3, 5, 10 dk) ve özel süre, bitişte ses ve görsel uyarı — *K-4*
 - [ ] **Grup oluşturucu** — sınıfı N gruba ya da N kişilik gruplara rastgele bölme (bizde ek)
@@ -184,3 +184,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 |---|---|---|
 | 6 Kasım 2026 | Duyurular okula göre ayrıldı (Paket 0) | `1a759ab` |
 | 6 Kasım 2026 | Sınıflarım açıklaması düzeltildi, YOL_HARITASI güncellendi (Paket 0) | `d40a0f4` |
+| 6 Kasım 2026 | Rastgele öğrenci seçici (Paket 1) | `fc2a2ca` |

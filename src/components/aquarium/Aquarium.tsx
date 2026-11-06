@@ -68,8 +68,8 @@ const FOOD_POINTS = 4;
 const FOOD_MAX = 24;
 const FOOD_SINK = 2.2; // cqw/sn
 const FOOD_BOTTOM_MS = 9000; // dipte bu kadar kalır, sonra kaybolur
-const FOOD_AUTO_MIN_MS = 6000;
-const FOOD_AUTO_MAX_MS = 11000;
+const FOOD_AUTO_MIN_MS = 2500;
+const FOOD_AUTO_MAX_MS = 5000;
 const FOOD_SEE = 40; // küçük balık yemi bu uzaklıktan fark eder (cqw)
 interface Food { id: number; x: number; y: number; sway: number; landedAt?: number; by?: string }
 /** Burun ucunun balık genişliğine oranı (sağa bakarken) */
@@ -603,11 +603,11 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         if (at === now) { snacks = rest; publish(); }
       }, 1100));
     };
-    let nextFoodAt = Date.now() + 3000;
+    let nextFoodAt = Date.now() + 1500;
     const autoFood = (now: number) => {
       if (!swallowRef.current || now < nextFoodAt) return;
       nextFoodAt = now + FOOD_AUTO_MIN_MS + Math.random() * (FOOD_AUTO_MAX_MS - FOOD_AUTO_MIN_MS);
-      const n = 1 + Math.floor(Math.random() * 3);
+      const n = 2 + Math.floor(Math.random() * 3);
       const x0 = 10 + Math.random() * 80;
       for (let i = 0; i < n; i++) dropFood(clamp(x0 + (Math.random() - 0.5) * 8, 2, 98), 1 + Math.random() * 2);
     };

@@ -15,7 +15,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 |---|---|---|
 | 0 | Acil düzeltmeler | 3 / 3 ✅ |
 | 1 | Sınıf araçları | 5 / 5 ✅ |
-| 2 | Ödev sistemini güçlendirme | 2 / 8 |
+| 2 | Ödev sistemini güçlendirme | 3 / 8 |
 | 3 | Öğretmen dosyaları ve içerik düzeni | 0 / 8 |
 | 4 | Quiz motoru | 0 / 10 |
 | 5 | Analitik ve raporlama | 0 / 6 |
@@ -26,7 +26,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **10 / 101** |
+| | **Toplam** | **11 / 101** |
 
 ---
 
@@ -52,7 +52,7 @@ Bizdeki ödev, EduBoard'daki "yayın"ın karşılığı. Quiz motoru da bunun ü
 
 - [x] **İyileştir:** Aynı ödevi birden çok sınıfa tek seferde verme — *K-2, K-6* · 6 Kasım 2026 · `ef590a3` (veritabanında da öğretmenin kendi sınıflarıyla sınırlı)
 - [x] **İyileştir:** Teslim tarihi doğrulaması (geçmiş tarih engeli) ve isteğe bağlı teslim saati — *K-6* · 6 Kasım 2026 · `71f5852`
-- [ ] **Sonuçları açıklama:** öğretmen kontrol sonucunu hemen ya da "sonra açıkla" ile gösterebilsin — *K-6*
+- [x] **Sonuçları açıklama:** öğretmen kontrol sonucunu hemen ya da "sonra açıkla" ile gösterebilsin — *K-6* · 6 Kasım 2026 · `23081db` (gizliyken davranış puanı da bekler; açıklanınca tek seferde işlenir)
 - [ ] **Öğrenci teslimi:** öğrenci dosya/fotoğraf yükleyip teslim eder (taslak → teslim edildi) — *K-7*
 - [ ] **Teslim kilidi:** teslim tarihi geçince ya da teslim edildikten sonra değişiklik yapılamaz — *K-7*
 - [ ] **Otomatik kapanış:** teslim tarihi gelince ödev kendiliğinden kapanır (zamanlanmış görev) — *K-7*
@@ -190,3 +190,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 | 6 Kasım 2026 | Grup oluşturucu; araçların görsel kontrolü ve akıllı tahta uyumu — Paket 1 tamam | `c241991` |
 | 6 Kasım 2026 | Ödevi birden çok sınıfa verme (Paket 2) | `ef590a3` |
 | 6 Kasım 2026 | Teslim saati ve geçmiş tarih engeli (Paket 2) | `71f5852` |
+| 6 Kasım 2026 | Sonuçları açıklama: hemen / sonra açıkla (Paket 2) | `23081db` |

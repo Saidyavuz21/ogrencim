@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Minus } from '../icons';
 import { givePoints, listPointHistory, PointHistoryRow } from '../../lib/teacherData';
 import { CollapsiblePanel, Notice, NoticeState, formatDateTime, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
@@ -14,16 +14,24 @@ type PointAnimation = {
   delta: 1 | -1;
 };
 
+// Tek ses motoru: her tıklamada yenisini açmak tarayıcının sınırına takılır
+let pointAudio: AudioContext | null = null;
+
 /** Puan verildiğinde hafif, hoş bir ses efekti çalar (Web Audio API) */
 function playPointSound(delta: 1 | -1) {
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    if (!pointAudio || pointAudio.state === 'closed') {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      pointAudio = new AudioCtx();
+    }
+    const ctx = pointAudio;
+    if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
+    osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 
     if (delta > 0) {
       // Çift tonlu neşeli 'ding' (E5 -> G5)
@@ -62,6 +70,9 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
   const [notice, setNotice] = useState<NoticeState>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
   const [animations, setAnimations] = useState<PointAnimation[]>([]);
+  const animSeq = useRef(0);
+  const animTimers = useRef<number[]>([]);
+  useEffect(() => () => { animTimers.current.forEach((t) => window.clearTimeout(t)); }, []);
 
   const studentIdsKey = students.map((s) => s.id).join(',');
   useEffect(() => {
@@ -79,11 +90,12 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
 
     // Görsel animasyonu ve sesi anında başlat
     playPointSound(delta);
-    const animId = `${studentId}-${Date.now()}`;
+    animSeq.current += 1;
+    const animId = `${studentId}-${animSeq.current}`;
     setAnimations((prev) => [...prev.filter((a) => a.studentId !== studentId), { id: animId, studentId, delta }]);
-    setTimeout(() => {
+    animTimers.current.push(window.setTimeout(() => {
       setAnimations((prev) => prev.filter((a) => a.id !== animId));
-    }, 850);
+    }, 850));
 
     setBusyId(studentId);
     const res = await givePoints(studentId, delta, reason);

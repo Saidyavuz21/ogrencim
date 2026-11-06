@@ -597,6 +597,42 @@
 .switchOn .switchTrack { background: #1a78ad; }
 .switchOn .switchThumb { transform: translateX(16px); }
 
+.feedButton {
+  min-height: 44px;
+  padding: 6px 18px;
+  border: 1px solid #c8792a;
+  border-radius: 999px;
+  background: #fff4dc;
+  color: #6b3a07;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.feedButton:hover { background: #ffe8b8; }
+.feedButton:focus-visible { outline: 3px solid #1a78ad; outline-offset: 2px; }
+
+/* Yem: balıkların altında, yavaşça batar (konumu motor yazar) */
+.tankFeed { cursor: pointer; touch-action: manipulation; }
+.food {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  width: 1.1cqw;
+  height: 1.1cqw;
+  margin: -0.55cqw 0 0 -0.55cqw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffe7a3, #d9862f 70%);
+  box-shadow: 0 0 0 0.12cqw rgba(90, 50, 10, 0.35);
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity 300ms linear;
+}
+/* Yem yiyen balık: ağzını bir kez açıp kapar */
+.snacked .mouth { animation: chomp 0.36s ease-in-out 1; }
+.snackBadge { background: #ffe7a3; font-size: max(11px, 1.1cqw); }
+
 .toolbarHint {
   flex: 1 1 260px;
   min-width: 0;

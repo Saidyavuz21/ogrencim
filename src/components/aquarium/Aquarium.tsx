@@ -53,14 +53,25 @@ interface Feast {
   gulping: Record<string, true>;
   /** Yeni yutmuş balık: yutkunma şişmesi + "Hap!" rozeti (değer: rozet anahtarı) */
   gulp: Record<string, number>;
+  /** Yeni yem yemiş balık: "+2" rozeti (değer: rozet anahtarı) */
+  snack: Record<string, number>;
 }
-const EMPTY_FEAST: Feast = { bonus: {}, eaten: {}, swallowing: {}, gulping: {}, gulp: {} };
+const EMPTY_FEAST: Feast = { bonus: {}, eaten: {}, swallowing: {}, gulping: {}, gulp: {}, snack: {} };
 /** Yutma sahnesi: ağız avın boyu kadar açılır (ilk %35), sonra büyük balık öne atılıp avı ağzına alır */
 const GULP_MS = 1100;
 const GULP_OPEN = 0.35;
 /** Yutma modunda kovalamaca: av gerçekten kaçar; avcı önce az geride kalır, sonra atak yapar */
 const FEAST_FLEE = 5;
 const SWALLOW_MIN_CHASE_MS = 2200;
+/** Yem (yalnızca yutma modunda): yalnızca küçük balıklar yer, her yem geçici +2 puan */
+const FOOD_POINTS = 2;
+const FOOD_MAX = 24;
+const FOOD_SINK = 2.2; // cqw/sn
+const FOOD_BOTTOM_MS = 9000; // dipte bu kadar kalır, sonra kaybolur
+const FOOD_AUTO_MIN_MS = 6000;
+const FOOD_AUTO_MAX_MS = 11000;
+const FOOD_SEE = 40; // küçük balık yemi bu uzaklıktan fark eder (cqw)
+interface Food { id: number; x: number; y: number; sway: number; landedAt?: number; by?: string }
 /** Burun ucunun balık genişliğine oranı (sağa bakarken) */
 const MOUTH_AT = 0.88;
 
@@ -100,6 +111,8 @@ interface Mover {
   /** Kenardan kaçıyor: o yöne ekrandan çıkar, karşı kenardan geri girer */
   wrapDir?: 1 | -1;
   wrapped?: boolean;
+  /** Peşine düştüğü yem */
+  foodId?: number;
 }
 
 const TANK_H = 56.25; // 16:9 → yükseklik = genişliğin %56.25'i (cqw)
@@ -143,7 +156,7 @@ export function Aquarium(props: AquariumProps) {
 }
 
 function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvaryumu' }: AquariumProps) {
-  const { enabled: soundEnabled, unavailable: soundUnavailable, toggle: toggleSound, playChase, playGulp } = useAquariumSound();
+  const { enabled: soundEnabled, unavailable: soundUnavailable, toggle: toggleSound, playChase, playGulp, playNibble } = useAquariumSound();
   const stageRef = useRef<HTMLDivElement>(null);
   const tankRef = useRef<HTMLDivElement>(null);
   const swimmerRefs = useRef(new Map<string, HTMLDivElement>());
@@ -157,15 +170,32 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
   const swallowRef = useRef(swallowOn);
   const mealsRef = useRef<Meal[]>([]);
   const [feast, setFeast] = useState<Feast>(EMPTY_FEAST);
+  // Yemler: konumları motor yazar; React yalnızca ekleme/çıkarmayı bilir
+  const foodRef = useRef<Food[]>([]);
+  const foodSeq = useRef(0);
+  const foodEls = useRef(new Map<number, HTMLSpanElement>());
+  const [foods, setFoods] = useState<{ id: number; x: number; y: number }[]>([]);
   const toggleSwallow = useCallback(() => {
-    setSwallowOn((prev) => {
-      const next = !prev;
-      swallowRef.current = next;
-      try { window.localStorage.setItem(SWALLOW_TOGGLE_KEY, next ? '1' : '0'); } catch { /* gizli sekme */ }
-      return next;
-    });
+    const next = !swallowRef.current;
+    swallowRef.current = next;
+    setSwallowOn(next);
+    try { window.localStorage.setItem(SWALLOW_TOGGLE_KEY, next ? '1' : '0'); } catch { /* gizli sekme */ }
+    if (!next) { foodRef.current = []; setFoods([]); }
   }, []);
   const reducedMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
+  /** Yem bırak (x, y: cqw); yalnızca yutma modunda ve hareket açıkken */
+  const dropFood = useCallback((x: number, y: number) => {
+    if (!swallowRef.current || reducedMotion || foodRef.current.length >= FOOD_MAX) return;
+    foodSeq.current += 1;
+    const f: Food = { id: foodSeq.current, x, y, sway: Math.random() * 6 };
+    foodRef.current.push(f);
+    setFoods((prev) => [...prev, { id: f.id, x, y }]);
+  }, [reducedMotion]);
+  /** "Yem at" düğmesi: üstten birkaç yem */
+  const scatterFood = useCallback(() => {
+    const x0 = 15 + Math.random() * 70;
+    for (let i = 0; i < 3; i++) dropFood(Math.min(97, Math.max(3, x0 + (Math.random() - 0.5) * 14)), 1 + Math.random() * 2);
+  }, [dropFood]);
   const [nativeFull, setNativeFull] = useState(false);
   const [pseudoFull, setPseudoFull] = useState(false);
   const full = nativeFull || pseudoFull;
@@ -415,6 +445,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       m.y = clamp(m.y, b.minY, b.maxY);
     };
     let gulps: Record<string, number> = {};
+    let snacks: Record<string, number> = {};
     const publish = () => {
       const bonus: Record<string, number> = {};
       const eaten: Record<string, true> = {};
@@ -427,7 +458,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       movers.forEach((m, id) => {
         if (m.gulpBy) { swallowing[id] = true; gulping[m.gulpBy] = true; }
       });
-      setFeast({ bonus, eaten, swallowing, gulping, gulp: gulps });
+      setFeast({ bonus, eaten, swallowing, gulping, gulp: gulps, snack: snacks });
     };
     /** Balığın burun ucu (cqw): gittiği yöne göre sağ ya da sol uç */
     const mouthX = (m: Mover) => m.x + m.size * (m.face > 0 ? MOUTH_AT : 1 - MOUTH_AT);
@@ -520,6 +551,67 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
     movers.forEach((m, id) => { m.hidden = mealsRef.current.some((x) => x.preyId === id); });
     queueMicrotask(publish);
 
+    // ---- Yem ----
+    const paintFood = (f: Food, now: number) => {
+      const el = foodEls.current.get(f.id);
+      if (!el) return;
+      el.style.transform = `translate3d(${f.x.toFixed(2)}cqw, ${f.y.toFixed(2)}cqw, 0)`;
+      // Dipte son 2 sn'de solar
+      if (f.landedAt) el.style.opacity = String(Math.max(0, Math.min(1, (FOOD_BOTTOM_MS - (now - f.landedAt)) / 2000)));
+    };
+    const removeFood = (ids: number[]) => {
+      if (!ids.length) return;
+      foodRef.current = foodRef.current.filter((f) => !ids.includes(f.id));
+      movers.forEach((m) => { if (m.foodId != null && ids.includes(m.foodId)) m.foodId = undefined; });
+      setFoods((prev) => prev.filter((f) => !ids.includes(f.id)));
+    };
+    /** Yemi yalnızca küçük balıklar (sınıfın ortanca puanı ve altı) görür; en yakın boştaki küçük balık peşine düşer */
+    const assignFood = () => {
+      const all = foodRef.current;
+      for (const f of all) {
+        if (!f.by) continue;
+        const m = movers.get(f.by);
+        if (!m || m.hidden || m.gulpBy || m.foodId !== f.id) f.by = undefined;
+      }
+      if (!swallowRef.current) return;
+      const free = all.filter((f) => !f.by);
+      if (!free.length) return;
+      const vis = [...movers.entries()].filter(([, m]) => !m.hidden && !m.gulpBy);
+      if (!vis.length) return;
+      const pts = vis.map(([, m]) => m.points).sort((a, b) => a - b);
+      const median = pts[Math.floor((pts.length - 1) / 2)];
+      for (const f of free) {
+        let best: [string, Mover] | null = null;
+        let bestD = FOOD_SEE;
+        for (const [id, m] of vis) {
+          if (m.points > median || m.foodId != null || m.mode !== 'wander' || m.wrapDir) continue;
+          const d = Math.hypot(f.x - cx(m), f.y - (m.y + m.h / 2));
+          if (d < bestD) { bestD = d; best = [id, m]; }
+        }
+        if (best) { f.by = best[0]; best[1].foodId = f.id; best[1].rest = 0; }
+      }
+    };
+    const eatFood = (id: string, f: Food, now: number) => {
+      removeFood([f.id]);
+      mealsRef.current.push({ eaterId: id, preyId: `yem:${f.id}`, amount: FOOD_POINTS });
+      regrow(id);
+      snacks = { ...snacks, [id]: now };
+      playNibble();
+      publish();
+      timers.push(window.setTimeout(() => {
+        const { [id]: at, ...rest } = snacks;
+        if (at === now) { snacks = rest; publish(); }
+      }, 1100));
+    };
+    let nextFoodAt = Date.now() + 3000;
+    const autoFood = (now: number) => {
+      if (!swallowRef.current || now < nextFoodAt) return;
+      nextFoodAt = now + FOOD_AUTO_MIN_MS + Math.random() * (FOOD_AUTO_MAX_MS - FOOD_AUTO_MIN_MS);
+      const n = 1 + Math.floor(Math.random() * 3);
+      const x0 = 10 + Math.random() * 80;
+      for (let i = 0; i < n; i++) dropFood(clamp(x0 + (Math.random() - 0.5) * 8, 2, 98), 1 + Math.random() * 2);
+    };
+
     const checkChase = (now: number) => {
       if (now < nextChaseAt) return;
       for (const m of movers.values()) if (m.mode !== 'wander') return; // aynı anda tek kovalamaca
@@ -547,6 +639,19 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       const dt = Math.min(0.05, (t - last) / 1000);
       last = t;
       const now = Date.now();
+      if (foodRef.current.length) {
+        const floor = fishBottom - 0.6;
+        const gone: number[] = [];
+        for (const f of foodRef.current) {
+          if (f.y < floor) {
+            f.y = Math.min(floor, f.y + FOOD_SINK * dt);
+            f.x = clamp(f.x + Math.sin(now / 600 + f.sway) * 0.6 * dt, 1, 99);
+          } else if (!f.landedAt) f.landedAt = now;
+          if (f.landedAt && now - f.landedAt > FOOD_BOTTOM_MS) gone.push(f.id);
+          else paintFood(f, now);
+        }
+        removeFood(gone);
+      }
       movers.forEach((m, id) => {
         if (m.hidden) return;
         // Yakalandı: av çırpınarak kaçmaya devam eder; büyük balık ağzını açıp öne atılır ve avı ağzına alır.
@@ -620,6 +725,22 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
             m.ty = m.y;
           }
         }
+        if (m.foodId != null) {
+          const f = foodRef.current.find((x) => x.id === m.foodId);
+          if (!f || m.mode !== 'wander' || m.wrapDir || !swallowRef.current) {
+            if (f) f.by = undefined;
+            m.foodId = undefined;
+          } else {
+            // Ağzını yeme getirir; yem dibe çöktüyse en alçak yerden uzanır
+            const toRight = f.x >= cx(m);
+            m.tx = clamp(f.x - m.size * (toRight ? MOUTH_AT : 1 - MOUTH_AT), b.minX, b.maxX);
+            m.ty = clamp(f.y - m.h * 0.55, b.minY, b.maxY);
+            m.rest = 0;
+            const nearX = Math.abs(mouthX(m) - f.x) < Math.max(1.2, m.size * 0.14);
+            const nearY = Math.abs(mouthY(m) - f.y) < Math.max(1.2, m.h * 0.3) || (m.y >= b.maxY - 0.5 && f.y > mouthY(m));
+            if (nearX && nearY) eatFood(id, f, now);
+          }
+        }
         if (m.mode === 'chase' && m.preyId) {
           const prey = movers.get(m.preyId);
           if (prey && !prey.hidden && !prey.gulpBy) {
@@ -645,7 +766,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         const dy = m.ty - m.y;
         const dist = Math.hypot(dx, dy);
         // Hedefe varınca bazen kısa bir mola, sonra yeni hedef
-        if (m.mode === 'wander') {
+        if (m.mode === 'wander' && m.foodId == null) {
           if (m.rest > 0) {
             m.rest -= dt;
             if (m.rest <= 0) pickTarget(m);
@@ -659,6 +780,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         let sp = m.speed * boost;
         if (m.rest > 0) sp = 0;
         else if (m.wrapDir || (swallowRef.current && m.mode === 'flee')) sp = FEAST_FLEE + m.speed * 0.5;
+        else if (m.foodId != null) sp = 2.5 + m.speed * 1.2;
         else if (swallowRef.current && m.mode === 'chase') {
           // Önce avın biraz gerisinde kalır (kovalamaca görünsün), sonra atak yapıp yetişir
           const prey = m.preyId ? movers.get(m.preyId) : undefined;
@@ -698,6 +820,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       if (sinceCheck > CHASE_CHECK_S) {
         sinceCheck = 0;
         settleMeals();
+        autoFood(now);
+        assignFood();
         checkChase(now);
       }
       raf = requestAnimationFrame(frame);
@@ -716,10 +840,20 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       timers.forEach((tm) => window.clearTimeout(tm));
       movers.forEach((m) => { m.mode = 'wander'; m.preyId = undefined; });
     };
-  }, [fish, layout, fishBottom, scopeKey, playChase, playGulp]);
+  }, [fish, layout, fishBottom, scopeKey, playChase, playGulp, playNibble, dropFood]);
 
   const fishCount = fish.length;
   const summary = `${title}: ${fishCount} balık, ${eggs.length} yumurta`;
+  const canFeed = swallowOn && !reducedMotion;
+  /** Akvaryuma dokununca o noktaya yem düşer (düğmeler hariç) */
+  const onTankPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!canFeed || (e.target as HTMLElement).closest('button')) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.width) * 100; // cqw: genişliğin yüzdesi
+    if (y > fishBottom - 1) return;
+    dropFood(Math.min(98, Math.max(2, x)), Math.max(1, y));
+  };
 
   return (
     <div ref={stageRef} className={`${styles.stage} ${full ? styles.full : ''}`}>
@@ -732,7 +866,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         </div>
       )}
 
-      <div ref={tankRef} className={styles.tank} role="img" aria-label={summary}>
+      <div ref={tankRef} className={`${styles.tank} ${canFeed ? styles.tankFeed : ''}`} role="img" aria-label={summary} onPointerDown={onTankPointerDown}>
         <div className={styles.rays} aria-hidden="true" />
 
         {BUBBLES.map((x, i) => (
@@ -766,6 +900,16 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           <span className={styles.rock} style={{ left: '78cqw', width: '8cqw' }} />
         </div>
 
+        {foods.map((f) => (
+          <span
+            key={f.id}
+            ref={(el) => { if (el) foodEls.current.set(f.id, el); else foodEls.current.delete(f.id); }}
+            className={styles.food}
+            style={{ transform: `translate3d(${f.x.toFixed(2)}cqw, ${f.y.toFixed(2)}cqw, 0)` }}
+            aria-hidden="true"
+          />
+        ))}
+
         {fish.map((s) => {
           const { left, top, size: baseSize } = layout[s.id];
           // Yutma modunda geçici puanla büyür (yalnızca ekranda)
@@ -781,11 +925,12 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           const swallowing = !!feast.swallowing[s.id];
           const gulping = !!feast.gulping[s.id];
           const gulped = !!feast.gulp[s.id];
+          const snacked = !!feast.snack[s.id];
           return (
             <div
               key={s.id}
               ref={(el) => { if (el) swimmerRefs.current.set(s.id, el); else swimmerRefs.current.delete(s.id); }}
-              className={`${styles.swimmer} ${born ? styles.born : ''} ${role === 'chase' ? styles.chasing : ''} ${role === 'flee' ? styles.fleeing : ''} ${eaten ? styles.eaten : ''} ${extra > 0 ? styles.fed : ''} ${swallowing ? styles.swallowing : ''} ${gulping ? styles.gulping : ''} ${gulped ? styles.gulped : ''}`}
+              className={`${styles.swimmer} ${born ? styles.born : ''} ${role === 'chase' ? styles.chasing : ''} ${role === 'flee' ? styles.fleeing : ''} ${eaten ? styles.eaten : ''} ${extra > 0 ? styles.fed : ''} ${swallowing ? styles.swallowing : ''} ${gulping ? styles.gulping : ''} ${gulped ? styles.gulped : ''} ${snacked ? styles.snacked : ''}`}
               aria-hidden={eaten || undefined}
               style={{
                 // Başlangıç konumu; sonrasını yüzme motoru yazar
@@ -809,6 +954,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
                 </span>
                 {born && <span className={styles.bornBadge}>Yumurtadan çıktı!</span>}
                 {feast.gulp[s.id] && <span key={feast.gulp[s.id]} className={styles.gulpBadge} aria-hidden="true">Hap! +{extra}</span>}
+                {!feast.gulp[s.id] && feast.snack[s.id] && <span key={`y${feast.snack[s.id]}`} className={`${styles.gulpBadge} ${styles.snackBadge}`} aria-hidden="true">Ham! +{FOOD_POINTS}</span>}
               </div>
             </div>
           );
@@ -870,12 +1016,17 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           <span className={styles.switchTrack} aria-hidden="true"><span className={styles.switchThumb} /></span>
           Balıklar birbirini yutsun
         </button>
+        {canFeed && (
+          <button type="button" className={styles.feedButton} onClick={scatterFood}>
+            Yem at
+          </button>
+        )}
         <p className={styles.toolbarHint}>
           {!swallowOn
             ? 'Kapalı: büyük balık küçüğü kovalar, küçük kaçar.'
             : reducedMotion
               ? 'Bu cihazda hareket azaltma açık olduğu için balıklar yüzmüyor.'
-              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Küçük balık bazen kaçıp kurtulur. Yutulan balıklar bu ayar kapatılınca geri gelir. Gerçek puanlar değişmez.'}
+              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Küçük balık bazen kaçıp kurtulur. Yemi yalnızca küçük balıklar yer (+2); akvaryuma dokunarak da yem atabilirsin. Yutulan balıklar bu ayar kapatılınca geri gelir. Gerçek puanlar değişmez.'}
         </p>
       </div>
 

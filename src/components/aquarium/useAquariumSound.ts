@@ -161,6 +161,15 @@ export function useAquariumSound() {
     }
   }, []);
 
+  /** Küçük balık yem yedi: tek kısa "çıt" kabarcık */
+  const playNibble = useCallback(() => {
+    const g = liveGraph(graph.current, enabledRef.current);
+    if (!g) return;
+    const t = g.ctx.currentTime + 0.01;
+    bubble(g, t, 900 + Math.random() * 300, 0.09, 0.04);
+    bubble(g, t + 0.06, 1200 + Math.random() * 300, 0.06, 0.035);
+  }, []);
+
   /** Büyük balık yuttu: alçalan "glup" ve birkaç kabarcık */
   const playGulp = useCallback(() => {
     const g = liveGraph(graph.current, enabledRef.current);
@@ -249,5 +258,5 @@ export function useAquariumSound() {
     };
   }, []);
 
-  return { enabled, unavailable, toggle, playChase, playGulp };
+  return { enabled, unavailable, toggle, playChase, playGulp, playNibble };
 }

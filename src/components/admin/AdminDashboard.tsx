@@ -30,11 +30,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   const [message, notify, clearMessage] = useNotify();
   const [page, setPage] = useState<AdminPageId>(readPageFromUrl);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Okul başvurularındaki "Okul ekle": Okullar sayfası ekleme formu açık açılır
+  const [schoolFormOpen, setSchoolFormOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const openPage = useCallback((next: AdminPageId) => {
     setPage(next);
     clearMessage();
+    setSchoolFormOpen(false);
     const info = getAdminPage(next);
     const url = new URL(window.location.href);
     if (info) url.searchParams.set('sayfa', info.slug);
@@ -92,10 +95,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         {page === 'teacher_requests' && (
           <AdminTeacherRequestsPage data={data} notify={notify} onOpenSchoolRequests={() => openPage('school_requests')} />
         )}
-        {page === 'school_requests' && <AdminSchoolRequestsPage data={data} notify={notify} />}
+        {page === 'school_requests' && (
+          <AdminSchoolRequestsPage data={data} notify={notify} onAddSchools={() => { openPage('schools'); setSchoolFormOpen(true); }} />
+        )}
         {page === 'teachers' && <AdminTeachersPage data={data} notify={notify} />}
         {page === 'students' && <AdminStudentsPage data={data} notify={notify} />}
-        {page === 'schools' && <AdminSchoolsPage data={data} notify={notify} />}
+        {page === 'schools' && <AdminSchoolsPage key={schoolFormOpen ? 'form' : 'list'} data={data} notify={notify} startWithForm={schoolFormOpen} />}
         {page === 'classes' && <AdminClassesPage data={data} />}
         {page === 'announcements' && <AnnouncementsPage canManage />}
         {page === 'account' && <TeacherProfilePage user={currentUser} onLogout={handleLogout} />}

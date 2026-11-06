@@ -99,3 +99,10 @@
   .hideNarrow { display: none; }
 }
 
+
+/* Okul ekleme: Excel'den yapıştırma önizlemesi */
+.pasteArea { min-height: 180px; font-size: 14px; tab-size: 16; }
+.parseSummary { display: flex; flex-wrap: wrap; gap: 8px; }
+.parseSummary .errorBadge { margin-top: 0; }
+.parseIssues { display: grid; gap: 4px; margin: 0; padding: 12px 16px; border: 1px solid #e6bbc3; border-radius: 10px; background: #fdf6f7; color: #20352d; font-size: 13px; line-height: 1.5; list-style: none; }
+.parseIssues strong { color: #943747; }

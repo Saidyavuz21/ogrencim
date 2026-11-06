@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import styles from './AdminManagement.module.css';
-import { Check, Trash2 } from '../icons';
+import { Check, Trash2, Plus } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { useDialog } from '../ConfirmDialog';
 import { approveSchool, mergeSchool, deleteSchool, SchoolRecord } from '../../lib/supabaseClient';
@@ -11,10 +11,12 @@ import { AdminData, EmptyState, Notify } from './adminShared';
 interface Props {
   data: AdminData;
   notify: Notify;
+  /** Okullar sayfasını ekleme formu açık hâlde açar */
+  onAddSchools: () => void;
 }
 
 /** Öğretmenlerin "Okulum listede yok" ile eklediği okullar: onayla, birleştir veya sil */
-export function AdminSchoolRequestsPage({ data, notify }: Props) {
+export function AdminSchoolRequestsPage({ data, notify, onAddSchools }: Props) {
   const { confirm, prompt } = useDialog();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [mergeFor, setMergeFor] = useState<SchoolRecord | null>(null);
@@ -76,7 +78,12 @@ export function AdminSchoolRequestsPage({ data, notify }: Props) {
 
   return (
     <section className={styles.section} aria-labelledby="school-requests-title">
-      <h2 id="school-requests-title" className={styles.sectionTitle}>Onay bekleyen okullar ({pending.length})</h2>
+      <div className={styles.between}>
+        <h2 id="school-requests-title" className={styles.sectionTitle}>Onay bekleyen okullar ({pending.length})</h2>
+        <button type="button" className={styles.button} onClick={onAddSchools}>
+          <Plus className={styles.icon} /> Okul ekle
+        </button>
+      </div>
       <p className={styles.muted}>
         Listede olmayan okullar öğretmen kaydında buraya düşer. Doğruysa onaylayın; yazım farkıyla tekrar eklenmiş bir okulsa
         listedeki okulla birleştirin, öğretmenleri oraya taşınır.

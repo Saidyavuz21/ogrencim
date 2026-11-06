@@ -132,7 +132,7 @@ export function Aquarium(props: AquariumProps) {
 }
 
 function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvaryumu' }: AquariumProps) {
-  const { enabled: soundEnabled, unavailable: soundUnavailable, toggle: toggleSound } = useAquariumSound();
+  const { enabled: soundEnabled, unavailable: soundUnavailable, toggle: toggleSound, playChase, playGulp } = useAquariumSound();
   const stageRef = useRef<HTMLDivElement>(null);
   const tankRef = useRef<HTMLDivElement>(null);
   const swimmerRefs = useRef(new Map<string, HTMLDivElement>());
@@ -373,6 +373,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       busyUntil.set(smallId, now + (feasting ? SWALLOW_COOLDOWN_MS : CHASE_COOLDOWN_MS));
       nextChaseAt = now + (feasting ? 2500 + Math.random() * 3000 : 8000 + Math.random() * 8000);
       setChase({ [bigId]: 'chase', [smallId]: 'flee' });
+      playChase();
       timers.push(window.setTimeout(() => setChase({}), feasting ? SWALLOW_FLEE_MS : FLEE_MS));
     };
 
@@ -458,6 +459,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       regrow(smallId);
       regrow(bigId);
       gulps = { ...gulps, [bigId]: now };
+      playGulp();
       publish();
       timers.push(window.setTimeout(() => {
         const { [bigId]: at, ...rest } = gulps;
@@ -627,7 +629,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       timers.forEach((tm) => window.clearTimeout(tm));
       movers.forEach((m) => { m.mode = 'wander'; m.preyId = undefined; });
     };
-  }, [fish, layout, fishBottom, scopeKey]);
+  }, [fish, layout, fishBottom, scopeKey, playChase, playGulp]);
 
   const fishCount = fish.length;
   const summary = `${title}: ${fishCount} balık, ${eggs.length} yumurta`;

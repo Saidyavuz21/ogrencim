@@ -2,7 +2,7 @@
 // SINIF AKVARYUMU KURALLARI
 // - 5 puanın altı (eksiler dahil) yumurta; 1–4 puanda çatlaklar artar
 // - 5 puanda yumurtadan çıkar; puan 5'in altına düşerse yeniden yumurta olur
-// - Her 5 puanda balığın şekli değişir (12 şekil: 5–9, 10–14, … 60+)
+// - Her 5 puanda balığın şekli değişir (16 şekil: 5–9, 10–14, … 80+)
 // - Her puanda boy belirgin biçimde artar; büyüme yavaşlayarak bir üst sınıra yaklaşır
 // - Puanı yaklaşık iki katı olan balık yanındaki küçüğe ağzını açıp saldırır, küçük kaçar (yemez)
 // - 50 puanda parıltı, 75 puanda taç
@@ -16,7 +16,7 @@ export interface AquariumInput {
 
 export const HATCH_POINTS = 5;
 export const FORM_STEP = 5;
-export const FORM_COUNT = 12;
+export const FORM_COUNT = 16;
 export const SPARKLE_POINTS = 50;
 export const CROWN_POINTS = 75;
 
@@ -26,7 +26,7 @@ export const isFish = (s: Pick<AquariumInput, 'points'>) => s.points >= HATCH_PO
 /** Yumurtadaki çatlak sayısı: 0 puan ve eksi → 0, 1–4 puan → 1–4 */
 export const eggCracks = (points: number) => Math.max(0, Math.min(HATCH_POINTS - 1, points));
 
-/** Balık şekli 1–12 (5–9 puan → 1, 10–14 → 2, … 60+ → 12) */
+/** Balık şekli 1–16 (5–9 puan → 1, 10–14 → 2, … 80+ → 16) */
 export const fishForm = (points: number) =>
   Math.max(1, Math.min(FORM_COUNT, Math.floor(Math.max(points, HATCH_POINTS) / FORM_STEP)));
 
@@ -50,17 +50,23 @@ export const CHASE_RATIO = 1.8;
 
 /**
  * "Balıklar birbirini yutsun" modu (yalnızca ekranda; gerçek puanlar değişmez):
- * - Balık, kendinden en az 2 şekil (kademe) küçük balığı yakalarsa yutar
+ * - Balık, kendinden en az 1 şekil (kademe) küçük balığı yakalarsa yutar
+ * - İkisi de son şekildeyse (Ejder) puanı fazla olan diğerini yutar
  * - Yutan, yutulan kaç puanlı olursa olsun geçici olarak 5 puan alır (bir şekil büyür); böylece
  *   şekiller atlanmadan sırayla görünür ve yuta yuta daha büyükleri de yutabilir
  * - Yaklaşık 1 dakika sonra yutulan geri gelir, yutan da aldığı geçici puanı kaybeder
  */
-export const SWALLOW_TIER_GAP = 2;
+export const SWALLOW_TIER_GAP = 1;
 export const SWALLOW_MS = 60_000;
 /** Her yutuşta kazanılan geçici puan (bir şekil kademesi) */
 export const SWALLOW_POINTS = FORM_STEP;
-export const canSwallow = (bigPoints: number, smallPoints: number) =>
-  isFish({ points: bigPoints }) && isFish({ points: smallPoints }) && fishForm(bigPoints) - fishForm(smallPoints) >= SWALLOW_TIER_GAP;
+export function canSwallow(bigPoints: number, smallPoints: number) {
+  if (!isFish({ points: bigPoints }) || !isFish({ points: smallPoints })) return false;
+  const big = fishForm(bigPoints);
+  const small = fishForm(smallPoints);
+  if (big === FORM_COUNT && small === FORM_COUNT) return bigPoints > smallPoints;
+  return big - small >= SWALLOW_TIER_GAP;
+}
 
 /** Kimliğe göre sabit sözde rastgele sayı (her açılışta aynı balık aynı yerde yüzer) */
 export function seeded(id: string, salt: number): number {

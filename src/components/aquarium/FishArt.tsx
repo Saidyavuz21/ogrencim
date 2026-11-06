@@ -210,7 +210,78 @@ function Lantern() {
   );
 }
 
-/** 12 · Ejder (60+): kırmızı pullu gövde, altın dikenli sırt, uzun bıyıklar */
+/** 12 · Aslan (60–64): çizgili gövde, yelpaze gibi dikenli yüzgeçler */
+function Lion() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M34 42 L14 30 Q20 42 14 54 Z" fill="#f6d7c3" />
+      <path d="M42 30 L32 4 L50 27 L46 -1 L58 26 L62 -3 L68 26 L76 1 L80 29 Z" fill="#f3c2ae" />
+      <path d="M38 6 L44 28 M50 2 L52 27 M62 0 L63 26 M74 4 L72 27" fill="none" stroke="#c8372d" strokeWidth={1.4} />
+      <path d="M62 50 Q50 80 28 78 Q44 68 50 54 Z" fill="#f3c2ae" />
+      <path d="M58 54 Q46 72 34 76 M54 52 Q48 64 40 72" fill="none" stroke="#c8372d" strokeWidth={1.4} />
+      <path d="M30 42 Q44 24 72 26 Q98 28 106 42 Q98 56 72 58 Q44 60 30 42 Z" fill="#fbefe4" />
+      <path d="M46 30 Q42 42 46 56 M60 27 Q56 42 60 58 M74 26 Q70 42 74 58 M86 29 Q83 42 86 55" fill="none" stroke="#c8372d" strokeWidth={4.5} />
+      <Shine cx={66} cy={32} rx={12} ry={3} />
+      <Eye cx={93} cy={38} r={5} />
+      <path d="M104 46 Q101 48 98 46" fill="none" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/** 13 · Vatoz (65–69): geniş kanatlı, uzun kuyruklu */
+function Manta() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M32 42 Q16 44 -2 52" fill="none" strokeWidth={2.4} strokeLinecap="round" />
+      <path d="M28 42 Q48 30 60 4 Q72 24 98 34 Q110 38 110 42 Q110 46 98 50 Q72 60 60 80 Q48 54 28 42 Z" fill="#3d5a80" />
+      <path d="M44 42 Q62 35 98 40 Q62 50 44 42 Z" fill="#e0ecf5" stroke="none" />
+      <path d="M100 36 Q112 28 116 35 Q109 36 104 39 Z M100 48 Q112 56 116 49 Q109 48 104 45 Z" fill="#2c4462" />
+      {[[58, 22, 2.5], [64, 30, 2], [56, 60, 2.5], [64, 54, 2]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#9db7d3" stroke="none" />
+      ))}
+      <Shine cx={62} cy={16} rx={4} ry={8} />
+      <Eye cx={96} cy={38} r={4.5} />
+    </g>
+  );
+}
+
+/** 14 · Çekiç (70–74): çekiç başlı köpekbalığı */
+function Hammer() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M26 40 L6 12 Q12 34 14 40 Q12 48 4 60 Z" fill="#7f8c9a" />
+      <path d="M52 27 L64 4 L74 27 Z" fill="#7f8c9a" />
+      <path d="M66 52 L54 70 L78 54 Z" fill="#7f8c9a" />
+      <path d="M20 40 Q40 24 70 26 Q92 28 100 36 L100 46 Q92 54 70 56 Q40 56 20 40 Z" fill="#95a5b4" />
+      <path d="M34 46 Q60 56 96 46 Q86 54 66 55 Q44 54 34 46 Z" fill="#eef2f5" stroke="none" />
+      <path d="M94 32 Q100 20 108 12 Q115 12 114 19 L108 41 L114 64 Q115 71 108 71 Q100 64 94 52 Z" fill="#95a5b4" />
+      <path d="M82 34 Q80 40 82 46 M87 34 Q85 40 87 46" fill="none" strokeWidth={1.6} />
+      <Shine cx={62} cy={31} rx={14} ry={3} />
+      <Eye cx={110} cy={18} r={3.8} />
+      <Eye cx={110} cy={64} r={3.2} />
+    </g>
+  );
+}
+
+/** 15 · Köpekbalığı (75–79): üçgen sırt yüzgeci, beyaz karın, dişli gülüş */
+function Shark() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M26 40 L4 6 Q14 32 16 40 Q14 48 8 64 Z" fill="#4a6fa5" />
+      <path d="M50 24 L62 -2 L74 24 Z" fill="#4a6fa5" />
+      <path d="M62 52 L48 72 L74 54 Z" fill="#4a6fa5" />
+      <path d="M18 40 Q38 20 72 22 Q100 24 114 40 Q104 54 72 58 Q38 58 18 40 Z" fill="#5b84c4" />
+      <path d="M32 46 Q66 60 108 44 Q96 56 70 57 Q46 56 32 46 Z" fill="#f2f5f8" stroke="none" />
+      <path d="M82 32 Q79 40 82 48 M87 32 Q84 40 87 48 M92 33 Q89 40 92 47" fill="none" strokeWidth={1.6} />
+      <path d="M96 47 Q104 50 110 44" fill="none" strokeLinecap="round" />
+      <path d="M98 48 L99.5 51.5 L101 48.8 Z M102.5 48.8 L104 52 L105.5 48 Z" fill="#fff" strokeWidth={1} />
+      <Shine cx={68} cy={28} rx={15} ry={3} />
+      <Eye cx={100} cy={35} r={4.5} />
+    </g>
+  );
+}
+
+/** 16 · Ejder (80+): kırmızı pullu gövde, altın dikenli sırt, uzun bıyıklar */
 function Dragon() {
   return (
     <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
@@ -226,9 +297,9 @@ function Dragon() {
   );
 }
 
-const FORMS = [Fry, Orange, Striped, Blue, Angel, Spotted, Veil, Golden, Puffer, Sword, Lantern, Dragon];
+const FORMS = [Fry, Orange, Striped, Blue, Angel, Spotted, Veil, Golden, Puffer, Sword, Lantern, Lion, Manta, Hammer, Shark, Dragon];
 
-export const FORM_NAMES = ['Yavru', 'Turuncu', 'Çizgili', 'Mavi', 'Melek', 'Benekli', 'Pelerin', 'Altın', 'Balon', 'Kılıç', 'Fener', 'Ejder'];
+export const FORM_NAMES = ['Yavru', 'Turuncu', 'Çizgili', 'Mavi', 'Melek', 'Benekli', 'Pelerin', 'Altın', 'Balon', 'Kılıç', 'Fener', 'Aslan', 'Vatoz', 'Çekiç', 'Köpekbalığı', 'Ejder'];
 
 function Crown() {
   return (
@@ -245,7 +316,7 @@ function Crown() {
 /** Her şeklin burun ucu (ağzın açılacağı nokta): [x, y] */
 const MOUTHS: [number, number][] = [
   [89, 46], [97, 45], [99, 45], [110, 44], [101, 43], [96, 47], [101, 44], [103, 45],
-  [94, 47], [102, 41], [108, 47], [105, 43],
+  [94, 47], [102, 41], [108, 47], [105, 45], [110, 42], [100, 48], [111, 44], [105, 43],
 ];
 
 /**

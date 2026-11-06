@@ -790,7 +790,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
             ? 'Kapalı: büyük balık küçüğü kovalar, küçük kaçar.'
             : reducedMotion
               ? 'Bu cihazda hareket azaltma açık olduğu için balıklar yüzmüyor.'
-              : 'Açık: balık, kendinden en az iki kademe küçük balığı yutar ve bir dakikalığına 5 puan alıp bir şekil büyür. Yutulan balık bir dakika sonra geri gelir. Gerçek puanlar değişmez.'}
+              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve bir dakikalığına 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Yutulan balık bir dakika sonra geri gelir. Gerçek puanlar değişmez.'}
         </p>
       </div>
 

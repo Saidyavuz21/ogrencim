@@ -169,9 +169,12 @@
 }
 
 .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35cqw;
   margin-top: 0.15cqw;
-  padding: 0.1cqw 0.55cqw;
-  max-width: 14cqw;
+  padding: 0.1cqw 0.2cqw 0.1cqw 0.55cqw;
+  max-width: 17cqw;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -182,6 +185,29 @@
   font-weight: 700;
   line-height: 1.35;
   box-shadow: 0 0.15cqw 0.4cqw rgba(8, 40, 60, 0.18);
+}
+
+/* İsim uzunsa kısalır, puan hep görünür */
+.labelName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.labelPts {
+  flex-shrink: 0;
+  padding: 0 0.4cqw;
+  border-radius: 999px;
+  background: #0f3446;
+  color: #fff;
+  font-size: 0.9em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Geçici puanla (yutma/yem) büyümüş balık: puan altın renkte */
+.fed .labelPts {
+  background: #ffd84d;
+  color: #3b2a00;
 }
 
 /* ===== "Yeme" oyunu: büyük balık kovalar ve ağzını açar, küçük kaçar (yemez) ===== */
@@ -259,6 +285,12 @@
   background: #3b2a00;
   color: #ffd84d;
   font-size: 0.85em;
+}
+
+/* Sarı "Sen" etiketinde altın puan kaybolmasın */
+.fed .labelMe .labelPts {
+  background: #3b2a00;
+  color: #ffd84d;
 }
 
 .meGlow {

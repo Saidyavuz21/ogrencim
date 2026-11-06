@@ -950,7 +950,9 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
                   {role === 'flee' && <span className={styles.yikes} aria-hidden="true">!</span>}
                 </div>
                 <span className={`${styles.label} ${me ? styles.labelMe : ''}`}>
-                  {me && <b>Sen</b>}{names[s.id]}
+                  {me && <b>Sen</b>}
+                  <span className={styles.labelName}>{names[s.id]}</span>
+                  <span className={styles.labelPts}>{shown}</span>
                 </span>
                 {born && <span className={styles.bornBadge}>Yumurtadan çıktı!</span>}
                 {feast.gulp[s.id] && <span key={feast.gulp[s.id]} className={styles.gulpBadge} aria-hidden="true">Hap! +{extra}</span>}

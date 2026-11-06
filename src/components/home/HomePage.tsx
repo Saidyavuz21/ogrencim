@@ -8,6 +8,7 @@ import { restoreSession, signInStaff, signInStudent, SchoolRecord } from '../../
 import styles from './HomePage.module.css';
 import { BrandLogo } from '../BrandLogo';
 import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
+import { InstallAppBanner } from '../InstallAppBanner';
 
 export default function HomePage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function HomePage() {
       .then((user) => {
         if (user && !cancelled) router.replace('/giris');
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -69,6 +70,7 @@ export default function HomePage() {
 
   return (
     <div className={styles.page}>
+      <InstallAppBanner />
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <Link className={styles.brand} href="/" aria-label="tofutr.com ana sayfa">
@@ -102,28 +104,28 @@ export default function HomePage() {
             </div>
             <form onSubmit={handleLogin} aria-busy={isSubmitting}>
               <fieldset className={styles.loginFields} disabled={isSubmitting}>
-              {role !== 'Öğretmen' && <StudentSchoolSelect value={school} onChange={setSchool} disabled={isSubmitting} />}
-              <label htmlFor="identifier">{role === 'Öğretmen' ? 'E-posta adresi' : 'Öğrenci okul numarası'}</label>
-              <input id="identifier" name="identifier" type={role === 'Öğretmen' ? 'email' : 'text'} inputMode={role === 'Öğretmen' ? 'email' : 'numeric'} autoComplete="username" placeholder={role === 'Öğretmen' ? 'ornek@okul.edu.tr' : 'Okul numaranızı yazın'} required />
-              {role === 'Öğretmen' ? <>
-                <label htmlFor="password">Şifre</label>
-                <div className={styles.password}><input id="password" name="password" type={visible ? 'text' : 'password'} autoComplete="current-password" placeholder="Şifrenizi yazın" required /><button type="button" aria-label={visible ? 'Şifreyi gizle' : 'Şifreyi göster'} aria-pressed={visible} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
-              </> : <fieldset className={styles.pinGroup}>
-                <legend>4 haneli PIN kodu</legend>
-                <div className={styles.pinInputs}>{pin.map((digit, index) => <input key={index} id={`home-pin-${index}`} aria-label={`PIN ${index + 1}. hane`} type="password" inputMode="numeric" pattern="[0-9]" maxLength={1} value={digit} required onChange={event => {
-                  const value = event.target.value.replace(/\D/g, '').slice(-1);
-                  setPin(previous => previous.map((item, position) => position === index ? value : item));
-                  if (value && index < 3) document.getElementById(`home-pin-${index + 1}`)?.focus();
-                }} onKeyDown={event => { if (event.key === 'Backspace' && !digit && index > 0) document.getElementById(`home-pin-${index - 1}`)?.focus(); }} onPaste={event => {
-                  const digits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4 - index);
-                  if (!digits) return;
-                  event.preventDefault();
-                  setPin(previous => previous.map((item, position) => position >= index && position < index + digits.length ? digits[position - index] : item));
-                  document.getElementById(`home-pin-${Math.min(index + digits.length, 3)}`)?.focus();
-                }} />)}</div>
-              </fieldset>}
-              <p className={styles.help}>{role === 'Öğretmen' ? 'Öğretmen hesabınızla giriş yapabilirsiniz.' : 'Okul numaranızı ve PIN kodunuzu öğretmeninizden alabilirsiniz.'}</p>
-              <button className={styles.submit} type="submit">{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'} <ArrowRight size={19} /></button>
+                {role !== 'Öğretmen' && <StudentSchoolSelect value={school} onChange={setSchool} disabled={isSubmitting} />}
+                <label htmlFor="identifier">{role === 'Öğretmen' ? 'E-posta adresi' : 'Öğrenci okul numarası'}</label>
+                <input id="identifier" name="identifier" type={role === 'Öğretmen' ? 'email' : 'text'} inputMode={role === 'Öğretmen' ? 'email' : 'numeric'} autoComplete="username" placeholder={role === 'Öğretmen' ? 'ornek@okul.edu.tr' : 'Okul numaranızı yazın'} required />
+                {role === 'Öğretmen' ? <>
+                  <label htmlFor="password">Şifre</label>
+                  <div className={styles.password}><input id="password" name="password" type={visible ? 'text' : 'password'} autoComplete="current-password" placeholder="Şifrenizi yazın" required /><button type="button" aria-label={visible ? 'Şifreyi gizle' : 'Şifreyi göster'} aria-pressed={visible} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
+                </> : <fieldset className={styles.pinGroup}>
+                  <legend>4 haneli PIN kodu</legend>
+                  <div className={styles.pinInputs}>{pin.map((digit, index) => <input key={index} id={`home-pin-${index}`} aria-label={`PIN ${index + 1}. hane`} type="password" inputMode="numeric" pattern="[0-9]" maxLength={1} value={digit} required onChange={event => {
+                    const value = event.target.value.replace(/\D/g, '').slice(-1);
+                    setPin(previous => previous.map((item, position) => position === index ? value : item));
+                    if (value && index < 3) document.getElementById(`home-pin-${index + 1}`)?.focus();
+                  }} onKeyDown={event => { if (event.key === 'Backspace' && !digit && index > 0) document.getElementById(`home-pin-${index - 1}`)?.focus(); }} onPaste={event => {
+                    const digits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4 - index);
+                    if (!digits) return;
+                    event.preventDefault();
+                    setPin(previous => previous.map((item, position) => position >= index && position < index + digits.length ? digits[position - index] : item));
+                    document.getElementById(`home-pin-${Math.min(index + digits.length, 3)}`)?.focus();
+                  }} />)}</div>
+                </fieldset>}
+                <p className={styles.help}>{role === 'Öğretmen' ? 'Öğretmen hesabınızla giriş yapabilirsiniz.' : 'Okul numaranızı ve PIN kodunuzu öğretmeninizden alabilirsiniz.'}</p>
+                <button className={styles.submit} type="submit">{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'} <ArrowRight size={19} /></button>
               </fieldset>
               {notice && <p className={styles.notice} role="alert">{notice}</p>}
             </form>

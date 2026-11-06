@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "e-Okul Portalı | Öğrenci Bilgi Sistemi",
   description: "Öğretmen ödevleri, puan durumu ve öğrenci başarı takip sistemi",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

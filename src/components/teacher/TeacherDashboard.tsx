@@ -42,6 +42,7 @@ interface TeacherDashboardProps {
   onOpenNotifications?: () => void;
   unreadCount?: number;
   currentUser?: UserAccount;
+  onUserUpdated?: (user: UserAccount) => void;
 }
 
 const readPageFromUrl = (): TeacherPageId =>
@@ -55,6 +56,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onOpenNotifications,
   unreadCount = 0,
   currentUser,
+  onUserUpdated,
 }) => {
   const homeroomClass = currentUser?.className && currentUser.className !== 'Yok' ? currentUser.className : '';
   const defaultSubject = currentUser?.branch || '';
@@ -187,6 +189,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {page === 'profile' && (
         <TeacherProfilePage
           user={currentUser}
+          onUserUpdated={onUserUpdated}
           // Çıkışta adresteki ?sayfa= temizlenir; sonraki giriş ana sayfadan başlar
           onLogout={onLogout && (() => { window.history.replaceState(null, '', window.location.pathname); onLogout(); })}
         />

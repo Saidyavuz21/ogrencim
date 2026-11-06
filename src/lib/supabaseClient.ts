@@ -312,6 +312,29 @@ export async function changeMyPassword(newPassword: string): Promise<{ ok: boole
   return { ok: true };
 }
 
+/**
+ * Giriş yapmış öğretmen sadece kendi Ad Soyad ve Branş bilgilerini günceller.
+ * Okul, il/ilçe ve sınıf güvenliği için sunucu tarafındaki update_my_profile RPC'si çağrılır.
+ */
+export async function updateMyProfile(name: string, branch: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('update_my_profile', {
+    p_full_name: name,
+    p_branch: branch,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Öğretmen e-posta değişikliği: Supabase Auth akışı üzerinden yürütülür.
+ * Yeni e-posta adresine onay bağlantısı gönderilir, doğrudan profiles tablosu güncellenmez.
+ */
+export async function changeMyEmail(newEmail: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 // ========================================================
 // 1. ÖĞRENCİ SERVİSLERİ
 // ========================================================

@@ -123,6 +123,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
             onLogout={handleLogout}
             onOpenNotifications={() => setTeacherSection('announcements')}
             currentUser={currentUser}
+            onUserUpdated={setCurrentUser}
           />
         )}
 

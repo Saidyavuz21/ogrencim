@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Maximize, Minimize } from '../icons';
+import { Maximize, Minimize, Sparkles } from '../icons';
 import { Volume2, VolumeX } from '../icons';
 import { useAquariumSound } from './useAquariumSound';
 import {
@@ -1018,7 +1018,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         </button>
         {canFeed && (
           <button type="button" className={styles.feedButton} onClick={scatterFood}>
-            Yem at
+            <Sparkles size={16} aria-hidden="true" />
+            <span>Yem at</span>
           </button>
         )}
         <p className={styles.toolbarHint}>

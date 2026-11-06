@@ -1,4 +1,4 @@
-/* ===== Rastgele öğrenci seçici ===== */
+/* ===== Sınıf araçları: ortak çekiliş/sayaç alanı + rastgele seçici + kronometre ===== */
 
 .layout { display: grid; gap: 16px; min-width: 0; }
 @media (min-width: 1024px) {
@@ -128,4 +128,39 @@
 
 @media (prefers-reduced-motion: reduce) {
   .rolling, .winner { animation: none; }
+}
+
+/* ===== Kronometre ===== */
+.clock { display: flex; align-items: baseline; justify-content: center; gap: 0.1em; font-variant-numeric: tabular-nums; line-height: 1; }
+.clockMain { font-size: clamp(56px, 18cqw, 168px); font-weight: 800; letter-spacing: -0.03em; }
+.clockCs { font-size: clamp(26px, 7cqw, 64px); font-weight: 700; color: rgba(255, 255, 255, 0.75); }
+.clockSub { margin: 12px 0 0; font-size: clamp(16px, 3cqw, 24px); font-weight: 600; color: rgba(255, 255, 255, 0.8); font-variant-numeric: tabular-nums; }
+.full .clockMain { font-size: clamp(80px, 24cqw, 320px); }
+.full .clockCs { font-size: clamp(36px, 9cqw, 120px); }
+
+.laps { display: grid; gap: 2px; max-height: 360px; margin: 0; padding: 0; list-style: none; overflow-y: auto; }
+.laps li {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 12px;
+  padding: 8px 10px; border-radius: 10px; font-variant-numeric: tabular-nums; color: var(--teacher-text);
+}
+.laps li:nth-child(odd) { background: #f7f6f2; }
+.lapNo { font-size: 14px; color: var(--teacher-muted); font-weight: 600; }
+.lapTime { font-size: 17px; font-weight: 700; }
+.lapTotal { font-size: 13px; color: var(--teacher-muted); }
+.lapFast .lapTime { color: #216044; }
+.lapSlow .lapTime { color: #a33342; }
+
+/* ===== Araç sekmeleri ===== */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; width: fit-content; max-width: 100%; border: 1px solid var(--teacher-border); border-radius: 12px; background: #f0eee7; }
+.tabs button {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px;
+  border: 0; border-radius: 9px; background: transparent; color: var(--teacher-muted);
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.tabs button[aria-selected='true'] { background: #fff; color: var(--teacher-primary); box-shadow: 0 1px 2px rgba(20, 35, 28, 0.12); }
+.tabs button:hover:not([aria-selected='true']) { color: var(--teacher-text); }
+.tabs button:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .tabs { width: 100%; }
+  .tabs button { flex: 1; justify-content: center; padding: 0 8px; }
 }

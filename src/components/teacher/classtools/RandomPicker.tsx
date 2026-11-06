@@ -5,7 +5,7 @@ import { Check, Maximize, Minimize, RotateCcw, Shuffle, UserX } from '../../icon
 import type { ClassStudent } from '../../../lib/teacherData';
 import { initialsOf } from '../TeacherUi';
 import { useFullscreen } from './useFullscreen';
-import s from './RandomPicker.module.css';
+import s from './ClassTools.module.css';
 
 /**
  * Rastgele öğrenci seçici
@@ -24,6 +24,7 @@ const keys = (cls: string) => ({
 });
 
 function readJson<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
   try {
     const raw = window.localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;

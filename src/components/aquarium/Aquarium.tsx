@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Maximize, Minimize } from '../icons';
 import {
-  AquariumInput, CROWN_POINTS, SPARKLE_POINTS, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
+  AquariumInput, CHASE_RATIO, CROWN_POINTS, SPARKLE_POINTS, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
 } from '../../lib/aquarium';
 import { EggArt, FishArt, FORM_NAMES } from './FishArt';
 import styles from './Aquarium.module.css';
@@ -18,6 +18,19 @@ interface AquariumProps {
 }
 
 type CSSVars = React.CSSProperties & Record<`--${string}`, string | number>;
+
+/** "Yeme" oyunu: büyük balık saldırır (chase), küçük kaçar (flee). dir: hareket yönü, face: iç çevirme */
+type ChaseEvent = { role: 'chase' | 'flee'; dir: 1 | -1; face: 1 | -1 };
+const CHASE_MS = 1500;
+const CHASE_COOLDOWN_MS = 9000;
+const CHASE_CHECK_MS = 450;
+
+/** Elemanın şu anki yatay çevrilme yönü (CSS animasyonundaki scaleX işareti) */
+const currentFacing = (el: HTMLElement): 1 | -1 => {
+  const m = getComputedStyle(el).transform;
+  if (!m || m === 'none') return 1;
+  return parseFloat(m.slice(m.indexOf('(') + 1)) < 0 ? -1 : 1;
+};
 
 const TANK_H = 56.25; // 16:9 → yükseklik = genişliğin %56.25'i (cqw)
 const FISH_RATIO = 92 / 124; // FishArt viewBox oranı
@@ -59,6 +72,9 @@ export function Aquarium(props: AquariumProps) {
 
 function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvaryumu' }: AquariumProps) {
   const stageRef = useRef<HTMLDivElement>(null);
+  const tankRef = useRef<HTMLDivElement>(null);
+  const swimmerRefs = useRef(new Map<string, HTMLDivElement>());
+  const [chase, setChase] = useState<Record<string, ChaseEvent>>({});
   const [nativeFull, setNativeFull] = useState(false);
   const [pseudoFull, setPseudoFull] = useState(false);
   const full = nativeFull || pseudoFull;
@@ -128,16 +144,16 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
   // ---- Balık yerleşimi: kalabalık sınıfta daha çok sütun; her sütunda balıklar boylarına göre dağıtılır ----
   const fishTop = 4.5;
   const fishBottom = TANK_H - sandH - 1;
-  const LABEL_H = 2.7; // isim etiketi + boşluk (cqw)
+  const LABEL_H = 2.2; // isim etiketi + boşluk (cqw)
   const layout = useMemo(() => {
     const colCount = fish.length <= 8 ? 2 : fish.length <= 18 ? 3 : 4;
     const cols: AquariumInput[][] = Array.from({ length: colCount }, () => []);
     fish.forEach((f, i) => cols[i % colCount].push(f));
     const region = fishBottom - fishTop;
     const colW = 96 / colCount;
-    // Sütun sığmıyorsa balıklar orantılı küçültülür (en fazla %35; daha kalabalıksa hafif üst üste binebilir)
+    // Sütun sığmıyorsa balıklar orantılı küçültülür (en fazla %45; boy oranları korunur; daha kalabalıksa hafif üst üste binebilir)
     const need = Math.max(...cols.map((c) => c.reduce((sum, f) => sum + (fishSize(f.points) / 10) * FISH_RATIO + LABEL_H, 0)), 0.001);
-    const scale = Math.max(0.65, Math.min(1, region / need));
+    const scale = Math.max(0.55, Math.min(1, region / need));
     const out: Record<string, { left: number; top: number; size: number; dist: number }> = {};
     cols.forEach((col, ci) => {
       const heights = col.map((f) => (fishSize(f.points) / 10) * scale * FISH_RATIO);
@@ -158,6 +174,60 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
     return out;
   }, [fish, fishBottom]);
 
+  // ---- "Yeme" oyunu: puanı ~2 katı olan balık yanına gelen küçüğe ağzını açıp atılır, küçük kaçar ----
+  useEffect(() => {
+    if (fish.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const busyUntil = new Map<string, number>();
+    const timers: number[] = [];
+    const tick = () => {
+      const tank = tankRef.current;
+      if (!tank || document.hidden) return;
+      const now = Date.now();
+      const tankW = tank.getBoundingClientRect().width;
+      const items = fish.flatMap((f) => {
+        const flipEl = swimmerRefs.current.get(f.id)?.querySelector<HTMLElement>('[data-flip]');
+        return flipEl ? [{ f, flipEl, r: flipEl.getBoundingClientRect() }] : [];
+      });
+      for (const big of items) {
+        if ((busyUntil.get(big.f.id) || 0) > now) continue;
+        for (const small of items) {
+          if (small === big || (busyUntil.get(small.f.id) || 0) > now) continue;
+          if (big.f.points < CHASE_RATIO * small.f.points) continue;
+          const dx = (small.r.left + small.r.width / 2) - (big.r.left + big.r.width / 2);
+          const dy = (small.r.top + small.r.height / 2) - (big.r.top + big.r.height / 2);
+          const gap = Math.abs(dx) - (big.r.width + small.r.width) / 2;
+          if (gap > tankW * 0.05 || Math.abs(dy) > Math.max(big.r.height, small.r.height) * 0.9) continue;
+
+          const dir: 1 | -1 = dx >= 0 ? 1 : -1;
+          // İç çevirme, dıştaki yüzme çevirmesiyle çarpılınca: büyük küçüğe, küçük büyükten öteye bakar
+          const bigFace = (dir * currentFacing(big.flipEl)) as 1 | -1;
+          const smallFace = (dir * currentFacing(small.flipEl)) as 1 | -1;
+          busyUntil.set(big.f.id, now + CHASE_COOLDOWN_MS);
+          busyUntil.set(small.f.id, now + CHASE_COOLDOWN_MS);
+          setChase((prev) => ({
+            ...prev,
+            [big.f.id]: { role: 'chase', dir, face: bigFace },
+            [small.f.id]: { role: 'flee', dir, face: smallFace },
+          }));
+          timers.push(window.setTimeout(() => {
+            setChase((prev) => {
+              const next = { ...prev };
+              delete next[big.f.id];
+              delete next[small.f.id];
+              return next;
+            });
+          }, CHASE_MS));
+          return; // aynı anda tek kovalamaca
+        }
+      }
+    };
+    const interval = window.setInterval(tick, CHASE_CHECK_MS);
+    return () => {
+      window.clearInterval(interval);
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, [fish]);
+
   const fishCount = fish.length;
   const summary = `${title}: ${fishCount} balık, ${eggs.length} yumurta`;
 
@@ -172,7 +242,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         </div>
       )}
 
-      <div className={styles.tank} role="img" aria-label={summary}>
+      <div ref={tankRef} className={styles.tank} role="img" aria-label={summary}>
         <div className={styles.rays} aria-hidden="true" />
 
         {BUBBLES.map((x, i) => (
@@ -216,9 +286,11 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           const me = s.id === highlightId;
           const born = newlyHatched.has(s.id);
           const form = fishForm(s.points);
+          const ev = chase[s.id];
           return (
             <div
               key={s.id}
+              ref={(el) => { if (el) swimmerRefs.current.set(s.id, el); else swimmerRefs.current.delete(s.id); }}
               className={`${styles.swimmer} ${born ? styles.born : ''}`}
               style={{
                 left: `${left}cqw`,
@@ -230,17 +302,25 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
                 '--bob': `${(3 + r2 * 2.5).toFixed(1)}s`,
               } as CSSVars}
             >
-              <div className={styles.bob}>
-                <div className={`${styles.flip} ${me ? styles.meGlow : ''}`} style={{ height: `${h}cqw`, '--hue': `${((seeded(s.id, 7) - 0.5) * 36).toFixed(0)}deg` } as CSSVars}>
-                  <FishArt form={form} crown={s.points >= CROWN_POINTS} />
-                  {s.points >= SPARKLE_POINTS && (
-                    <span className={styles.sparkles} aria-hidden="true"><i /><i /><i /></span>
-                  )}
+              <div
+                className={`${styles.act} ${ev?.role === 'chase' ? styles.chasing : ''} ${ev?.role === 'flee' ? styles.fleeing : ''}`}
+                style={{ '--dir': ev?.dir ?? 1 } as CSSVars}
+              >
+                <div className={styles.bob}>
+                  <div data-flip className={`${styles.flip} ${me ? styles.meGlow : ''}`} style={{ height: `${h}cqw`, '--hue': `${((seeded(s.id, 7) - 0.5) * 36).toFixed(0)}deg` } as CSSVars}>
+                    <div className={styles.face} style={{ '--face': ev?.face ?? 1 } as CSSVars}>
+                      <FishArt form={form} crown={s.points >= CROWN_POINTS} mouthClassName={styles.mouth} />
+                      {s.points >= SPARKLE_POINTS && (
+                        <span className={styles.sparkles} aria-hidden="true"><i /><i /><i /></span>
+                      )}
+                    </div>
+                    {ev?.role === 'flee' && <span className={styles.yikes} aria-hidden="true">!</span>}
+                  </div>
+                  <span className={`${styles.label} ${me ? styles.labelMe : ''}`}>
+                    {me && <b>Sen</b>}{names[s.id]}
+                  </span>
+                  {born && <span className={styles.bornBadge}>Yumurtadan çıktı!</span>}
                 </div>
-                <span className={`${styles.label} ${me ? styles.labelMe : ''}`}>
-                  {me && <b>Sen</b>}{names[s.id]}
-                </span>
-                {born && <span className={styles.bornBadge}>Yumurtadan çıktı!</span>}
               </div>
             </div>
           );
@@ -283,7 +363,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           <li><span className={styles.legendEgg} aria-hidden="true" />5 puanın altı: yumurta (her puanda bir çatlak)</li>
           <li><strong>5 puanda</strong> yumurtadan çıkar; 5 puanın altına düşerse yeniden yumurta olur</li>
           <li>Her <strong>5 puanda</strong> yeni balık: {FORM_NAMES.join(' → ')}</li>
-          <li>Her puanda biraz büyür · <strong>{SPARKLE_POINTS}</strong> puanda parıltı · <strong>{CROWN_POINTS}</strong> puanda taç</li>
+          <li>Her puanda büyür · <strong>{SPARKLE_POINTS}</strong> puanda parıltı · <strong>{CROWN_POINTS}</strong> puanda taç</li>
+          <li>Puanı yaklaşık <strong>iki katı</strong> olan balık yanındaki küçüğe saldırır, küçük kaçar</li>
         </ul>
       )}
 

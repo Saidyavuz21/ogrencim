@@ -175,19 +175,99 @@
 }
 
 .label {
-  margin-top: 0.2cqw;
-  padding: 0.15cqw 0.7cqw;
-  max-width: 16cqw;
+  margin-top: 0.15cqw;
+  padding: 0.1cqw 0.55cqw;
+  max-width: 14cqw;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.85);
   color: #0f3446;
-  font-size: max(10px, 1.45cqw);
+  font-size: max(9px, 1.1cqw);
   font-weight: 700;
   line-height: 1.35;
-  box-shadow: 0 0.2cqw 0.5cqw rgba(8, 40, 60, 0.2);
+  box-shadow: 0 0.15cqw 0.4cqw rgba(8, 40, 60, 0.18);
+}
+
+/* ===== "Yeme" oyunu: büyük balık atılır ve ağzını açar, küçük kaçar (yemez) ===== */
+.act {
+  will-change: transform;
+}
+
+.face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(var(--face, 1));
+  transition: transform 120ms ease-out;
+}
+
+/* Ağız varsayılan kapalı; burun ucundan gövdeye doğru açılır */
+.mouth {
+  transform-box: fill-box;
+  transform-origin: 100% 50%;
+  transform: scale(0);
+}
+
+.chasing {
+  animation: lunge 1.5s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+
+.chasing .mouth {
+  animation: chomp 0.36s ease-in-out 0.15s 3;
+}
+
+@keyframes lunge {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(calc(var(--dir) * -0.6cqw)); }
+  45% { transform: translateX(calc(var(--dir) * 3.2cqw)) scale(1.06); }
+  70% { transform: translateX(calc(var(--dir) * 2.4cqw)); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes chomp {
+  0%, 100% { transform: scale(0); }
+  45% { transform: scale(1); }
+}
+
+.fleeing {
+  animation: flee 1.5s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes flee {
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(calc(var(--dir) * -0.4cqw), -0.6cqw) rotate(calc(var(--dir) * -8deg)); }
+  40% { transform: translate(calc(var(--dir) * 7cqw), -2.4cqw) rotate(calc(var(--dir) * 6deg)); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Kaçan balığın üstünde kısa bir ünlem */
+.yikes {
+  position: absolute;
+  top: -1.6cqw;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: max(14px, 1.7cqw);
+  height: max(14px, 1.7cqw);
+  border-radius: 50%;
+  background: #ffd84d;
+  color: #3b2a00;
+  font-size: max(10px, 1.2cqw);
+  font-weight: 900;
+  line-height: 1;
+  transform: translateX(-50%);
+  animation: yikes 1.5s ease-out both;
+  pointer-events: none;
+}
+
+@keyframes yikes {
+  0% { opacity: 0; translate: 0 0.6cqw; scale: 0.4; }
+  12% { opacity: 1; translate: 0 0; scale: 1.15; }
+  25% { scale: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; translate: 0 -0.8cqw; }
 }
 
 .labelMe {
@@ -307,7 +387,7 @@
   white-space: nowrap;
   text-align: center;
   color: #4a3410;
-  font-size: max(8px, calc(var(--egg-w) * 0.17));
+  font-size: max(8px, calc(var(--egg-w) * 0.14));
   font-weight: 800;
   line-height: 1.2;
 }
@@ -420,7 +500,8 @@
 
 /* Hareketi azalt tercihi: akvaryum durağan */
 @media (prefers-reduced-motion: reduce) {
-  .rays, .bubble, .plant, .swimmer, .bob, .flip, .sparkles i, .eggWobble, .born .flip, .bornBadge {
+  .rays, .bubble, .plant, .swimmer, .bob, .flip, .sparkles i, .eggWobble, .born .flip, .bornBadge,
+  .chasing, .fleeing, .chasing .mouth, .yikes {
     animation: none !important;
   }
   .bubble { display: none; }

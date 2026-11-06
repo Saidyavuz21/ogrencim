@@ -3,7 +3,8 @@
 // - 5 puanın altı (eksiler dahil) yumurta; 1–4 puanda çatlaklar artar
 // - 5 puanda yumurtadan çıkar; puan 5'in altına düşerse yeniden yumurta olur
 // - Her 5 puanda balığın şekli değişir (8 şekil: 5–9, 10–14, … 40+)
-// - Her puanda boy biraz artar; büyüme yavaşlayarak bir üst sınıra yaklaşır
+// - Her puanda boy belirgin biçimde artar; büyüme yavaşlayarak bir üst sınıra yaklaşır
+// - Puanı yaklaşık iki katı olan balık yanındaki küçüğe ağzını açıp saldırır, küçük kaçar (yemez)
 // - 50 puanda parıltı, 75 puanda taç
 // ========================================================
 
@@ -29,18 +30,23 @@ export const eggCracks = (points: number) => Math.max(0, Math.min(HATCH_POINTS -
 export const fishForm = (points: number) =>
   Math.max(1, Math.min(FORM_COUNT, Math.floor(Math.max(points, HATCH_POINTS) / FORM_STEP)));
 
-const MIN_SIZE = 44;
-const HATCH_SIZE = 50;
-const MAX_SIZE = 132;
+const MIN_SIZE = 34;
+const HATCH_SIZE = 38;
+const MAX_SIZE = 210;
+/** Büyüme hızı: küçük değer = puan farkı boyda daha belirgin (5 puan ≈ 38, 20 ≈ 89, 40 ≈ 136, 75 ≈ 182) */
+const GROWTH = 45;
 
 /**
  * Balığın genişliği (1000 birim genişlikteki akvaryuma göre).
- * Her puanda büyür ama ekranı kaplamasın diye büyüme yavaşlar.
+ * Her puanda belirgin biçimde büyür; ekranı kaplamasın diye büyüme yüksek puanlarda yavaşlar.
  */
 export function fishSize(points: number): number {
   if (points < HATCH_POINTS) return MIN_SIZE + (HATCH_SIZE - MIN_SIZE) * Math.max(0, points) / HATCH_POINTS;
-  return HATCH_SIZE + (MAX_SIZE - HATCH_SIZE) * (1 - Math.exp(-(points - HATCH_POINTS) / 32));
+  return HATCH_SIZE + (MAX_SIZE - HATCH_SIZE) * (1 - Math.exp(-(points - HATCH_POINTS) / GROWTH));
 }
+
+/** "Yeme" oyunu: büyük balığın puanı küçüğün yaklaşık iki katıysa ona saldırır (küçük kaçar) */
+export const CHASE_RATIO = 1.8;
 
 /** Kimliğe göre sabit sözde rastgele sayı (her açılışta aynı balık aynı yerde yüzer) */
 export function seeded(id: string, salt: number): number {

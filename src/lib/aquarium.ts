@@ -48,6 +48,17 @@ export function fishSize(points: number): number {
 /** "Yeme" oyunu: büyük balığın puanı küçüğün yaklaşık iki katıysa ona saldırır (küçük kaçar) */
 export const CHASE_RATIO = 1.8;
 
+/**
+ * "Balıklar birbirini yutsun" modu (yalnızca ekranda; gerçek puanlar değişmez):
+ * - Balık, kendinden en az 2 şekil (kademe) küçük balığı yakalarsa yutar
+ * - Yutan, yutulanın puanını geçici olarak alır ve büyür; böylece daha büyükleri de yutabilir
+ * - Yaklaşık 1 dakika sonra yutulan geri gelir, yutan da aldığı geçici puanı kaybeder
+ */
+export const SWALLOW_TIER_GAP = 2;
+export const SWALLOW_MS = 60_000;
+export const canSwallow = (bigPoints: number, smallPoints: number) =>
+  isFish({ points: bigPoints }) && isFish({ points: smallPoints }) && fishForm(bigPoints) - fishForm(smallPoints) >= SWALLOW_TIER_GAP;
+
 /** Kimliğe göre sabit sözde rastgele sayı (her açılışta aynı balık aynı yerde yüzer) */
 export function seeded(id: string, salt: number): number {
   let h = 2166136261 ^ salt;

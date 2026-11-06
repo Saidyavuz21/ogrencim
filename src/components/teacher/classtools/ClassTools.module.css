@@ -150,23 +150,76 @@
 .lapFast .lapTime { color: #216044; }
 .lapSlow .lapTime { color: #a33342; }
 
-/* ===== Araç sekmeleri ===== */
-.tabs {
+/* ===== Araç sekmeleri ve İleri / Geri Kaydırma Butonları ===== */
+.tabsNav {
   display: flex;
-  gap: 6px;
-  padding: 4px;
-  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
   max-width: 100%;
+}
+
+.scrollBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border: 1px solid var(--teacher-border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--teacher-text);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.scrollBtn:hover:not(:disabled) {
+  background: #f0eee7;
+  color: var(--teacher-primary);
+  border-color: var(--teacher-primary);
+}
+
+.scrollBtn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.scrollBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.tabsTrack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
   border: 1px solid var(--teacher-border);
   border-radius: 12px;
   background: #f0eee7;
+  padding: 4px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  scroll-behavior: smooth;
 }
+
 .tabs::-webkit-scrollbar {
   display: none;
 }
+
 .tabs button {
   display: inline-flex;
   align-items: center;
@@ -185,14 +238,30 @@
   flex-shrink: 0;
   transition: all 0.15s ease;
 }
-.tabs button[aria-selected='true'] { background: #fff; color: var(--teacher-primary); box-shadow: 0 1px 2px rgba(20, 35, 28, 0.12); }
-.tabs button:hover:not([aria-selected='true']) { color: var(--teacher-text); }
-.tabs button:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+
+.tabs button[aria-selected='true'] {
+  background: #fff;
+  color: var(--teacher-primary);
+  box-shadow: 0 1px 2px rgba(20, 35, 28, 0.12);
+}
+
+.tabs button:hover:not([aria-selected='true']) {
+  color: var(--teacher-text);
+}
+
+.tabs button:focus-visible {
+  outline: 3px solid var(--teacher-primary);
+  outline-offset: 2px;
+}
+
 @media (max-width: 640px) {
-  .tabs {
-    width: 100%;
-    gap: 4px;
-    padding: 4px;
+  .tabsNav {
+    gap: 6px;
+  }
+  .scrollBtn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
   }
   .tabs button {
     padding: 0 12px;

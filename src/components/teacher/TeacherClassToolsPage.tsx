@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Clock, Shuffle, Bell, Users } from '../icons';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Clock, Shuffle, Bell, Users, ChevronLeft, ChevronRight } from '../icons';
 import type { IconProps } from '../icons';
 import { RandomPicker } from './classtools/RandomPicker';
 import { Stopwatch } from './classtools/Stopwatch';
@@ -39,28 +39,90 @@ const readTool = (): ToolId => {
 export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string }) {
   const { students, loading, error } = useClassStudents(selectedClass);
   const [tool, setToolState] = useState<ToolId>(readTool);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    checkScroll();
+    const handleResize = () => checkScroll();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkScroll]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const offset = direction === 'left' ? -160 : 160;
+    el.scrollBy({ left: offset, behavior: 'smooth' });
+    setTimeout(checkScroll, 220);
+  };
+
   const setTool = (id: ToolId, e?: React.MouseEvent<HTMLButtonElement>) => {
     setToolState(id);
     try { window.localStorage.setItem(TOOL_KEY, id); } catch { /* gizli sekme vb. */ }
     e?.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    setTimeout(checkScroll, 220);
   };
 
   return (
     <div className={styles.pageBody}>
-      <div className={s.tabs} role="tablist" aria-label="Sınıf araçları">
-        {TOOLS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            id={`tool-tab-${t.id}`}
-            aria-selected={tool === t.id}
-            aria-controls={`tool-panel-${t.id}`}
-            onClick={(e) => setTool(t.id, e)}
+      <div className={s.tabsNav}>
+        <button
+          type="button"
+          className={s.scrollBtn}
+          onClick={() => scroll('left')}
+          disabled={!canScrollLeft}
+          aria-label="Önceki araçlar"
+          title="Önceki araçlar"
+        >
+          <ChevronLeft size={20} aria-hidden="true" />
+        </button>
+
+        <div className={s.tabsTrack}>
+          <div
+            ref={tabsRef}
+            className={s.tabs}
+            role="tablist"
+            aria-label="Sınıf araçları"
+            onScroll={checkScroll}
           >
-            <t.icon size={18} aria-hidden="true" />{t.label}
-          </button>
-        ))}
+            {TOOLS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                id={`tool-tab-${t.id}`}
+                aria-selected={tool === t.id}
+                aria-controls={`tool-panel-${t.id}`}
+                onClick={(e) => setTool(t.id, e)}
+              >
+                <t.icon size={18} aria-hidden="true" />{t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className={s.scrollBtn}
+          onClick={() => scroll('right')}
+          disabled={!canScrollRight}
+          aria-label="Sonraki araçlar"
+          title="Sonraki araçlar"
+        >
+          <ChevronRight size={20} aria-hidden="true" />
+        </button>
       </div>
 
       <div role="tabpanel" id={`tool-panel-${tool}`} aria-labelledby={`tool-tab-${tool}`}>

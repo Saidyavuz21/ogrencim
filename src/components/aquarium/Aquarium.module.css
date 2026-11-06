@@ -409,6 +409,8 @@
 }
 
 .fullButton:hover { background: rgba(10, 50, 70, 0.8); }
+.soundButton { right: auto; left: 1.4cqw; min-height: 44px; }
+.soundNotice { position: absolute; top: 58px; left: 12px; right: 12px; z-index: 6; margin: 0; padding: 8px 12px; border-radius: 8px; background: #0a3246; color: white; font-size: 14px; }
 .fullButton:focus-visible { outline: 3px solid #ffd84d; outline-offset: 2px; }
 
 @media (max-width: 520px) {

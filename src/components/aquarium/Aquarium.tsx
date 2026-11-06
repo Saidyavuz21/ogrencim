@@ -2,6 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Maximize, Minimize } from '../icons';
+import { Volume2, VolumeX } from '../icons';
+import { useAquariumSound } from './useAquariumSound';
 import {
   AquariumInput, CHASE_RATIO, CROWN_POINTS, SPARKLE_POINTS, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
 } from '../../lib/aquarium';
@@ -93,6 +95,7 @@ export function Aquarium(props: AquariumProps) {
 }
 
 function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvaryumu' }: AquariumProps) {
+  const { enabled: soundEnabled, unavailable: soundUnavailable, toggle: toggleSound, playChase } = useAquariumSound();
   const stageRef = useRef<HTMLDivElement>(null);
   const tankRef = useRef<HTMLDivElement>(null);
   const swimmerRefs = useRef(new Map<string, HTMLDivElement>());
@@ -309,6 +312,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       busyUntil.set(smallId, now + CHASE_COOLDOWN_MS);
       nextChaseAt = now + 8000 + Math.random() * 8000;
       setChase({ [bigId]: 'chase', [smallId]: 'flee' });
+      playChase(true);
       timers.push(window.setTimeout(() => setChase({}), FLEE_MS));
     };
 
@@ -416,7 +420,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       timers.forEach((tm) => window.clearTimeout(tm));
       movers.forEach((m) => { m.mode = 'wander'; m.preyId = undefined; });
     };
-  }, [fish, layout, fishBottom, scopeKey]);
+  }, [fish, layout, fishBottom, scopeKey, playChase]);
 
   const fishCount = fish.length;
   const summary = `${title}: ${fishCount} balık, ${eggs.length} yumurta`;
@@ -523,6 +527,19 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         )}
 
         {students.length === 0 && <p className={styles.empty}>Bu sınıfta henüz öğrenci yok.</p>}
+
+        <button
+          type="button"
+          className={`${styles.fullButton} ${styles.soundButton}`}
+          onClick={toggleSound}
+          aria-pressed={soundEnabled}
+          aria-label={soundEnabled ? 'Akvaryum sesini kapat' : 'Akvaryum sesini aç'}
+          title={soundEnabled ? 'Sesi kapat' : 'Sesi aç'}
+        >
+          {soundEnabled ? <Volume2 size={20} aria-hidden="true" /> : <VolumeX size={20} aria-hidden="true" />}
+          <span>{soundEnabled ? 'Ses açık' : 'Sesi aç'}</span>
+        </button>
+        {soundUnavailable && <p className={styles.soundNotice} role="status">Ses açılamadı. Sesi aç düğmesiyle tekrar deneyin.</p>}
 
         <button
           type="button"

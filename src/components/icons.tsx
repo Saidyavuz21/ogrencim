@@ -371,6 +371,12 @@ export const Users = createIcon('Users', (
   </>
 ));
 
+export const ChevronLeft = createIcon('ChevronLeft', (
+  <>
+    <path d="m15 18-6-6 6-6" />
+  </>
+));
+
 export const ChevronRight = createIcon('ChevronRight', (
   <>
     <path d="m9 18 6-6-6-6" />
@@ -797,3 +803,18 @@ export const Flag = createIcon('Flag', (
     <line x1="4" x2="4" y1="22" y2="15" />
   </>
 ));
+
+export const Volume2 = createIcon('Volume2', (
+  <>
+    <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+    <path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14" />
+  </>
+));
+
+export const VolumeX = createIcon('VolumeX', (
+  <>
+    <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+    <path d="m16 9 5 6m0-6-5 6" />
+  </>
+));
+

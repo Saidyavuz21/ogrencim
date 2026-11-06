@@ -2,6 +2,7 @@
 
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { Save } from '../icons';
+import { CustomSelect } from '../CustomSelect';
 import { EXAMS, ExamId, GradeRow, listClassGrades, saveGrades } from '../../lib/teacherData';
 import { branchSubject, subjectHue, subjectShortLabel, subjectsForClass } from '../../data/subjects';
 import { Notice, NoticeState, StudentSortToggle, useClassStudents } from './TeacherUi';
@@ -169,19 +170,26 @@ export function TeacherGradesPage({ selectedClass, defaultSubject }: { selectedC
       {tab === 'gir' && students.length > 0 && (
         <div role="tabpanel" id={`${tabsId}-gir-panel`} aria-labelledby={`${tabsId}-gir`} className={styles.gradeEntry}>
           <section className={`${styles.panel} ${styles.gradeSelectors}`} aria-label="Not girişi seçimleri">
-            <label className={styles.field}>Ders
-              <select value={subjectChoice} onChange={(e) => setSubjectChoice(e.target.value)}>
-                <option value="" disabled>Ders seçin</option>
-                {subjectOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                <option value={OTHER}>Diğer ders…</option>
-              </select>
-            </label>
-            <label className={styles.field}>Not türü
-              <select value={exam} onChange={(e) => setExam(e.target.value as ExamId | '')}>
-                <option value="" disabled>Not türü seçin</option>
-                {EXAMS.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
-              </select>
-            </label>
+            <div className={styles.field}>
+              <label htmlFor={`${tabsId}-subject`}>Ders</label>
+              <CustomSelect
+                id={`${tabsId}-subject`}
+                value={subjectChoice}
+                onChange={setSubjectChoice}
+                options={[...subjectOptions.map((s) => ({ value: s, label: s })), { value: OTHER, label: 'Diğer ders…' }]}
+                placeholder="Ders seçin"
+              />
+            </div>
+            <div className={styles.field}>
+              <label htmlFor={`${tabsId}-exam`}>Not türü</label>
+              <CustomSelect
+                id={`${tabsId}-exam`}
+                value={exam}
+                onChange={(value) => setExam(value as ExamId)}
+                options={EXAMS.map((e) => ({ value: e.id, label: e.label }))}
+                placeholder="Not türü seçin"
+              />
+            </div>
             {subjectChoice === OTHER && (
               <label className={`${styles.field} ${styles.fullRow}`}>Ders adı
                 <input value={customSubject} onChange={(e) => setCustomSubject(e.target.value.slice(0, 80))} placeholder="Ders adını yazın" autoFocus />

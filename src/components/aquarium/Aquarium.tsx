@@ -5,7 +5,7 @@ import { Maximize, Minimize } from '../icons';
 import { Volume2, VolumeX } from '../icons';
 import { useAquariumSound } from './useAquariumSound';
 import {
-  AquariumInput, CHASE_RATIO, CROWN_POINTS, SPARKLE_POINTS, SWALLOW_MS, canSwallow, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
+  AquariumInput, CHASE_RATIO, CROWN_POINTS, SPARKLE_POINTS, SWALLOW_MS, SWALLOW_POINTS, canSwallow, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
 } from '../../lib/aquarium';
 import { EggArt, FishArt, FORM_NAMES } from './FishArt';
 import styles from './Aquarium.module.css';
@@ -441,7 +441,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       setChase({});
       publish();
     };
-    /** 2. aşama: av midede. Yutan geçici puanı alır, yutkunup büyür */
+    /** 2. aşama: av midede. Yutan geçici 5 puan alır (bir şekil), yutkunup büyür */
     const finishSwallow = (smallId: string, small: Mover, now: number) => {
       const bigId = small.gulpBy!;
       small.gulpBy = undefined;
@@ -453,9 +453,11 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         publish();
         return;
       }
-      // Yutulanın midesindekiler (onun geçici puanı) yutana geçer; o balıklar kendi süreleri dolunca döner
+      // Yutulanın midesindekiler kurtulur ve hemen geri gelir (yutan yalnızca 5 puan alır, onları devralmaz)
+      const freed = mealsRef.current.filter((x) => x.eaterId === smallId);
       mealsRef.current = mealsRef.current.filter((x) => x.eaterId !== smallId);
-      mealsRef.current.push({ eaterId: bigId, preyId: smallId, amount: small.points, until: now + SWALLOW_MS });
+      for (const x of freed) { release(x.preyId); regrow(x.preyId); }
+      mealsRef.current.push({ eaterId: bigId, preyId: smallId, amount: SWALLOW_POINTS, until: now + SWALLOW_MS });
       regrow(smallId);
       regrow(bigId);
       gulps = { ...gulps, [bigId]: now };
@@ -788,7 +790,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
             ? 'Kapalı: büyük balık küçüğü kovalar, küçük kaçar.'
             : reducedMotion
               ? 'Bu cihazda hareket azaltma açık olduğu için balıklar yüzmüyor.'
-              : 'Açık: balık, kendinden en az iki kademe küçük balığı yutar ve bir dakikalığına onun puanını alıp büyür. Yutulan balık bir dakika sonra geri gelir. Gerçek puanlar değişmez.'}
+              : 'Açık: balık, kendinden en az iki kademe küçük balığı yutar ve bir dakikalığına 5 puan alıp bir şekil büyür. Yutulan balık bir dakika sonra geri gelir. Gerçek puanlar değişmez.'}
         </p>
       </div>
 

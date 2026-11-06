@@ -51,11 +51,14 @@ export const CHASE_RATIO = 1.8;
 /**
  * "Balıklar birbirini yutsun" modu (yalnızca ekranda; gerçek puanlar değişmez):
  * - Balık, kendinden en az 2 şekil (kademe) küçük balığı yakalarsa yutar
- * - Yutan, yutulanın puanını geçici olarak alır ve büyür; böylece daha büyükleri de yutabilir
+ * - Yutan, yutulan kaç puanlı olursa olsun geçici olarak 5 puan alır (bir şekil büyür); böylece
+ *   şekiller atlanmadan sırayla görünür ve yuta yuta daha büyükleri de yutabilir
  * - Yaklaşık 1 dakika sonra yutulan geri gelir, yutan da aldığı geçici puanı kaybeder
  */
 export const SWALLOW_TIER_GAP = 2;
 export const SWALLOW_MS = 60_000;
+/** Her yutuşta kazanılan geçici puan (bir şekil kademesi) */
+export const SWALLOW_POINTS = FORM_STEP;
 export const canSwallow = (bigPoints: number, smallPoints: number) =>
   isFish({ points: bigPoints }) && isFish({ points: smallPoints }) && fishForm(bigPoints) - fishForm(smallPoints) >= SWALLOW_TIER_GAP;
 

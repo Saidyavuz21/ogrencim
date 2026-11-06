@@ -1,23 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Clock, Shuffle } from '../icons';
+import { Clock, Shuffle, Bell } from '../icons';
 import type { IconProps } from '../icons';
 import { RandomPicker } from './classtools/RandomPicker';
 import { Stopwatch } from './classtools/Stopwatch';
+import { Countdown } from './classtools/Countdown';
 import { useClassStudents } from './TeacherUi';
 import styles from './TeacherDashboard.module.css';
 import s from './classtools/ClassTools.module.css';
 
 /**
  * Sınıf araçları: derste kullanılan küçük araçlar (EduBoard listesi, Paket 1).
- * Geri sayım ve grup oluşturucu sırayla eklenecek.
+ * Grup oluşturucu sırayla eklenecek.
  */
-type ToolId = 'picker' | 'stopwatch';
+type ToolId = 'picker' | 'stopwatch' | 'countdown';
 
 const TOOLS: { id: ToolId; label: string; icon: React.FC<IconProps> }[] = [
   { id: 'picker', label: 'Rastgele seçici', icon: Shuffle },
   { id: 'stopwatch', label: 'Kronometre', icon: Clock },
+  { id: 'countdown', label: 'Geri sayım', icon: Bell },
 ];
 
 const TOOL_KEY = 'sinif-araci';
@@ -66,6 +68,7 @@ export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string
           </>
         )}
         {tool === 'stopwatch' && <Stopwatch />}
+        {tool === 'countdown' && <Countdown />}
       </div>
     </div>
   );

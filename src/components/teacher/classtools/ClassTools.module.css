@@ -164,3 +164,53 @@
   .tabs { width: 100%; }
   .tabs button { flex: 1; justify-content: center; padding: 0 8px; }
 }
+
+/* ===== Geri sayım ===== */
+.stageWarn {
+  background: linear-gradient(160deg, #b77a12 0%, #9a6208 55%, #7d4e05 100%);
+  transition: background 400ms ease-out;
+}
+.stageDone {
+  background: linear-gradient(160deg, #b8323f 0%, #9a2633 55%, #7c1d29 100%);
+  animation: alarmPulse 1s ease-in-out infinite alternate;
+}
+@keyframes alarmPulse {
+  from { box-shadow: 0 0 0 0 rgba(255, 90, 90, 0); filter: brightness(1); }
+  to { box-shadow: 0 0 0 10px rgba(255, 90, 90, 0.35); filter: brightness(1.12); }
+}
+
+.ring { position: relative; width: min(100%, clamp(240px, 52cqw, 440px)); aspect-ratio: 1; }
+.full .ring { width: min(80vh, 70cqw); }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ringTrack { fill: none; stroke: rgba(255, 255, 255, 0.16); stroke-width: 7; }
+.ringBar { fill: none; stroke: #ffd84d; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 120ms linear; }
+.stageWarn .ringBar { stroke: #fff; }
+.ringText { position: absolute; inset: 0; display: grid; place-items: center; container-type: inline-size; }
+.countMain { font-size: 30cqw; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+.doneText { font-size: 15cqw; font-weight: 800; text-align: center; line-height: 1.1; }
+
+.panelTitle { margin: 0; font-size: 16px; font-weight: 700; color: var(--teacher-text); }
+.presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.preset {
+  min-height: 48px; border: 1px solid var(--teacher-border); border-radius: 12px; background: #fff;
+  color: var(--teacher-text); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.preset:hover { border-color: var(--teacher-primary); }
+.preset[aria-pressed='true'] { background: var(--teacher-selected); border-color: var(--teacher-primary); color: var(--teacher-primary); }
+.custom { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 8px; }
+.custom label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--teacher-muted); }
+.custom input {
+  min-height: 48px; width: 100%; min-width: 0; padding: 8px 12px; border: 1px solid #a4b1a6; border-radius: 10px;
+  font: inherit; font-size: 18px; font-variant-numeric: tabular-nums; color: var(--teacher-text); background: #fff;
+}
+.setButton {
+  min-height: 48px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--teacher-primary); color: #fff;
+  font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.setButton:disabled { opacity: 0.5; cursor: default; }
+.side :is(.preset, .setButton, input):focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stageDone { animation: none; }
+  .ringBar { transition: none; }
+}

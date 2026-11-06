@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export function useAquariumSound() {
   const context = useRef<AudioContext | null>(null);
   const enabledRef = useRef(false);
+  const pending = useRef(false);
   const [enabled, setEnabled] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -19,30 +20,43 @@ export function useAquariumSound() {
       const gain = ctx.createGain();
       const at = start + i * (chase ? 0.065 : 0.16);
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(380 + Math.random() * 420, at);
-      oscillator.frequency.exponentialRampToValueAtTime(130 + Math.random() * 100, at + 0.14);
+      oscillator.frequency.setValueAtTime(850 + Math.random() * 450, at);
+      oscillator.frequency.exponentialRampToValueAtTime(320 + Math.random() * 180, at + 0.2);
       gain.gain.setValueAtTime(0, at);
-      gain.gain.linearRampToValueAtTime(chase ? 0.045 : 0.025, at + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+      gain.gain.linearRampToValueAtTime(chase ? 0.16 : 0.12, at + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.28);
       oscillator.connect(gain);
       gain.connect(ctx.destination);
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
       oscillator.start(at);
-      oscillator.stop(at + 0.2);
+      oscillator.stop(at + 0.3);
     }
   }, []);
 
   const toggle = useCallback(async () => {
+    if (pending.current) return;
+    pending.current = true;
     if (enabledRef.current) {
       enabledRef.current = false;
       setEnabled(false);
       await context.current?.suspend().catch(() => {});
+      pending.current = false;
       return;
     }
     try {
-      if (!context.current) context.current = new AudioContext();
-      await context.current.resume();
-      if (context.current.state !== 'running') throw new Error('Audio unavailable');
+      const AudioConstructor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioConstructor) throw new Error('Audio unsupported');
+      if (!context.current || context.current.state === 'closed') context.current = new AudioConstructor();
+      const ctx = context.current;
+      // Start the output while the click's user activation is still live (Safari/iOS).
+      const unlock = ctx.createBufferSource();
+      unlock.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+      unlock.connect(ctx.destination);
+      unlock.onended = () => unlock.disconnect();
+      unlock.start();
+      await ctx.resume();
+      if (context.current !== ctx) return;
+      if (ctx.state !== 'running') throw new Error('Audio unavailable');
       enabledRef.current = true;
       setEnabled(true);
       setUnavailable(false);
@@ -51,6 +65,8 @@ export function useAquariumSound() {
       enabledRef.current = false;
       setEnabled(false);
       setUnavailable(true);
+    } finally {
+      pending.current = false;
     }
   }, [play]);
 

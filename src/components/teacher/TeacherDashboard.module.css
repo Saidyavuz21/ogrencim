@@ -17,6 +17,8 @@
 
 .teacherShell {
   background: var(--teacher-bg);
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .dashboardShell {

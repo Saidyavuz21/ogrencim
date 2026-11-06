@@ -19,6 +19,8 @@ html, body {
   padding: 0;
   min-height: 100%;
   color-scheme: light;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 svg {

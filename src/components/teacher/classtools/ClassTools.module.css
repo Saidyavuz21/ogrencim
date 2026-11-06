@@ -157,15 +157,17 @@
   gap: 8px;
   width: 100%;
   max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .scrollBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   border: 1px solid var(--teacher-border);
   border-radius: 10px;
   background: #ffffff;
@@ -198,17 +200,21 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  flex: 1 1 auto;
+  max-width: 100%;
+  flex: 1 1 0%;
+  overflow: hidden;
   border: 1px solid var(--teacher-border);
   border-radius: 12px;
   background: #f0eee7;
   padding: 4px;
+  box-sizing: border-box;
 }
 
 .tabs {
   display: flex;
   gap: 6px;
   width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -259,14 +265,21 @@
     gap: 6px;
   }
   .scrollBtn {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+  }
+  .tabsTrack {
+    padding: 3px;
+  }
+  .tabs {
+    gap: 4px;
   }
   .tabs button {
     padding: 0 12px;
     font-size: 14px;
     gap: 6px;
+    min-height: 40px;
   }
 }
 

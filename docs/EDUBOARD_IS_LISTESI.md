@@ -18,7 +18,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 2 | Ödev sistemini güçlendirme | 8 / 8 ✅ |
 | 2b | Okuma yarışması (bizde ek) | 5 / 5 ✅ |
 | 3 | Öğretmen dosyaları ve içerik düzeni | 8 / 8 ✅ |
-| 4 | Quiz motoru | 0 / 10 |
+| 4 | Quiz motoru | 10 / 10 ✅ |
 | 5 | Analitik ve raporlama | 0 / 6 |
 | 6 | Sınıf ve okul yapısı | 0 / 6 |
 | 7 | Etkileşimli tahta | 0 / 14 |
@@ -27,7 +27,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **29 / 106** |
+| | **Toplam** | **39 / 106** |
 
 ---
 
@@ -85,16 +85,16 @@ Okuma hızı: öğrencinin 1 dakikada okuduğu kelime sayısı. Metin uygulamada
 
 Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılır.
 
-- [ ] Soru bankası: çoktan seçmeli soru (metin + görsel, 2–5 şık) oluşturma ve düzenleme — *K-4*
-- [ ] Cevap anahtarı yalnızca sunucuda (RLS + sunucu fonksiyonu) — *K-4, K-14*
-- [ ] Quiz'i sınıfa yayınlama (ödev altyapısıyla) — *K-6*
-- [ ] **Alıştırma modu:** anında doğru/yanlış dönütü, soru başına 3 deneme — *K-6*
-- [ ] **Sınav modu:** teslim tarihi zorunlu, tarih geçene kadar sonuç gizli — *K-6*
-- [ ] Doğru çözülen sorunun sonradan bozulmaması; puanın sunucuda tek işlemde artması — *K-6*
-- [ ] Soru başına kısa tekrar sınırı (art arda deneme koruması) — *K-6*
-- [ ] Gelen cevabın quiz'in sorularına ait olduğunun doğrulanması — *K-6*
-- [ ] Sayfa kapanırken son cevapların kaybolmaması (sınav modu) — *K-7*
-- [ ] Öğrenci quiz ekranı (mobil uyumlu) ve sonuç ekranı — *K-6*
+- [x] Soru bankası: çoktan seçmeli soru (metin + görsel, 2–5 şık) oluşturma ve düzenleme — *K-4* · 7 Kasım 2026 · `c8a8d9e` (görsel yüklenir ya da Dosyalarım/kütüphaneden seçilir; ders, kademe, konu, etiket; çoğaltma)
+- [x] Cevap anahtarı yalnızca sunucuda (RLS + sunucu fonksiyonu) — *K-4, K-14* · 7 Kasım 2026 · `c8a8d9e` (öğrenci tablolara erişemez; sorular ve sonuç yalnızca `quiz_state` ile, doğru cevap yalnızca açıklanabiliyorsa)
+- [x] Quiz'i sınıfa yayınlama (ödev altyapısıyla) — *K-6* · 7 Kasım 2026 · `c8a8d9e` (Ödev gönder'de tür "Quiz"; birden çok sınıfa; sorular yayınlanınca dondurulur)
+- [x] **Alıştırma modu:** anında doğru/yanlış dönütü, soru başına 3 deneme — *K-6* · 7 Kasım 2026 · `c8a8d9e` (puan 1 / 0,5 / 0,25; çözüm açıklaması)
+- [x] **Sınav modu:** teslim tarihi zorunlu, tarih geçene kadar sonuç gizli — *K-6* · 7 Kasım 2026 · `c8a8d9e` (tarih geçince ilk açılışta sunucu kapatır: yarım kalanlar biter, girmeyenler "yapmadı", sonuçlar açıklanır)
+- [x] Doğru çözülen sorunun sonradan bozulmaması; puanın sunucuda tek işlemde artması — *K-6* · 7 Kasım 2026 · `c8a8d9e`
+- [x] Soru başına kısa tekrar sınırı (art arda deneme koruması) — *K-6* · 7 Kasım 2026 · `c8a8d9e` (alıştırmada 1,5 sn, sınavda 0,3 sn)
+- [x] Gelen cevabın quiz'in sorularına ait olduğunun doğrulanması — *K-6* · 7 Kasım 2026 · `c8a8d9e`
+- [x] Sayfa kapanırken son cevapların kaybolmaması (sınav modu) — *K-7* · 7 Kasım 2026 · `c8a8d9e` (her seçim anında kaydedilir; kaydedilemeyen cihazda bekler, bağlantı gelince ya da sayfa açılınca gönderilir; kapanırken uyarı)
+- [x] Öğrenci quiz ekranı (mobil uyumlu) ve sonuç ekranı — *K-6* · 7 Kasım 2026 · `c8a8d9e` (sonuç Ödev kontrolü'ne işlenir: %70+ yaptı, %40–69 kısmen; öğretmene sonuç paneli)
 
 ## 5. Analitik ve raporlama
 
@@ -204,3 +204,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 | 6 Kasım 2026 | Sonuçları açıklama: hemen / sonra açıkla (Paket 2) | `23081db` |
 | 6 Kasım 2026 | Öğrenci teslimi, teslim kilidi, otomatik kapanış, teslim özeti, dosya içeriği doğrulaması — Paket 2 tamam | `50a8def` |
 | 7 Kasım 2026 | Dosyalarım, klasörler, etiketler, Dosyalarımdan ekle, sınıfla paylaşım, kota, setler, ortak kütüphane — Paket 3 tamam | `07bec54` |
+| 7 Kasım 2026 | Quiz motoru: soru bankası, alıştırma ve sınav modu, sunucuda değerlendirme, sonuç ekranları — Paket 4 tamam | `c8a8d9e` |

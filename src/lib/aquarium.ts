@@ -2,7 +2,7 @@
 // SINIF AKVARYUMU KURALLARI
 // - 5 puanın altı (eksiler dahil) yumurta; 1–4 puanda çatlaklar artar
 // - 5 puanda yumurtadan çıkar; puan 5'in altına düşerse yeniden yumurta olur
-// - Her 5 puanda balığın şekli değişir (8 şekil: 5–9, 10–14, … 40+)
+// - Her 5 puanda balığın şekli değişir (12 şekil: 5–9, 10–14, … 60+)
 // - Her puanda boy belirgin biçimde artar; büyüme yavaşlayarak bir üst sınıra yaklaşır
 // - Puanı yaklaşık iki katı olan balık yanındaki küçüğe ağzını açıp saldırır, küçük kaçar (yemez)
 // - 50 puanda parıltı, 75 puanda taç
@@ -16,7 +16,7 @@ export interface AquariumInput {
 
 export const HATCH_POINTS = 5;
 export const FORM_STEP = 5;
-export const FORM_COUNT = 8;
+export const FORM_COUNT = 12;
 export const SPARKLE_POINTS = 50;
 export const CROWN_POINTS = 75;
 
@@ -26,15 +26,15 @@ export const isFish = (s: Pick<AquariumInput, 'points'>) => s.points >= HATCH_PO
 /** Yumurtadaki çatlak sayısı: 0 puan ve eksi → 0, 1–4 puan → 1–4 */
 export const eggCracks = (points: number) => Math.max(0, Math.min(HATCH_POINTS - 1, points));
 
-/** Balık şekli 1–8 (5–9 puan → 1, 10–14 → 2, … 40+ → 8) */
+/** Balık şekli 1–12 (5–9 puan → 1, 10–14 → 2, … 60+ → 12) */
 export const fishForm = (points: number) =>
   Math.max(1, Math.min(FORM_COUNT, Math.floor(Math.max(points, HATCH_POINTS) / FORM_STEP)));
 
 const MIN_SIZE = 34;
 const HATCH_SIZE = 38;
-const MAX_SIZE = 210;
-/** Büyüme hızı: küçük değer = puan farkı boyda daha belirgin (5 puan ≈ 38, 20 ≈ 89, 40 ≈ 136, 75 ≈ 182) */
-const GROWTH = 45;
+const MAX_SIZE = 250;
+/** Büyüme hızı: yüksek puanlarda da boy farkı görünsün (5 puan ≈ 38, 20 ≈ 85, 40 ≈ 131, 60 ≈ 165, 100 ≈ 207) */
+const GROWTH = 60;
 
 /**
  * Balığın genişliği (1000 birim genişlikteki akvaryuma göre).

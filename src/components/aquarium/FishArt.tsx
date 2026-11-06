@@ -132,7 +132,7 @@ function Veil() {
   );
 }
 
-/** 8 · Altın (40+): parlak altın gövde, akan yüzgeçler */
+/** 8 · Altın (40–44): parlak altın gövde, akan yüzgeçler */
 function Golden() {
   return (
     <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
@@ -149,9 +149,86 @@ function Golden() {
   );
 }
 
-const FORMS = [Fry, Orange, Striped, Blue, Angel, Spotted, Veil, Golden];
+/** 9 · Balon (45–49): yuvarlak, dikenli kirpi balığı */
+const PUFFER_SPIKES = Array.from({ length: 16 }, (_, k) => {
+  const a = (k / 16) * Math.PI * 2;
+  const p = (r: number, da: number) => `${(64 + Math.cos(a + da) * r).toFixed(1)} ${(40 + Math.sin(a + da) * r).toFixed(1)}`;
+  return `M${p(29, -0.1)} L${p(37, 0)} L${p(29, 0.1)} Z`;
+}).join(' ');
 
-export const FORM_NAMES = ['Yavru', 'Turuncu', 'Çizgili', 'Mavi', 'Melek', 'Benekli', 'Pelerin', 'Altın'];
+function Puffer() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d={PUFFER_SPIKES} fill="#e9d36a" />
+      <path d="M32 40 L14 30 Q18 40 14 50 Z" fill="#9fd36b" />
+      <circle cx={64} cy={40} r={30} fill="#b8e07a" />
+      <ellipse cx={66} cy={53} rx={20} ry={11} fill="#f4f7d8" stroke="none" />
+      {[[50, 28, 3], [60, 22, 2.5], [46, 42, 2.5], [72, 24, 2], [54, 34, 2]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#5f9a3a" stroke="none" />
+      ))}
+      <Shine cx={58} cy={20} rx={10} ry={3.5} />
+      <Eye cx={80} cy={34} r={7} />
+      <circle cx={92} cy={47} r={2.6} fill="#5c1626" strokeWidth={1.4} />
+    </g>
+  );
+}
+
+/** 10 · Kılıç (50–54): uzun gövde, yelken gibi sırt yüzgeci, kılıç burun */
+function Sword() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M22 40 L4 18 Q12 40 4 62 Z" fill="#1f4f8f" />
+      <path d="M38 28 Q46 -2 78 4 Q70 16 76 28 Z" fill="#2b6cb0" />
+      <path d="M100 37 L123 39.5 L100 42 Z" fill="#a9c4e0" />
+      <path d="M18 40 Q36 22 70 24 Q94 26 104 38 Q94 54 70 56 Q36 58 18 40 Z" fill="#3a7bd5" />
+      <path d="M30 45 Q60 56 98 43 Q88 54 66 55 Q42 55 30 45 Z" fill="#d6e7f8" stroke="none" />
+      <path d="M66 46 L56 62 L76 50 Z" fill="#2b6cb0" />
+      <Shine cx={64} cy={30} rx={14} ry={3} />
+      <Eye cx={92} cy={36} r={4.8} />
+    </g>
+  );
+}
+
+/** 11 · Fener (55–59): iri başlı derin deniz balığı, alnında parlayan fener */
+function Lantern() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M30 42 L10 28 Q16 42 10 56 Z" fill="#6b4a8c" />
+      <path d="M44 62 Q50 76 62 66 Z" fill="#6b4a8c" />
+      <path d="M26 42 Q34 14 70 12 Q104 14 108 42 Q104 68 70 70 Q34 68 26 42 Z" fill="#7d5aa6" />
+      {[[48, 30, 3], [56, 50, 2.5], [40, 44, 2], [64, 24, 2]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#a98bd4" stroke="none" />
+      ))}
+      <path d="M78 14 Q86 -2 100 2" fill="none" strokeWidth={2.4} />
+      <circle cx={101} cy={4} r={8} fill="#fff59d" opacity={0.45} stroke="none" />
+      <circle cx={101} cy={4} r={3.8} fill="#ffeb3b" strokeWidth={1.4} />
+      <path d="M84 53 Q97 56 108 46" fill="none" />
+      <path d="M88 54 L90 48 L92 54 Z M94 54 L96 48 L98 53 Z M100 52 L102 47 L104 50 Z" fill="#fff" strokeWidth={1} />
+      <Shine cx={62} cy={22} rx={12} ry={3.5} />
+      <Eye cx={84} cy={31} r={6} />
+    </g>
+  );
+}
+
+/** 12 · Ejder (60+): kırmızı pullu gövde, altın dikenli sırt, uzun bıyıklar */
+function Dragon() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M38 40 Q16 8 0 12 Q12 28 6 40 Q12 52 0 68 Q16 72 38 40 Z" fill="#ff6b3d" />
+      <path d="M40 26 L46 10 L52 23 L58 5 L64 21 L70 3 L76 21 L82 9 L88 26 Z" fill="#ffc83d" />
+      <path d="M58 56 Q64 74 80 58 Z" fill="#ffc83d" />
+      <ellipse cx={70} cy={40} rx={36} ry={19} fill="#e8322b" />
+      <path d="M48 38 q4 -4 8 0 M58 46 q4 -4 8 0 M58 30 q4 -4 8 0 M68 38 q4 -4 8 0 M78 46 q4 -4 8 0" fill="none" stroke="#9e1b16" strokeWidth={1.5} />
+      <path d="M101 46 Q112 58 119 52 M101 43 Q114 40 120 29" fill="none" stroke="#ffc83d" strokeWidth={2.2} strokeLinecap="round" />
+      <Shine cx={68} cy={29} rx={13} ry={3.5} />
+      <Eye cx={92} cy={35} r={5.5} />
+    </g>
+  );
+}
+
+const FORMS = [Fry, Orange, Striped, Blue, Angel, Spotted, Veil, Golden, Puffer, Sword, Lantern, Dragon];
+
+export const FORM_NAMES = ['Yavru', 'Turuncu', 'Çizgili', 'Mavi', 'Melek', 'Benekli', 'Pelerin', 'Altın', 'Balon', 'Kılıç', 'Fener', 'Ejder'];
 
 function Crown() {
   return (
@@ -166,7 +243,10 @@ function Crown() {
 }
 
 /** Her şeklin burun ucu (ağzın açılacağı nokta): [x, y] */
-const MOUTHS: [number, number][] = [[89, 46], [97, 45], [99, 45], [110, 44], [101, 43], [96, 47], [101, 44], [103, 45]];
+const MOUTHS: [number, number][] = [
+  [89, 46], [97, 45], [99, 45], [110, 44], [101, 43], [96, 47], [101, 44], [103, 45],
+  [94, 47], [102, 41], [108, 47], [105, 43],
+];
 
 /**
  * Açılan ağız: burun ucundan gövdeye doğru koyu bir kama + dişler.

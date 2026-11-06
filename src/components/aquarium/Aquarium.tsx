@@ -53,7 +53,7 @@ interface Feast {
   gulping: Record<string, true>;
   /** Yeni yutmuş balık: yutkunma şişmesi + "Hap!" rozeti (değer: rozet anahtarı) */
   gulp: Record<string, number>;
-  /** Yeni yem yemiş balık: "+2" rozeti (değer: rozet anahtarı) */
+  /** Yeni yem yemiş balık: "+4" rozeti (değer: rozet anahtarı) */
   snack: Record<string, number>;
 }
 const EMPTY_FEAST: Feast = { bonus: {}, eaten: {}, swallowing: {}, gulping: {}, gulp: {}, snack: {} };
@@ -63,8 +63,8 @@ const GULP_OPEN = 0.35;
 /** Yutma modunda kovalamaca: av gerçekten kaçar; avcı önce az geride kalır, sonra atak yapar */
 const FEAST_FLEE = 5;
 const SWALLOW_MIN_CHASE_MS = 2200;
-/** Yem (yalnızca yutma modunda): yalnızca küçük balıklar yer, her yem geçici +2 puan */
-const FOOD_POINTS = 2;
+/** Yem (yalnızca yutma modunda): yalnızca küçük balıklar yer, her yem geçici +4 puan */
+const FOOD_POINTS = 4;
 const FOOD_MAX = 24;
 const FOOD_SINK = 2.2; // cqw/sn
 const FOOD_BOTTOM_MS = 9000; // dipte bu kadar kalır, sonra kaybolur
@@ -1026,7 +1026,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
             ? 'Kapalı: büyük balık küçüğü kovalar, küçük kaçar.'
             : reducedMotion
               ? 'Bu cihazda hareket azaltma açık olduğu için balıklar yüzmüyor.'
-              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Küçük balık bazen kaçıp kurtulur. Yemi yalnızca küçük balıklar yer (+2); akvaryuma dokunarak da yem atabilirsin. Yutulan balıklar bu ayar kapatılınca geri gelir. Gerçek puanlar değişmez.'}
+              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Küçük balık bazen kaçıp kurtulur. Yemi yalnızca küçük balıklar yer (+4); akvaryuma dokunarak da yem atabilirsin. Yutulan balıklar bu ayar kapatılınca geri gelir. Gerçek puanlar değişmez.'}
         </p>
       </div>
 

@@ -89,6 +89,8 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   const [dueDate, setDueDate] = useState('');
   // İsteğe bağlı teslim saati; boşsa teslim günün sonu (23:59)
   const [dueTime, setDueTime] = useState('');
+  // Kontrol sonucu öğrenciye hemen mi görünsün, yoksa öğretmen sonra mı açıklasın (seçim gönderimler arasında korunur)
+  const [releaseNow, setReleaseNow] = useState(true);
   const [link, setLink] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -156,7 +158,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     const failed: { cls: string; error: string }[] = [];
     for (const [i, c] of targets.entries()) {
       if (targets.length > 1) setProgress(`${c} sınıfına gönderiliyor (${i + 1}/${targets.length})…`);
-      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files });
+      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, resultsReleased: releaseNow });
       if (res.ok) sent.push(c);
       else failed.push({ cls: c, error: res.error });
     }
@@ -279,6 +281,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   <div className={styles.assignmentMeta}>
                     {!selectedClass && <span>{hw.class_name || 'Sınıf yok'}</span>}
                     {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />{dueLabel(hw.due_date, hw.due_time)}</span>}
+                    {!hw.results_released && <span>Sonuç gizli</span>}
                   </div>
                   {hw.description && <p className={styles.assignmentDescription}>{hw.description}</p>}
                   <AttachmentList attachments={hw.attachments} />
@@ -394,6 +397,20 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     <p className={styles.mutedText}>
                       {dueTime ? `Teslim: ${shortDate(dueDate)} saat ${dueTime}.` : `Saat seçilmezse teslim ${shortDate(dueDate)} gün sonudur (23:59).`}
                     </p>
+                  )}
+                </fieldset>
+                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                  <legend>Kontrol sonucu</legend>
+                  <div className={styles.subjectChips}>
+                    <button type="button" className={styles.dueChip} aria-pressed={releaseNow} onClick={() => setReleaseNow(true)}>
+                      Hemen göster<small>Kontrol edince öğrenci görür</small>
+                    </button>
+                    <button type="button" className={styles.dueChip} aria-pressed={!releaseNow} onClick={() => setReleaseNow(false)}>
+                      Sonra açıkla<small>Siz açıklayana kadar gizli</small>
+                    </button>
+                  </div>
+                  {!releaseNow && (
+                    <p className={styles.mutedText}>Sonuç ve davranış puanı, &quot;Ödev kontrolü&quot; sayfasında &quot;Sonuçları açıkla&quot;ya basana kadar öğrenciye yansımaz.</p>
                   )}
                 </fieldset>
                 <label className={`${styles.field} ${styles.fullRow}`}>Ödev

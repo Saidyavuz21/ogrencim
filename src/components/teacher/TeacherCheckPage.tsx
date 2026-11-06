@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, Minus, X, Save, BookOpen, Plus } from '../icons';
-import { CheckStatus, HomeworkCheckRow, HomeworkRow, listHomeworkChecks, listMyHomeworks, saveHomeworkChecks } from '../../lib/teacherData';
+import { Check, Minus, X, Save, BookOpen, Plus, Eye, EyeOff } from '../icons';
+import { CheckStatus, HomeworkCheckRow, HomeworkRow, listHomeworkChecks, listMyHomeworks, saveHomeworkChecks, setHomeworkResultsReleased } from '../../lib/teacherData';
 import { CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
 import styles from './TeacherDashboard.module.css';
@@ -39,6 +39,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
     setDraft(id, { note: '' });
   };
   const [busy, setBusy] = useState(false);
+  const [releasing, setReleasing] = useState(false);
   const [notice, setNotice] = useState<NoticeState>(null);
 
   const { students, loading: stLoading, error: stError } = useClassStudents(selectedClass);
@@ -121,7 +122,29 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
       return;
     }
     setSavedIds(rows.map((r) => r.student_id));
-    setNotice({ kind: 'ok', text: `${rows.length} öğrencinin kontrolü kaydedildi (${counts.yapti} yaptı, ${counts.kismen} kısmen, ${counts.yapmadi} yapmadı)${cleared.length ? `; ${cleared.length} öğrencinin işareti kaldırıldı` : ''}. Davranış puanları buna göre güncellendi.` });
+    const tail = activeHw.results_released
+      ? 'Davranış puanları buna göre güncellendi.'
+      : 'Sonuçlar öğrenciden gizli; "Sonuçları açıkla"ya basınca öğrenci görür ve puanlar işlenir.';
+    setNotice({ kind: 'ok', text: `${rows.length} öğrencinin kontrolü kaydedildi (${counts.yapti} yaptı, ${counts.kismen} kısmen, ${counts.yapmadi} yapmadı)${cleared.length ? `; ${cleared.length} öğrencinin işareti kaldırıldı` : ''}. ${tail}` });
+  };
+
+  const toggleRelease = async () => {
+    if (!activeHw) return;
+    const next = !activeHw.results_released;
+    setReleasing(true);
+    const res = await setHomeworkResultsReleased(activeHw.id, next);
+    setReleasing(false);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: `Değiştirilemedi: ${res.error}` });
+      return;
+    }
+    setHomeworks((prev) => prev.map((h) => (h.id === activeHw.id ? { ...h, results_released: next } : h)));
+    setNotice({
+      kind: 'ok',
+      text: next
+        ? `Sonuçlar açıklandı. Öğrenciler kayıtlı kontrolleri görüyor; bekleyen davranış puanları işlendi.`
+        : 'Sonuçlar yeniden gizlendi. Önceden işlenen puanlar kalır; bundan sonraki değişiklikler açıklayınca işlenir.',
+    });
   };
 
   if (!hwLoading && homeworks.length === 0) {
@@ -143,7 +166,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
         <section className={styles.studentList} aria-label="Öğrenci kontrol listesi">
           {students.length > 0 && (
             <div className={`${styles.listSortBar} ${styles.checkListBar}`}>
-              <p className={styles.checkPointsHint}>Puan: <b>Yaptı +1</b> · Kısmen 0 · <b>Yapmadı −1</b></p>
+              <p className={styles.checkPointsHint}>Puan: <b>Yaptı +1</b> · Kısmen 0 · <b>Yapmadı −1</b>{activeHw && !activeHw.results_released && ' · sonuçlar açıklanınca işlenir'}</p>
               {students.length > 1 && <StudentSortToggle />}
             </div>
           )}
@@ -226,6 +249,22 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
             <div className={styles.inlineRow}>
               <button type="button" className={styles.secondary} onClick={() => markAll('yapti')}>Hepsini &quot;Yaptı&quot; yap</button>
             </div>
+            {activeHw && (
+              <div className={styles.field}>
+                <span>Öğrenciye sonuç</span>
+                <p className={styles.mutedText}>
+                  {activeHw.results_released
+                    ? 'Açık: öğrenciler kaydedilen sonucu ve puanı hemen görür.'
+                    : 'Gizli: öğrenciler sonucu görmez, davranış puanı bekler.'}
+                </p>
+                <div className={styles.inlineRow}>
+                  <button type="button" className={activeHw.results_released ? styles.secondary : styles.primary} disabled={releasing} onClick={toggleRelease}>
+                    {activeHw.results_released ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                    {releasing ? 'Değiştiriliyor…' : activeHw.results_released ? 'Sonuçları gizle' : 'Sonuçları açıkla'}
+                  </button>
+                </div>
+              </div>
+            )}
           </CollapsiblePanel>
 
           {students.length > 0 && (

@@ -58,6 +58,8 @@ export interface MyHomework {
   attachments: HomeworkAttachment[] | null;
   teacher_name: string;
   created_at: string;
+  /** false = öğretmen sonucu henüz açıklamadı (kontrol satırı RLS ile gizli) */
+  results_released: boolean;
   check: { status: CheckStatus; score: number | null; note: string | null } | null;
 }
 
@@ -66,7 +68,7 @@ export async function listMyHomeworks(studentId: string): Promise<Result<MyHomew
   const [hw, checks] = await Promise.all([
     supabase
       .from('homeworks')
-      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at')
+      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at, results_released')
       .order('created_at', { ascending: false }),
     supabase.from('homework_checks').select('homework_id, status, score, note').eq('student_id', studentId),
   ]);

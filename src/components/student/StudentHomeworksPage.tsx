@@ -101,7 +101,7 @@ export function StudentHomeworksPage({ homeworks, loaded }: { homeworks: MyHomew
                   {h.check.note && ` · ${h.check.note}`}
                 </p>
               ) : (
-                <p className={styles.homeworkPending}>Öğretmen henüz kontrol etmedi.</p>
+                <p className={styles.homeworkPending}>{h.results_released ? 'Öğretmen henüz kontrol etmedi.' : 'Sonuç daha sonra açıklanacak.'}</p>
               )}
             </li>
           );

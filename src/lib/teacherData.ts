@@ -145,9 +145,11 @@ export interface HomeworkRow {
   teacher_id: string | null;
   teacher_name: string;
   created_at: string;
+  /** false = "sonra açıkla": öğrenci kontrol sonucunu göremez, davranış puanı bekler */
+  results_released: boolean;
 }
 
-const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at';
+const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at, results_released';
 
 export async function listMyHomeworks(className?: string): Promise<Result<HomeworkRow[]>> {
   const { data: auth } = await supabase.auth.getUser();
@@ -232,6 +234,8 @@ export async function createHomework(input: {
   points: number;
   link: string;
   files?: File[];
+  /** false = sonuçlar öğretmen açıklayana kadar öğrenciden gizli (varsayılan: hemen göster) */
+  resultsReleased?: boolean;
 }): Promise<Result> {
   const title = input.title.trim();
   if (!title) return { ok: false, error: 'Ödev başlığı zorunludur.' };
@@ -249,6 +253,7 @@ export async function createHomework(input: {
     points: input.points,
     file_url: input.link.trim() || null,
     file_type: files.length ? 'Dosya' : input.link.trim() ? 'Bağlantı' : 'Metin',
+    results_released: input.resultsReleased ?? true,
     teacher_name: 'server',
   }).select('id').single();
   if (error || !created) return fail(error);
@@ -274,6 +279,14 @@ export async function deleteHomework(id: string, attachments: HomeworkAttachment
 // --------------------------------------------------------
 // Ödev kontrolü
 // --------------------------------------------------------
+/** Kontrol sonuçlarını öğrenciye açıklar ya da yeniden gizler; açıklanınca bekleyen puanlar işlenir (veritabanı tetikleyicisi) */
+export async function setHomeworkResultsReleased(id: string, released: boolean): Promise<Result> {
+  const { error, count } = await supabase.from('homeworks').update({ results_released: released }, { count: 'exact' }).eq('id', id);
+  if (error) return fail(error);
+  if (!count) return { ok: false, error: 'Ödev bulunamadı ya da bu ödevi değiştirme yetkiniz yok.' };
+  return { ok: true, data: undefined };
+}
+
 export type CheckStatus = 'yapti' | 'kismen' | 'yapmadi';
 
 export interface HomeworkCheckRow {

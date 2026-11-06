@@ -6,7 +6,7 @@ import { MyHomework, MyStudent } from '../../lib/studentData';
 import { initialsOf } from '../teacher/TeacherUi';
 import { isPlainLeftClick } from '../teacher/teacherPages';
 import { PortalPageCards } from '../shell/PortalShell';
-import { STUDENT_PAGES, STUDENT_PAGE_GROUPS, StudentPageId, studentPageHref } from './studentPages';
+import { STUDENT_PAGES, STUDENT_PAGE_GROUPS, StudentPageId, studentPageHref } from './studentRoutes';
 import { DueLabel, sortPending } from './StudentHomeworksPage';
 import s from './StudentPortal.module.css';
 

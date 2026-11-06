@@ -10,7 +10,7 @@ import { studentConversationId } from '../../lib/teacherData';
 import { Aquarium } from '../aquarium/Aquarium';
 import { Notice } from '../teacher/TeacherUi';
 import { PortalPageHeader, PortalSidebar, PortalTopBar, usePageRoute } from '../shell/PortalShell';
-import { STUDENT_PAGES, STUDENT_PAGE_GROUPS, StudentPageGroup, StudentPageId, getStudentPage, studentPageHref, studentPageIdFromSlug, studentPageSlug } from './studentPages';
+import { STUDENT_PAGES, STUDENT_PAGE_GROUPS, StudentPageGroup, StudentPageId, getStudentPage, studentPageHref, studentPageIdFromSlug, studentPageSlug } from './studentRoutes';
 import { StudentHome } from './StudentHome';
 import { StudentHomeworksPage } from './StudentHomeworksPage';
 import { StudentMessagesPage } from './StudentMessagesPage';

@@ -646,6 +646,7 @@
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(32, 53, 45, 0.15);
   transition: all 0.15s ease;
+  -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }

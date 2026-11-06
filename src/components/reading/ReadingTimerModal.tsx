@@ -107,7 +107,8 @@ export function ReadingTimerModal({ studentName, initialWords, late, onSave, onC
           <div className={styles.modalBody}>
             <p className={styles.modalText}>Öğrenci kitaptan okumaya hazır olunca süreyi başlatın. {READING_SECONDS} saniye sonra bip sesi çalar.</p>
             <button type="button" className={styles.startButton} onClick={start} autoFocus>
-              <Play size={28} aria-hidden="true" />Süreyi başlat
+              <Play size={48} aria-hidden="true" />
+              <span>Süreyi<br />başlat</span>
             </button>
             <button type="button" className={styles.linkButton} onClick={() => setPhase('entry')}>
               Süreyi başka yerde tuttum, sonucu yazacağım

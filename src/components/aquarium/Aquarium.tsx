@@ -199,6 +199,15 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
   // Konumlar React'e uğramadan doğrudan transform ile yazılır (saniyede 60 kez yeniden çizim yok).
   useEffect(() => {
     const movers = moversRef.current;
+    // Sayfa yenilenince balıklar kaldıkları yerden devam eder (bu cihazda, sınıf bazında)
+    const posKey = `akvaryum-konum:${scopeKey}`;
+    let saved: Record<string, [number, number, 1 | -1]> = {};
+    try { saved = JSON.parse(window.localStorage.getItem(posKey) || '{}'); } catch { saved = {}; }
+    const savePositions = () => {
+      const out: Record<string, [number, number, 1 | -1]> = {};
+      movers.forEach((m, id) => { out[id] = [Math.round(m.x * 100) / 100, Math.round(m.y * 100) / 100, m.face]; });
+      try { window.localStorage.setItem(posKey, JSON.stringify(out)); } catch { /* gizli sekme vb. */ }
+    };
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const ids = new Set(fish.map((f) => f.id));
     for (const id of [...movers.keys()]) if (!ids.has(id)) movers.delete(id);
@@ -266,6 +275,13 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           rest: 0, mode: 'wander', modeUntil: 0,
         };
         pickTarget(m);
+        const last = saved[f.id];
+        if (last) {
+          const b = bounds(m);
+          m.x = clamp(last[0], b.minX, b.maxX);
+          m.y = clamp(last[1], b.minY, b.maxY);
+          m.face = last[2] === -1 ? -1 : 1;
+        }
         movers.set(f.id, m);
       }
     }
@@ -388,12 +404,19 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
     };
     raf = requestAnimationFrame(frame);
 
+    // Konumları 2 sn'de bir ve sayfa kapanırken kaydet
+    const saveTimer = window.setInterval(savePositions, 2000);
+    window.addEventListener('pagehide', savePositions);
+
     return () => {
       cancelAnimationFrame(raf);
+      window.clearInterval(saveTimer);
+      window.removeEventListener('pagehide', savePositions);
+      savePositions();
       timers.forEach((tm) => window.clearTimeout(tm));
       movers.forEach((m) => { m.mode = 'wander'; m.preyId = undefined; });
     };
-  }, [fish, layout, fishBottom]);
+  }, [fish, layout, fishBottom, scopeKey]);
 
   const fishCount = fish.length;
   const summary = `${title}: ${fishCount} balık, ${eggs.length} yumurta`;
@@ -512,16 +535,6 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           <span>{full ? 'Küçült' : 'Tam ekran'}</span>
         </button>
       </div>
-
-      {!full && (
-        <ul className={styles.legend}>
-          <li><span className={styles.legendEgg} aria-hidden="true" />5 puanın altı: yumurta (her puanda bir çatlak)</li>
-          <li><strong>5 puanda</strong> yumurtadan çıkar; 5 puanın altına düşerse yeniden yumurta olur</li>
-          <li>Her <strong>5 puanda</strong> yeni balık: {FORM_NAMES.join(' → ')}</li>
-          <li>Her puanda büyür · <strong>{SPARKLE_POINTS}</strong> puanda parıltı · <strong>{CROWN_POINTS}</strong> puanda taç</li>
-          <li>Puanı yaklaşık <strong>iki katı</strong> olan balık yanındaki küçüğe saldırır, küçük kaçar</li>
-        </ul>
-      )}
 
       {/* Ekran okuyucular için liste */}
       <ul className={styles.srOnly}>

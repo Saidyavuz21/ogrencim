@@ -256,7 +256,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
     <div className={styles.pageBody}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
       {activeHw?.quiz_mode && loadedFor === activeHw.id && (
-        <QuizReport key={activeHw.id} homeworkId={activeHw.id} mode={activeHw.quiz_mode} dueAt={activeHw.due_at} students={students} />
+        <QuizReport key={activeHw.id} homeworkId={activeHw.id} title={activeHw.title} mode={activeHw.quiz_mode} dueAt={activeHw.due_at} students={students} />
       )}
 
       <div className={styles.pointsLayout}>

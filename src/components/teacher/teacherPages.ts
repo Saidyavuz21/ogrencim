@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3 } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -12,6 +12,7 @@ export type TeacherPageId =
   | 'reading'
   | 'grade_entry'
   | 'files'
+  | 'class_report'
   | 'students'
   | 'leaderboard'
   | 'aquarium'
@@ -36,13 +37,14 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'assignments', slug: 'odev-gonder', title: 'Ödev gönder', description: 'Yeni ödev oluştur ve listele', icon: Send, group: 'Ödevler' },
   { id: 'check_sheet', slug: 'odev-kontrol', title: 'Ödev kontrolü', description: 'Yaptı, kısmen, yapmadı işaretle', icon: CheckSquare, group: 'Ödevler' },
   { id: 'questions', slug: 'soru-bankasi', title: 'Soru bankası', description: 'Quiz soruları: yaz, düzenle, süz', icon: HelpCircle, group: 'Ödevler' },
+  { id: 'files', slug: 'dosyalarim', title: 'Dosyalarım', description: 'Yükle, klasörle, etiketle, sınıfla paylaş', icon: Folder, group: 'Ödevler' },
   { id: 'plus_minus', slug: 'puan-ver', title: 'Puan ver', description: 'Artı ve eksi puan ekle', icon: Star, group: 'Puan ve ödül' },
   { id: 'leaderboard', slug: 'siralama', title: 'Puan sıralaması', description: 'Sınıfın başarı sırası', icon: Award, group: 'Puan ve ödül' },
   { id: 'aquarium', slug: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balıklar, tam ekran', icon: Fish, group: 'Puan ve ödül' },
   { id: 'class_tools', slug: 'sinif-araclari', title: 'Sınıf araçları', description: 'Rastgele seçici, grup, kronometre, geri sayım', icon: Shuffle, group: 'Ders ve değerlendirme' },
   { id: 'reading', slug: 'okuma-yarismasi', title: 'Okuma yarışması', description: '1 dakikada okunan kelime, sıralama, gelişim', icon: BookOpen, group: 'Ders ve değerlendirme' },
   { id: 'grade_entry', slug: 'not-girisi', title: 'Not girişi', description: 'Yazılı ve sözlü notlar', icon: TrendingUp, group: 'Ders ve değerlendirme' },
-  { id: 'files', slug: 'dosyalarim', title: 'Dosyalarım', description: 'Yükle, klasörle, etiketle, sınıfla paylaş', icon: Folder, group: 'Ders ve değerlendirme' },
+  { id: 'class_report', slug: 'sinif-karnesi', title: 'Sınıf karnesi', description: 'Not ortalamaları, dağılım, öğrenci gelişimi', icon: BarChart3, group: 'Ders ve değerlendirme' },
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
   { id: 'classes', slug: 'siniflar', title: 'Sınıflarım', description: 'Ders verdiğin sınıfları ekle ve çıkar', icon: School, group: 'Öğrenciler ve sınıflar' },
   { id: 'messages', slug: 'mesajlar', title: 'Mesajlar', description: 'Öğrencilerle birebir ve sınıf grubu', icon: MessageSquare, group: 'İletişim' },

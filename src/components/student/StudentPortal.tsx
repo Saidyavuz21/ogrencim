@@ -18,6 +18,7 @@ import { AnnouncementsList, StudentAccountPage, StudentGradesPage, StudentPoints
 import { Spinner } from '../Spinner';
 import { StudentReadingPage } from '../reading/StudentReadingPage';
 import { StudentMaterialsPage } from '../files/StudentMaterialsPage';
+import { StudentProgress } from '../reports/StudentProgress';
 import styles from '../teacher/TeacherDashboard.module.css';
 
 interface StudentPortalProps {
@@ -162,6 +163,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
           />
         )}
         {page === 'materyaller' && <StudentMaterialsPage />}
+        {page === 'gelisim' && (me ? <StudentProgress studentId={user.id} studentName={me.name} currentPoints={me.points} self /> : <Spinner center label="Yükleniyor…" />)}
         {page === 'notlar' && <StudentGradesPage grades={grades} loaded={loaded} />}
         {page === 'okuma' && <StudentReadingPage />}
         {page === 'puanlar' && <StudentPointsPage me={me} points={points} loaded={loaded} />}

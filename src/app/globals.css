@@ -92,3 +92,13 @@ select option:checked {
 select option:disabled {
   color: #94a3b8;
 }
+
+/* Rapor yazdırma / PDF olarak kaydetme: yalnızca [data-print-area] basılır */
+@media print {
+  body:has([data-print-area]) * { visibility: hidden; }
+  [data-print-area], [data-print-area] * { visibility: visible; }
+  [data-print-area] { position: absolute; left: 0; top: 0; width: 100%; padding: 0 8mm; }
+  [data-no-print] { display: none !important; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }

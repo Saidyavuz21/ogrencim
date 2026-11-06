@@ -8,6 +8,7 @@ import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker } from '../SchoolPicker';
 import { CustomSelect } from '../CustomSelect';
 import { useDialog } from '../ConfirmDialog';
+import { Spinner } from '../Spinner';
 import {
   listProfiles,
   setTeacherApproved,
@@ -317,5 +318,8 @@ export function SearchInput({ id, value, onChange, placeholder }: { id: string; 
 }
 
 export function EmptyState({ children }: { children: React.ReactNode }) {
+  if (typeof children === 'string' && children.toLocaleLowerCase('tr-TR').includes('yükleniyor')) {
+    return <Spinner center label={children} />;
+  }
   return <p className={styles.emptyState}>{children}</p>;
 }

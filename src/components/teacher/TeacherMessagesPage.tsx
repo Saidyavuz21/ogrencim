@@ -13,6 +13,7 @@ import {
 import { useLiveMessages } from '../../lib/useLiveMessages';
 import { LiveBadge } from './TeacherUi';
 import { Notice, NoticeState, formatDateTime, initialsOf, useClassStudents } from './TeacherUi';
+import { Spinner } from '../Spinner';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherMessagesPageProps {
@@ -138,7 +139,7 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
         <section className={`${styles.panel} ${styles.convPane}`} aria-label="Konuşmalar">
           <div className={styles.listToolbar}><h2 className={styles.panelTitle}>Konuşmalar</h2><LiveBadge live={live} /></div>
           {msgError && <p className={styles.noticeError}>Mesajlar alınamadı: {msgError}</p>}
-          {loading && <p className={styles.mutedText}>Yükleniyor…</p>}
+          {loading && <Spinner center label="Yükleniyor…" />}
           {error && <p className={styles.noticeError}>{error}</p>}
           {!loading && !error && students.length === 0 && (
             <p className={styles.mutedText}>{selectedClass} sınıfında kayıtlı öğrenci yok. Öğrenciler okul numarası ve PIN&apos;i ile giriş yapıp size yazabilir.</p>

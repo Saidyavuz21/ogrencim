@@ -2896,3 +2896,21 @@
 .alsoSend .chipRow { gap: 6px; }
 .dashboard .alsoSend .chip { min-height: 32px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
 .chipLocked { opacity: .7; cursor: default; }
+
+/* Compact homework flow; secondary options stay available on demand. */
+.homeworkComposer { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.homeworkComposer .field :is(input, select, textarea) { font-size: 16px; }
+.homeworkComposer .field :is(input, select) { min-height: 48px; }
+.homeworkComposer .dueChip { min-height: 44px; }
+.homeworkComposer .subjectChips { gap: 8px; }
+.composerDetails { grid-column: 1 / -1; min-width: 0; border-top: 1px solid var(--teacher-border, #dedad0); }
+.composerDetails > summary { padding: 16px 24px 16px 0; cursor: pointer; position: relative; list-style: none; font-size: 14px; font-weight: 600; }
+.composerDetails > summary::-webkit-details-marker { display: none; }
+.composerDetails > summary::after { content: ''; position: absolute; right: 4px; top: 20px; width: 8px; height: 8px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); }
+.composerDetails[open] > summary::after { transform: rotate(225deg); top: 24px; }
+.composerDetails > summary small { display: block; margin-top: 4px; color: var(--teacher-muted); font-size: 13px; font-weight: 400; line-height: 1.5; }
+.composerDetails > summary:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 3px; border-radius: 4px; }
+.composerDetailBody { display: grid; gap: 20px; padding: 4px 0 16px; }
+.homeworkComposer .formActions > button { width: 100%; min-height: 48px; justify-content: center; }
+.homeworkComposer .dueRow { flex-wrap: wrap; }
+.homeworkComposer .dueRow input { flex-basis: 120px; }

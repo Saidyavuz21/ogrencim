@@ -8,6 +8,7 @@ import { AdminDashboard } from './admin/AdminDashboard';
 import { StudentPortal } from './student/StudentPortal';
 import { AnnouncementsPage } from './AnnouncementsPage';
 import { AuthPage } from './auth/AuthPage';
+import { Spinner } from './Spinner';
 import { UserRole, UserAccount } from '../data/portalData';
 
 const SIGNED_OUT_USER: UserAccount = {
@@ -81,27 +82,61 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
   }, []);
 
   if (isRestoringSession) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-sm text-slate-500">
-        Oturum kontrol ediliyor...
-      </div>
-    );
+    return <Spinner fullScreen size="lg" showLogo label="Oturum kontrol ediliyor…" />;
   }
 
   if (restoreFailed && !isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50 px-4 text-center text-sm text-slate-600">
-        <p>Sunucuya bağlanılamadı. Oturumunuz kapatılmadı; bağlantınızı kontrol edip tekrar deneyin.</p>
-        <button
-          type="button"
-          className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800"
-          onClick={() => {
-            setIsRestoringSession(true);
-            setRestoreAttempt((n) => n + 1);
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f7f6f2',
+          padding: '24px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '380px',
+            width: '100%',
+            backgroundColor: '#ffffff',
+            border: '1px solid #dedad0',
+            borderRadius: '20px',
+            padding: '32px 24px',
+            textAlign: 'center',
+            boxShadow: '0 4px 20px rgba(32, 53, 45, 0.06)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
           }}
         >
-          Tekrar dene
-        </button>
+          <p style={{ margin: 0, fontSize: '15px', color: '#58665f', lineHeight: 1.6 }}>
+            Sunucuya bağlanılamadı. Oturumunuz kapatılmadı; bağlantınızı kontrol edip tekrar deneyin.
+          </p>
+          <button
+            type="button"
+            style={{
+              backgroundColor: '#25634b',
+              color: '#ffffff',
+              border: 0,
+              borderRadius: '10px',
+              padding: '12px 24px',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              setIsRestoringSession(true);
+              setRestoreAttempt((n) => n + 1);
+            }}
+          >
+            Tekrar dene
+          </button>
+        </div>
       </div>
     );
   }

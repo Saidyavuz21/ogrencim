@@ -10,6 +10,7 @@ import {
   computeCompetitionRanks, countTiers, getPointTier, getRankBadgeClass, getRankRowPodiumClass,
   LeaderboardTierLegend, TIER_CLASS, TIER_ROW_CLASS,
 } from '../teacher/TeacherLeaderboardPage';
+import { Spinner } from '../Spinner';
 import styles from '../teacher/TeacherDashboard.module.css';
 import s from './StudentPortal.module.css';
 
@@ -23,7 +24,7 @@ export function StudentGradesPage({ grades, loaded }: { grades: MyGrade[]; loade
     () => Array.from(new Set(grades.map((g) => g.subject))).sort((a, b) => a.localeCompare(b, 'tr')),
     [grades]
   );
-  if (!loaded) return <p className={styles.mutedText}>Notlar yükleniyor…</p>;
+  if (!loaded) return <Spinner center label="Notlar yükleniyor…" />;
   if (!grades.length) return <p className={`${styles.panel} ${styles.mutedText}`}>Henüz not girilmedi.</p>;
   const order = (id: string) => EXAMS.findIndex((e) => e.id === id);
   const overall = grades.reduce((a, g) => a + g.score, 0) / grades.length;
@@ -74,7 +75,7 @@ export function StudentPointsPage({ me, points, loaded }: { me: MyStudent | null
       </section>
       <section className={styles.panel}>
         <h2 className={styles.panelTitle}>Geçmiş</h2>
-        {!loaded && <p className={styles.mutedText}>Yükleniyor…</p>}
+        {!loaded && <Spinner center label="Yükleniyor…" />}
         {loaded && !points.length && <p className={styles.mutedText}>Henüz puan verilmedi.</p>}
         <ul className={styles.historyList}>
           {points.map((h) => (
@@ -133,7 +134,7 @@ export function StudentRankingPage({ ranking, myId, className }: { ranking: Clas
 export function AnnouncementsList({ announcements, loaded }: { announcements: AnnouncementRow[]; loaded: boolean }) {
   return (
     <div className={styles.pageBody}>
-      {!loaded && <p className={styles.mutedText}>Duyurular yükleniyor…</p>}
+      {!loaded && <Spinner center label="Duyurular yükleniyor…" />}
       {loaded && !announcements.length && <p className={`${styles.panel} ${styles.mutedText}`}>Henüz duyuru yok.</p>}
       {announcements.map((a) => (
         <article key={a.id} className={styles.panel}>

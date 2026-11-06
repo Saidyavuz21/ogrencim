@@ -5,6 +5,7 @@ import { Send, Trash2, CheckSquare, Calendar, MoreVertical, Search, Paperclip, X
 import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, formatBytes, homeworkIsOpen, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, formatDate } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
+import { Spinner } from '../Spinner';
 import { useDialog } from '../ConfirmDialog';
 import { branchSubject, subjectHue, subjectShortLabel, subjectsForClass } from '../../data/subjects';
 import styles from './TeacherDashboard.module.css';
@@ -231,7 +232,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     { label: 'Cuma', date: nextWeekday(today, 5) },
     { label: 'Pazartesi', date: nextWeekday(today, 1) },
     { label: '1 hafta', date: addDays(today, 7) },
-  ].filter((o, i, all) => all.findIndex((x) => x.date === o.date) === i);
+  ].filter((o, i, all) => all.findIndex((x) => x.date === o.date) === i).sort((a, b) => a.date.localeCompare(b.date));
   const shortDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', weekday: 'short' });
 
   const classHomeworks = selectedClass ? homeworks.filter((h) => h.class_name === selectedClass) : homeworks;
@@ -277,7 +278,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
               )}
             </div>
           )}
-          {loading && <p className={styles.mutedText}>Ödevler yükleniyor…</p>}
+          {loading && <Spinner center label="Ödevler yükleniyor…" />}
           {!loading && classHomeworks.length === 0 && <p className={styles.mutedText}>Henüz ödev göndermediniz.</p>}
           {!loading && classHomeworks.length > 0 && visible.length === 0 && (
             <p className={styles.mutedText}>
@@ -323,7 +324,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
 
         <aside className={styles.pointsAside}>
             <CollapsiblePanel title="Yeni ödev" summary={targets.length ? `${targets.join(', ')} ${targets.length > 1 ? 'sınıflarına' : 'sınıfına'} gönder` : undefined}>
-              <form className={styles.formGrid} onSubmit={handleCreate}>
+              <form className={`${styles.formGrid} ${styles.homeworkComposer}`} onSubmit={handleCreate}>
                 <h2 className={styles.panelTitle}>Yeni ödev</h2>
                 <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
                   <legend>
@@ -348,37 +349,21 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     )}
                   </div>
                 </fieldset>
-                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-                  <legend>Ders</legend>
-                  <div className={styles.subjectChips}>
-                    {subjectOptions.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        className={styles.subjectChip}
-                        aria-pressed={subjectChoice === s}
-                        title={s}
-                        style={{ '--subject-hue': subjectHue(s) } as CSSVars}
-                        onClick={() => setSubjectChoice(s)}
-                      >
-                        {subjectShortLabel(s)}
-                      </button>
-                    ))}
-                    <button type="button" className={`${styles.subjectChip} ${styles.subjectChipOther}`} aria-pressed={subjectChoice === OTHER} onClick={() => setSubjectChoice(OTHER)}>
-                      Diğer…
-                    </button>
-                  </div>
-                  {subjectChoice === OTHER && (
-                    <input
-                      aria-label="Ders adı"
-                      value={customSubject}
-                      onChange={(e) => setCustomSubject(e.target.value)}
-                      maxLength={80}
-                      placeholder="Ders adını yazın. Örn: Değerler eğitimi"
-                      autoFocus
-                    />
-                  )}
-                </fieldset>
+                <label className={`${styles.field} ${styles.fullRow}`}>Ders
+                  <select value={subjectChoice} onChange={(e) => setSubjectChoice(e.target.value)}>
+                    <option value="" disabled>Ders seçin</option>
+                    {subjectOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                    <option value={OTHER}>Diğer ders…</option>
+                  </select>
+                </label>
+                {subjectChoice === OTHER && (
+                  <label className={`${styles.field} ${styles.fullRow}`}>Ders adı
+                    <input value={customSubject} onChange={(e) => setCustomSubject(e.target.value)} maxLength={80} placeholder="Ders adını yazın" autoFocus />
+                  </label>
+                )}
+                <label className={`${styles.field} ${styles.fullRow}`}>Ödev
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} maxLength={2000} placeholder="Öğrencinin ne yapacağını yazın. Örn: Ders kitabı sayfa 24-25'teki etkinlikleri yapın." />
+                </label>
                 <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
                   <legend>Teslim tarihi <span className={styles.optionalHint}>(isteğe bağlı)</span></legend>
                   <div className={styles.subjectChips}>
@@ -412,39 +397,9 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     </p>
                   )}
                 </fieldset>
-                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-                  <legend>Teslim şekli</legend>
-                  <div className={styles.subjectChips}>
-                    <button type="button" className={styles.dueChip} aria-pressed={!acceptsSubmissions} onClick={() => setAcceptsSubmissions(false)}>
-                      Sınıfta kontrol<small>Öğrenci bir şey yüklemez</small>
-                    </button>
-                    <button type="button" className={styles.dueChip} aria-pressed={acceptsSubmissions} onClick={() => setAcceptsSubmissions(true)}>
-                      Uygulamadan teslim<small>Öğrenci dosya ya da fotoğraf yükler</small>
-                    </button>
-                  </div>
-                  {acceptsSubmissions && (
-                    <p className={styles.mutedText}>
-                      {dueDate ? 'Teslim tarihi gelince ödev kendiliğinden kapanır; teslim eden öğrenci sonradan değişiklik yapamaz.' : 'Teslim tarihi seçmezseniz ödev siz "Ödevi kapat" diyene kadar açık kalır.'}
-                    </p>
-                  )}
-                </fieldset>
-                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-                  <legend>Kontrol sonucu</legend>
-                  <div className={styles.subjectChips}>
-                    <button type="button" className={styles.dueChip} aria-pressed={releaseNow} onClick={() => setReleaseNow(true)}>
-                      Hemen göster<small>Kontrol edince öğrenci görür</small>
-                    </button>
-                    <button type="button" className={styles.dueChip} aria-pressed={!releaseNow} onClick={() => setReleaseNow(false)}>
-                      Sonra açıkla<small>Siz açıklayana kadar gizli</small>
-                    </button>
-                  </div>
-                  {!releaseNow && (
-                    <p className={styles.mutedText}>Sonuç ve davranış puanı, &quot;Ödev kontrolü&quot; sayfasında &quot;Sonuçları açıkla&quot;ya basana kadar öğrenciye yansımaz.</p>
-                  )}
-                </fieldset>
-                <label className={`${styles.field} ${styles.fullRow}`}>Ödev
-                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} maxLength={2000} placeholder="Öğrencinin ne yapacağını yazın. Örn: Ders kitabı sayfa 24-25'teki etkinlikleri yapın." />
-                </label>
+                <details className={styles.composerDetails}>
+                  <summary><span>Dosya veya bağlantı ekle</span><small>{files.length || link.trim() ? `${files.length} dosya${link.trim() ? ' · bağlantı eklendi' : ''}` : 'İsteğe bağlı'}</small></summary>
+                  <div className={styles.composerDetailBody}>
                 <label className={styles.field}>Bağlantı (isteğe bağlı)
                   <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." />
                 </label>
@@ -486,6 +441,43 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     </ul>
                   )}
                 </div>
+                  </div>
+                </details>
+                <details className={styles.composerDetails}>
+                  <summary><span>Teslim ve sonuç ayarları</span><small>{acceptsSubmissions ? 'Uygulamadan teslim' : 'Sınıfta kontrol'} · {releaseNow ? 'Sonuçlar hemen görünür' : 'Sonuçlar gizli'}</small></summary>
+                  <div className={styles.composerDetailBody}>
+                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                  <legend>Teslim şekli</legend>
+                  <div className={styles.subjectChips}>
+                    <button type="button" className={styles.dueChip} aria-pressed={!acceptsSubmissions} onClick={() => setAcceptsSubmissions(false)}>
+                      Sınıfta kontrol<small>Öğrenci bir şey yüklemez</small>
+                    </button>
+                    <button type="button" className={styles.dueChip} aria-pressed={acceptsSubmissions} onClick={() => setAcceptsSubmissions(true)}>
+                      Uygulamadan teslim<small>Öğrenci dosya ya da fotoğraf yükler</small>
+                    </button>
+                  </div>
+                  {acceptsSubmissions && (
+                    <p className={styles.mutedText}>
+                      {dueDate ? 'Teslim tarihi gelince ödev kendiliğinden kapanır; teslim eden öğrenci sonradan değişiklik yapamaz.' : 'Teslim tarihi seçmezseniz ödev siz "Ödevi kapat" diyene kadar açık kalır.'}
+                    </p>
+                  )}
+                </fieldset>
+                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                  <legend>Kontrol sonucu</legend>
+                  <div className={styles.subjectChips}>
+                    <button type="button" className={styles.dueChip} aria-pressed={releaseNow} onClick={() => setReleaseNow(true)}>
+                      Hemen göster<small>Kontrol edince öğrenci görür</small>
+                    </button>
+                    <button type="button" className={styles.dueChip} aria-pressed={!releaseNow} onClick={() => setReleaseNow(false)}>
+                      Sonra açıkla<small>Siz açıklayana kadar gizli</small>
+                    </button>
+                  </div>
+                  {!releaseNow && (
+                    <p className={styles.mutedText}>Sonuç ve davranış puanı, &quot;Ödev kontrolü&quot; sayfasında &quot;Sonuçları açıkla&quot;ya basana kadar öğrenciye yansımaz.</p>
+                  )}
+                </fieldset>
+                  </div>
+                </details>
                 <div className={styles.formActions}>
                   {progress && <span className={styles.mutedText} aria-live="polite">{progress}</span>}
                   <button type="submit" className={styles.primary} disabled={busy || !targets.length}>

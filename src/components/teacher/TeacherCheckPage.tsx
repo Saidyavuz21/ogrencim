@@ -9,6 +9,7 @@ import {
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
 import { useDialog } from '../ConfirmDialog';
 import { CustomSelect } from '../CustomSelect';
+import { Spinner } from '../Spinner';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherCheckPageProps {
@@ -260,7 +261,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
               {students.length > 1 && <StudentSortToggle />}
             </div>
           )}
-          {stLoading && <p className={`${styles.mutedText} ${styles.listPad}`}>Öğrenciler yükleniyor…</p>}
+          {stLoading && <Spinner center label="Öğrenciler yükleniyor…" />}
           {stError && <p className={`${styles.noticeError} ${styles.listPad}`}>{stError}</p>}
           {!stLoading && !stError && students.length === 0 && (
             <p className={`${styles.mutedText} ${styles.listPad}`}>{selectedClass} sınıfında kayıtlı öğrenci yok. &quot;Öğrenciler&quot; sayfasından ekleyin.</p>

@@ -15,6 +15,7 @@ import { StudentHome } from './StudentHome';
 import { StudentHomeworksPage } from './StudentHomeworksPage';
 import { StudentMessagesPage } from './StudentMessagesPage';
 import { AnnouncementsList, StudentAccountPage, StudentGradesPage, StudentPointsPage, StudentRankingPage } from './StudentSections';
+import { Spinner } from '../Spinner';
 import styles from '../teacher/TeacherDashboard.module.css';
 
 interface StudentPortalProps {
@@ -147,7 +148,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
         )}
 
         {loadError && <Notice notice={{ kind: 'error', text: `Bazı bilgiler alınamadı: ${loadError}` }} />}
-        {!loaded && page === 'home' && <p className={styles.mutedText}>Bilgiler yükleniyor…</p>}
+        {!loaded && page === 'home' && <Spinner center label="Bilgiler yükleniyor…" />}
 
         {page === 'odevler' && (
           <StudentHomeworksPage
@@ -164,12 +165,12 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
           <div className={styles.pageBody}>
             {loaded
               ? <Aquarium students={ranking} highlightId={user.id} scopeKey={`ogrenci:${user.id}`} title={`${me?.class_name || 'Sınıf'} akvaryumu`} />
-              : <p className={styles.mutedText}>Akvaryum hazırlanıyor…</p>}
+              : <Spinner center label="Akvaryum hazırlanıyor…" />}
           </div>
         )}
         {page === 'mesajlar' && (me
           ? <StudentMessagesPage me={me} onRead={refreshUnread} />
-          : <p className={styles.mutedText}>{loaded ? 'Öğrenci bilgisi alınamadı.' : 'Mesajlar yükleniyor…'}</p>)}
+          : (loaded ? <p className={styles.mutedText}>Öğrenci bilgisi alınamadı.</p> : <Spinner center label="Mesajlar yükleniyor…" />))}
         {page === 'duyurular' && <AnnouncementsList announcements={announcements} loaded={loaded} />}
         {page === 'hesap' && (
           <StudentAccountPage me={me} fallbackName={user.name} fallbackNo={user.studentNo} fallbackClass={user.className} onLogout={handleLogout} />

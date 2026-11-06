@@ -8,6 +8,7 @@ import { Stopwatch } from './classtools/Stopwatch';
 import { Countdown } from './classtools/Countdown';
 import { GroupMaker } from './classtools/GroupMaker';
 import { useClassStudents } from './TeacherUi';
+import { Spinner } from '../Spinner';
 import styles from './TeacherDashboard.module.css';
 import s from './classtools/ClassTools.module.css';
 
@@ -64,14 +65,14 @@ export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string
       <div role="tabpanel" id={`tool-panel-${tool}`} aria-labelledby={`tool-tab-${tool}`}>
         {tool === 'picker' && (
           <>
-            {loading && <p className={styles.mutedText}>Öğrenciler yükleniyor…</p>}
+            {loading && <Spinner center label="Öğrenciler yükleniyor…" />}
             {error && <p className={styles.noticeError}>{error}</p>}
             {!loading && !error && <RandomPicker key={selectedClass} className={selectedClass} students={students} />}
           </>
         )}
         {tool === 'groups' && (
           <>
-            {loading && <p className={styles.mutedText}>Öğrenciler yükleniyor…</p>}
+            {loading && <Spinner center label="Öğrenciler yükleniyor…" />}
             {error && <p className={styles.noticeError}>{error}</p>}
             {!loading && !error && <GroupMaker key={selectedClass} className={selectedClass} students={students} />}
           </>

@@ -5,6 +5,7 @@ import { Save } from '../icons';
 import { EXAMS, ExamId, GradeRow, listClassGrades, saveGrades } from '../../lib/teacherData';
 import { branchSubject, subjectHue, subjectShortLabel, subjectsForClass } from '../../data/subjects';
 import { Notice, NoticeState, StudentSortToggle, useClassStudents } from './TeacherUi';
+import { Spinner } from '../Spinner';
 import styles from './TeacherDashboard.module.css';
 
 type CSSVars = React.CSSProperties & Record<`--${string}`, string | number>;
@@ -160,7 +161,7 @@ export function TeacherGradesPage({ selectedClass, defaultSubject }: { selectedC
         {tabButton('liste', 'Öğrenci notları')}
       </div>
 
-      {loading && <p className={styles.mutedText}>Öğrenciler yükleniyor…</p>}
+      {loading && <Spinner center label="Öğrenciler yükleniyor…" />}
       {error && <p className={styles.noticeError}>{error}</p>}
       {!loading && !error && students.length === 0 && <p className={styles.mutedText}>{selectedClass} sınıfında kayıtlı öğrenci yok.</p>}
 

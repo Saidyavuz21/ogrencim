@@ -7,6 +7,7 @@ import { TeacherBulkStudents } from './TeacherBulkStudents';
 import { CollapsiblePanel, StudentSortToggle, sortStudents, useStudentSort } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
 import { useDialog } from '../ConfirmDialog';
+import { Spinner } from '../Spinner';
 import { createStudent, deleteStudent, listStudentPins, listStudents, resetStudentPin, updateStudentInfo, StudentListItem } from '../../lib/supabaseClient';
 import styles from './TeacherDashboard.module.css';
 import pinStyles from './StudentPin.module.css';
@@ -290,7 +291,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
           )}
         </div>
 
-        {loading && <p className={styles.mutedText}>Öğrenciler yükleniyor…</p>}
+        {loading && <Spinner center label="Öğrenciler yükleniyor…" />}
         {loadError && <p role="alert" className={styles.noticeError}><AlertCircle size={18} aria-hidden="true" /><span>{loadError}</span></p>}
         {!loading && !loadError && visible.length === 0 && (
           <p className={styles.mutedText}>{q ? 'Aramaya uyan öğrenci yok.' : 'Bu sınıfta henüz öğrenci yok. Yukarıdaki "Öğrenci ekle" veya "Toplu ekle" ile başlayın.'}</p>

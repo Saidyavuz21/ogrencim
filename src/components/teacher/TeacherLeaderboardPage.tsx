@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { CollapsiblePanel, useClassStudents } from './TeacherUi';
+import { Spinner } from '../Spinner';
 import styles from './TeacherDashboard.module.css';
 
 export type PointTier = 'elite' | 'high' | 'good' | 'positive' | 'neutral' | 'warn' | 'negative';
@@ -138,7 +139,7 @@ export function TeacherLeaderboardPage({ selectedClass }: { selectedClass: strin
             <h3>{selectedClass} sınıfı</h3>
             <span>{ranked.length} öğrenci · puanlar canlı veritabanından</span>
           </div>
-          {loading && <p className={`${styles.mutedText} ${styles.listPad}`}>Yükleniyor…</p>}
+          {loading && <Spinner center label="Yükleniyor…" />}
           {error && <p className={`${styles.noticeError} ${styles.listPad}`}>{error}</p>}
           {!loading && !error && ranked.length === 0 && <p className={`${styles.mutedText} ${styles.listPad}`}>Bu sınıfta kayıtlı öğrenci yok.</p>}
           <ol className={styles.rankList}>

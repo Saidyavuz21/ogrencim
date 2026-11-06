@@ -6,6 +6,7 @@ import { MyHomework } from '../../lib/studentData';
 import type { SubmissionRow } from '../../lib/teacherData';
 import { StudentSubmission } from './StudentSubmission';
 import { AttachmentList, formatDate } from '../teacher/TeacherUi';
+import { Spinner } from '../Spinner';
 import styles from '../teacher/TeacherDashboard.module.css';
 import s from './StudentPortal.module.css';
 
@@ -61,7 +62,7 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
   const [chosen, setFilter] = useState<Filter | null>(null);
   const filter: Filter = chosen ?? (pending.length ? 'pending' : 'all');
 
-  if (!loaded) return <p className={styles.mutedText}>Ödevler yükleniyor…</p>;
+  if (!loaded) return <Spinner center label="Ödevler yükleniyor…" />;
   if (!homeworks.length) return <p className={`${styles.panel} ${styles.mutedText}`}>Sınıfına henüz ödev verilmedi.</p>;
 
   const list = filter === 'pending' ? pending : filter === 'checked' ? checked : [...pending, ...checked];

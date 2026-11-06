@@ -22,11 +22,16 @@ export function daysUntil(due: string | null): number | null {
   return Math.round((startOfDay(new Date(due)) - startOfDay(new Date())) / DAY);
 }
 
-/** "Bugün", "Yarın", "3 gün kaldı", "2 gün gecikti" */
-export function DueLabel({ due }: { due: string | null }) {
+const hm = (time?: string | null) => (time ? time.slice(0, 5) : '');
+
+/** "Bugün · 15:30", "Yarın teslim", "3 gün kaldı", "2 gün gecikti" */
+export function DueLabel({ due, time }: { due: string | null; time?: string | null }) {
   const d = daysUntil(due);
   if (d === null) return null;
-  const text = d < 0 ? `${-d} gün gecikti` : d === 0 ? 'Bugün teslim' : d === 1 ? 'Yarın teslim' : `${d} gün kaldı`;
+  const text = d < 0 ? `${-d} gün gecikti`
+    : d === 0 ? (time ? `Bugün · ${hm(time)}` : 'Bugün teslim')
+    : d === 1 ? (time ? `Yarın · ${hm(time)}` : 'Yarın teslim')
+    : `${d} gün kaldı`;
   const tone = d < 0 ? s.dueLate : d <= 1 ? s.dueSoon : s.dueLater;
   return <span className={`${s.dueLabel} ${tone}`}>{text}</span>;
 }
@@ -37,7 +42,8 @@ export function sortPending(list: MyHomework[]) {
     if (!a.due_date && !b.due_date) return b.created_at.localeCompare(a.created_at);
     if (!a.due_date) return 1;
     if (!b.due_date) return -1;
-    return a.due_date.localeCompare(b.due_date);
+    // Aynı gün içinde saati olan önce (saatsiz = gün sonu)
+    return a.due_date.localeCompare(b.due_date) || (a.due_time || '23:59').localeCompare(b.due_time || '23:59');
   });
 }
 
@@ -78,11 +84,11 @@ export function StudentHomeworksPage({ homeworks, loaded }: { homeworks: MyHomew
               <div className={styles.assignmentContent}>
                 <div className={s.homeworkHead}>
                   <h2 className={styles.assignmentTitle}>{h.title}</h2>
-                  {!h.check && <DueLabel due={h.due_date} />}
+                  {!h.check && <DueLabel due={h.due_date} time={h.due_time} />}
                 </div>
                 <div className={styles.assignmentMeta}>
                   <span>{h.subject} · {h.teacher_name}</span>
-                  {h.due_date && <span>Son teslim: {formatDate(h.due_date)}</span>}
+                  {h.due_date && <span>Son teslim: {formatDate(h.due_date)}{h.due_time ? ` · ${hm(h.due_time)}` : ''}</span>}
                 </div>
                 {h.description && <p className={styles.assignmentDescription}>{h.description}</p>}
                 <AttachmentList attachments={h.attachments} />

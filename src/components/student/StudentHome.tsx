@@ -89,7 +89,7 @@ export function StudentHome({ me, fallbackName, fallbackNo, fallbackClass, myRan
                       <strong>{h.title}</strong>
                       <span>{h.subject} · {h.teacher_name}</span>
                     </span>
-                    <DueLabel due={h.due_date} />
+                    <DueLabel due={h.due_date} time={h.due_time} />
                   </a>
                 </li>
               ))}

@@ -87,6 +87,8 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   const [query, setQuery] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
   const [dueDate, setDueDate] = useState('');
+  // İsteğe bağlı teslim saati; boşsa teslim günün sonu (23:59)
+  const [dueTime, setDueTime] = useState('');
   const [link, setLink] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -139,6 +141,14 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
       setNotice({ kind: 'error', text: 'Ödevin gideceği en az bir sınıf seçin.' });
       return;
     }
+    // Teslim anı geçmişte olamaz (veritabanı da denetler)
+    if (dueDate) {
+      const nowHM = new Date().toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', hour12: false });
+      if (dueDate < today || (dueDate === today && dueTime && dueTime <= nowHM)) {
+        setNotice({ kind: 'error', text: dueDate < today ? 'Teslim tarihi geçmişte olamaz.' : `Teslim saati geçti (şu an ${nowHM}). Daha ileri bir saat seçin.` });
+        return;
+      }
+    }
     const title = autoTitle(subject);
     setBusy(true);
     // Her sınıf için ayrı kayıt (kontrol, puan ve teslim sınıf bazında ayrı kalır); dosyalar her birine yüklenir
@@ -146,7 +156,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     const failed: { cls: string; error: string }[] = [];
     for (const [i, c] of targets.entries()) {
       if (targets.length > 1) setProgress(`${c} sınıfına gönderiliyor (${i + 1}/${targets.length})…`);
-      const res = await createHomework({ title, subject, description, className: c, dueDate, points: 100, link, files });
+      const res = await createHomework({ title, subject, description, className: c, dueDate, dueTime, points: 100, link, files });
       if (res.ok) sent.push(c);
       else failed.push({ cls: c, error: res.error });
     }
@@ -170,6 +180,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     if (fileInput.current) fileInput.current.value = '';
     setDescription('');
     setDueDate('');
+    setDueTime('');
     setLink('');
     reload();
   };
@@ -196,10 +207,10 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
   const tomorrowDate = new Date(`${today}T12:00:00`);
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
   const tomorrow = tomorrowDate.toLocaleDateString('sv-SE');
-  const dueLabel = (date: string) => {
+  const dueLabel = (date: string, time?: string | null) => {
     const day = date.slice(0, 10);
     const prefix = day === today ? 'Bugün teslim' : day === tomorrow ? 'Yarın teslim' : day < today ? 'Teslim tarihi geçti' : 'Son teslim';
-    return `${prefix} · ${formatDate(date)}`;
+    return `${prefix} · ${formatDate(date)}${time ? ` · ${time.slice(0, 5)}` : ''}`;
   };
   const dueOptions = [
     { label: 'Yarın', date: tomorrow },
@@ -267,7 +278,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   <h3 className={styles.assignmentTitle}>{hw.subject ? <SubjectTag subject={hw.subject} /> : hw.title}</h3>
                   <div className={styles.assignmentMeta}>
                     {!selectedClass && <span>{hw.class_name || 'Sınıf yok'}</span>}
-                    {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />{dueLabel(hw.due_date)}</span>}
+                    {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />{dueLabel(hw.due_date, hw.due_time)}</span>}
                   </div>
                   {hw.description && <p className={styles.assignmentDescription}>{hw.description}</p>}
                   <AttachmentList attachments={hw.attachments} />
@@ -364,11 +375,26 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   <div className={styles.dueRow}>
                     <input aria-label="Başka bir tarih seçin" type="date" min={today} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                     {dueDate && (
-                      <button type="button" className={styles.noteRemove} onClick={() => setDueDate('')} aria-label="Teslim tarihini kaldır" title="Tarihi kaldır">
+                      <input
+                        aria-label="Teslim saati (isteğe bağlı)"
+                        title="Teslim saati (isteğe bağlı). Boş bırakılırsa gün sonu."
+                        type="time"
+                        step={300}
+                        value={dueTime}
+                        onChange={(e) => setDueTime(e.target.value)}
+                      />
+                    )}
+                    {dueDate && (
+                      <button type="button" className={styles.noteRemove} onClick={() => { setDueDate(''); setDueTime(''); }} aria-label="Teslim tarihini kaldır" title="Tarihi kaldır">
                         <X size={18} aria-hidden="true" />
                       </button>
                     )}
                   </div>
+                  {dueDate && (
+                    <p className={styles.mutedText}>
+                      {dueTime ? `Teslim: ${shortDate(dueDate)} saat ${dueTime}.` : `Saat seçilmezse teslim ${shortDate(dueDate)} gün sonudur (23:59).`}
+                    </p>
+                  )}
                 </fieldset>
                 <label className={`${styles.field} ${styles.fullRow}`}>Ödev
                   <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} maxLength={2000} placeholder="Öğrencinin ne yapacağını yazın. Örn: Ders kitabı sayfa 24-25'teki etkinlikleri yapın." />

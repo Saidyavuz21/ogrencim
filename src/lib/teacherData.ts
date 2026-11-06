@@ -137,6 +137,8 @@ export interface HomeworkRow {
   description: string | null;
   class_name: string | null;
   due_date: string | null;
+  /** İsteğe bağlı teslim saati 'SS:DD:ss' (boşsa gün sonu) */
+  due_time: string | null;
   points: number;
   file_url: string | null;
   attachments: HomeworkAttachment[] | null;
@@ -145,7 +147,7 @@ export interface HomeworkRow {
   created_at: string;
 }
 
-const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, points, file_url, attachments, teacher_id, teacher_name, created_at';
+const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at';
 
 export async function listMyHomeworks(className?: string): Promise<Result<HomeworkRow[]>> {
   const { data: auth } = await supabase.auth.getUser();
@@ -225,6 +227,8 @@ export async function createHomework(input: {
   description: string;
   className: string;
   dueDate: string;
+  /** İsteğe bağlı 'SS:DD' (yalnızca tarih seçiliyse) */
+  dueTime?: string;
   points: number;
   link: string;
   files?: File[];
@@ -241,6 +245,7 @@ export async function createHomework(input: {
     description: input.description.trim().slice(0, 2000) || null,
     class_name: input.className,
     due_date: input.dueDate || null,
+    due_time: input.dueDate && input.dueTime ? input.dueTime : null,
     points: input.points,
     file_url: input.link.trim() || null,
     file_type: files.length ? 'Dosya' : input.link.trim() ? 'Bağlantı' : 'Metin',

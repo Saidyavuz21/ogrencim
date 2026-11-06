@@ -349,13 +349,16 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     )}
                   </div>
                 </fieldset>
-                <label className={`${styles.field} ${styles.fullRow}`}>Ders
-                  <select value={subjectChoice} onChange={(e) => setSubjectChoice(e.target.value)}>
-                    <option value="" disabled>Ders seçin</option>
-                    {subjectOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                    <option value={OTHER}>Diğer ders…</option>
-                  </select>
-                </label>
+                <div className={`${styles.field} ${styles.fullRow}`}>
+                  <label htmlFor="hw-subject">Ders</label>
+                  <CustomSelect
+                    id="hw-subject"
+                    value={subjectChoice}
+                    onChange={setSubjectChoice}
+                    options={[...subjectOptions.map((s) => ({ value: s, label: s })), { value: OTHER, label: 'Diğer ders…' }]}
+                    placeholder="Ders seçin"
+                  />
+                </div>
                 {subjectChoice === OTHER && (
                   <label className={`${styles.field} ${styles.fullRow}`}>Ders adı
                     <input value={customSubject} onChange={(e) => setCustomSubject(e.target.value)} maxLength={80} placeholder="Ders adını yazın" autoFocus />
@@ -397,85 +400,86 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     </p>
                   )}
                 </fieldset>
-                <details className={styles.composerDetails}>
-                  <summary><span>Dosya veya bağlantı ekle</span><small>{files.length || link.trim() ? `${files.length} dosya${link.trim() ? ' · bağlantı eklendi' : ''}` : 'İsteğe bağlı'}</small></summary>
+                {/* Dosya sürüklenince bölüm kendiliğinden açılır (kapalıyken de bırakılabilsin) */}
+                <details className={styles.composerDetails} onDragEnter={(e) => { e.currentTarget.open = true; }}>
+                  <summary><span>Dosya veya bağlantı ekle</span><small>{[files.length ? `${files.length} dosya` : '', link.trim() ? 'bağlantı eklendi' : ''].filter(Boolean).join(' · ') || 'İsteğe bağlı'}</small></summary>
                   <div className={styles.composerDetailBody}>
-                <label className={styles.field}>Bağlantı (isteğe bağlı)
-                  <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." />
-                </label>
-                <div className={`${styles.field} ${styles.fullRow}`}>
-                  <span id="hw-files-label">Dosyalar <span className={styles.optionalHint}>(PDF veya resim · en fazla {MAX_FILES} · her biri 10 MB)</span></span>
-                  <div
-                    className={`${styles.fileDrop} ${dragging ? styles.fileDropActive : ''}`}
-                    onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                    onDragLeave={() => setDragging(false)}
-                    onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
-                  >
-                    <input
-                      id="hw-files"
-                      ref={fileInput}
-                      type="file"
-                      multiple
-                      accept={ALLOWED_FILE_TYPES.join(',')}
-                      className={styles.visuallyHidden}
-                      aria-labelledby="hw-files-label"
-                      tabIndex={-1}
-                      onChange={(e) => handleFiles(e.target.files)}
-                    />
-                    <button type="button" className={styles.fileDropButton} onClick={() => fileInput.current?.click()} disabled={files.length >= MAX_FILES}>
-                      <Paperclip size={18} aria-hidden="true" />{files.length ? 'Dosya ekle' : 'Dosya seç'}
-                    </button>
-                    <span className={styles.fileDropHint}>{files.length >= MAX_FILES ? 'En fazla dosya sayısına ulaşıldı' : 'veya buraya sürükleyin'}</span>
-                  </div>
-                  {files.length > 0 && (
-                    <ul className={styles.fileList}>
-                      {files.map((f) => (
-                        <li key={f.name + f.size} className={styles.fileItem}>
-                          <span>{f.name}</span>
-                          <small>{formatBytes(f.size)}</small>
-                          <button type="button" className={styles.fileRemove} onClick={() => removeFile(f)} aria-label={`${f.name} dosyasını çıkar`} title="Çıkar">
-                            <X size={16} aria-hidden="true" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                    <label className={styles.field}>Bağlantı (isteğe bağlı)
+                      <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." />
+                    </label>
+                    <div className={`${styles.field} ${styles.fullRow}`}>
+                      <span id="hw-files-label">Dosyalar <span className={styles.optionalHint}>(PDF veya resim · en fazla {MAX_FILES} · her biri 10 MB)</span></span>
+                      <div
+                        className={`${styles.fileDrop} ${dragging ? styles.fileDropActive : ''}`}
+                        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                        onDragLeave={() => setDragging(false)}
+                        onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+                      >
+                        <input
+                          id="hw-files"
+                          ref={fileInput}
+                          type="file"
+                          multiple
+                          accept={ALLOWED_FILE_TYPES.join(',')}
+                          className={styles.visuallyHidden}
+                          aria-labelledby="hw-files-label"
+                          tabIndex={-1}
+                          onChange={(e) => handleFiles(e.target.files)}
+                        />
+                        <button type="button" className={styles.fileDropButton} onClick={() => fileInput.current?.click()} disabled={files.length >= MAX_FILES}>
+                          <Paperclip size={18} aria-hidden="true" />{files.length ? 'Dosya ekle' : 'Dosya seç'}
+                        </button>
+                        <span className={styles.fileDropHint}>{files.length >= MAX_FILES ? 'En fazla dosya sayısına ulaşıldı' : 'veya buraya sürükleyin'}</span>
+                      </div>
+                      {files.length > 0 && (
+                        <ul className={styles.fileList}>
+                          {files.map((f) => (
+                            <li key={f.name + f.size} className={styles.fileItem}>
+                              <span>{f.name}</span>
+                              <small>{formatBytes(f.size)}</small>
+                              <button type="button" className={styles.fileRemove} onClick={() => removeFile(f)} aria-label={`${f.name} dosyasını çıkar`} title="Çıkar">
+                                <X size={16} aria-hidden="true" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
                 </details>
                 <details className={styles.composerDetails}>
                   <summary><span>Teslim ve sonuç ayarları</span><small>{acceptsSubmissions ? 'Uygulamadan teslim' : 'Sınıfta kontrol'} · {releaseNow ? 'Sonuçlar hemen görünür' : 'Sonuçlar gizli'}</small></summary>
                   <div className={styles.composerDetailBody}>
-                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-                  <legend>Teslim şekli</legend>
-                  <div className={styles.subjectChips}>
-                    <button type="button" className={styles.dueChip} aria-pressed={!acceptsSubmissions} onClick={() => setAcceptsSubmissions(false)}>
-                      Sınıfta kontrol<small>Öğrenci bir şey yüklemez</small>
-                    </button>
-                    <button type="button" className={styles.dueChip} aria-pressed={acceptsSubmissions} onClick={() => setAcceptsSubmissions(true)}>
-                      Uygulamadan teslim<small>Öğrenci dosya ya da fotoğraf yükler</small>
-                    </button>
-                  </div>
-                  {acceptsSubmissions && (
-                    <p className={styles.mutedText}>
-                      {dueDate ? 'Teslim tarihi gelince ödev kendiliğinden kapanır; teslim eden öğrenci sonradan değişiklik yapamaz.' : 'Teslim tarihi seçmezseniz ödev siz "Ödevi kapat" diyene kadar açık kalır.'}
-                    </p>
-                  )}
-                </fieldset>
-                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-                  <legend>Kontrol sonucu</legend>
-                  <div className={styles.subjectChips}>
-                    <button type="button" className={styles.dueChip} aria-pressed={releaseNow} onClick={() => setReleaseNow(true)}>
-                      Hemen göster<small>Kontrol edince öğrenci görür</small>
-                    </button>
-                    <button type="button" className={styles.dueChip} aria-pressed={!releaseNow} onClick={() => setReleaseNow(false)}>
-                      Sonra açıkla<small>Siz açıklayana kadar gizli</small>
-                    </button>
-                  </div>
-                  {!releaseNow && (
-                    <p className={styles.mutedText}>Sonuç ve davranış puanı, &quot;Ödev kontrolü&quot; sayfasında &quot;Sonuçları açıkla&quot;ya basana kadar öğrenciye yansımaz.</p>
-                  )}
-                </fieldset>
+                    <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                      <legend>Teslim şekli</legend>
+                      <div className={styles.subjectChips}>
+                        <button type="button" className={styles.dueChip} aria-pressed={!acceptsSubmissions} onClick={() => setAcceptsSubmissions(false)}>
+                          Sınıfta kontrol<small>Öğrenci bir şey yüklemez</small>
+                        </button>
+                        <button type="button" className={styles.dueChip} aria-pressed={acceptsSubmissions} onClick={() => setAcceptsSubmissions(true)}>
+                          Uygulamadan teslim<small>Öğrenci dosya ya da fotoğraf yükler</small>
+                        </button>
+                      </div>
+                      {acceptsSubmissions && (
+                        <p className={styles.mutedText}>
+                          {dueDate ? 'Teslim tarihi gelince ödev kendiliğinden kapanır; teslim eden öğrenci sonradan değişiklik yapamaz.' : 'Teslim tarihi seçmezseniz ödev siz "Ödevi kapat" diyene kadar açık kalır.'}
+                        </p>
+                      )}
+                    </fieldset>
+                    <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                      <legend>Kontrol sonucu</legend>
+                      <div className={styles.subjectChips}>
+                        <button type="button" className={styles.dueChip} aria-pressed={releaseNow} onClick={() => setReleaseNow(true)}>
+                          Hemen göster<small>Kontrol edince öğrenci görür</small>
+                        </button>
+                        <button type="button" className={styles.dueChip} aria-pressed={!releaseNow} onClick={() => setReleaseNow(false)}>
+                          Sonra açıkla<small>Siz açıklayana kadar gizli</small>
+                        </button>
+                      </div>
+                      {!releaseNow && (
+                        <p className={styles.mutedText}>Sonuç ve davranış puanı, &quot;Ödev kontrolü&quot; sayfasında &quot;Sonuçları açıkla&quot;ya basana kadar öğrenciye yansımaz.</p>
+                      )}
+                    </fieldset>
                   </div>
                 </details>
                 <div className={styles.formActions}>

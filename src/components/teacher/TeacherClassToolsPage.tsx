@@ -39,9 +39,10 @@ const readTool = (): ToolId => {
 export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string }) {
   const { students, loading, error } = useClassStudents(selectedClass);
   const [tool, setToolState] = useState<ToolId>(readTool);
-  const setTool = (id: ToolId) => {
+  const setTool = (id: ToolId, e?: React.MouseEvent<HTMLButtonElement>) => {
     setToolState(id);
     try { window.localStorage.setItem(TOOL_KEY, id); } catch { /* gizli sekme vb. */ }
+    e?.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   };
 
   return (
@@ -55,7 +56,7 @@ export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string
             id={`tool-tab-${t.id}`}
             aria-selected={tool === t.id}
             aria-controls={`tool-panel-${t.id}`}
-            onClick={() => setTool(t.id)}
+            onClick={(e) => setTool(t.id, e)}
           >
             <t.icon size={18} aria-hidden="true" />{t.label}
           </button>

@@ -168,47 +168,25 @@ export function TeacherGradesPage({ selectedClass, defaultSubject }: { selectedC
       {/* ===== NOT GİR ===== */}
       {tab === 'gir' && students.length > 0 && (
         <div role="tabpanel" id={`${tabsId}-gir-panel`} aria-labelledby={`${tabsId}-gir`} className={styles.gradeEntry}>
-          <section className={`${styles.panel} ${styles.formGrid}`}>
-            <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-              <legend>1. Ders</legend>
-              <div className={styles.subjectChips}>
-                {subjectOptions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={styles.subjectChip}
-                    aria-pressed={subjectChoice === s}
-                    title={s}
-                    style={{ '--subject-hue': subjectHue(s) } as CSSVars}
-                    onClick={() => setSubjectChoice(s)}
-                  >
-                    {subjectShortLabel(s)}
-                  </button>
-                ))}
-                <button type="button" className={`${styles.subjectChip} ${styles.subjectChipOther}`} aria-pressed={subjectChoice === OTHER} onClick={() => setSubjectChoice(OTHER)}>
-                  Diğer…
-                </button>
-              </div>
-              {subjectChoice === OTHER && (
-                <input
-                  aria-label="Ders adı"
-                  value={customSubject}
-                  onChange={(e) => setCustomSubject(e.target.value.slice(0, 80))}
-                  placeholder="Ders adını yazın"
-                  autoFocus
-                />
-              )}
-            </fieldset>
-            <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
-              <legend>2. Not türü</legend>
-              <div className={styles.subjectChips}>
-                {EXAMS.map((e) => (
-                  <button key={e.id} type="button" className={styles.dueChip} aria-pressed={exam === e.id} onClick={() => setExam(e.id)}>
-                    {e.label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+          <section className={`${styles.panel} ${styles.gradeSelectors}`} aria-label="Not girişi seçimleri">
+            <label className={styles.field}>Ders
+              <select value={subjectChoice} onChange={(e) => setSubjectChoice(e.target.value)}>
+                <option value="" disabled>Ders seçin</option>
+                {subjectOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                <option value={OTHER}>Diğer ders…</option>
+              </select>
+            </label>
+            <label className={styles.field}>Not türü
+              <select value={exam} onChange={(e) => setExam(e.target.value as ExamId | '')}>
+                <option value="" disabled>Not türü seçin</option>
+                {EXAMS.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
+              </select>
+            </label>
+            {subjectChoice === OTHER && (
+              <label className={`${styles.field} ${styles.fullRow}`}>Ders adı
+                <input value={customSubject} onChange={(e) => setCustomSubject(e.target.value.slice(0, 80))} placeholder="Ders adını yazın" autoFocus />
+              </label>
+            )}
           </section>
 
           <section className={styles.studentList} aria-label="Öğrenci notları girişi">

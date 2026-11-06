@@ -375,7 +375,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       big.miss = false;
       if (feasting) {
         const tiers = fishForm(big.points) - fishForm(small.points);
-        big.miss = Math.random() < (tiers <= 1 ? 0.4 : tiers === 2 ? 0.3 : 0.2);
+        big.miss = Math.random() < (tiers <= 1 ? 0.6 : tiers === 2 ? 0.5 : 0.4);
         if (big.miss) {
           // Avcı yetişemez, bir süre sonra pes eder; av biraz daha kaçıp sakinleşir
           big.modeUntil = now + 3800 + Math.random() * 1200;

@@ -141,14 +141,26 @@ export interface AnnouncementRow {
   teacher_name: string;
   priority: 'normal' | 'urgent';
   created_at: string;
+  author_id: string | null;
+  /** null = bütün okullara duyuru */
+  school_id: string | null;
+  school_name: string | null;
 }
 
+/** Görebildiği duyurular (RLS: kendi okulu + bütün okullara olanlar; admin hepsi) */
 export async function listAnnouncements(): Promise<Result<AnnouncementRow[]>> {
   const { data, error } = await supabase
     .from('announcements')
-    .select('id, title, content, teacher_name, priority, created_at')
+    .select('id, title, content, teacher_name, priority, created_at, author_id, school_id, schools(name)')
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) return fail(error);
-  return { ok: true, data: (data as AnnouncementRow[]) || [] };
+  type Row = Omit<AnnouncementRow, 'school_name'> & { schools: { name: string } | { name: string }[] | null };
+  return {
+    ok: true,
+    data: ((data as unknown as Row[]) || []).map(({ schools, ...a }) => ({
+      ...a,
+      school_name: Array.isArray(schools) ? schools[0]?.name ?? null : schools?.name ?? null,
+    })),
+  };
 }

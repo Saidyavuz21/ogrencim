@@ -1,0 +1,2 @@
+/* Duyurunun kime gittiği (admin: her duyuruda; öğretmen: bütün okullara olanlarda) */
+.audience { display: inline-flex; align-items: center; width: fit-content; min-height: 26px; padding: 2px 10px; border-radius: 999px; background: var(--teacher-selected); color: var(--teacher-primary); font-size: 13px; font-weight: 600; }

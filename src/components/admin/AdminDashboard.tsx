@@ -99,7 +99,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         {page === 'students' && <AdminStudentsPage data={data} notify={notify} />}
         {page === 'schools' && <AdminSchoolsPage key={schoolFormOpen ? 'form' : 'list'} data={data} notify={notify} startWithForm={schoolFormOpen} />}
         {page === 'classes' && <AdminClassesPage data={data} />}
-        {page === 'announcements' && <AnnouncementsPage canManage />}
+        {page === 'announcements' && <AnnouncementsPage manager="admin" />}
         {page === 'account' && <TeacherProfilePage user={currentUser} onLogout={handleLogout} />}
       </div>
     </div>

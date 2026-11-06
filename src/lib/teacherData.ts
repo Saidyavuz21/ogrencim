@@ -421,22 +421,22 @@ export async function sendMessage(conversationId: string, content: string): Prom
 }
 
 // --------------------------------------------------------
-// Duyurular (personel yazar, herkes okur)
+// Duyurular: öğretmen kendi okuluna, süper admin bütün okullara ya da tek okula yazar.
+// Yazar, yazar adı ve (öğretmen için) okul sunucuda atanır (announcements_set_author).
 // --------------------------------------------------------
-export async function createAnnouncement(title: string, content: string, priority: 'normal' | 'urgent'): Promise<Result> {
+export async function createAnnouncement(
+  title: string,
+  content: string,
+  priority: 'normal' | 'urgent',
+  /** Yalnızca süper admin: null = bütün okullar. Öğretmende yok sayılır. */
+  schoolId: string | null = null
+): Promise<Result> {
   if (!title.trim() || !content.trim()) return { ok: false, error: 'Başlık ve metin zorunludur.' };
-  const { data: auth } = await supabase.auth.getUser();
-  let teacherName = 'Okul Yönetimi';
-  if (auth.user) {
-    const { data } = await supabase.from('profiles').select('full_name, role').eq('id', auth.user.id).maybeSingle();
-    const p = data as { full_name: string | null; role: string } | null;
-    if (p) teacherName = p.role === 'admin' ? 'Okul Yönetimi' : p.full_name || 'Öğretmen';
-  }
   const { error } = await supabase.from('announcements').insert({
     title: title.trim().slice(0, 200),
     content: content.trim().slice(0, 4000),
     priority,
-    teacher_name: teacherName,
+    school_id: schoolId,
   });
   if (error) return fail(error);
   return { ok: true, data: undefined };

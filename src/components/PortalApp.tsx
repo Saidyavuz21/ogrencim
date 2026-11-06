@@ -119,7 +119,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
           <TeacherDashboard
             activeSection={teacherSection}
             onSectionChange={setTeacherSection}
-            announcementsContent={<AnnouncementsPage canManage />}
+            announcementsContent={<AnnouncementsPage manager="teacher" />}
             onLogout={handleLogout}
             onOpenNotifications={() => setTeacherSection('announcements')}
             currentUser={currentUser}

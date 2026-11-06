@@ -23,8 +23,16 @@ type CSSVars = React.CSSProperties & Record<`--${string}`, string | number>;
 type ChaseRole = 'chase' | 'flee';
 const CHASE_MS = 1300;
 const FLEE_MS = 1700;
-const CHASE_COOLDOWN_MS = 9000;
+const CHASE_COOLDOWN_MS = 15000;
 const CHASE_CHECK_S = 0.35;
+/** Yayılma: hedef seçerken denenen aday sayısı, kişisel alan payı (cqw) ve itme gücü (cqw/sn) */
+// Değerler 19 balıklı sınıfla simülasyonda seçildi: üst üste binen çift ortalama 7,6 → ~0,1
+const TARGET_CANDIDATES = 10;
+const SPACE_X = 5;
+const SPACE_Y = 2.5;
+const SEPARATION = 12;
+/** Kişisel alanın hemen dışında karşılaşınca saldırı başlar (cqw) */
+const CHASE_GAP = SPACE_X + 2;
 
 /**
  * Yüzme motorundaki balık durumu (cqw biriminde, akvaryumun sol üstüne göre).
@@ -202,11 +210,35 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       maxY: Math.max(FISH_TOP, fishBottom - m.h - LABEL_H),
     });
     const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    // Merkez: balık + altındaki isim etiketi birlikte
+    const cx = (m: Mover, x = m.x) => x + m.size / 2;
+    const cy = (m: Mover, y = m.y) => y + (m.h + LABEL_H) / 2;
+    // İki balığın "kişisel alanı" (etiket dahil, biraz boşlukla)
+    const reachX = (a: Mover, o: Mover) => (a.size + o.size) / 2 + SPACE_X;
+    const reachY = (a: Mover, o: Mover) => (a.h + o.h) / 2 + LABEL_H + SPACE_Y;
+    /** Yeni hedef: birkaç aday noktadan diğer balıklara (ve hedeflerine) en uzak olanı; balıklar akvaryuma yayılır */
     const pickTarget = (m: Mover) => {
       const b = bounds(m);
-      m.tx = b.minX + Math.random() * (b.maxX - b.minX);
-      m.ty = b.minY + Math.random() * (b.maxY - b.minY);
+      let best = { x: m.x, y: m.y, score: -1 };
+      for (let i = 0; i < TARGET_CANDIDATES; i++) {
+        const x = b.minX + Math.random() * (b.maxX - b.minX);
+        const y = b.minY + Math.random() * (b.maxY - b.minY);
+        let score = Infinity;
+        movers.forEach((o) => {
+          if (o === m) return;
+          for (const [ox, oy] of [[cx(o), cy(o)], [cx(o, o.tx), cy(o, o.ty)]]) {
+            const d = Math.hypot((cx(m, x) - ox) / reachX(m, o), (cy(m, y) - oy) / reachY(m, o));
+            if (d < score) score = d;
+          }
+        });
+        if (score > best.score) best = { x, y, score };
+      }
+      m.tx = best.x;
+      m.ty = best.y;
     };
+    /** Büyük balık yavaş ve ağır, küçük balık daha çevik; her balığın kendi temposu var */
+    const speedFor = (size: number, id: string) => 0.7 + 2 * (1 - Math.min(1, size / 13)) + seeded(id, 8) * 0.5;
+    const agilityFor = (size: number) => 0.8 + 1.2 * (1 - Math.min(1, size / 13));
     const paint = (id: string, m: Mover) => {
       const el = swimmerRefs.current.get(id);
       if (el) el.style.transform = `translate3d(${m.x.toFixed(2)}cqw, ${m.y.toFixed(2)}cqw, 0)`;
@@ -222,14 +254,14 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         existing.size = L.size;
         existing.h = h;
         existing.points = f.points;
+        existing.speed = speedFor(L.size, f.id);
         const b = bounds(existing);
         existing.x = clamp(existing.x, b.minX, b.maxX);
         existing.y = clamp(existing.y, b.minY, b.maxY);
       } else {
         const m: Mover = {
           x: L.left, y: L.top, tx: L.left, ty: L.top, vx: 0, vy: 0, size: L.size, h, points: f.points,
-          // Küçük balıklar biraz daha hızlı; her balığın kendi temposu var
-          speed: 2 + seeded(f.id, 8) * 1.6 + (1 - Math.min(1, L.size / 14)) * 1.6,
+          speed: speedFor(L.size, f.id),
           face: seeded(f.id, 9) < 0.5 ? 1 : -1,
           rest: 0, mode: 'wander', modeUntil: 0,
         };
@@ -242,6 +274,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
 
     const busyUntil = new Map<string, number>();
     const timers: number[] = [];
+    // Akvaryum genelinde iki saldırı arası 8–16 sn (dakikada en fazla ~5)
+    let nextChaseAt = Date.now() + 4000;
 
     const startChase = (bigId: string, big: Mover, smallId: string, small: Mover, now: number) => {
       const away: 1 | -1 = small.x + small.size / 2 >= big.x + big.size / 2 ? 1 : -1;
@@ -257,11 +291,13 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       small.ty = clamp(small.y + (room > 12 ? (Math.random() - 0.5) * 14 : (small.y > (b.minY + b.maxY) / 2 ? -18 : 18)), b.minY, b.maxY);
       busyUntil.set(bigId, now + CHASE_COOLDOWN_MS);
       busyUntil.set(smallId, now + CHASE_COOLDOWN_MS);
+      nextChaseAt = now + 8000 + Math.random() * 8000;
       setChase({ [bigId]: 'chase', [smallId]: 'flee' });
       timers.push(window.setTimeout(() => setChase({}), FLEE_MS));
     };
 
     const checkChase = (now: number) => {
+      if (now < nextChaseAt) return;
       for (const m of movers.values()) if (m.mode !== 'wander') return; // aynı anda tek kovalamaca
       for (const [bigId, big] of movers) {
         if ((busyUntil.get(bigId) || 0) > now) continue;
@@ -271,7 +307,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           const dx = (small.x + small.size / 2) - (big.x + big.size / 2);
           const dy = (small.y + small.h / 2) - (big.y + big.h / 2);
           const gap = Math.abs(dx) - (big.size + small.size) / 2;
-          if (gap < 4 && Math.abs(dy) < Math.max(big.h, small.h)) {
+          if (gap < CHASE_GAP && Math.abs(dy) < Math.max(big.h, small.h)) {
             startChase(bigId, big, smallId, small, now);
             return;
           }
@@ -315,9 +351,27 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         }
         const boost = m.mode === 'chase' ? 2.6 : m.mode === 'flee' ? 3.6 : 1;
         const sp = m.rest > 0 ? 0 : m.speed * boost;
-        const wantVx = dist > 0.05 ? (dx / dist) * sp : 0;
-        const wantVy = dist > 0.05 ? (dy / dist) * sp * 0.75 : 0;
-        const turn = Math.min(1, dt * (m.mode === 'wander' ? 1.6 : 6));
+        let wantVx = dist > 0.05 ? (dx / dist) * sp : 0;
+        let wantVy = dist > 0.05 ? (dy / dist) * sp * 0.75 : 0;
+
+        // Kişisel alan: çok yaklaşan balıktan yumuşakça uzaklaş (kovalamaca çifti birbirini itmez)
+        let sepX = 0;
+        let sepY = 0;
+        movers.forEach((o, oid) => {
+          if (o === m || oid === m.preyId || o.preyId === id) return;
+          const nx = (cx(m) - cx(o)) / reachX(m, o);
+          const ny = (cy(m) - cy(o)) / reachY(m, o);
+          const d = Math.hypot(nx, ny);
+          if (d >= 1) return;
+          if (d < 0.001) { sepX += Math.random() - 0.5; return; }
+          const w = 1 - d;
+          sepX += (nx / d) * w;
+          sepY += (ny / d) * w;
+        });
+        wantVx += sepX * SEPARATION;
+        wantVy += sepY * SEPARATION;
+
+        const turn = Math.min(1, dt * (m.mode === 'wander' ? agilityFor(m.size) : 6));
         m.vx += (wantVx - m.vx) * turn;
         m.vy += (wantVy - m.vy) * turn;
         m.x = clamp(m.x + m.vx * dt, b.minX, b.maxX);

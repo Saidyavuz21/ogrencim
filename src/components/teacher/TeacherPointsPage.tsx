@@ -104,60 +104,56 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={styles.pointsLayout}>
-      <section className={pStyles.pointsContainer} aria-label="Öğrenci puanları">
-        {students.length > 1 && <div className={pStyles.sortBar}><StudentSortToggle /></div>}
+      <section className={styles.studentList} aria-label="Öğrenci puanları">
+        {students.length > 1 && <div className={styles.listSortBar}><StudentSortToggle /></div>}
         {loading && <Spinner center label="Öğrenciler yükleniyor…" />}
         {error && <p className={`${styles.noticeError} ${styles.listPad}`}>{error}</p>}
         {!loading && !error && students.length === 0 && <p className={`${styles.mutedText} ${styles.listPad}`}>{selectedClass} sınıfında kayıtlı öğrenci yok.</p>}
-        <div className={pStyles.grid}>
-          {students.map((s) => {
-            const anim = animations.find((a) => a.studentId === s.id);
-            const pulseClass = anim ? (anim.delta > 0 ? pStyles.cardPulsePlus : pStyles.cardPulseMinus) : '';
+        {students.map((s) => {
+          const anim = animations.find((a) => a.studentId === s.id);
+          const pulseClass = anim ? (anim.delta > 0 ? pStyles.rowPulsePlus : pStyles.rowPulseMinus) : '';
 
-            return (
-              <div key={s.id} className={`${pStyles.card} ${pulseClass}`}>
-                {anim && (
-                  <span
-                    key={anim.id}
-                    className={`${pStyles.floatBadge} ${anim.delta > 0 ? pStyles.floatPlus : pStyles.floatMinus}`}
-                    aria-hidden="true"
-                  >
-                    {anim.delta > 0 ? '+1' : '−1'}
-                  </span>
-                )}
-                <div className={pStyles.studentInfo}>
-                  <span className={pStyles.avatar} aria-hidden="true">{initialsOf(s.name)}</span>
-                  <div className={pStyles.details}>
-                    <h4 className={pStyles.name} title={s.name}>{s.name}</h4>
-                    <p className={pStyles.subText}>
-                      No {s.student_number} · <strong className={pStyles.pointsBadge}>{s.points} puan</strong> · +{s.plus_count} / −{s.minus_count}
-                    </p>
-                  </div>
-                </div>
-                <div className={pStyles.actions}>
-                  <button
-                    type="button"
-                    className={pStyles.btnMinus}
-                    disabled={busyId === s.id}
-                    onClick={() => handleGive(s.id, -1)}
-                    aria-label={`${s.name} eksi puan`}
-                  >
-                    <Minus size={16} aria-hidden="true" /> 1
-                  </button>
-                  <button
-                    type="button"
-                    className={pStyles.btnPlus}
-                    disabled={busyId === s.id}
-                    onClick={() => handleGive(s.id, 1)}
-                    aria-label={`${s.name} artı puan`}
-                  >
-                    <Plus size={16} aria-hidden="true" /> 1
-                  </button>
+          return (
+            <div key={s.id} className={`${styles.pointRow} ${pulseClass}`} style={{ position: 'relative' }}>
+              {anim && (
+                <span
+                  key={anim.id}
+                  className={`${pStyles.floatBadge} ${anim.delta > 0 ? pStyles.floatPlus : pStyles.floatMinus}`}
+                  aria-hidden="true"
+                >
+                  {anim.delta > 0 ? '+1' : '−1'}
+                </span>
+              )}
+              <div className={styles.studentIdentity}>
+                <span className={styles.studentAvatar} aria-hidden="true">{initialsOf(s.name)}</span>
+                <div>
+                  <h4>{s.name}</h4>
+                  <p>No {s.student_number} · {s.points} puan · +{s.plus_count} / −{s.minus_count}</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              <div className={styles.pointActions}>
+                <button
+                  type="button"
+                  className={styles.minusButton}
+                  disabled={busyId === s.id}
+                  onClick={() => handleGive(s.id, -1)}
+                  aria-label={`${s.name} eksi puan`}
+                >
+                  <Minus size={18} aria-hidden="true" />1
+                </button>
+                <button
+                  type="button"
+                  className={styles.plusButton}
+                  disabled={busyId === s.id}
+                  onClick={() => handleGive(s.id, 1)}
+                  aria-label={`${s.name} artı puan`}
+                >
+                  <Plus size={18} aria-hidden="true" />1
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <aside className={styles.pointsAside}>

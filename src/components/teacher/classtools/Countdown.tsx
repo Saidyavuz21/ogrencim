@@ -179,7 +179,7 @@ export function Countdown() {
     return () => document.removeEventListener('keydown', onKey);
   }, [full, toggleRun, reset, addMinute]);
 
-  const progress = state.duration ? remaining / state.duration : 0;
+  const progress = state.finished || !state.duration ? 0 : Math.min(1, remaining / state.duration);
   const warn = !state.finished && remaining <= WARN_MS && (running || remaining < state.duration);
   const R = 46;
   const C = 2 * Math.PI * R;
@@ -200,7 +200,8 @@ export function Countdown() {
           <div className={s.ring}>
             <svg viewBox="0 0 100 100" aria-hidden="true">
               <circle cx="50" cy="50" r={R} className={s.ringTrack} />
-              <circle cx="50" cy="50" r={R} className={s.ringBar} strokeDasharray={C} strokeDashoffset={C * (1 - progress)} />
+              {/* Süre bitince yuvarlak uç nokta olarak kalmasın diye çizgi gizlenir */}
+              {progress > 0.002 && <circle cx="50" cy="50" r={R} className={s.ringBar} strokeDasharray={C} strokeDashoffset={C * (1 - progress)} />}
             </svg>
             <div className={s.ringText} role="timer" aria-live="off" aria-label={`Kalan süre ${fmt(remaining)}`}>
               {state.finished ? <span className={s.doneText}>Süre doldu!</span> : <span className={s.countMain}>{fmt(remaining)}</span>}

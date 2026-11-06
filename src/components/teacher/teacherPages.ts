@@ -32,7 +32,7 @@ export interface TeacherPageInfo {
 export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'check_sheet', slug: 'odev-kontrol', title: 'Ödev kontrolü', description: 'Yaptı, kısmen, yapmadı işaretle', icon: CheckSquare, group: 'Günlük işler' },
   { id: 'plus_minus', slug: 'puan-ver', title: 'Puan ver', description: 'Artı ve eksi puan ekle', icon: Star, group: 'Günlük işler' },
-  { id: 'class_tools', slug: 'sinif-araclari', title: 'Sınıf araçları', description: 'Rastgele seçici, kronometre, geri sayım', icon: Shuffle, group: 'Günlük işler' },
+  { id: 'class_tools', slug: 'sinif-araclari', title: 'Sınıf araçları', description: 'Rastgele seçici, grup, kronometre, geri sayım', icon: Shuffle, group: 'Günlük işler' },
   { id: 'assignments', slug: 'odev-gonder', title: 'Ödev gönder', description: 'Yeni ödev oluştur ve listele', icon: Send, group: 'Günlük işler' },
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
   { id: 'leaderboard', slug: 'siralama', title: 'Puan sıralaması', description: 'Sınıfın başarı sırası', icon: Award, group: 'Öğrenciler ve sınıflar' },

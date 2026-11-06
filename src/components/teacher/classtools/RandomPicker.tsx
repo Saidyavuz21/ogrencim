@@ -5,6 +5,7 @@ import { Check, Maximize, Minimize, RotateCcw, Shuffle, UserX } from '../../icon
 import type { ClassStudent } from '../../../lib/teacherData';
 import { initialsOf } from '../TeacherUi';
 import { useFullscreen } from './useFullscreen';
+import { absentKey, randomIndex, readJson, writeJson } from './storage';
 import s from './ClassTools.module.css';
 
 /**
@@ -16,32 +17,11 @@ import s from './ClassTools.module.css';
 
 type Phase = 'idle' | 'rolling' | 'done';
 
-const today = () => new Date().toISOString().slice(0, 10);
 const keys = (cls: string) => ({
-  absent: `secici-yok:${cls}:${today()}`,
+  absent: absentKey(cls),
   round: `secici-tur:${cls}`,
   repeat: 'secici-tekrar',
 });
-
-function readJson<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-function writeJson(key: string, value: unknown) {
-  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* gizli sekme vb. */ }
-}
-
-/** Güvenli rastgele tam sayı [0, n) */
-function randomIndex(n: number) {
-  const buf = new Uint32Array(1);
-  crypto.getRandomValues(buf);
-  return buf[0] % n;
-}
 
 const shortName = (name: string) => name.trim().split(/\s+/)[0] || name;
 

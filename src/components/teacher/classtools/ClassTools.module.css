@@ -94,7 +94,7 @@
 .panelHead h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 700; color: var(--teacher-text); }
 .pill { min-width: 26px; padding: 1px 8px; border-radius: 999px; background: var(--teacher-selected); color: var(--teacher-primary); font-size: 13px; text-align: center; }
 .link {
-  display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 4px;
+  display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 6px;
   border: 0; background: transparent; color: var(--teacher-primary); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
 }
 .link:hover { text-decoration: underline; }
@@ -108,7 +108,7 @@
 
 .roster { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .chip {
-  display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px 12px;
+  display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 4px 12px;
   border: 1px solid var(--teacher-border); border-radius: 999px; background: #fff;
   color: var(--teacher-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   transition: background-color 150ms, border-color 150ms;
@@ -186,7 +186,8 @@
 .ringBar { fill: none; stroke: #ffd84d; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 120ms linear; }
 .stageWarn .ringBar { stroke: #fff; }
 .ringText { position: absolute; inset: 0; display: grid; place-items: center; container-type: inline-size; }
-.countMain { font-size: 30cqw; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+/* Halkanın iç çapına sığar (çizgiye değmez) */
+.countMain { font-size: 23cqw; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
 .doneText { font-size: 15cqw; font-weight: 800; text-align: center; line-height: 1.1; }
 
 .panelTitle { margin: 0; font-size: 16px; font-weight: 700; color: var(--teacher-text); }
@@ -213,4 +214,61 @@
 @media (prefers-reduced-motion: reduce) {
   .stageDone { animation: none; }
   .ringBar { transition: none; }
+}
+
+/* ===== Grup oluşturucu ===== */
+.stageActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.groupStage { grid-template-rows: auto minmax(0, 1fr) auto auto; }
+
+.groups {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+  gap: 12px; align-content: start; margin: 0; padding: 0; list-style: none;
+  max-height: 62vh; overflow-y: auto;
+}
+.full .groups { max-height: none; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+
+.group {
+  display: grid; gap: 8px; align-content: start; padding: 14px;
+  border-radius: 14px; background: #fff; color: var(--teacher-text);
+  border-top: 0; box-shadow: inset 0 0 0 2px var(--group-color), 0 6px 16px rgba(0, 0, 0, 0.12);
+  animation: groupIn 380ms cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+@keyframes groupIn { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+.groupTitle { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 800; }
+.groupTitle svg { padding: 3px; border-radius: 8px; background: var(--group-color); color: #2b2000; box-sizing: content-box; }
+.groupTitle span { margin-left: auto; min-width: 26px; padding: 1px 8px; border-radius: 999px; background: #f0eee7; color: var(--teacher-muted); font-size: 13px; text-align: center; }
+.groupMembers { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 15px; font-weight: 600; }
+.full .groupTitle { font-size: 22px; }
+.full .groupMembers { font-size: 20px; gap: 6px; }
+.memberAbsent { color: var(--teacher-muted); text-decoration: line-through; }
+
+.segment { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--teacher-border); border-radius: 12px; background: #f0eee7; }
+.segment button { min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--teacher-muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.segment button[aria-pressed='true'] { background: #fff; color: var(--teacher-primary); box-shadow: 0 1px 2px rgba(20, 35, 28, 0.12); }
+
+.stepper { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 8px; }
+.stepper button {
+  display: grid; place-items: center; height: 56px; border: 1px solid var(--teacher-border); border-radius: 12px;
+  background: #fff; color: var(--teacher-text); cursor: pointer;
+}
+.stepper button:hover:not(:disabled) { border-color: var(--teacher-primary); }
+.stepper button:disabled { opacity: 0.4; cursor: default; }
+.stepper output { display: grid; justify-items: center; line-height: 1.1; }
+.stepper strong { font-size: 32px; font-weight: 800; color: var(--teacher-text); font-variant-numeric: tabular-nums; }
+.stepper span { font-size: 13px; color: var(--teacher-muted); }
+.side :is(.segment button, .stepper button):focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .group { animation: none; }
+}
+
+/* Dar ekran: üst düğmelerde yalnızca ikon, grup kartları iki sütun */
+@media (max-width: 520px) {
+  .ghost span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ghost { min-width: 44px; min-height: 44px; justify-content: center; padding: 8px; }
+  .groups { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .group { padding: 10px; }
+  .groupTitle { font-size: 15px; }
+  .groupMembers { font-size: 14px; }
 }

@@ -6,6 +6,8 @@
 .svg { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-select: none; }
 .overlay { position: absolute; inset: 0; pointer-events: none; }
 .widgetBox { position: absolute; pointer-events: auto; }
+.widgetControlsOnly { pointer-events: none; }
+.widgetControlsOnly :is(button, input, select, textarea, label, a, [role='button']) { pointer-events: auto; }
 .noteEditor { position: absolute; box-sizing: border-box; padding: 1.04cqw; border: 0.16cqw solid #2a78d6; border-radius: 0.73cqw; font: inherit; line-height: 1.3; color: #1f2a24; resize: none; outline: none; }
 
 /* Parçalar (HTML katmanı) */

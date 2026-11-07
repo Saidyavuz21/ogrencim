@@ -250,6 +250,8 @@ export interface BoardCanvasProps {
   renderWidget?: (el: WidgetEl) => React.ReactNode;
   /** Parçalar görünür ama tıklanmaz (düzenlerken seçip taşımak için) */
   widgetsPassive?: boolean;
+  /** Parçanın yalnızca düğme/alanları tıklanır; geri kalanı seçme ve taşıma için tuvale geçer */
+  widgetsControlsOnly?: boolean;
   onDropMedia?: (payload: string, x: number, y: number) => void;
   /** Dışa aktarma için SVG öğesi */
   svgRef?: (node: SVGSVGElement | null) => void;
@@ -259,7 +261,7 @@ export interface BoardCanvasProps {
 }
 
 export function BoardCanvas(props: BoardCanvasProps) {
-  const { page, editable, tool = 'select', color = '#1f2a24', width = 6, onCommit, layer, onLayerCommit, selectedId, onSelect, editingNoteId, onEditNote, onNoteText, imageUrls, renderWidget, widgetsPassive, onDropMedia, svgRef, thumbnail, ariaLabel } = props;
+  const { page, editable, tool = 'select', color = '#1f2a24', width = 6, onCommit, layer, onLayerCommit, selectedId, onSelect, editingNoteId, onEditNote, onNoteText, imageUrls, renderWidget, widgetsPassive, widgetsControlsOnly, onDropMedia, svgRef, thumbnail, ariaLabel } = props;
   const uid = useId().replace(/:/g, '');
   const patternId = `bg-${uid}`;
   const localSvg = useRef<SVGSVGElement | null>(null);
@@ -449,7 +451,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
       {widgets.length > 0 && (
         <div className={styles.overlay}>
           {widgets.map((w) => (
-            <div key={w.id} className={styles.widgetBox} style={{ pointerEvents: widgetsPassive ? 'none' : undefined, left: `${(w.x / BOARD_W) * 100}%`, top: `${(w.y / BOARD_H) * 100}%`, width: `${(w.w / BOARD_W) * 100}%`, height: `${(w.h / BOARD_H) * 100}%` }}>
+            <div key={w.id} className={`${styles.widgetBox} ${widgetsControlsOnly && !widgetsPassive ? styles.widgetControlsOnly : ''}`} style={{ pointerEvents: widgetsPassive ? 'none' : undefined, left: `${(w.x / BOARD_W) * 100}%`, top: `${(w.y / BOARD_H) * 100}%`, width: `${(w.w / BOARD_W) * 100}%`, height: `${(w.h / BOARD_H) * 100}%` }}>
               {renderWidget!(w)}
             </div>
           ))}

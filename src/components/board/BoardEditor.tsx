@@ -511,7 +511,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onNoteText={(id, text) => { const el = page.elements.find((e) => e.id === id) as NoteEl | undefined; if (el && el.text !== text) patchElement(id, { text }); }}
           imageUrls={imageUrls}
           renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
-          widgetsPassive={tool === 'select'}
+          widgetsControlsOnly={tool === 'select'}
           onDropMedia={(payload, x, y) => { try { insertMedia(JSON.parse(payload), x, y); } catch { /* geçersiz */ } }}
           svgRef={(node) => { svgRef.current = node; }}
           ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa`}
@@ -553,7 +553,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         ) : (
           <MediaDrawer onInsert={(m) => insertMedia(m)} busy={busy} />
         )}
-        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. Parçaları seçmek ve taşımak için “Seç” aracını kullanın; diğer araçlarda parçalar çalışır.</p>
+        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
       </aside>
       {deleteConfirm}
       {printArea}
@@ -653,7 +653,7 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
         <button type="button" className={styles.tool} onClick={() => onOrder('back')}>Arkaya gönder</button>
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }}><Trash2 size={18} aria-hidden="true" /> Sil</button>
       </div>
-      {el.type === 'widget' && <p className={styles.hintText}>“Seç” aracıyla parça seçilip taşınır; parçayı denemek için başka bir araç (ör. Kalem) seçin.</p>}
+      {el.type === 'widget' && <p className={styles.hintText}>Parçanın düğmeleri “Seç” aracında da çalışır; taşımak için düğme olmayan yerinden tutup sürükleyin.</p>}
     </section>
   );
 }

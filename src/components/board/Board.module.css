@@ -140,6 +140,7 @@
   .pages { display: flex; max-height: none; overflow-x: auto; }
   .pages .pageThumb { width: 140px; flex-shrink: 0; }
   .pages .pagesHint { flex: 0 0 120px; align-self: center; }
+  .pages .pageTools { flex: 0 0 auto; align-self: center; flex-wrap: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

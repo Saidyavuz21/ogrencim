@@ -206,7 +206,8 @@ export async function boardImageUrls(images: { bucket: string; path: string }[])
   const out: Record<string, string> = {};
   await Promise.all(Array.from(byBucket.entries()).map(async ([bucket, paths]) => {
     const { data } = await supabase.storage.from(bucket).createSignedUrls(paths, 3600);
-    (data || []).forEach((d) => { if (d.signedUrl && d.path) out[`${bucket}/${d.path}`] = d.signedUrl; });
+    // Yanıt istekle aynı sıradadır; yol alanı her sürümde dolu gelmeyebilir
+    (data || []).forEach((d, i) => { if (d.signedUrl && !d.error) out[`${bucket}/${d.path || paths[i]}`] = d.signedUrl; });
   }));
   return out;
 }

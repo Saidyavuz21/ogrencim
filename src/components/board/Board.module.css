@@ -37,8 +37,34 @@
 
 /* ===== Düzenleyici ===== */
 .editor { display: grid; grid-template-columns: 180px minmax(0, 1fr) 260px; gap: 12px; align-items: start; min-width: 0; }
-.editorFull { position: fixed; inset: 0; z-index: 105; grid-template-columns: minmax(0, 1fr); align-content: center; padding: 12px; background: #2d3631; }
-.editorFull .stage { max-width: min(100%, calc((100dvh - 96px) * 16 / 9)); margin: 0 auto; width: 100%; }
+.editorFull { position: fixed; inset: 0; z-index: 105; display: block; padding: 0; background: #ffffff; overflow: hidden; }
+/* Tuval ekranın tamamını kaplar (16:9 sığdırılır, kalan alan beyaz) */
+.editorFull .stage { position: absolute; inset: 0; display: grid; place-items: center; gap: 0; max-width: none; margin: 0; }
+.editorFull .stage > .canvas { width: min(100vw, calc(100dvh * 16 / 9)); border: 0; border-radius: 0; box-shadow: none; }
+/* Araç çubuğu tahtanın üstünde yüzer */
+.editorFull .toolbar { position: absolute; top: 8px; left: 50%; z-index: 3; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 16px); box-shadow: 0 8px 28px rgb(0 0 0 / 18%); }
+.toolsReveal { position: absolute; top: 8px; right: 8px; z-index: 3; min-height: 44px; padding: 0 16px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; background: rgb(255 255 255 / 92%); color: #25634b; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgb(0 0 0 / 15%); }
+.toolsReveal:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
+.floatNotice { position: absolute; bottom: 12px; left: 50%; z-index: 3; transform: translateX(-50%); padding: 8px 14px; border-radius: 10px; background: #fff; box-shadow: 0 6px 20px rgb(0 0 0 / 15%); cursor: pointer; }
+
+/* Tam ekranda sağdan açılan panel: tahtanın üstünde kayar */
+.drawer { position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 106; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 12px; width: min(420px, calc(100vw - 24px)); box-sizing: border-box; padding: 14px; overflow-x: hidden; overflow-y: auto; border-radius: 16px; background: #f4f3ee; box-shadow: -12px 0 40px rgb(0 0 0 / 30%); transform: translateX(calc(100% + 24px)); visibility: hidden; transition: transform 220ms ease-out, visibility 220ms; }
+.drawerOpen { transform: none; visibility: visible; }
+.drawerHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.drawerHead strong { font-size: 15px; }
+.drawer > * { min-width: 0; }
+.drawer .panel { min-width: 0; }
+.drawer .mediaGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); max-height: 420px; }
+
+/* Normal görünüm: önizleme + "Tam ekranda aç" */
+.preview { display: grid; gap: 12px; min-width: 0; }
+.previewHead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
+.previewHead h2 { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
+.previewHead .spacer { flex: 1; }
+.openButton { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border: 1px solid var(--teacher-primary, #25634b); border-radius: 14px; background: var(--teacher-primary, #25634b); color: #fff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+.openButton:hover { background: var(--teacher-hover, #1d503d); }
+.openButton:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
+.previewBody { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; align-items: start; }
 .stage { display: grid; gap: 8px; min-width: 0; }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
 .toolbar .sep { width: 1px; height: 28px; margin: 0 4px; background: var(--teacher-border, #dedad0); }
@@ -94,10 +120,13 @@
 
 @media (max-width: 1100px) {
   .editor { grid-template-columns: minmax(0, 1fr); }
+  .editorFull { overflow: auto; }
+  .previewBody { grid-template-columns: minmax(0, 1fr); }
   .pages { display: flex; max-height: none; overflow-x: auto; }
   .pages .pageThumb { width: 140px; flex-shrink: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .widget * { transition: none !important; animation: none !important; }
+  .drawer { transition: none; }
 }

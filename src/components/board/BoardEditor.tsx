@@ -52,6 +52,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Tam ekranda sağdan açılan panel (sayfalar, zemin, seçili öğe, medya)
+  const [panelOpen, setPanelOpen] = useState(false);
+  // Tam ekranda araç çubuğu tahtanın üstünde yüzer; gizlenebilir
+  const [toolsHidden, setToolsHidden] = useState(false);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -149,6 +153,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   // ---- Klavye ----
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (!full) return;
       const typing = (e.target as HTMLElement)?.closest('input, textarea, [contenteditable="true"]');
       if (typing) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
@@ -264,27 +269,66 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const size = byteSize(content);
   const minitests = Array.from(allWidgets.values()).filter((w) => w.kind === 'minitest');
 
-  const toolbar = (
-    <div className={styles.toolbar} role="toolbar" aria-label="Tahta araçları">
-      {full ? null : <button type="button" className={styles.tool} onClick={onClose} aria-label="Tahtalarıma dön" title="Tahtalarıma dön"><ArrowLeft size={20} aria-hidden="true" /></button>}
-      {TOOLS.filter((t) => !full || ['select', 'pen', 'highlighter', 'eraser', 'line', 'arrow'].includes(t.id)).map((t) => (
-        <button key={t.id} type="button" className={styles.tool} aria-pressed={tool === t.id} onClick={() => setTool(t.id)} title={`${t.label} (${t.key.toUpperCase()})`}>{t.label}</button>
+  const saveLabel = (
+    <span className={`${styles.saveState} ${saveState === 'error' ? styles.saveWarn : ''}`} role="status" title={saveError || undefined}>
+      {saveState === 'saved' ? 'Kaydedildi' : saveState === 'saving' ? 'Kaydediliyor…' : saveState === 'error' ? `Kaydedilemedi: ${saveError}` : 'Değişiklik var'}
+      {size > MAX_BOARD_BYTES * 0.6 ? ` · ${Math.round((size / MAX_BOARD_BYTES) * 100)}% dolu` : ''}
+    </span>
+  );
+  const printArea = printing && (
+    <div className="print-only" data-print-area>
+      {content.pages.map((p, i) => (
+        <div key={p.id} style={{ breakAfter: 'page', padding: '4mm 0' }}>
+          <p style={{ margin: '0 0 4px', font: '600 12px system-ui' }}>{board.title} · {i + 1}/{content.pages.length}</p>
+          <BoardCanvas page={p} imageUrls={imageUrls} thumbnail />
+        </div>
       ))}
-      <span className={styles.sep} aria-hidden="true" />
-      {COLORS.map((c) => (
-        <button key={c} type="button" className={styles.swatch} style={{ background: c }} aria-pressed={color === c} onClick={() => { setColor(c); if (selected && 'color' in selected && selected.type !== 'note') patchElement(selected.id, { color: c }); }} aria-label={`Renk ${c}`} />
-      ))}
-      <span className={styles.sep} aria-hidden="true" />
-      {WIDTHS.map((w) => (
-        <button key={w} type="button" className={styles.tool} aria-pressed={width === w} onClick={() => setWidth(w)} aria-label={`Kalınlık ${w}`} title={`Kalınlık ${w}`}>
-          <span className={styles.widthDot} style={{ width: Math.max(4, w), height: Math.max(4, w) }} />
-        </button>
-      ))}
-      <span className={styles.sep} aria-hidden="true" />
-      <button type="button" className={styles.tool} onClick={undo} disabled={!past.length} title="Geri al (Ctrl+Z)">Geri al</button>
-      <button type="button" className={styles.tool} onClick={redo} disabled={!future.length} title="Yinele (Ctrl+Y)">Yinele</button>
-      {!full && (
-        <>
+    </div>
+  );
+
+  // Normal görünüm: yalnızca önizleme. Tuval bu boyutta küçük kaldığı için düzenleme tam ekranda yapılır.
+  if (!full) {
+    return (
+      <div ref={rootRef} className={styles.preview}>
+        <div className={styles.previewHead}>
+          <button type="button" className={styles.tool} onClick={onClose} aria-label="Tahtalarıma dön" title="Tahtalarıma dön"><ArrowLeft size={20} aria-hidden="true" /></button>
+          <h2>{board.title}</h2>
+          {saveLabel}
+          <span className={styles.spacer} />
+          <button type="button" className={styles.openButton} onClick={toggleFull}>
+            <Maximize size={22} aria-hidden="true" />Tam ekranda aç
+          </button>
+        </div>
+        <div className={styles.previewBody}>
+          <nav aria-label="Sayfalar" className={styles.pages}>
+            {content.pages.map((p, i) => (
+              <button key={p.id} type="button" className={styles.pageThumb} aria-current={i === pageIndex ? 'true' : undefined} onClick={() => setPageIndex(i)} aria-label={`${i + 1}. sayfa`}>
+                <span>{i + 1}</span>
+                <BoardCanvas page={p} imageUrls={imageUrls} thumbnail />
+              </button>
+            ))}
+          </nav>
+          <div className={styles.stage}>
+            <BoardCanvas page={page} imageUrls={imageUrls} renderWidget={(w) => <WidgetView el={w} ctx={ctx} />} widgetsPassive ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (önizleme)`} />
+            <p className={styles.saveState}>Çizmek, şekil ve parça eklemek, sayfaları düzenlemek ve sunmak için “Tam ekranda aç”a basın.</p>
+          </div>
+        </div>
+        {printArea}
+      </div>
+    );
+  }
+
+  // Tam ekran: bütün düzenleme araçları + sağda sayfa ve ayar paneli
+  return (
+    <div ref={rootRef} className={`${styles.editor} ${styles.editorFull}`}>
+      <div className={styles.stage}>
+        {toolsHidden ? (
+          <button type="button" className={styles.toolsReveal} onClick={() => setToolsHidden(false)}>Araçlar</button>
+        ) : (
+        <div className={styles.toolbar} role="toolbar" aria-label="Tahta araçları">
+          {TOOLS.map((t) => (
+            <button key={t.id} type="button" className={styles.tool} aria-pressed={tool === t.id} onClick={() => setTool(t.id)} title={`${t.label} (${t.key.toUpperCase()})`}>{t.label}</button>
+          ))}
           <span className={styles.sep} aria-hidden="true" />
           <input ref={fileInput} type="file" accept={BOARD_IMAGE_TYPES.join(',')} hidden onChange={(e) => upload(e.target.files?.[0])} />
           <button type="button" className={styles.tool} onClick={() => fileInput.current?.click()} disabled={busy} title="Görsel yükle"><ImageIcon size={20} aria-hidden="true" /></button>
@@ -296,56 +340,29 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               ))}
             </div>
           </details>
-        </>
-      )}
-      <span className={styles.spacer} />
-      {full ? (
-        <span className={styles.saveState} style={{ color: '#e9efe9' }}>{pageIndex + 1} / {content.pages.length}</span>
-      ) : (
-        <span className={`${styles.saveState} ${saveState === 'error' ? styles.saveWarn : ''}`} role="status" title={saveError || undefined}>
-          {saveState === 'saved' ? 'Kaydedildi' : saveState === 'saving' ? 'Kaydediliyor…' : saveState === 'error' ? `Kaydedilemedi: ${saveError}` : 'Değişiklik var'}
-          {size > MAX_BOARD_BYTES * 0.6 ? ` · ${Math.round((size / MAX_BOARD_BYTES) * 100)}% dolu` : ''}
-        </span>
-      )}
-      {full && (
-        <>
-          <button type="button" className={styles.tool} onClick={() => setPageIndex((i) => Math.max(0, i - 1))} disabled={pageIndex === 0} aria-label="Önceki sayfa"><ChevronUp size={20} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
-          <button type="button" className={styles.tool} onClick={() => setPageIndex((i) => Math.min(content.pages.length - 1, i + 1))} disabled={pageIndex >= content.pages.length - 1} aria-label="Sonraki sayfa"><ChevronDown size={20} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
-        </>
-      )}
-      {!full && <button type="button" className={styles.tool} onClick={exportPng} disabled={busy} title="Bu sayfayı PNG indir"><Download size={20} aria-hidden="true" /></button>}
-      {!full && <button type="button" className={styles.tool} onClick={exportPdf} title="Bütün sayfaları yazdır / PDF olarak kaydet"><Printer size={20} aria-hidden="true" /></button>}
-      <button type="button" className={styles.tool} onClick={toggleFull} title={full ? 'Sunumdan çık (Esc)' : 'Tam ekran sunum'}>
-        {full ? <Minimize size={20} aria-hidden="true" /> : <Maximize size={20} aria-hidden="true" />}{full ? '' : ' Sun'}
-      </button>
-    </div>
-  );
-
-  return (
-    <div ref={rootRef} className={`${styles.editor} ${full ? styles.editorFull : ''}`}>
-      {!full && (
-        <nav aria-label="Sayfalar">
-          <div className={styles.pages}>
-            {content.pages.map((p, i) => (
-              <button key={p.id} type="button" className={styles.pageThumb} aria-current={i === pageIndex ? 'true' : undefined} onClick={() => { setPageIndex(i); setSelectedId(null); }} aria-label={`${i + 1}. sayfa`}>
-                <span>{i + 1}</span>
-                <BoardCanvas page={p} imageUrls={imageUrls} thumbnail />
-              </button>
-            ))}
-          </div>
-          <div className={styles.pageTools}>
-            <button type="button" className={styles.tool} onClick={addPage} title="Sayfa ekle"><Plus size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={duplicatePage} title="Sayfayı çoğalt"><Copy size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={() => movePage(-1)} disabled={pageIndex === 0} title="Yukarı taşı"><ChevronUp size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={() => movePage(1)} disabled={pageIndex >= content.pages.length - 1} title="Aşağı taşı"><ChevronDown size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={deletePage} disabled={content.pages.length <= 1} title="Sayfayı sil"><Trash2 size={18} aria-hidden="true" /></button>
-          </div>
-        </nav>
-      )}
-
-      <div className={styles.stage}>
-        {toolbar}
-        {notice && <p className={styles.saveWarn} role="alert" onClick={() => setNotice(null)}>{notice}</p>}
+          <span className={styles.sep} aria-hidden="true" />
+          {COLORS.map((c) => (
+            <button key={c} type="button" className={styles.swatch} style={{ background: c }} aria-pressed={color === c} onClick={() => { setColor(c); if (selected && 'color' in selected && selected.type !== 'note') patchElement(selected.id, { color: c }); }} aria-label={`Renk ${c}`} />
+          ))}
+          <span className={styles.sep} aria-hidden="true" />
+          {WIDTHS.map((w) => (
+            <button key={w} type="button" className={styles.tool} aria-pressed={width === w} onClick={() => setWidth(w)} aria-label={`Kalınlık ${w}`} title={`Kalınlık ${w}`}>
+              <span className={styles.widthDot} style={{ width: Math.max(4, w), height: Math.max(4, w) }} />
+            </button>
+          ))}
+          <span className={styles.sep} aria-hidden="true" />
+          <button type="button" className={styles.tool} onClick={undo} disabled={!past.length} title="Geri al (Ctrl+Z)">Geri al</button>
+          <button type="button" className={styles.tool} onClick={redo} disabled={!future.length} title="Yinele (Ctrl+Y)">Yinele</button>
+          <span className={styles.spacer} />
+          {saveLabel}
+          <button type="button" className={styles.tool} aria-expanded={panelOpen} aria-controls="board-drawer" aria-pressed={panelOpen} onClick={() => setPanelOpen((v) => !v)} title="Sayfalar, zemin, ayarlar ve medya">Panel</button>
+          <button type="button" className={styles.tool} onClick={exportPng} disabled={busy} title="Bu sayfayı PNG indir"><Download size={20} aria-hidden="true" /></button>
+          <button type="button" className={styles.tool} onClick={exportPdf} title="Bütün sayfaları yazdır / PDF olarak kaydet"><Printer size={20} aria-hidden="true" /></button>
+          <button type="button" className={styles.tool} onClick={() => setToolsHidden(true)} title="Araç çubuğunu gizle">Gizle</button>
+          <button type="button" className={styles.tool} onClick={toggleFull} title="Tam ekrandan çık (Esc)"><Minimize size={20} aria-hidden="true" /> Çık</button>
+        </div>
+        )}
+        {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="alert" onClick={() => setNotice(null)}>{notice}</p>}
         <BoardCanvas
           page={page}
           editable
@@ -354,54 +371,62 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           width={width}
           onCommit={commitElements}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            // Not ve parçaların ayarları panelde: seçilince panel açılır
+            const el = id ? page.elements.find((e) => e.id === id) : undefined;
+            if (el && (el.type === 'widget' || el.type === 'note')) setPanelOpen(true);
+          }}
           editingNoteId={editingNoteId}
           onEditNote={setEditingNoteId}
           onNoteText={(id, text) => { const el = page.elements.find((e) => e.id === id) as NoteEl | undefined; if (el && el.text !== text) patchElement(id, { text }); }}
           imageUrls={imageUrls}
           renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
-          widgetsPassive={!full}
+          widgetsPassive={tool === 'select'}
           onDropMedia={(payload, x, y) => { try { insertMedia(JSON.parse(payload), x, y); } catch { /* geçersiz */ } }}
           svgRef={(node) => { svgRef.current = node; }}
           ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa`}
         />
       </div>
 
-      {!full && (
-        <aside className={styles.side} aria-label="Ayarlar">
-          <section className={styles.panel}>
-            <h3>Sayfa {pageIndex + 1} zemini</h3>
-            <CustomSelect value={page.background} onChange={(v) => updatePage({ background: v as Background })} options={(Object.keys(BACKGROUND_LABEL) as Background[]).map((b) => ({ value: b, label: BACKGROUND_LABEL[b] }))} />
-          </section>
-          {selected ? (
-            <SelectionPanel
-              el={selected}
-              questions={questions}
-              minitests={minitests}
-              onPatch={(patch) => patchElement(selected.id, patch)}
-              onDelete={() => { commitElements(page.elements.filter((e) => e.id !== selected.id)); setSelectedId(null); }}
-              onOrder={(dir) => {
-                const rest = page.elements.filter((e) => e.id !== selected.id);
-                commitElements(dir === 'front' ? [...rest, selected] : [selected, ...rest]);
-              }}
-            />
-          ) : (
-            <MediaDrawer onInsert={(m) => insertMedia(m)} busy={busy} />
-          )}
-          <p className={styles.saveState}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil. Görselleri çekmeceden tahtaya sürükleyebilirsiniz.</p>
-        </aside>
-      )}
-
-      {printing && (
-        <div className="print-only" data-print-area>
-          {content.pages.map((p, i) => (
-            <div key={p.id} style={{ breakAfter: 'page', padding: '4mm 0' }}>
-              <p style={{ margin: '0 0 4px', font: '600 12px system-ui' }}>{board.title} · {i + 1}/{content.pages.length}</p>
-              <BoardCanvas page={p} imageUrls={imageUrls} thumbnail />
-            </div>
-          ))}
+      <aside id="board-drawer" className={`${styles.drawer} ${panelOpen ? styles.drawerOpen : ''}`} aria-label="Sayfalar ve ayarlar" aria-hidden={!panelOpen || undefined} inert={!panelOpen || undefined}>
+        <div className={styles.drawerHead}>
+          <strong>Panel</strong>
+          <button type="button" className={styles.tool} onClick={() => setPanelOpen(false)} aria-label="Paneli kapat">Kapat</button>
         </div>
-      )}
+        <section className={styles.panel}>
+          <h3>Sayfa {pageIndex + 1} / {content.pages.length}</h3>
+          <div className={styles.pageTools}>
+            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.max(0, i - 1)); setSelectedId(null); }} disabled={pageIndex === 0} title="Önceki sayfa (←)"><ChevronUp size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
+            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.min(content.pages.length - 1, i + 1)); setSelectedId(null); }} disabled={pageIndex >= content.pages.length - 1} title="Sonraki sayfa (→)"><ChevronDown size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
+            <button type="button" className={styles.tool} onClick={addPage} title="Sayfa ekle"><Plus size={18} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={duplicatePage} title="Sayfayı çoğalt"><Copy size={18} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={() => movePage(-1)} disabled={pageIndex === 0} title="Sayfayı öne taşı"><ChevronUp size={18} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={() => movePage(1)} disabled={pageIndex >= content.pages.length - 1} title="Sayfayı arkaya taşı"><ChevronDown size={18} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={deletePage} disabled={content.pages.length <= 1} title="Sayfayı sil"><Trash2 size={18} aria-hidden="true" /></button>
+          </div>
+          <label>Zemin
+            <CustomSelect value={page.background} onChange={(v) => updatePage({ background: v as Background })} options={(Object.keys(BACKGROUND_LABEL) as Background[]).map((b) => ({ value: b, label: BACKGROUND_LABEL[b] }))} />
+          </label>
+        </section>
+        {selected ? (
+          <SelectionPanel
+            el={selected}
+            questions={questions}
+            minitests={minitests}
+            onPatch={(patch) => patchElement(selected.id, patch)}
+            onDelete={() => { commitElements(page.elements.filter((e) => e.id !== selected.id)); setSelectedId(null); }}
+            onOrder={(dir) => {
+              const rest = page.elements.filter((e) => e.id !== selected.id);
+              commitElements(dir === 'front' ? [...rest, selected] : [selected, ...rest]);
+            }}
+          />
+        ) : (
+          <MediaDrawer onInsert={(m) => insertMedia(m)} busy={busy} />
+        )}
+        <p className={styles.saveState}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. Parçaları seçmek ve taşımak için “Seç” aracını kullanın; diğer araçlarda parçalar çalışır.</p>
+      </aside>
+      {printArea}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useMemo, useState } from 'react';
-import { Copy, Edit, Layers, Plus, Search, Trash2 } from '../icons';
+import { Copy, Edit, Layers, Plus, Search, Trash2, X } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { useDialog } from '../ConfirmDialog';
@@ -139,7 +139,7 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
         </div>
       ) : (
         <>
-          <div className={f.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) repeat(3, minmax(150px, 1fr))' }}>
+          <div className={f.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) repeat(3, minmax(150px, 1fr)) auto' }}>
             <label className={f.search}>
               <span className={f.srOnly}>Tahtalarda ara</span>
               <Search size={18} aria-hidden="true" />
@@ -157,6 +157,15 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
             />
             <CustomSelect value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Tüm dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} />
             <CustomSelect value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Tüm kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} />
+            <button
+              type="button"
+              className={f.secondaryButton}
+              onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); setView(ALL); }}
+              disabled={!filtering}
+              title={filtering ? 'Arama ve süzgeçleri temizle' : 'Temizlenecek süzgeç yok'}
+            >
+              <X size={18} aria-hidden="true" />Temizle
+            </button>
           </div>
           {groups.length === 0 ? (
             <p className={f.muted}>

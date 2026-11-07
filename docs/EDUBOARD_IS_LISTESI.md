@@ -21,13 +21,13 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 4 | Quiz motoru | 10 / 10 ✅ |
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
-| 7 | Etkileşimli tahta | 0 / 15 |
+| 7 | Etkileşimli tahta | 15 / 15 ✅ |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **51 / 107** |
+| | **Toplam** | **66 / 107** |
 
 ---
 
@@ -116,21 +116,21 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 
 ## 7. Etkileşimli tahta
 
-- [ ] Çizim tuvali: kalem, silgi, renk, kalınlık — *K-3*
-- [ ] Geometrik şekiller (çizgi, ok, dikdörtgen, daire) — *K-3*
-- [ ] Şablon zeminler (kareli, çizgili, koordinat) — *K-3*
-- [ ] Tahtaya not kutusu ve görsel ekleme — *K-3*
-- [ ] Geri al / yinele (50 adım) — *K-3*
-- [ ] Her ekrana orantılı ölçekleme (sabit sanal çözünürlük) — *K-3*
-- [ ] Tahta ve öğrenci çizimi boyut sınırları — *K-3*
-- [ ] Öğretmen düzenler, öğrenci görüntüler/çözer modu — *K-3*
-- [ ] Tahtaya **Mini Test** parçası (quiz motorunu kullanır) — *K-4*
-- [ ] Tahtaya **Cevabı Göster** parçası (sınav modunda sunucuda kapalı) — *K-4*
-- [ ] Tahtaya **Adım Adım** çözüm parçası — *K-4*
-- [ ] Tahtaya **Kronometre** parçası — *K-4*
-- [ ] Öğrenci çiziminin otomatik kaydı (30 sn) — *K-7*
-- [ ] Ortak medya çekmecesinden tahtaya sürükle-bırak — *K-3*
-- [ ] Tahtayı PDF/PNG olarak dışa aktarma (5. paketten taşındı) — *K-8*
+- [x] Çizim tuvali: kalem, silgi, renk, kalınlık — *K-3* · 7 Kasım 2026 · `73358e2` (SVG, dış kütüphane yok; kalem, vurgu, silgi)
+- [x] Geometrik şekiller (çizgi, ok, dikdörtgen, daire) — *K-3* · 7 Kasım 2026 · `73358e2` (Shift ile düz çizgi / kare / daire)
+- [x] Şablon zeminler (kareli, çizgili, koordinat) — *K-3* · 7 Kasım 2026 · `73358e2` (düz, kareli, çizgili, noktalı, koordinat)
+- [x] Tahtaya not kutusu ve görsel ekleme — *K-3* · 7 Kasım 2026 · `73358e2`
+- [x] Geri al / yinele (50 adım) — *K-3* · 7 Kasım 2026 · `73358e2` (Ctrl+Z / Ctrl+Y; öğrenci katmanında da)
+- [x] Her ekrana orantılı ölçekleme (sabit sanal çözünürlük) — *K-3* · 7 Kasım 2026 · `73358e2` (1920×1080)
+- [x] Tahta ve öğrenci çizimi boyut sınırları — *K-3* · 7 Kasım 2026 · `73358e2` (tahta 5 MB, öğrenci çizimi 2 MB, 50 sayfa; veritabanında da)
+- [x] Öğretmen düzenler, öğrenci görüntüler/çözer modu — *K-3* · 7 Kasım 2026 · `73358e2` (ödev türü Tahta: kopya dondurulur, öğrenci kendi katmanına çizer, öğretmen tek tek inceler)
+- [x] Tahtaya **Mini Test** parçası (quiz motorunu kullanır) — *K-4* · 7 Kasım 2026 · `73358e2` (soru sunucuda dondurulur, doğru cevap tarayıcıya gitmez, sonuç Ödev kontrolü'ne)
+- [x] Tahtaya **Cevabı Göster** parçası (sınav modunda sunucuda kapalı) — *K-4* · 7 Kasım 2026 · `73358e2` (o sorudan puan alınmaz)
+- [x] Tahtaya **Adım Adım** çözüm parçası — *K-4* · 7 Kasım 2026 · `73358e2`
+- [x] Tahtaya **Kronometre** parçası — *K-4* · 7 Kasım 2026 · `73358e2` (0 sn = ileri, değilse geri sayım)
+- [x] Öğrenci çiziminin otomatik kaydı (30 sn) — *K-7* · 7 Kasım 2026 · `73358e2` (sekme gizlenince ve kapatınca da)
+- [x] Ortak medya çekmecesinden tahtaya sürükle-bırak — *K-3* · 7 Kasım 2026 · `73358e2` (Dosyalarım ve kütüphane resimleri)
+- [x] Tahtayı PDF/PNG olarak dışa aktarma (5. paketten taşındı) — *K-8* · 7 Kasım 2026 · `73358e2` (sayfa PNG, bütün sayfalar yazdır / PDF)
 
 ## 8. Canlı ders
 
@@ -208,3 +208,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 | 7 Kasım 2026 | Quiz motoru: soru bankası, alıştırma ve sınav modu, sunucuda değerlendirme, sonuç ekranları — Paket 4 tamam | `c8a8d9e` |
 | 7 Kasım 2026 | Isı haritası, sınıf karnesi, öğrenci gelişimi, Excel/PDF/PNG dışa aktarma, quiz cevaplarını inceleme — Paket 5 tamam | `b7879b1` |
 | 7 Kasım 2026 | Ek gruplar ve sınıf kodu, okul yöneticisi, kampüs, okul alanı/zümre, grup mesajında okundu — Paket 6 tamam | `6eb93a1` |
+| 7 Kasım 2026 | Etkileşimli tahta: çizim, şekil, zemin, not/görsel, parçalar, sunum, ödev olarak çözme, PDF/PNG — Paket 7 tamam | `73358e2` |

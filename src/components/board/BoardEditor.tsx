@@ -6,7 +6,6 @@ import {
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
-import { useDialog } from '../ConfirmDialog';
 import {
   Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl, boardImageUrls, BoardPage, BoardRow,
   byteSize, copyImageToBoard, exportBoardPng, getBoard, HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, MAX_PAGES, newId, newPage, NoteEl,
@@ -32,7 +31,6 @@ type MediaItem = { key: string; bucket: string; path: string; name: string };
 
 /** Öğretmen: tahta düzenleyici (çizim, şekil, not, görsel, parçalar, sayfalar, sunum) */
 export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: () => void }) {
-  const { confirm } = useDialog();
   const [board, setBoard] = useState<BoardRow | null>(null);
   const [content, setContent] = useState<BoardContent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +54,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [panelOpen, setPanelOpen] = useState(false);
   // Tam ekranda araç çubuğu tahtanın üstünde yüzer; gizlenebilir
   const [toolsHidden, setToolsHidden] = useState(false);
+  // Sayfa silme onayı tahtanın içinde açılır (tarayıcı tam ekrandayken dışarıdaki pencereler görünmez)
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  // Önizlemede sayfa sırası sürükle-bırakla değişir
+  const [dragPage, setDragPage] = useState<number | null>(null);
+  const [dropPage, setDropPage] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -199,11 +202,25 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     apply({ ...content, pages });
     setPageIndex(pageIndex + 1);
   };
-  const deletePage = async () => {
+  const deletePage = () => {
     if (!content || !page || content.pages.length <= 1) return;
-    if (page.elements.length && !(await confirm({ title: 'Sayfayı sil', message: `${pageIndex + 1}. sayfa silinsin mi? (Geri al ile geri getirebilirsiniz.)`, confirmText: 'Sil', cancelText: 'Vazgeç', variant: 'danger' }))) return;
+    setConfirmDelete(true);
+  };
+  const doDeletePage = () => {
+    setConfirmDelete(false);
+    if (!content || !page || content.pages.length <= 1) return;
     apply({ ...content, pages: content.pages.filter((p) => p.id !== page.id) });
     setPageIndex(Math.max(0, pageIndex - 1));
+    setSelectedId(null);
+  };
+  /** Sayfayı başka bir sıraya taşır (sürükle-bırak) */
+  const movePageTo = (from: number, to: number) => {
+    if (!content || from === to || from < 0 || to < 0 || from >= content.pages.length || to >= content.pages.length) return;
+    const pages = [...content.pages];
+    const [moved] = pages.splice(from, 1);
+    pages.splice(to, 0, moved);
+    apply({ ...content, pages });
+    setPageIndex(to);
   };
   const movePage = (dir: -1 | 1) => {
     if (!content) return;
@@ -275,6 +292,18 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       {size > MAX_BOARD_BYTES * 0.6 ? ` · ${Math.round((size / MAX_BOARD_BYTES) * 100)}% dolu` : ''}
     </span>
   );
+  const deleteConfirm = confirmDelete && (
+    <div className={styles.confirmOverlay} role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmDelete(false); }}>
+      <div className={styles.confirmBox} role="alertdialog" aria-modal="true" aria-labelledby="page-del-title" aria-describedby="page-del-text">
+        <h3 id="page-del-title">Sayfayı sil</h3>
+        <p id="page-del-text">{pageIndex + 1}. sayfa silinsin mi?{page.elements.length ? ` Sayfada ${page.elements.length} öğe var.` : ' Sayfa boş.'} Yanlışlıkla silerseniz “Geri al” ile geri getirebilirsiniz.</p>
+        <div className={styles.confirmActions}>
+          <button type="button" className={styles.confirmCancel} onClick={() => setConfirmDelete(false)} autoFocus>Vazgeç</button>
+          <button type="button" className={styles.confirmDanger} onClick={doDeletePage}>Sayfayı sil</button>
+        </div>
+      </div>
+    </div>
+  );
   const printArea = printing && (
     <div className="print-only" data-print-area>
       {content.pages.map((p, i) => (
@@ -300,19 +329,35 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           </button>
         </div>
         <div className={styles.previewBody}>
-          <nav aria-label="Sayfalar" className={styles.pages}>
+          <nav aria-label="Sayfalar (sırayı değiştirmek için sürükleyin)" className={styles.pages}>
             {content.pages.map((p, i) => (
-              <button key={p.id} type="button" className={styles.pageThumb} aria-current={i === pageIndex ? 'true' : undefined} onClick={() => setPageIndex(i)} aria-label={`${i + 1}. sayfa`}>
+              <button
+                key={p.id}
+                type="button"
+                className={`${styles.pageThumb} ${dragPage === i ? styles.pageDragging : ''} ${dropPage === i && dragPage !== i ? styles.pageDropTarget : ''}`}
+                aria-current={i === pageIndex ? 'true' : undefined}
+                onClick={() => setPageIndex(i)}
+                aria-label={`${i + 1}. sayfa`}
+                title="Sırasını değiştirmek için sürükleyin"
+                draggable
+                onDragStart={(e) => { setDragPage(i); e.dataTransfer.setData('application/x-board-page', String(i)); e.dataTransfer.effectAllowed = 'move'; }}
+                onDragOver={(e) => { if (e.dataTransfer.types.includes('application/x-board-page')) { e.preventDefault(); setDropPage(i); } }}
+                onDragLeave={() => setDropPage((cur) => (cur === i ? null : cur))}
+                onDrop={(e) => { e.preventDefault(); const from = Number(e.dataTransfer.getData('application/x-board-page')); setDragPage(null); setDropPage(null); if (!Number.isNaN(from)) movePageTo(from, i); }}
+                onDragEnd={() => { setDragPage(null); setDropPage(null); }}
+              >
                 <span>{i + 1}</span>
                 <BoardCanvas page={p} imageUrls={imageUrls} thumbnail />
               </button>
             ))}
+            {content.pages.length > 1 && <p className={styles.saveState}>Sırayı değiştirmek için sayfayı sürükleyip bırakın.</p>}
           </nav>
           <div className={styles.stage}>
             <BoardCanvas page={page} imageUrls={imageUrls} renderWidget={(w) => <WidgetView el={w} ctx={ctx} />} widgetsPassive ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (önizleme)`} />
             <p className={styles.saveState}>Çizmek, şekil ve parça eklemek, sayfaları düzenlemek ve sunmak için “Tam ekranda aç”a basın.</p>
           </div>
         </div>
+        {deleteConfirm}
         {printArea}
       </div>
     );
@@ -426,6 +471,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         )}
         <p className={styles.saveState}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. Parçaları seçmek ve taşımak için “Seç” aracını kullanın; diğer araçlarda parçalar çalışır.</p>
       </aside>
+      {deleteConfirm}
       {printArea}
     </div>
   );

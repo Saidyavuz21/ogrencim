@@ -150,13 +150,13 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
               onChange={setView}
               disabled={!categories.length}
               options={[
-                { value: ALL, label: categories.length ? `Bütün kategoriler (${all.length})` : 'Kategori yok' },
+                { value: ALL, label: categories.length ? `Tüm kategoriler (${all.length})` : 'Kategori yok' },
                 ...categories.map((c) => ({ value: c, label: `${c} (${all.filter((b) => b.category === c).length})` })),
                 ...(categories.length && all.some((b) => !b.category) ? [{ value: NONE, label: `Kategorisiz (${all.filter((b) => !b.category).length})` }] : []),
               ]}
             />
-            <CustomSelect value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Bütün dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} />
-            <CustomSelect value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Bütün kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} />
+            <CustomSelect value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Tüm dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} />
+            <CustomSelect value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Tüm kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} />
           </div>
           {groups.length === 0 ? (
             <p className={f.muted}>

@@ -20,14 +20,14 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 3 | Öğretmen dosyaları ve içerik düzeni | 8 / 8 ✅ |
 | 4 | Quiz motoru | 10 / 10 ✅ |
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
-| 6 | Sınıf ve okul yapısı | 0 / 6 |
+| 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 0 / 15 |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **45 / 107** |
+| | **Toplam** | **51 / 107** |
 
 ---
 
@@ -107,12 +107,12 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 
 ## 6. Sınıf ve okul yapısı (iyileştir)
 
-- [ ] **İyileştir:** Öğrenci birden çok sınıfa/derse üye olabilsin (sınıf üyeliği tablosu) — *K-2*
-- [ ] Sınıf kodu ile katılım (öğrenci kendini sınıfa ekler, öğretmen onaylar) — *K-2*
-- [ ] **Okul yöneticisi rolü:** kendi okulunun öğretmen ve öğrencilerini yönetir — *K-12*
-- [ ] Şube / kampüs katmanı (okul → şube → sınıf) — *K-12*
-- [ ] Okul şablonları ve zümre klasörleri (branş öğretmenlerinin ortak alanı) — *K-12*
-- [ ] **İyileştir:** Sınıf grubu mesajında kişi başına "okundu" bilgisi — *K-11 (bizde ek)*
+- [x] **İyileştir:** Öğrenci birden çok sınıfa/derse üye olabilsin (sınıf üyeliği tablosu) — *K-2* · 7 Kasım 2026 · `6eb93a1` (ana şube kalır + ek gruplar; ödev, quiz, materyal, okuma yarışması ve grup mesajı üyelere de görünür)
+- [x] Sınıf kodu ile katılım (öğrenci kendini sınıfa ekler, öğretmen onaylar) — *K-2* · 7 Kasım 2026 · `6eb93a1` (8 karakter Crockford Base32; öğretmen doğrudan da ekler)
+- [x] **Okul yöneticisi rolü:** kendi okulunun öğretmen ve öğrencilerini yönetir — *K-12* · 7 Kasım 2026 · `6eb93a1` (süper admin verir; öğretmen onayı/pasife alma, bütün sınıflar, karneler)
+- [x] Şube / kampüs katmanı (okul → şube → sınıf) — *K-12* · 7 Kasım 2026 · `6eb93a1` (isteğe bağlı kampüs; sınıf listesi kampüse göre süzülür)
+- [x] Okul şablonları ve zümre klasörleri (branş öğretmenlerinin ortak alanı) — *K-12* · 7 Kasım 2026 · `6eb93a1` (Dosyalarım > Okul alanı; kopyalama ve ödeve ekleme)
+- [x] **İyileştir:** Sınıf grubu mesajında kişi başına "okundu" bilgisi — *K-11 (bizde ek)* · 7 Kasım 2026 · `6eb93a1`
 
 ## 7. Etkileşimli tahta
 
@@ -207,3 +207,4 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 | 7 Kasım 2026 | Dosyalarım, klasörler, etiketler, Dosyalarımdan ekle, sınıfla paylaşım, kota, setler, ortak kütüphane — Paket 3 tamam | `07bec54` |
 | 7 Kasım 2026 | Quiz motoru: soru bankası, alıştırma ve sınav modu, sunucuda değerlendirme, sonuç ekranları — Paket 4 tamam | `c8a8d9e` |
 | 7 Kasım 2026 | Isı haritası, sınıf karnesi, öğrenci gelişimi, Excel/PDF/PNG dışa aktarma, quiz cevaplarını inceleme — Paket 5 tamam | `b7879b1` |
+| 7 Kasım 2026 | Ek gruplar ve sınıf kodu, okul yöneticisi, kampüs, okul alanı/zümre, grup mesajında okundu — Paket 6 tamam | `6eb93a1` |

@@ -30,6 +30,8 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
   const [version, setVersion] = useState(0);
   const [view, setView] = useState(ALL);
   const [q, setQ] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('');
   const [dialog, setDialog] = useState<{ board: BoardSummary | null } | null>(null);
 
   useEffect(() => {
@@ -44,11 +46,17 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
 
   const all = useMemo(() => boards || [], [boards]);
   const categories = useMemo(() => Array.from(new Set(all.map((b) => b.category).filter((c): c is string => !!c))).sort((a, b) => a.localeCompare(b, 'tr')), [all]);
+  // Süzgeçlerde yalnızca tahtalarda kullanılan dersler ve kademeler
+  const subjects = useMemo(() => Array.from(new Set(all.map((b) => b.subject).filter((x): x is string => !!x))).sort((a, b) => a.localeCompare(b, 'tr')), [all]);
+  const grades = useMemo(() => GRADE_OPTIONS.filter((g) => all.some((b) => b.grade === g)), [all]);
   const visible = useMemo(() => {
     const n = normalize(q.trim());
     return all.filter((b) => (view === ALL || (view === NONE ? !b.category : b.category === view))
+      && (!subjectFilter || b.subject === subjectFilter)
+      && (!gradeFilter || b.grade === gradeFilter)
       && (!n || normalize([b.title, b.category || '', b.subject || '', b.grade || ''].join(' ')).includes(n)));
-  }, [all, view, q]);
+  }, [all, view, q, subjectFilter, gradeFilter]);
+  const filtering = !!(q.trim() || subjectFilter || gradeFilter);
   // "Tümü"nde kategorilere göre gruplanır
   const groups = useMemo(() => {
     if (view !== ALL) return [{ key: view, title: '', items: visible }];
@@ -140,14 +148,21 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
               <button type="button" className={f.folderChip} aria-pressed={view === NONE} onClick={() => setView(NONE)}>Kategorisiz <small>{all.filter((b) => !b.category).length}</small></button>
             )}
           </div>
-          {all.length > 6 && (
+          <div className={f.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) repeat(2, minmax(150px, 1fr))' }}>
             <label className={f.search}>
               <span className={f.srOnly}>Tahtalarda ara</span>
               <Search size={18} aria-hidden="true" />
               <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, kategori ya da ders ara" />
             </label>
-          )}
-          {groups.length === 0 ? <p className={f.muted}>Aramaya uyan tahta yok.</p> : groups.map((g) => (
+            <CustomSelect value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Bütün dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} />
+            <CustomSelect value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Bütün kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} />
+          </div>
+          {groups.length === 0 ? (
+            <p className={f.muted}>
+              Süzgece uyan tahta yok.{' '}
+              {filtering && <button type="button" className={f.linkButton} onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); }}>Süzgeçleri temizle</button>}
+            </p>
+          ) : groups.map((g) => (
             <div key={g.key} style={{ display: 'grid', gap: 10 }}>
               {g.title && <h3 className={f.cardTitle}>{g.title} <span className={f.muted} style={{ display: 'inline', fontWeight: 400 }}>· {g.items.length}</span></h3>}
               <div className={styles.boardCards}>{g.items.map(card)}</div>

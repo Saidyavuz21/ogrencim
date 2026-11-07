@@ -81,7 +81,8 @@
 .saveWarn { color: #a3283a; font-weight: 600; }
 
 /* Sayfa listesi */
-.pages { display: grid; gap: 8px; max-height: calc(100dvh - 200px); overflow: auto; padding: 4px; }
+.pages { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; max-height: calc(100dvh - 200px); overflow-x: hidden; overflow-y: auto; padding: 4px; min-width: 0; }
+.pagesHint { margin: 0; font-size: 12px; line-height: 1.4; color: var(--teacher-muted, #58665f); white-space: normal; }
 .pageThumb { position: relative; display: block; width: 100%; padding: 3px; border: 2px solid transparent; border-radius: 10px; background: none; cursor: pointer; }
 .pageThumb[aria-current='true'] { border-color: #25634b; }
 .pageThumb span { position: absolute; left: 8px; top: 6px; z-index: 1; padding: 0 6px; border-radius: 6px; background: rgb(255 255 255 / 90%); font-size: 12px; font-weight: 700; color: #3c4b44; }
@@ -138,6 +139,7 @@
   .previewBody { grid-template-columns: minmax(0, 1fr); }
   .pages { display: flex; max-height: none; overflow-x: auto; }
   .pages .pageThumb { width: 140px; flex-shrink: 0; }
+  .pages .pagesHint { flex: 0 0 120px; align-self: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {

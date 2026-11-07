@@ -350,7 +350,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 <BoardCanvas page={p} imageUrls={imageUrls} thumbnail />
               </button>
             ))}
-            {content.pages.length > 1 && <p className={styles.saveState}>Sırayı değiştirmek için sayfayı sürükleyip bırakın.</p>}
+            {content.pages.length > 1 && <p className={styles.pagesHint}>Sırayı değiştirmek için sürükleyin.</p>}
           </nav>
           <div className={styles.stage}>
             <BoardCanvas page={page} imageUrls={imageUrls} renderWidget={(w) => <WidgetView el={w} ctx={ctx} />} widgetsPassive ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (önizleme)`} />

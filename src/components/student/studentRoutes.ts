@@ -1,8 +1,8 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { FileText, TrendingUp, Star, Award, Fish, MessageSquare, Bell, User, BookOpen, Folder, BarChart3 } from '../icons';
+import { FileText, TrendingUp, Star, Award, Fish, MessageSquare, Bell, User, BookOpen, Folder, BarChart3, School } from '../icons';
 
-export type StudentPageId = 'home' | 'odevler' | 'materyaller' | 'notlar' | 'okuma' | 'puanlar' | 'siralama' | 'akvaryum' | 'gelisim' | 'mesajlar' | 'duyurular' | 'hesap';
+export type StudentPageId = 'home' | 'odevler' | 'materyaller' | 'notlar' | 'okuma' | 'puanlar' | 'siralama' | 'akvaryum' | 'gelisim' | 'mesajlar' | 'duyurular' | 'gruplar' | 'hesap';
 
 export type StudentPageGroup = 'Derslerim' | 'Puanlarım' | 'İletişim' | 'Hesap';
 
@@ -26,6 +26,7 @@ export const STUDENT_PAGES: StudentPageInfo[] = [
   { id: 'gelisim', title: 'Gelişimim', description: 'Puan ve notlarının zaman içindeki değişimi', icon: BarChart3, group: 'Puanlarım' },
   { id: 'mesajlar', title: 'Mesajlar', description: 'Öğretmenlerine yaz, sınıf grubunu oku', icon: MessageSquare, group: 'İletişim' },
   { id: 'duyurular', title: 'Duyurular', description: 'Okuldan gelen duyurular', icon: Bell, group: 'İletişim' },
+  { id: 'gruplar', title: 'Sınıflarım', description: 'Şuben, gruplarım, kodla katıl', icon: School, group: 'Hesap' },
   { id: 'hesap', title: 'Hesabım', description: 'Bilgilerim ve çıkış', icon: User, group: 'Hesap' },
 ];
 

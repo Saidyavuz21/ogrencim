@@ -28,6 +28,7 @@ import { TeacherClassToolsPage } from './TeacherClassToolsPage';
 import { TeacherFilesPage } from '../files/TeacherFilesPage';
 import { QuestionBankPage } from '../quiz/QuestionBankPage';
 import { ClassReportPage } from '../reports/ClassReportPage';
+import { SchoolAdminPage } from '../school/SchoolAdminPage';
 import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
@@ -163,6 +164,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         open={menuOpen}
         currentPage={page}
         badges={{ messages: unreadMessages }}
+        isSchoolAdmin={currentUser?.isSchoolAdmin}
         onClose={closeMenu}
         onOpenPage={openPage}
       />
@@ -221,8 +223,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         />
       )}
 
-      {page === 'files' && <TeacherFilesPage classNames={classNames} />}
+      {page === 'files' && <TeacherFilesPage classNames={classNames} userId={currentUser?.id} isSchoolAdmin={currentUser?.isSchoolAdmin} branch={currentUser?.branch} />}
       {page === 'questions' && <QuestionBankPage />}
+      {page === 'school_admin' && (currentUser?.isSchoolAdmin && currentUser.schoolId
+        ? <SchoolAdminPage schoolId={currentUser.schoolId} schoolName={currentUser.schoolName} />
+        : <p className={styles.mutedText}>Bu sayfa yalnızca okul yöneticilerine açıktır.</p>)}
 
       {!missingClass && (
         <>

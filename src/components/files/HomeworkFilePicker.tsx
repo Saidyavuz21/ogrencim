@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Folder, Library, Search } from '../icons';
+import { Folder, Library, School, Search } from '../icons';
+import { listStaffShares, StaffShareRow } from '../../lib/schoolData';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { formatBytes, HomeworkFilePick } from '../../lib/teacherData';
@@ -11,7 +12,7 @@ import {
 import { KindIcon, Modal, normalize } from './FilesUi';
 import styles from './Files.module.css';
 
-type Source = 'mine' | 'library';
+type Source = 'mine' | 'school' | 'library';
 const ALL = '__all__';
 const NO_FOLDER = '__none__';
 
@@ -35,6 +36,7 @@ export function HomeworkFilePicker({ remaining, already, onClose, onPick, accept
   const [files, setFiles] = useState<TeacherFileRow[] | null>(null);
   const [folders, setFolders] = useState<FolderRow[]>([]);
   const [library, setLibrary] = useState<LibraryItemRow[] | null>(null);
+  const [school, setSchool] = useState<StaffShareRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [folder, setFolder] = useState(ALL);
   const [q, setQ] = useState('');
@@ -50,6 +52,17 @@ export function HomeworkFilePicker({ remaining, already, onClose, onPick, accept
     });
     return () => { alive = false; };
   }, []);
+
+  useEffect(() => {
+    if (source !== 'school' || school) return;
+    let alive = true;
+    listStaffShares().then((res) => {
+      if (!alive) return;
+      if (res.ok) setSchool(res.data);
+      else setError(res.error);
+    });
+    return () => { alive = false; };
+  }, [source, school]);
 
   useEffect(() => {
     if (source !== 'library' || library) return;
@@ -98,6 +111,7 @@ export function HomeworkFilePicker({ remaining, already, onClose, onPick, accept
     <Modal title={title} kicker={remaining > 0 ? `En fazla ${remaining} dosya daha` : 'Dosya sınırı doldu'} onClose={onClose} wide>
       <div className={styles.tabs} role="group" aria-label="Kaynak">
         <button type="button" aria-pressed={source === 'mine'} onClick={() => setSource('mine')}><Folder size={18} aria-hidden="true" />Dosyalarım</button>
+        <button type="button" aria-pressed={source === 'school'} onClick={() => setSource('school')}><School size={18} aria-hidden="true" />Okul alanı</button>
         <button type="button" aria-pressed={source === 'library'} onClick={() => setSource('library')}><Library size={18} aria-hidden="true" />Ortak kütüphane</button>
       </div>
       <div className={styles.filters} style={{ gridTemplateColumns: source === 'mine' && folders.length ? 'minmax(200px, 2fr) minmax(160px, 1fr)' : 'minmax(0, 1fr)' }}>
@@ -122,6 +136,18 @@ export function HomeworkFilePicker({ remaining, already, onClose, onPick, accept
                     [KIND_LABEL[fileKind(f.mime)], formatBytes(f.size), f.subject, f.topic].filter(Boolean).join(' · ')))}
                 </ul>
               )
+      )}
+      {!error && source === 'school' && (
+        !school ? <Spinner center label="Okul alanı yükleniyor…" />
+          : (() => {
+            const list = school.filter((r) => r.file && (!accept || accept(r.file.mime)) && (!n || normalize([r.file.name, r.file.topic || '', r.subject || '', r.shared_by_name].join(' ')).includes(n)));
+            return list.length === 0 ? <p className={styles.muted}>{school.length ? 'Aramaya uyan dosya yok.' : 'Okul alanında henüz dosya yok.'}</p> : (
+              <ul className={styles.pickList}>
+                {list.map((r) => row(r.id, { bucket: FILES_BUCKET, path: r.file!.path, name: r.file!.name, size: r.file!.size, type: r.file!.mime },
+                  [r.scope === 'okul' ? 'Okul şablonu' : `${r.subject} zümresi`, r.shared_by_name, formatBytes(r.file!.size)].join(' · ')))}
+              </ul>
+            );
+          })()
       )}
       {!error && source === 'library' && (
         !library ? <Spinner center label="Kütüphane yükleniyor…" />

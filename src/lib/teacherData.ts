@@ -59,10 +59,15 @@ export interface ClassStudent {
   points: number;
   plus_count: number;
   minus_count: number;
+  /** Ana şubesi başka; bu gruba üye */
+  is_member?: boolean;
 }
 
 export async function listClassStudents(className: string): Promise<Result<ClassStudent[]>> {
   if (!className) return { ok: true, data: [] };
+  // Ana şube + onaylı grup üyeleri (sunucu fonksiyonu yoksa yalnızca ana şube)
+  const roster = await supabase.rpc('class_roster', { p_class: className });
+  if (!roster.error) return { ok: true, data: (roster.data as ClassStudent[]) || [] };
   const { data, error } = await supabase
     .from('students')
     .select('id, student_number, name, class_name, points, plus_count, minus_count')

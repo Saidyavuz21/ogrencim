@@ -53,10 +53,12 @@ export function sortPending(list: MyHomework[]) {
   });
 }
 
-export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissionChange, onQuizChange }: {
+export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissionChange, onQuizChange, primaryClass }: {
   homeworks: MyHomework[];
   loaded: boolean;
   studentId: string;
+  /** Öğrencinin ana şubesi: başka bir gruptan gelen ödevde grubun adı gösterilir */
+  primaryClass?: string | null;
   onSubmissionChange: (homeworkId: string, submission: SubmissionRow) => void;
   /** Quiz çözüldü/bitirildi: liste yenilenir */
   onQuizChange?: () => void;
@@ -101,7 +103,7 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
                   {!h.check && h.submission?.status !== 'teslim' && <DueLabel due={h.due_date} time={h.due_time} />}
                 </div>
                 <div className={styles.assignmentMeta}>
-                  <span>{h.subject} · {h.teacher_name}</span>
+                  <span>{h.subject} · {h.teacher_name}{h.class_name && primaryClass && h.class_name !== primaryClass ? ` · ${h.class_name} grubu` : ''}</span>
                   {h.due_date && <span>Son teslim: {formatDate(h.due_date)}{h.due_time ? ` · ${hm(h.due_time)}` : ''}</span>}
                 </div>
                 {h.description && <p className={styles.assignmentDescription}>{h.description}</p>}

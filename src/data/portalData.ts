@@ -41,6 +41,10 @@ export interface UserAccount {
   district?: string;
   schoolName?: string;
   className?: string;
+  /** Öğretmenin okulu */
+  schoolId?: string;
+  /** Okul yöneticisi (kendi okulunu yönetir) */
+  isSchoolAdmin?: boolean;
   avatar: string;
   title: string;
 }

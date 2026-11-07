@@ -70,6 +70,8 @@ export interface MyHomework {
   due_at: string | null;
   check: { status: CheckStatus; score: number | null; note: string | null } | null;
   submission: SubmissionRow | null;
+  /** Ödevin verildiği sınıf ya da grup */
+  class_name: string | null;
   /** Quiz ise mod ve öğrencinin durumu */
   quiz_mode: 'practice' | 'exam' | null;
   quiz: MyQuizSummary | null;
@@ -80,7 +82,7 @@ export async function listMyHomeworks(studentId: string): Promise<Result<MyHomew
   const [hw, checks, subs, quizzes] = await Promise.all([
     supabase
       .from('homeworks')
-      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at, quiz_mode')
+      .select('id, title, subject, description, due_date, due_time, points, file_url, attachments, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at, quiz_mode, class_name')
       .order('created_at', { ascending: false }),
     supabase.from('homework_checks').select('homework_id, status, score, note').eq('student_id', studentId),
     supabase.from('homework_submissions').select(SUBMISSION_COLUMNS).eq('student_id', studentId),

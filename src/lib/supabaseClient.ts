@@ -42,6 +42,8 @@ export interface ProfileRecord {
   /** teacher-documents bucket'ındaki doğrulama belgesinin yolu */
   verification_doc: string | null;
   created_at: string;
+  /** Okul yöneticisi (müdür / müdür yardımcısı): yalnızca süper admin verir */
+  is_school_admin?: boolean;
 }
 
 export interface SchoolRecord {
@@ -85,6 +87,8 @@ function profileToAccount(p: ProfileRecord): UserAccount {
     district: p.district || undefined,
     schoolName: p.school_name || undefined,
     className: p.class_name || undefined,
+    schoolId: p.school_id || undefined,
+    isSchoolAdmin: p.role === 'ogretmen' && !!p.is_school_admin && !!p.school_id,
     avatar: initials(p.full_name || p.email || '?'),
     title:
       p.role === 'admin'

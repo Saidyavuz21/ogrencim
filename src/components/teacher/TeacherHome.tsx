@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, ChevronRight, ChevronDown } from '../icons';
 import { TeacherClass, UserAccount } from '../../data/portalData';
-import { TEACHER_PAGES, TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick } from './teacherPages';
+import { TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick, visibleTeacherPages } from './teacherPages';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherHomeProps {
@@ -63,7 +63,8 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
       </header>
 
       {TEACHER_PAGE_GROUPS.map((group) => {
-        const pages = TEACHER_PAGES.filter((p) => p.group === group);
+        const pages = visibleTeacherPages(user?.isSchoolAdmin).filter((p) => p.group === group);
+        if (!pages.length) return null;
         const headingId = `teacher-group-${group.replace(/\s+/g, '-')}`;
         return (
           <section key={group} className={styles.cardGroup} aria-labelledby={headingId}>

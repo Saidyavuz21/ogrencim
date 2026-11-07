@@ -5,6 +5,7 @@ import { ArrowLeft, MessageSquare, Send, Users } from '../icons';
 import { MyStudent } from '../../lib/studentData';
 import { classConversationId, isFamilyRole, markConversationRead, sendMessage, studentConversationId } from '../../lib/teacherData';
 import { useLiveMessages } from '../../lib/useLiveMessages';
+import { listMyGroups, markGroupRead } from '../../lib/schoolData';
 import { LiveBadge, Notice, NoticeState, formatDateTime } from '../teacher/TeacherUi';
 import { useFitToViewport } from '../shell/PortalShell';
 import styles from '../teacher/TeacherDashboard.module.css';
@@ -16,10 +17,18 @@ import styles from '../teacher/TeacherDashboard.module.css';
 export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: () => void }) {
   const directConv = studentConversationId(me.id);
   const groupConv = me.class_name ? classConversationId(me.school_id, me.class_name) : '';
+  // Katıldığı ek grupların (seçmeli ders, etüt, kulüp) sohbetleri
+  const [groups, setGroups] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    listMyGroups(me.id).then((res) => { if (alive && res.ok) setGroups(res.data.filter((g) => g.status === 'approved').map((g) => g.class_name)); });
+    return () => { alive = false; };
+  }, [me.id]);
   const convs = useMemo(() => [
     { id: directConv, title: 'Öğretmenlerim', subtitle: 'Öğretmenlerinle birebir yazışma', canWrite: true },
     ...(groupConv ? [{ id: groupConv, title: `${me.class_name} sınıf grubu`, subtitle: 'Öğretmen duyuruları (yalnızca okunur)', canWrite: false }] : []),
-  ], [directConv, groupConv, me.class_name]);
+    ...groups.map((g) => ({ id: classConversationId(me.school_id, g), title: `${g} grubu`, subtitle: 'Grup duyuruları (yalnızca okunur)', canWrite: false })),
+  ], [directConv, groupConv, me.class_name, me.school_id, groups]);
 
   const [active, setActive] = useState<string | null>(null);
   const [text, setText] = useState('');
@@ -49,6 +58,11 @@ export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: ()
       markConversationRead(active, 'family').then(() => onRead?.());
     }
   }, [active, directConv, hasUnreadInThread, onRead]);
+
+  // Grup sohbeti açılınca yalnızca bu öğrencinin "okudum" kaydı düşer (öğretmen kimin okuduğunu görür)
+  useEffect(() => {
+    if (active && active !== directConv) void markGroupRead(active);
+  }, [active, directConv, thread.length]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

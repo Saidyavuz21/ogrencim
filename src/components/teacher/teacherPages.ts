@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3 } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -13,6 +13,7 @@ export type TeacherPageId =
   | 'grade_entry'
   | 'files'
   | 'class_report'
+  | 'school_admin'
   | 'students'
   | 'leaderboard'
   | 'aquarium'
@@ -21,7 +22,7 @@ export type TeacherPageId =
   | 'announcements'
   | 'profile';
 
-export type TeacherPageGroup = 'Ödevler' | 'Puan ve ödül' | 'Ders ve değerlendirme' | 'Öğrenciler ve sınıflar' | 'İletişim' | 'Hesap';
+export type TeacherPageGroup = 'Ödevler' | 'Puan ve ödül' | 'Ders ve değerlendirme' | 'Öğrenciler ve sınıflar' | 'Okul yönetimi' | 'İletişim' | 'Hesap';
 
 export interface TeacherPageInfo {
   id: Exclude<TeacherPageId, 'home'>;
@@ -31,6 +32,8 @@ export interface TeacherPageInfo {
   description: string;
   icon: React.FC<IconProps>;
   group: TeacherPageGroup;
+  /** Yalnızca okul yöneticisine görünür */
+  schoolAdminOnly?: boolean;
 }
 
 export const TEACHER_PAGES: TeacherPageInfo[] = [
@@ -47,12 +50,16 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'class_report', slug: 'sinif-karnesi', title: 'Sınıf karnesi', description: 'Not ortalamaları, dağılım, öğrenci gelişimi', icon: BarChart3, group: 'Ders ve değerlendirme' },
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
   { id: 'classes', slug: 'siniflar', title: 'Sınıflarım', description: 'Ders verdiğin sınıfları ekle ve çıkar', icon: School, group: 'Öğrenciler ve sınıflar' },
+  { id: 'school_admin', slug: 'okul-yonetimi', title: 'Okul yönetimi', description: 'Öğretmen onayı, bütün sınıflar, kampüsler', icon: Building, group: 'Okul yönetimi', schoolAdminOnly: true },
   { id: 'messages', slug: 'mesajlar', title: 'Mesajlar', description: 'Öğrencilerle birebir ve sınıf grubu', icon: MessageSquare, group: 'İletişim' },
   { id: 'announcements', slug: 'duyurular', title: 'Okul duyuruları', description: 'Okuldan gelen duyurular', icon: Bell, group: 'İletişim' },
   { id: 'profile', slug: 'profil', title: 'Profilim', description: 'Bilgilerim, şifre, çıkış', icon: User, group: 'Hesap' },
 ];
 
-export const TEACHER_PAGE_GROUPS: TeacherPageGroup[] = ['Ödevler', 'Puan ve ödül', 'Ders ve değerlendirme', 'Öğrenciler ve sınıflar', 'İletişim', 'Hesap'];
+export const TEACHER_PAGE_GROUPS: TeacherPageGroup[] = ['Ödevler', 'Puan ve ödül', 'Ders ve değerlendirme', 'Öğrenciler ve sınıflar', 'Okul yönetimi', 'İletişim', 'Hesap'];
+
+/** Kullanıcının göreceği sayfalar (okul yöneticisi sayfaları yalnızca yöneticiye) */
+export const visibleTeacherPages = (isSchoolAdmin?: boolean) => TEACHER_PAGES.filter((p) => !p.schoolAdminOnly || isSchoolAdmin);
 
 export const getTeacherPage = (id: TeacherPageId) => TEACHER_PAGES.find((p) => p.id === id);
 

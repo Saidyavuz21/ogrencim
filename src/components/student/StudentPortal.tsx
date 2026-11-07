@@ -19,6 +19,7 @@ import { Spinner } from '../Spinner';
 import { StudentReadingPage } from '../reading/StudentReadingPage';
 import { StudentMaterialsPage } from '../files/StudentMaterialsPage';
 import { StudentProgress } from '../reports/StudentProgress';
+import { StudentGroupsPage } from '../school/StudentGroupsPage';
 import styles from '../teacher/TeacherDashboard.module.css';
 
 interface StudentPortalProps {
@@ -158,11 +159,19 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
             homeworks={homeworks}
             loaded={loaded}
             studentId={user.id}
+            primaryClass={me?.class_name ?? null}
             onSubmissionChange={(id, submission) => setHomeworks((prev) => prev.map((h) => (h.id === id ? { ...h, submission } : h)))}
             onQuizChange={() => { listMyHomeworks(user.id).then((res) => { if (res.ok) setHomeworks(res.data); }); }}
           />
         )}
         {page === 'materyaller' && <StudentMaterialsPage />}
+        {page === 'gruplar' && (
+          <StudentGroupsPage
+            studentId={user.id}
+            className={me?.class_name ?? null}
+            onChanged={() => { listMyHomeworks(user.id).then((res) => { if (res.ok) setHomeworks(res.data); }); }}
+          />
+        )}
         {page === 'gelisim' && (me ? <StudentProgress studentId={user.id} studentName={me.name} currentPoints={me.points} self /> : <Spinner center label="Yükleniyor…" />)}
         {page === 'notlar' && <StudentGradesPage grades={grades} loaded={loaded} />}
         {page === 'okuma' && <StudentReadingPage />}

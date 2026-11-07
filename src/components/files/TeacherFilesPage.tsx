@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ChevronDown, ChevronUp, Download, Edit, Eye, Folder, FolderPlus, GripVertical, Layers, Library, MoreVertical, Search, Share2, Trash2, Upload,
+  ChevronDown, ChevronUp, Download, Edit, Eye, Folder, FolderPlus, GripVertical, Layers, Library, MoreVertical, School, Search, Share2, Trash2, Upload,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -18,9 +18,10 @@ import { EditFileDialog, ShareDialog, SUBJECT_OPTIONS, UploadDialog } from './Fi
 import { FilePreview, KindIcon, Modal, normalize } from './FilesUi';
 import { SetsPanel } from './SetsPanel';
 import { LibraryPanel } from './LibraryPanel';
+import { SchoolSpacePanel, ShareToSchoolDialog } from './SchoolSpacePanel';
 import styles from './Files.module.css';
 
-type Tab = 'files' | 'sets' | 'library';
+type Tab = 'files' | 'sets' | 'school' | 'library';
 const ALL = '__all__';
 const NO_FOLDER = '__none__';
 const ANY = '';
@@ -31,7 +32,13 @@ const sortFiles = (list: TeacherFileRow[]) =>
   [...list].sort((a, b) => a.position - b.position || b.created_at.localeCompare(a.created_at));
 
 /** Öğretmen: Dosyalarım (yükle, klasörle, etiketle, paylaş), Setler ve Ortak kütüphane */
-export function TeacherFilesPage({ classNames }: { classNames: string[] }) {
+export function TeacherFilesPage({ classNames, userId, isSchoolAdmin, branch }: {
+  classNames: string[];
+  userId?: string;
+  isSchoolAdmin?: boolean;
+  /** Zümre paylaşımında varsayılan */
+  branch?: string;
+}) {
   const [tab, setTab] = useState<Tab>('files');
   const [files, setFiles] = useState<TeacherFileRow[]>([]);
   const [folders, setFolders] = useState<FolderRow[]>([]);
@@ -42,6 +49,10 @@ export function TeacherFilesPage({ classNames }: { classNames: string[] }) {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const refreshUsage = useCallback(() => {
+    getFileUsage().then((res) => { if (res.ok) setUsed(res.data.used); });
+  }, []);
+  const reloadFiles = useCallback(() => {
+    listMyFiles().then((res) => { if (res.ok) setFiles(res.data); });
     getFileUsage().then((res) => { if (res.ok) setUsed(res.data.used); });
   }, []);
 
@@ -79,6 +90,7 @@ export function TeacherFilesPage({ classNames }: { classNames: string[] }) {
       <div className={styles.tabs} role="group" aria-label="Bölüm">
         <button type="button" aria-pressed={tab === 'files'} onClick={() => setTab('files')}><Folder size={18} aria-hidden="true" />Dosyalarım</button>
         <button type="button" aria-pressed={tab === 'sets'} onClick={() => setTab('sets')}><Layers size={18} aria-hidden="true" />Setler{sets.length ? ` (${sets.length})` : ''}</button>
+        <button type="button" aria-pressed={tab === 'school'} onClick={() => setTab('school')}><School size={18} aria-hidden="true" />Okul alanı</button>
         <button type="button" aria-pressed={tab === 'library'} onClick={() => setTab('library')}><Library size={18} aria-hidden="true" />Ortak kütüphane</button>
       </div>
 
@@ -93,6 +105,7 @@ export function TeacherFilesPage({ classNames }: { classNames: string[] }) {
           onShareChange={onShareChange}
           used={used}
           refreshUsage={refreshUsage}
+          branch={branch}
           onFilesRemoved={(ids) => {
             setShares((prev) => prev.filter((s) => !s.file_id || !ids.includes(s.file_id)));
             setSets((prev) => prev.map((st) => ({ ...st, items: st.items.filter((i) => !ids.includes(i.file_id)) })));
@@ -110,6 +123,7 @@ export function TeacherFilesPage({ classNames }: { classNames: string[] }) {
           onSetRemoved={(id) => setShares((prev) => prev.filter((s) => s.set_id !== id))}
         />
       )}
+      {tab === 'school' && <SchoolSpacePanel userId={userId} isSchoolAdmin={isSchoolAdmin} onCopied={reloadFiles} />}
       {tab === 'library' && <LibraryPanel />}
     </div>
   );
@@ -118,7 +132,7 @@ export function TeacherFilesPage({ classNames }: { classNames: string[] }) {
 // --------------------------------------------------------
 // Dosyalarım
 // --------------------------------------------------------
-function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, classNames, onShareChange, used, refreshUsage, onFilesRemoved }: {
+function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, classNames, onShareChange, used, refreshUsage, onFilesRemoved, branch }: {
   files: TeacherFileRow[];
   setFiles: React.Dispatch<React.SetStateAction<TeacherFileRow[]>>;
   folders: FolderRow[];
@@ -129,8 +143,10 @@ function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, clas
   used: number | null;
   refreshUsage: () => void;
   onFilesRemoved: (ids: string[]) => void;
+  branch?: string;
 }) {
   const { confirm, prompt } = useDialog();
+  const [toSchool, setToSchool] = useState<TeacherFileRow | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
   const [view, setView] = useState<string>(ALL);
   const [q, setQ] = useState('');
@@ -490,6 +506,7 @@ function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, clas
                         <summary aria-label={`${f.name} işlemleri`}><MoreVertical size={20} aria-hidden="true" /></summary>
                         <div className={styles.menuList}>
                           <button type="button" onClick={(e) => { closeMenu(e.currentTarget); setSharing(f); }}><Share2 size={18} aria-hidden="true" />Sınıfla paylaş</button>
+                          <button type="button" onClick={(e) => { closeMenu(e.currentTarget); setToSchool(f); }}><School size={18} aria-hidden="true" />Okul alanında paylaş</button>
                           <button type="button" onClick={(e) => { closeMenu(e.currentTarget); setEditing(f); }}><Edit size={18} aria-hidden="true" />Bilgileri düzenle / taşı</button>
                           <button type="button" onClick={(e) => { closeMenu(e.currentTarget); download(f); }}><Download size={18} aria-hidden="true" />İndir</button>
                           {canReorder && (
@@ -556,6 +573,14 @@ function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, clas
         />
       )}
       {previewing && <FilePreview bucket={FILES_BUCKET} path={previewing.path} name={previewing.name} mime={previewing.mime} onClose={() => setPreviewing(null)} />}
+      {toSchool && (
+        <ShareToSchoolDialog
+          file={toSchool}
+          defaultSubject={branch}
+          onClose={() => setToSchool(null)}
+          onShared={(text) => { setToSchool(null); setNotice({ kind: 'ok', text }); }}
+        />
+      )}
       {moving && (
         <MoveDialog
           count={selectedRows.length}

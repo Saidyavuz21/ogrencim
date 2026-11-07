@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Users } from '../icons';
+import { Plus, Trash2, Users, UserPlus } from '../icons';
+import { ClassMembersDialog } from '../school/ClassMembersDialog';
+import { MAX_CLASS_NAME } from '../../lib/schoolData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { composeClassName } from '../../data/portalData';
 import { addMyClass, removeMyClass, TeacherClassRow } from '../../lib/teacherData';
@@ -25,6 +27,33 @@ export function TeacherClassesPage({ homeroomClass, classes, studentCounts, sele
   const [busy, setBusy] = useState(false);
   const { confirm } = useDialog();
   const [notice, setNotice] = useState<NoticeState>(null);
+  // Ek grup (seçmeli ders, etüt, kulüp): serbest ad
+  const [groupName, setGroupName] = useState('');
+  const [membersOf, setMembersOf] = useState<string | null>(null);
+
+  const handleAddGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = groupName.trim().replace(/\s+/g, ' ');
+    if (!name) {
+      setNotice({ kind: 'error', text: 'Grubun adını yazın (ör. Robotik Kulübü).' });
+      return;
+    }
+    if (rows.some((r) => r.name.toLocaleLowerCase('tr-TR') === name.toLocaleLowerCase('tr-TR'))) {
+      setNotice({ kind: 'error', text: `${name} zaten listenizde.` });
+      return;
+    }
+    setBusy(true);
+    const res = await addMyClass(name);
+    setBusy(false);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: `Grup oluşturulamadı: ${res.error}` });
+      return;
+    }
+    setGroupName('');
+    setNotice({ kind: 'ok', text: `${name} grubu oluşturuldu. Üyeleri eklemek ya da katılım kodu vermek için "Üyeler ve kod"a basın.` });
+    onChanged();
+    setMembersOf(name);
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +125,9 @@ export function TeacherClassesPage({ homeroomClass, classes, studentCounts, sele
                 {r.name !== selectedClass && (
                   <button type="button" className={styles.secondary} onClick={() => onSelectClass(r.name)}>Seç</button>
                 )}
+                <button type="button" className={styles.secondary} onClick={() => setMembersOf(r.name)} aria-label={`${r.name} grup üyeleri ve katılım kodu`} title="Grup üyeleri ve katılım kodu">
+                  <UserPlus size={16} aria-hidden="true" />
+                </button>
                 {r.row && (
                   <button type="button" className={styles.secondary} disabled={busy} onClick={() => handleRemove(r.row!)} aria-label={`${r.name} sınıfını listeden çıkar`}>
                     <Trash2 size={16} aria-hidden="true" />
@@ -125,8 +157,21 @@ export function TeacherClassesPage({ homeroomClass, classes, studentCounts, sele
           </div>
         </form>
       </CollapsiblePanel>
+      <CollapsiblePanel title="Grup oluştur" summary="Seçmeli ders, etüt, kulüp">
+        <form className={styles.formGrid} onSubmit={handleAddGroup}>
+          <h2 className={styles.panelTitle}>Grup oluştur</h2>
+          <label className={`${styles.field} ${styles.fullRow}`}>Grubun adı
+            <input value={groupName} maxLength={MAX_CLASS_NAME} onChange={(e) => setGroupName(e.target.value)} placeholder="Örn. Robotik Kulübü" />
+          </label>
+          <p className={`${styles.mutedText} ${styles.fullRow}`}>Grup, farklı şubelerden öğrencileri bir araya getirir. Öğrencinin ana şubesi değişmez; gruba verilen ödev, quiz ve materyalleri de görür.</p>
+          <div className={styles.formActions}>
+            <button type="submit" className={styles.primary} disabled={busy}><Plus size={18} aria-hidden="true" />Grubu oluştur</button>
+          </div>
+        </form>
+      </CollapsiblePanel>
       </aside>
       </div>
+      {membersOf && <ClassMembersDialog className={membersOf} onClose={() => setMembersOf(null)} />}
     </div>
   );
 }

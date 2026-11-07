@@ -5,6 +5,7 @@ import styles from './AdminManagement.module.css';
 import { Edit, Trash2, FileText } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { ProfileRecord } from '../../lib/supabaseClient';
+import { adminSetSchoolAdmin } from '../../lib/schoolData';
 import {
   AdminData,
   EmptyState,
@@ -33,6 +34,18 @@ export function AdminTeachersPage({ data, notify }: Props) {
   const { busyId, remove, toggleActive, viewDocument } = useTeacherActions(notify, data.refresh, pendingSchoolIds);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [adminBusy, setAdminBusy] = useState<string | null>(null);
+  // Okul yöneticisi (müdür / müdür yardımcısı): kendi okulunun öğretmen ve öğrencilerini yönetir
+  const toggleSchoolAdmin = async (p: ProfileRecord) => {
+    const next = !p.is_school_admin;
+    if (next && !p.school_id) { notify('error', 'Önce öğretmeni bir okula bağlayın (Düzenle).'); return; }
+    setAdminBusy(p.id);
+    const res = await adminSetSchoolAdmin(p.id, next);
+    setAdminBusy(null);
+    if (!res.ok) { notify('error', `Değiştirilemedi: ${res.error}`); return; }
+    notify('ok', next ? `${displayName(p)} artık ${p.school_name || 'okulunun'} yöneticisi.` : `${displayName(p)} okul yöneticiliğinden çıkarıldı.`);
+    data.refresh();
+  };
   const [schoolId, setSchoolId] = useState('');
   const [editing, setEditing] = useState<ProfileRecord | null>(null);
 
@@ -97,6 +110,7 @@ export function AdminTeachersPage({ data, notify }: Props) {
                   <span className={styles.identity}>
                     <span className={p.is_active ? styles.name : styles.inactiveName}>{displayName(p)}</span>
                     <span className={p.is_active ? styles.activeBadge : styles.errorBadge}>{p.is_active ? 'Aktif' : 'Pasif'}</span>
+                    {p.is_school_admin && <span className={styles.activeBadge}>Okul yöneticisi</span>}
                   </span>
                   <span className={styles.muted}>
                     {[p.email, p.branch, p.school_name, p.class_name ? `Sınıf ${p.class_name}` : null].filter(Boolean).join(' • ')}
@@ -114,6 +128,9 @@ export function AdminTeachersPage({ data, notify }: Props) {
                     </button>
                     <button type="button" disabled={busy} onClick={() => toggleActive(p)} className={styles.button}>
                       {p.is_active ? 'Pasif yap' : 'Aktif yap'}
+                    </button>
+                    <button type="button" disabled={busy || adminBusy === p.id} onClick={() => toggleSchoolAdmin(p)} className={styles.button}>
+                      {p.is_school_admin ? 'Yöneticilikten çıkar' : 'Okul yöneticisi yap'}
                     </button>
                     <button type="button" disabled={busy} onClick={() => remove(p)} aria-label={`${displayName(p)} hesabını sil`} className={styles.danger}>
                       <Trash2 className={styles.icon} />

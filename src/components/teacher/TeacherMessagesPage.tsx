@@ -13,6 +13,7 @@ import {
 import { useLiveMessages } from '../../lib/useLiveMessages';
 import { LiveBadge } from './TeacherUi';
 import { Notice, NoticeState, formatDateTime, initialsOf, useClassStudents } from './TeacherUi';
+import { listGroupReadReceipts, ReadReceipt } from '../../lib/schoolData';
 import { Spinner } from '../Spinner';
 import styles from './TeacherDashboard.module.css';
 
@@ -81,6 +82,18 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
       return lb.localeCompare(la) || a.title.localeCompare(b.title, 'tr');
     });
   const active = conversations.find((c) => c.id === activeConv);
+
+  // Grup sohbeti: kim, en son ne zaman okudu (açıkken 30 sn'de bir yenilenir)
+  const [receipts, setReceipts] = useState<ReadReceipt[]>([]);
+  const activeIsGroup = !!active?.isGroup;
+  useEffect(() => {
+    if (!activeConv || !activeIsGroup) return;
+    let alive = true;
+    const load = () => listGroupReadReceipts(activeConv).then((res) => { if (alive && res.ok) setReceipts(res.data); });
+    void load();
+    const t = window.setInterval(load, 30000);
+    return () => { alive = false; window.clearInterval(t); setReceipts([]); };
+  }, [activeConv, activeIsGroup, thread.length]);
 
   // Yalnızca mesaj alanını aşağı kaydır (scrollIntoView tüm sayfayı da kaydırır)
   useEffect(() => {
@@ -187,11 +200,24 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
               {thread.length === 0 && <p className={styles.mutedText}>Henüz mesaj yok. İlk mesajı siz yazın.</p>}
               {thread.map((m) => {
                 const mine = m.sender_id === currentUserId;
+                // Grup: bu mesajdan sonra sohbeti açan öğrenciler
+                const readers = active.isGroup ? receipts.filter((r) => r.last_read_at >= m.created_at) : [];
+                const readTitle = readers.length ? `Okuyanlar: ${readers.map((r) => r.name).join(', ')}` : 'Henüz okuyan yok';
                 return (
                   <div key={m.id} className={`${styles.bubble} ${mine ? styles.bubbleMine : ''}`}>
                     {!mine && <strong>{m.sender_name}</strong>}
                     <p>{m.content}</p>
-                    <span>{formatDateTime(m.created_at)}{mine ? (m.is_read ? ' · Okundu' : ' · İletildi') : ''}</span>
+                    <span title={active.isGroup && mine ? readTitle : undefined}>
+                      {formatDateTime(m.created_at)}
+                      {mine && !active.isGroup ? (m.is_read ? ' · Okundu' : ' · İletildi') : ''}
+                      {mine && active.isGroup ? ` · ${readers.length}/${students.length} okudu` : ''}
+                    </span>
+                    {mine && active.isGroup && readers.length > 0 && (
+                      <details style={{ marginTop: 4, fontSize: 12 }}>
+                        <summary style={{ cursor: 'pointer' }}>Kimler okudu</summary>
+                        <span>{readers.map((r) => r.name).join(', ')}</span>
+                      </details>
+                    )}
                   </div>
                 );
               })}

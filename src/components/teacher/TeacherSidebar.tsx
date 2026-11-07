@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { X, LayoutDashboard } from '../icons';
-import { TEACHER_PAGES, TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick } from './teacherPages';
+import { TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick, visibleTeacherPages } from './teacherPages';
 import type { TeacherClass } from '../../data/portalData';
 import styles from './TeacherDashboard.module.css';
 
@@ -16,10 +16,12 @@ interface TeacherSidebarProps {
   classes?: TeacherClass[];
   selectedClass?: string;
   onSelectClass?: (value: string) => void;
+  /** Okul yöneticisi sayfaları da gösterilir */
+  isSchoolAdmin?: boolean;
 }
 
 /** Soldan açılan menü: tüm öğretmen sayfalarında kullanılır */
-export function TeacherSidebar({ open, currentPage, badges, onClose, onOpenPage, classes, selectedClass, onSelectClass }: TeacherSidebarProps) {
+export function TeacherSidebar({ open, currentPage, badges, onClose, onOpenPage, classes, selectedClass, onSelectClass, isSchoolAdmin }: TeacherSidebarProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   // Geniş ekranda menü sabit sütundur; dar ekranda çekmece gibi açılır
   const [wide, setWide] = useState(false);
@@ -76,10 +78,10 @@ export function TeacherSidebar({ open, currentPage, badges, onClose, onOpenPage,
             <LayoutDashboard size={20} aria-hidden="true" />
             <span>Ana sayfa</span>
           </a>
-          {TEACHER_PAGE_GROUPS.map((group) => (
+          {TEACHER_PAGE_GROUPS.filter((group) => visibleTeacherPages(isSchoolAdmin).some((p) => p.group === group)).map((group) => (
             <div key={group} className={styles.sidebarGroup}>
               <h2>{group}</h2>
-              {TEACHER_PAGES.filter((p) => p.group === group).map((p) => {
+              {visibleTeacherPages(isSchoolAdmin).filter((p) => p.group === group).map((p) => {
                 const badge = badges[p.id] || 0;
                 return (
                   <a key={p.id} href={teacherPageHref(p.id)} className={styles.sidebarItem} aria-current={currentPage === p.id ? 'page' : undefined} onClick={go(p.id)}>

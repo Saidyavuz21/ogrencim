@@ -56,7 +56,7 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
       && (!gradeFilter || b.grade === gradeFilter)
       && (!n || normalize([b.title, b.category || '', b.subject || '', b.grade || ''].join(' ')).includes(n)));
   }, [all, view, q, subjectFilter, gradeFilter]);
-  const filtering = !!(q.trim() || subjectFilter || gradeFilter);
+  const filtering = !!(q.trim() || subjectFilter || gradeFilter || view !== ALL);
   // "Tümü"nde kategorilere göre gruplanır
   const groups = useMemo(() => {
     if (view !== ALL) return [{ key: view, title: '', items: visible }];
@@ -139,28 +139,29 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
         </div>
       ) : (
         <>
-          <div className={f.folderBar} role="group" aria-label="Kategoriler">
-            <button type="button" className={f.folderChip} aria-pressed={view === ALL} onClick={() => setView(ALL)}>Tümü <small>{all.length}</small></button>
-            {categories.map((c) => (
-              <button key={c} type="button" className={f.folderChip} aria-pressed={view === c} onClick={() => setView(c)}>{c} <small>{all.filter((b) => b.category === c).length}</small></button>
-            ))}
-            {categories.length > 0 && all.some((b) => !b.category) && (
-              <button type="button" className={f.folderChip} aria-pressed={view === NONE} onClick={() => setView(NONE)}>Kategorisiz <small>{all.filter((b) => !b.category).length}</small></button>
-            )}
-          </div>
-          <div className={f.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) repeat(2, minmax(150px, 1fr))' }}>
+          <div className={f.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) repeat(3, minmax(150px, 1fr))' }}>
             <label className={f.search}>
               <span className={f.srOnly}>Tahtalarda ara</span>
               <Search size={18} aria-hidden="true" />
               <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, kategori ya da ders ara" />
             </label>
+            <CustomSelect
+              value={view}
+              onChange={setView}
+              disabled={!categories.length}
+              options={[
+                { value: ALL, label: categories.length ? `Bütün kategoriler (${all.length})` : 'Kategori yok' },
+                ...categories.map((c) => ({ value: c, label: `${c} (${all.filter((b) => b.category === c).length})` })),
+                ...(categories.length && all.some((b) => !b.category) ? [{ value: NONE, label: `Kategorisiz (${all.filter((b) => !b.category).length})` }] : []),
+              ]}
+            />
             <CustomSelect value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Bütün dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} />
             <CustomSelect value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Bütün kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} />
           </div>
           {groups.length === 0 ? (
             <p className={f.muted}>
               Süzgece uyan tahta yok.{' '}
-              {filtering && <button type="button" className={f.linkButton} onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); }}>Süzgeçleri temizle</button>}
+              {filtering && <button type="button" className={f.linkButton} onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); setView(ALL); }}>Süzgeçleri temizle</button>}
             </p>
           ) : groups.map((g) => (
             <div key={g.key} style={{ display: 'grid', gap: 10 }}>

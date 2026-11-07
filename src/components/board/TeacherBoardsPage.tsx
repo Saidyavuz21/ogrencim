@@ -67,15 +67,21 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
     if (!board) {
       const res = await createBoard(info.title, subject, grade, undefined, category);
       if (!res.ok) return res.error;
+      // Güvence: sunucudan dönen kayıtta kategori yoksa bir kez daha yaz
+      if (category && res.data.category !== category) {
+        const fix = await saveBoard(res.data.id, { category });
+        if (!fix.ok) return `Tahta oluşturuldu ama kategori kaydedilemedi: ${fix.error}`;
+      }
       setDialog(null);
       setOpenId(res.data.id);
       return null;
     }
     const res = await saveBoard(board.id, { title: info.title, subject, grade, category });
     if (!res.ok) return res.error;
-    setBoards((prev) => (prev || []).map((x) => (x.id === board.id ? { ...x, title: info.title.trim(), subject, grade, category } : x)));
     setDialog(null);
-    setNotice({ kind: 'ok', text: 'Tahta bilgileri kaydedildi.' });
+    // Liste sunucudan yeniden okunur: ekranda görünen gerçekten kaydedilendir
+    setVersion((v) => v + 1);
+    setNotice({ kind: 'ok', text: category ? `Tahta bilgileri kaydedildi (kategori: ${category}).` : 'Tahta bilgileri kaydedildi.' });
     return null;
   };
   const duplicate = async (b: BoardSummary) => {

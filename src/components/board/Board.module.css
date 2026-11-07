@@ -70,7 +70,7 @@
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
 .toolbar .sep { width: 1px; height: 28px; margin: 0 4px; background: var(--teacher-border, #dedad0); }
 .toolbar .spacer { flex: 1; }
-.tool { display: inline-grid; place-items: center; min-width: 44px; height: 44px; padding: 0 8px; border: 1px solid transparent; border-radius: 10px; background: none; color: #3c4b44; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.tool { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; min-width: 44px; height: 44px; padding: 0 8px; border: 1px solid transparent; border-radius: 10px; background: none; color: #3c4b44; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .tool:hover:not(:disabled) { background: #f0f4ee; }
 .tool[aria-pressed='true'] { border-color: #25634b; background: var(--teacher-selected, #e6f1e9); color: #25634b; }
 .tool:disabled { opacity: 0.4; cursor: not-allowed; }

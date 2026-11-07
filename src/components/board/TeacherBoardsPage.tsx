@@ -1,25 +1,36 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Copy, Edit, Layers, Plus, Trash2 } from '../icons';
+import React, { useEffect, useId, useMemo, useState } from 'react';
+import { Copy, Edit, Layers, Plus, Search, Trash2 } from '../icons';
+import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { useDialog } from '../ConfirmDialog';
 import { Notice, NoticeState } from '../teacher/TeacherUi';
 import { BoardSummary, createBoard, deleteBoard, duplicateBoard, listBoards, saveBoard } from '../../lib/boardData';
+import { GRADE_OPTIONS } from '../../lib/filesData';
+import { SUBJECT_OPTIONS } from '../files/FileDialogs';
+import { Modal, normalize } from '../files/FilesUi';
 import { BoardEditor } from './BoardEditor';
 import styles from './Board.module.css';
 import f from '../files/Files.module.css';
 
+const ALL = '__all__';
+const NONE = '__none__';
 const dateLabel = (iso: string) => new Date(iso).toLocaleString('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
-/** Öğretmen: tahtalarım (oluştur, aç, çoğalt, yeniden adlandır, sil) */
+type Info = { title: string; category: string; subject: string; grade: string };
+
+/** Öğretmen: tahtalarım (kategoriler, oluştur, aç, çoğalt, düzenle, sil) */
 export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string }) {
-  const { confirm, prompt } = useDialog();
+  const { confirm } = useDialog();
   const [boards, setBoards] = useState<BoardSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
+  const [view, setView] = useState(ALL);
+  const [q, setQ] = useState('');
+  const [dialog, setDialog] = useState<{ board: BoardSummary | null } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -31,21 +42,41 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
     return () => { alive = false; };
   }, [version]);
 
+  const all = useMemo(() => boards || [], [boards]);
+  const categories = useMemo(() => Array.from(new Set(all.map((b) => b.category).filter((c): c is string => !!c))).sort((a, b) => a.localeCompare(b, 'tr')), [all]);
+  const visible = useMemo(() => {
+    const n = normalize(q.trim());
+    return all.filter((b) => (view === ALL || (view === NONE ? !b.category : b.category === view))
+      && (!n || normalize([b.title, b.category || '', b.subject || '', b.grade || ''].join(' ')).includes(n)));
+  }, [all, view, q]);
+  // "Tümü"nde kategorilere göre gruplanır
+  const groups = useMemo(() => {
+    if (view !== ALL) return [{ key: view, title: '', items: visible }];
+    const out = categories.map((c) => ({ key: c, title: c, items: visible.filter((b) => b.category === c) })).filter((g) => g.items.length);
+    const rest = visible.filter((b) => !b.category);
+    if (rest.length) out.push({ key: NONE, title: categories.length ? 'Kategorisiz' : '', items: rest });
+    return out;
+  }, [view, visible, categories]);
+
   if (openId) return <BoardEditor boardId={openId} onClose={() => { setOpenId(null); setVersion((v) => v + 1); }} />;
 
-  const create = async () => {
-    const title = await prompt({ title: 'Yeni tahta', message: 'Tahtaya bir ad verin.', inputLabel: 'Tahtanın adı', placeholder: 'Örn. Kesirlerde toplama', confirmText: 'Oluştur', cancelText: 'Vazgeç', variant: 'primary' });
-    if (!title?.trim()) return;
-    const res = await createBoard(title, defaultSubject || null, null);
-    if (!res.ok) { setNotice({ kind: 'error', text: res.error }); return; }
-    setOpenId(res.data.id);
-  };
-  const rename = async (b: BoardSummary) => {
-    const title = await prompt({ title: 'Tahtayı yeniden adlandır', message: 'Yeni adı yazın.', inputLabel: 'Tahtanın adı', defaultValue: b.title, confirmText: 'Kaydet', cancelText: 'Vazgeç', variant: 'primary' });
-    if (!title?.trim() || title.trim() === b.title) return;
-    const res = await saveBoard(b.id, { title });
-    if (!res.ok) { setNotice({ kind: 'error', text: res.error }); return; }
-    setBoards((prev) => (prev || []).map((x) => (x.id === b.id ? { ...x, title: title.trim() } : x)));
+  const saveInfo = async (info: Info, board: BoardSummary | null) => {
+    const subject = info.subject || null;
+    const grade = info.grade || null;
+    const category = info.category.trim().slice(0, 60) || null;
+    if (!board) {
+      const res = await createBoard(info.title, subject, grade, undefined, category);
+      if (!res.ok) return res.error;
+      setDialog(null);
+      setOpenId(res.data.id);
+      return null;
+    }
+    const res = await saveBoard(board.id, { title: info.title, subject, grade, category });
+    if (!res.ok) return res.error;
+    setBoards((prev) => (prev || []).map((x) => (x.id === board.id ? { ...x, title: info.title.trim(), subject, grade, category } : x)));
+    setDialog(null);
+    setNotice({ kind: 'ok', text: 'Tahta bilgileri kaydedildi.' });
+    return null;
   };
   const duplicate = async (b: BoardSummary) => {
     const res = await duplicateBoard(b.id);
@@ -64,36 +95,138 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
   if (error) return <p className={f.error} role="alert">Tahtalar alınamadı: {error}</p>;
   if (!boards) return <Spinner center label="Tahtalar yükleniyor…" />;
 
+  const card = (b: BoardSummary) => (
+    <article key={b.id} className={styles.boardCard}>
+      <h3>{b.title}</h3>
+      <p>{[`${b.pageCount} sayfa`, b.subject, b.grade].filter(Boolean).join(' · ')}</p>
+      <p>{dateLabel(b.updated_at)}</p>
+      <div className={f.cardActions}>
+        <button type="button" className={f.primaryButton} onClick={() => setOpenId(b.id)}>Aç</button>
+        <button type="button" className={f.iconButton} onClick={() => setDialog({ board: b })} aria-label={`${b.title} bilgilerini düzenle`} title="Ad, kategori, ders, kademe"><Edit size={18} aria-hidden="true" /></button>
+        <button type="button" className={f.iconButton} onClick={() => duplicate(b)} aria-label={`${b.title} çoğalt`} title="Çoğalt"><Copy size={18} aria-hidden="true" /></button>
+        <button type="button" className={f.iconButton} onClick={() => remove(b)} aria-label={`${b.title} sil`} title="Sil"><Trash2 size={18} aria-hidden="true" /></button>
+      </div>
+    </article>
+  );
+
   return (
     <section className={f.page} aria-label="Tahtalarım">
       <div className={f.topBar}>
         <p className={f.muted}>Tahtayı derste tam ekran açın (akıllı tahta) ya da Ödev gönder’de türü “Tahta” seçip sınıfa gönderin; öğrenciler kendi kopyası üzerinde çözer.</p>
-        <button type="button" className={f.primaryButton} onClick={create}><Plus size={18} aria-hidden="true" />Yeni tahta</button>
+        <button type="button" className={f.primaryButton} onClick={() => setDialog({ board: null })}><Plus size={18} aria-hidden="true" />Yeni tahta</button>
       </div>
       <Notice notice={notice} onClose={() => setNotice(null)} />
-      {boards.length === 0 ? (
+      {all.length === 0 ? (
         <div className={f.empty}>
           <Layers size={32} aria-hidden="true" />
           <h3>Henüz tahtanız yok</h3>
-          <p>Kalem, şekil, not, görsel ve Mini Test, Adım Adım, Kronometre gibi parçalarla ders tahtası hazırlayın.</p>
-          <button type="button" className={f.primaryButton} onClick={create}><Plus size={18} aria-hidden="true" />İlk tahtayı oluştur</button>
+          <p>Kalem, şekil, not, görsel ve Mini Test, Adım Adım, Kronometre gibi parçalarla ders tahtası hazırlayın. Tahtaları “1. Ünite”, “LGS tekrar” gibi kategorilere ayırabilirsiniz.</p>
+          <button type="button" className={f.primaryButton} onClick={() => setDialog({ board: null })}><Plus size={18} aria-hidden="true" />İlk tahtayı oluştur</button>
         </div>
       ) : (
-        <div className={styles.boardCards}>
-          {boards.map((b) => (
-            <article key={b.id} className={styles.boardCard}>
-              <h3>{b.title}</h3>
-              <p>{b.pageCount} sayfa{b.subject ? ` · ${b.subject}` : ''} · {dateLabel(b.updated_at)}</p>
-              <div className={f.cardActions}>
-                <button type="button" className={f.primaryButton} onClick={() => setOpenId(b.id)}>Aç</button>
-                <button type="button" className={f.iconButton} onClick={() => rename(b)} aria-label={`${b.title} adını değiştir`} title="Adını değiştir"><Edit size={18} aria-hidden="true" /></button>
-                <button type="button" className={f.iconButton} onClick={() => duplicate(b)} aria-label={`${b.title} çoğalt`} title="Çoğalt"><Copy size={18} aria-hidden="true" /></button>
-                <button type="button" className={f.iconButton} onClick={() => remove(b)} aria-label={`${b.title} sil`} title="Sil"><Trash2 size={18} aria-hidden="true" /></button>
-              </div>
-            </article>
+        <>
+          <div className={f.folderBar} role="group" aria-label="Kategoriler">
+            <button type="button" className={f.folderChip} aria-pressed={view === ALL} onClick={() => setView(ALL)}>Tümü <small>{all.length}</small></button>
+            {categories.map((c) => (
+              <button key={c} type="button" className={f.folderChip} aria-pressed={view === c} onClick={() => setView(c)}>{c} <small>{all.filter((b) => b.category === c).length}</small></button>
+            ))}
+            {categories.length > 0 && all.some((b) => !b.category) && (
+              <button type="button" className={f.folderChip} aria-pressed={view === NONE} onClick={() => setView(NONE)}>Kategorisiz <small>{all.filter((b) => !b.category).length}</small></button>
+            )}
+          </div>
+          {all.length > 6 && (
+            <label className={f.search}>
+              <span className={f.srOnly}>Tahtalarda ara</span>
+              <Search size={18} aria-hidden="true" />
+              <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, kategori ya da ders ara" />
+            </label>
+          )}
+          {groups.length === 0 ? <p className={f.muted}>Aramaya uyan tahta yok.</p> : groups.map((g) => (
+            <div key={g.key} style={{ display: 'grid', gap: 10 }}>
+              {g.title && <h3 className={f.cardTitle}>{g.title} <span className={f.muted} style={{ display: 'inline', fontWeight: 400 }}>· {g.items.length}</span></h3>}
+              <div className={styles.boardCards}>{g.items.map(card)}</div>
+            </div>
           ))}
-        </div>
+          {categories.length === 0 && <p className={f.muted}>İpucu: Tahtaları kategorilere ayırmak için kalem düğmesine basıp “Kategori” yazın (ör. 1. Ünite).</p>}
+        </>
+      )}
+
+      {dialog && (
+        <BoardInfoDialog
+          board={dialog.board}
+          categories={categories}
+          defaultSubject={defaultSubject}
+          defaultCategory={view !== ALL && view !== NONE ? view : ''}
+          onClose={() => setDialog(null)}
+          onSave={(info) => saveInfo(info, dialog.board)}
+        />
       )}
     </section>
+  );
+}
+
+/** Tahta bilgileri: ad, kategori (öğretmenin kendi kategorileri), ders, kademe */
+function BoardInfoDialog({ board, categories, defaultSubject, defaultCategory, onClose, onSave }: {
+  board: BoardSummary | null;
+  categories: string[];
+  defaultSubject?: string;
+  defaultCategory: string;
+  onClose: () => void;
+  onSave: (info: Info) => Promise<string | null>;
+}) {
+  const ids = { title: useId(), cat: useId(), list: useId() };
+  const [info, setInfo] = useState<Info>({
+    title: board?.title || '',
+    category: board?.category || defaultCategory,
+    subject: board?.subject || (defaultSubject && SUBJECT_OPTIONS.includes(defaultSubject) ? defaultSubject : ''),
+    grade: board?.grade || '',
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!info.title.trim()) { setError('Tahtaya bir ad verin.'); return; }
+    setBusy(true);
+    setError(null);
+    const err = await onSave(info);
+    setBusy(false);
+    if (err) setError(err);
+  };
+  return (
+    <Modal title={board ? 'Tahta bilgileri' : 'Yeni tahta'} onClose={onClose} busy={busy}>
+      <form className={f.form} onSubmit={submit}>
+        <label className={f.field} htmlFor={ids.title}>
+          Tahtanın adı
+          <input id={ids.title} value={info.title} maxLength={120} onChange={(e) => setInfo({ ...info, title: e.target.value })} placeholder="Örn. Kesirlerde toplama" data-autofocus required />
+        </label>
+        <label className={f.field} htmlFor={ids.cat}>
+          Kategori <span className={f.hint}>(isteğe bağlı; yeni bir ad yazın ya da listeden seçin)</span>
+          <input id={ids.cat} list={ids.list} value={info.category} maxLength={60} onChange={(e) => setInfo({ ...info, category: e.target.value })} placeholder="Örn. 1. Ünite, LGS tekrar" />
+          <datalist id={ids.list}>{categories.map((c) => <option key={c} value={c} />)}</datalist>
+        </label>
+        {categories.length > 0 && (
+          <div className={f.classChips} aria-label="Kategoriler">
+            {categories.map((c) => (
+              <button key={c} type="button" className={f.classChip} aria-pressed={info.category === c} onClick={() => setInfo({ ...info, category: info.category === c ? '' : c })}>{c}</button>
+            ))}
+          </div>
+        )}
+        <div className={f.grid2}>
+          <div className={f.field}>
+            <span>Ders</span>
+            <CustomSelect value={info.subject} onChange={(v) => setInfo({ ...info, subject: v })} options={[{ value: '', label: 'Seçilmedi' }, ...SUBJECT_OPTIONS]} />
+          </div>
+          <div className={f.field}>
+            <span>Kademe</span>
+            <CustomSelect value={info.grade} onChange={(v) => setInfo({ ...info, grade: v })} options={[{ value: '', label: 'Seçilmedi' }, ...GRADE_OPTIONS]} />
+          </div>
+        </div>
+        {error && <p className={f.error} role="alert">{error}</p>}
+        <div className={f.modalActions}>
+          <button type="button" className={f.secondaryButton} onClick={onClose} disabled={busy}>Vazgeç</button>
+          <button type="submit" className={f.primaryButton} disabled={busy}>{busy ? 'Kaydediliyor…' : board ? 'Kaydet' : 'Oluştur ve aç'}</button>
+        </div>
+      </form>
+    </Modal>
   );
 }

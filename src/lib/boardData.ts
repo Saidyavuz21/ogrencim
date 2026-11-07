@@ -82,7 +82,7 @@ export function simplifyPoints(points: number[], minDist = 2.5): number[] {
 // --------------------------------------------------------
 // Tahtalar (öğretmen)
 // --------------------------------------------------------
-export interface BoardRow { id: string; title: string; subject: string | null; grade: string | null; content: BoardContent; created_at: string; updated_at: string }
+export interface BoardRow { id: string; title: string; subject: string | null; grade: string | null; category: string | null; content: BoardContent; created_at: string; updated_at: string }
 export type BoardSummary = Omit<BoardRow, 'content'> & { pageCount: number };
 
 export async function listBoards(): Promise<Result<BoardSummary[]>> {
@@ -90,7 +90,7 @@ export async function listBoards(): Promise<Result<BoardSummary[]>> {
   if (!auth.user) return { ok: false, error: 'Oturum bulunamadı.' };
   const { data, error } = await supabase
     .from('boards')
-    .select('id, title, subject, grade, created_at, updated_at, pages:content->pages')
+    .select('id, title, subject, grade, category, created_at, updated_at, pages:content->pages')
     .eq('teacher_id', auth.user.id)
     .order('updated_at', { ascending: false });
   if (error) return fail(error);
@@ -99,22 +99,22 @@ export async function listBoards(): Promise<Result<BoardSummary[]>> {
 }
 
 export async function getBoard(id: string): Promise<Result<BoardRow>> {
-  const { data, error } = await supabase.from('boards').select('id, title, subject, grade, content, created_at, updated_at').eq('id', id).single();
+  const { data, error } = await supabase.from('boards').select('id, title, subject, grade, category, content, created_at, updated_at').eq('id', id).single();
   if (error || !data) return fail(error);
   const b = data as BoardRow;
   return { ok: true, data: { ...b, content: normalizeContent(b.content) } };
 }
 
-export async function createBoard(title: string, subject: string | null, grade: string | null, content: BoardContent = emptyContent()): Promise<Result<BoardRow>> {
+export async function createBoard(title: string, subject: string | null, grade: string | null, content: BoardContent = emptyContent(), category: string | null = null): Promise<Result<BoardRow>> {
   const t = title.trim().slice(0, 120);
   if (!t) return { ok: false, error: 'Tahtaya bir ad verin.' };
-  const { data, error } = await supabase.from('boards').insert({ title: t, subject, grade, content })
-    .select('id, title, subject, grade, content, created_at, updated_at').single();
+  const { data, error } = await supabase.from('boards').insert({ title: t, subject, grade, content, category: category?.trim().slice(0, 60) || null })
+    .select('id, title, subject, grade, category, content, created_at, updated_at').single();
   if (error || !data) return fail(error);
   return { ok: true, data: { ...(data as BoardRow), content: normalizeContent((data as BoardRow).content) } };
 }
 
-export async function saveBoard(id: string, patch: Partial<Pick<BoardRow, 'title' | 'subject' | 'grade' | 'content'>>): Promise<Result<string>> {
+export async function saveBoard(id: string, patch: Partial<Pick<BoardRow, 'title' | 'subject' | 'grade' | 'category' | 'content'>>): Promise<Result<string>> {
   if (patch.content && byteSize(patch.content) > MAX_BOARD_BYTES) return { ok: false, error: 'Tahta 5 MB sınırını aşıyor. Bazı çizim ya da sayfaları silin.' };
   if (patch.title !== undefined) {
     patch.title = patch.title.trim().slice(0, 120);
@@ -135,7 +135,7 @@ export async function deleteBoard(id: string): Promise<Result> {
 export async function duplicateBoard(id: string): Promise<Result<BoardRow>> {
   const src = await getBoard(id);
   if (!src.ok) return src;
-  return createBoard(`${src.data.title} (kopya)`.slice(0, 120), src.data.subject, src.data.grade, src.data.content);
+  return createBoard(`${src.data.title} (kopya)`.slice(0, 120), src.data.subject, src.data.grade, src.data.content, src.data.category);
 }
 
 /** Hiçbir tahtada kullanılmayan görselleri depodan siler */

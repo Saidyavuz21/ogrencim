@@ -63,6 +63,12 @@
 .previewHead .spacer { flex: 1; }
 .openButton { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border: 1px solid var(--teacher-primary, #25634b); border-radius: 14px; background: var(--teacher-primary, #25634b); color: #fff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
 .openButton:hover { background: var(--teacher-hover, #1d503d); }
+.presentButton { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 20px; border: 1px solid var(--teacher-primary, #25634b); border-radius: 14px; background: #fff; color: var(--teacher-primary, #25634b); font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+.presentButton:hover { background: var(--teacher-selected, #e6f1e9); }
+.presentButton:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
+/* Sunum çubuğu: altta, ortada, küçük */
+.presentBar { position: absolute; bottom: 10px; left: 50%; z-index: 3; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; max-width: calc(100vw - 16px); padding: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 16px; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 28px rgb(0 0 0 / 18%); }
+.presentBar .sep { width: 1px; height: 28px; margin: 0 2px; background: var(--teacher-border, #dedad0); }
 .openButton:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
 .previewBody { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 16px; align-items: start; }
 .previewBody .pageTools { flex-wrap: nowrap; justify-content: space-between; }

@@ -2,14 +2,14 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft, ChevronDown, ChevronUp, Copy, Download, Image as ImageIcon, Maximize, Minimize, Plus, Printer, Trash2,
+  ArrowLeft, ChevronDown, ChevronUp, Copy, Download, Image as ImageIcon, Maximize, Minimize, Play, Plus, Printer, Trash2,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import {
   Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl, boardImageUrls, BoardPage, BoardRow,
   byteSize, copyImageToBoard, exportBoardPng, getBoard, HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, MAX_PAGES, newId, newPage, NoteEl,
-  saveBoard, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
+  saveBoard, StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
@@ -45,6 +45,12 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [saveState, setSaveState] = useState<'saved' | 'dirty' | 'saving' | 'error'>('saved');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [full, setFull] = useState(false);
+  // Sunum: düzenleme yok; kalemle yazılanlar geçicidir (kaydedilmez), sayfa başına ayrı
+  const [presenting, setPresenting] = useState(false);
+  const [annot, setAnnot] = useState<Record<string, StrokeEl[]>>({});
+  const [annotPast, setAnnotPast] = useState<Record<string, StrokeEl[]>[]>([]);
+  const [presentTool, setPresentTool] = useState<Tool>('pen');
+  const [presentColor, setPresentColor] = useState('#d03b3b');
   const [printing, setPrinting] = useState(false);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -150,8 +156,23 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       req?.catch(() => {});
     } else {
       setFull(false);
+      setPresenting(false);
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     }
+  };
+  const startPresent = () => {
+    setPresenting(true);
+    setAnnot({});
+    setAnnotPast([]);
+    setEditingNoteId(null);
+    toggleFull();
+  };
+  const nextPage = () => { if (content) setPageIndex((i) => Math.min(content.pages.length - 1, i + 1)); };
+  const prevPage = () => setPageIndex((i) => Math.max(0, i - 1));
+  const undoAnnot = () => {
+    if (!annotPast.length) return;
+    setAnnot(annotPast[annotPast.length - 1]);
+    setAnnotPast((p) => p.slice(0, -1));
   };
   // ---- Klavye ----
   useEffect(() => {
@@ -159,6 +180,19 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       if (!full) return;
       const typing = (e.target as HTMLElement)?.closest('input, textarea, [contenteditable="true"]');
       if (typing) return;
+      // Sunum: sayfa ok tuşları, Page Up/Down, boşluk (akıllı tahta kumandaları da bunları gönderir)
+      if (presenting) {
+        if (['ArrowRight', 'PageDown', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); nextPage(); return; }
+        if (['ArrowLeft', 'PageUp', 'ArrowUp'].includes(e.key)) { e.preventDefault(); prevPage(); return; }
+        if (e.key === 'Escape') { toggleFull(); return; }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoAnnot(); return; }
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const k = e.key.toLowerCase();
+        if (k === 'p') setPresentTool('pen');
+        if (k === 'h') setPresentTool('highlighter');
+        if (k === 'e') setPresentTool('eraser');
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && page) {
@@ -179,7 +213,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   });
 
   useEffect(() => {
-    const onFs = () => { if (!document.fullscreenElement) setFull(false); };
+    const onFs = () => { if (!document.fullscreenElement) { setFull(false); setPresenting(false); } };
     document.addEventListener('fullscreenchange', onFs);
     return () => document.removeEventListener('fullscreenchange', onFs);
   }, []);
@@ -324,8 +358,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           <h2>{board.title}</h2>
           {saveLabel}
           <span className={styles.spacer} />
+          <button type="button" className={styles.presentButton} onClick={startPresent} title="Derste göster: düzenleme yok, kalemle yazılanlar kaydedilmez">
+            <Play size={20} aria-hidden="true" />Sun
+          </button>
           <button type="button" className={styles.openButton} onClick={toggleFull}>
-            <Maximize size={22} aria-hidden="true" />Tam ekranda aç
+            <Maximize size={22} aria-hidden="true" />Tam ekranda düzenle
           </button>
         </div>
         <div className={styles.previewBody}>
@@ -363,11 +400,49 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           </nav>
           <div className={styles.stage}>
             <BoardCanvas page={page} imageUrls={imageUrls} renderWidget={(w) => <WidgetView el={w} ctx={ctx} />} widgetsPassive ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (önizleme)`} />
-            <p className={styles.saveState}>Çizmek, şekil ve parça eklemek, sayfaları düzenlemek ve sunmak için “Tam ekranda aç”a basın.</p>
+            <p className={styles.hintText}>Derste göstermek için “Sun”; çizmek, şekil ve parça eklemek, sayfaları düzenlemek için “Tam ekranda düzenle”.</p>
           </div>
         </div>
         {deleteConfirm}
         {printArea}
+      </div>
+    );
+  }
+
+  // Sunum: sade ekran, altta küçük çubuk; yazılanlar kaydedilmez
+  if (presenting) {
+    const layer = annot[page.id] || [];
+    return (
+      <div ref={rootRef} className={`${styles.editor} ${styles.editorFull}`}>
+        <div className={styles.stage}>
+          <BoardCanvas
+            page={page}
+            tool={presentTool}
+            color={presentColor}
+            width={presentTool === 'highlighter' ? 6 : 5}
+            layer={layer}
+            onLayerCommit={(strokes) => { setAnnotPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), annot]); setAnnot({ ...annot, [page.id]: strokes }); }}
+            imageUrls={imageUrls}
+            renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
+            ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (sunum)`}
+          />
+        </div>
+        <div className={styles.presentBar} role="toolbar" aria-label="Sunum araçları">
+          {(['pen', 'highlighter', 'eraser'] as Tool[]).map((t) => (
+            <button key={t} type="button" className={styles.tool} aria-pressed={presentTool === t} onClick={() => setPresentTool(t)}>{t === 'pen' ? 'Kalem' : t === 'highlighter' ? 'Vurgu' : 'Silgi'}</button>
+          ))}
+          {['#d03b3b', '#2a78d6', '#1f2a24', '#1e7a4c', '#e0a800'].map((c) => (
+            <button key={c} type="button" className={styles.swatch} style={{ background: c }} aria-pressed={presentColor === c} onClick={() => { setPresentColor(c); if (presentTool === 'eraser') setPresentTool('pen'); }} aria-label={`Renk ${c}`} />
+          ))}
+          <button type="button" className={styles.tool} onClick={undoAnnot} disabled={!annotPast.length}>Geri al</button>
+          <button type="button" className={styles.tool} onClick={() => { if (!layer.length) return; setAnnotPast((p) => [...p, annot]); setAnnot({ ...annot, [page.id]: [] }); }} disabled={!layer.length} title="Bu sayfadaki yazıları sil">Temizle</button>
+          <span className={styles.sep} aria-hidden="true" />
+          <button type="button" className={styles.tool} onClick={prevPage} disabled={pageIndex === 0} aria-label="Önceki sayfa"><ChevronUp size={20} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
+          <span className={styles.saveState}>{pageIndex + 1} / {content.pages.length}</span>
+          <button type="button" className={styles.tool} onClick={nextPage} disabled={pageIndex >= content.pages.length - 1} aria-label="Sonraki sayfa"><ChevronDown size={20} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
+          <span className={styles.sep} aria-hidden="true" />
+          <button type="button" className={styles.tool} onClick={toggleFull} title="Sunumdan çık (Esc)"><Minimize size={20} aria-hidden="true" /> Çık</button>
+        </div>
       </div>
     );
   }

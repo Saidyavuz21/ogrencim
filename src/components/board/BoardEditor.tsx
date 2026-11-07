@@ -478,7 +478,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         ) : (
           <MediaDrawer onInsert={(m) => insertMedia(m)} busy={busy} />
         )}
-        <p className={styles.saveState}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. Parçaları seçmek ve taşımak için “Seç” aracını kullanın; diğer araçlarda parçalar çalışır.</p>
+        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. Parçaları seçmek ve taşımak için “Seç” aracını kullanın; diğer araçlarda parçalar çalışır.</p>
       </aside>
       {deleteConfirm}
       {printArea}
@@ -553,16 +553,32 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
         </>
       )}
       {el.type === 'widget' && el.kind === 'timer' && (
-        <label>Süre (sn) <span className={styles.saveState}>0 = kronometre (ileri sayar)</span>
-          <input type="number" min={0} max={3600} value={el.data.seconds ?? 0} onChange={(e) => onPatch({ data: { ...el.data, seconds: Math.max(0, Math.min(3600, Number(e.target.value) || 0)) } } as Partial<BoardEl>)} />
-        </label>
+        <fieldset className={styles.timeField}>
+          <legend>Geri sayım süresi</legend>
+          <div className={styles.timeInputs}>
+            <label>Dakika
+              <input type="number" min={0} max={60} inputMode="numeric" value={Math.floor((el.data.seconds ?? 0) / 60)}
+                onChange={(e) => { const m = Math.max(0, Math.min(60, Math.floor(Number(e.target.value) || 0))); onPatch({ data: { ...el.data, seconds: Math.min(3600, m * 60 + ((el.data.seconds ?? 0) % 60)) } } as Partial<BoardEl>); }} />
+            </label>
+            <label>Saniye
+              <input type="number" min={0} max={59} inputMode="numeric" value={(el.data.seconds ?? 0) % 60}
+                onChange={(e) => { const sec = Math.max(0, Math.min(59, Math.floor(Number(e.target.value) || 0))); onPatch({ data: { ...el.data, seconds: Math.min(3600, Math.floor((el.data.seconds ?? 0) / 60) * 60 + sec) } } as Partial<BoardEl>); }} />
+            </label>
+          </div>
+          <div className={styles.pageTools}>
+            {[1, 3, 5, 10].map((m) => (
+              <button key={m} type="button" className={styles.tool} aria-pressed={(el.data.seconds ?? 0) === m * 60} onClick={() => onPatch({ data: { ...el.data, seconds: m * 60 } } as Partial<BoardEl>)}>{m} dk</button>
+            ))}
+          </div>
+          <p className={styles.hintText}>Dakika ve saniye 0 ise kronometre olur (ileri sayar). En fazla 60 dakika.</p>
+        </fieldset>
       )}
       <div className={styles.pageTools}>
         <button type="button" className={styles.tool} onClick={() => onOrder('front')}>Öne getir</button>
         <button type="button" className={styles.tool} onClick={() => onOrder('back')}>Arkaya gönder</button>
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }}><Trash2 size={18} aria-hidden="true" /> Sil</button>
       </div>
-      {el.type === 'widget' && <p className={styles.saveState}>Parçayı denemek için “Sun”a basın; düzenlerken parça seçilip taşınır.</p>}
+      {el.type === 'widget' && <p className={styles.hintText}>“Seç” aracıyla parça seçilip taşınır; parçayı denemek için başka bir araç (ör. Kalem) seçin.</p>}
     </section>
   );
 }

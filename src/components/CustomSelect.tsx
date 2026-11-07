@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronDown, Check } from './icons';
 import styles from './CustomSelect.module.css';
 
@@ -39,6 +39,28 @@ export function CustomSelect({
   const listRef = useRef<HTMLUListElement>(null);
   const typeahead = useRef({ text: '', at: 0 });
   const listId = useId();
+  // Liste ekrana sabitlenir: pencere (modal) ya da kaydırılan kutu içinde kesilmez; yer yoksa yukarı açılır
+  const [menuPos, setMenuPos] = useState<React.CSSProperties | null>(null);
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const place = () => {
+      const r = containerRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const vh = window.innerHeight;
+      const below = vh - r.bottom - 12;
+      const above = r.top - 12;
+      const up = below < 200 && above > below;
+      const maxHeight = Math.max(120, Math.min(280, up ? above : below));
+      setMenuPos({
+        position: 'fixed', left: r.left, width: r.width, right: 'auto', maxHeight, zIndex: 250,
+        ...(up ? { top: 'auto', bottom: vh - r.top + 6 } : { top: r.bottom + 6, bottom: 'auto' }),
+      });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => { window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true); };
+  }, [isOpen]);
 
   // Normalize options to CustomSelectOption objects
   const normalizedOptions: CustomSelectOption[] = options.map((opt) =>
@@ -176,7 +198,7 @@ export function CustomSelect({
       </button>
 
       {isOpen && (
-        <ul ref={listRef} id={listId} className={styles.dropdownMenu} role="listbox">
+        <ul ref={listRef} id={listId} className={styles.dropdownMenu} role="listbox" style={menuPos || { visibility: 'hidden' }}>
           {normalizedOptions.length === 0 ? (
             <li className={styles.emptyOption}>Seçenek bulunamadı</li>
           ) : (

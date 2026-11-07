@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building, Layers } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -14,6 +14,7 @@ export type TeacherPageId =
   | 'files'
   | 'class_report'
   | 'school_admin'
+  | 'boards'
   | 'students'
   | 'leaderboard'
   | 'aquarium'
@@ -47,8 +48,9 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'class_tools', slug: 'sinif-araclari', title: 'Sınıf araçları', description: 'Rastgele seçici, grup, kronometre, geri sayım', icon: Shuffle, group: 'Ders ve değerlendirme' },
   { id: 'reading', slug: 'okuma-yarismasi', title: 'Okuma yarışması', description: '1 dakikada okunan kelime, sıralama, gelişim', icon: BookOpen, group: 'Ders ve değerlendirme' },
   { id: 'grade_entry', slug: 'not-girisi', title: 'Not girişi', description: 'Yazılı ve sözlü notlar', icon: TrendingUp, group: 'Ders ve değerlendirme' },
-  { id: 'class_report', slug: 'sinif-karnesi', title: 'Sınıf karnesi', description: 'Not ortalamaları, dağılım, öğrenci gelişimi', icon: BarChart3, group: 'Ders ve değerlendirme' },
+  { id: 'boards', slug: 'tahtalarim', title: 'Tahtalarım', description: 'Etkileşimli tahta: çiz, sun, ödev olarak gönder', icon: Layers, group: 'Ders ve değerlendirme' },
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
+  { id: 'class_report', slug: 'sinif-karnesi', title: 'Sınıf karnesi', description: 'Not ortalamaları, dağılım, öğrenci gelişimi', icon: BarChart3, group: 'Öğrenciler ve sınıflar' },
   { id: 'classes', slug: 'siniflar', title: 'Sınıflarım', description: 'Ders verdiğin sınıfları ekle ve çıkar', icon: School, group: 'Öğrenciler ve sınıflar' },
   { id: 'school_admin', slug: 'okul-yonetimi', title: 'Okul yönetimi', description: 'Öğretmen onayı, bütün sınıflar, kampüsler', icon: Building, group: 'Okul yönetimi', schoolAdminOnly: true },
   { id: 'messages', slug: 'mesajlar', title: 'Mesajlar', description: 'Öğrencilerle birebir ve sınıf grubu', icon: MessageSquare, group: 'İletişim' },

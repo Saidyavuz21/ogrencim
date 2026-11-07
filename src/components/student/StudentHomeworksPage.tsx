@@ -6,6 +6,7 @@ import { MyHomework } from '../../lib/studentData';
 import type { SubmissionRow } from '../../lib/teacherData';
 import { StudentSubmission } from './StudentSubmission';
 import { QuizPlayer } from '../quiz/QuizPlayer';
+import { StudentBoardPlayer } from '../board/StudentBoardPlayer';
 import { QUIZ_MODE_LABEL } from '../../lib/quizData';
 import q from '../quiz/Quiz.module.css';
 import { AttachmentList, formatDate } from '../teacher/TeacherUi';
@@ -64,6 +65,8 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
   onQuizChange?: () => void;
 }) {
   const [playing, setPlaying] = useState<MyHomework | null>(null);
+  const [boardOf, setBoardOf] = useState<MyHomework | null>(null);
+  const [now] = useState(() => Date.now());
   const pending = sortPending(homeworks.filter((h) => !h.check));
   const checked = homeworks.filter((h) => h.check);
   // Seçim yapılmadıysa: bekleyen ödev varsa "Bekleyen", yoksa "Tümü"
@@ -111,7 +114,13 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
                 {h.file_url && <a href={h.file_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>Bağlantıyı aç</a>}
               </div>
               {h.accepts_submissions && <StudentSubmission homework={h} studentId={studentId} onChange={onSubmissionChange} />}
-              {h.quiz_mode && <QuizCardRow homework={h} onOpen={() => setPlaying(h)} />}
+              {h.has_board && (
+                <div className={q.quizCardRow}>
+                  <button type="button" className={styles.primary} onClick={() => setBoardOf(h)}>Tahtayı aç</button>
+                  <span className={q.quizCardInfo}>Etkileşimli tahta · üzerine çizerek çöz{h.quiz_mode ? ` · Mini Test${h.quiz?.total ? ` (${h.quiz.answered}/${h.quiz.total})` : ''}` : ''}</span>
+                </div>
+              )}
+              {h.quiz_mode && !h.has_board && <QuizCardRow homework={h} onOpen={() => setPlaying(h)} />}
               {h.check && Icon ? (
                 <p className={`${styles.statusChoice} ${STATUS_STYLE[h.check.status]} ${styles.statusResult}`}>
                   <Icon size={16} aria-hidden="true" />{STATUS_LABEL[h.check.status]}
@@ -120,7 +129,8 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
                 </p>
               ) : (
                 <p className={styles.homeworkPending}>
-                  {h.quiz_mode === 'exam' && h.quiz?.finished ? 'Teslim ettin; sonuç teslim tarihi geçince açıklanacak.'
+                  {h.has_board && !h.quiz_mode ? 'Tahtadaki çalışmanı öğretmenin inceleyecek.'
+                    : h.quiz_mode === 'exam' && h.quiz?.finished ? 'Teslim ettin; sonuç teslim tarihi geçince açıklanacak.'
                     : h.quiz_mode && !h.quiz?.finished ? 'Quiz bitince sonuç buraya işlenir.'
                     : !h.results_released ? 'Sonuç daha sonra açıklanacak.'
                     : h.submission?.status === 'teslim' ? 'Teslim ettin; öğretmen henüz kontrol etmedi.'
@@ -132,6 +142,15 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
         })}
       </ul>
 
+      {boardOf && (
+        <StudentBoardPlayer
+          homeworkId={boardOf.id}
+          title={boardOf.title}
+          studentId={studentId}
+          open={!boardOf.closed_at && (!boardOf.due_at || new Date(boardOf.due_at).getTime() > now)}
+          onClose={(changed) => { setBoardOf(null); if (changed) onQuizChange?.(); }}
+        />
+      )}
       {playing && (
         <QuizPlayer
           homeworkId={playing.id}

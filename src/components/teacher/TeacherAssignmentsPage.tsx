@@ -6,6 +6,7 @@ import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, for
 import { HomeworkFilePicker } from '../files/HomeworkFilePicker';
 import { QuizComposer, QuizDraft } from '../quiz/QuizComposer';
 import { QUIZ_MODE_LABEL } from '../../lib/quizData';
+import { BoardSummary, listBoards, publishBoardToHomework } from '../../lib/boardData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, formatDate } from './TeacherUi';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -14,10 +15,10 @@ import { branchSubject, subjectHue, subjectShortLabel, subjectsForClass } from '
 import styles from './TeacherDashboard.module.css';
 
 /** Başlık ayrıca istenmez: "Hayat bilgisi ödevi · 6 Kasım", "Matematik quizi · 6 Kasım" */
-const autoTitle = (subject: string, quiz = false) => {
+const autoTitle = (subject: string, kind: 'homework' | 'quiz' | 'board' = 'homework') => {
   const s = subject.trim() || 'Genel';
   const date = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
-  return `${s.charAt(0).toLocaleUpperCase('tr-TR')}${s.slice(1)} ${quiz ? 'quizi' : 'ödevi'} · ${date}`;
+  return `${s.charAt(0).toLocaleUpperCase('tr-TR')}${s.slice(1)} ${kind === 'quiz' ? 'quizi' : kind === 'board' ? 'tahtası' : 'ödevi'} · ${date}`;
 };
 
 const OTHER = '__diger__';
@@ -65,9 +66,19 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
 
   const [description, setDescription] = useState('');
   // Tür: normal ödev ya da quiz (sorular soru bankasından)
-  const [kind, setKind] = useState<'homework' | 'quiz'>('homework');
+  const [kind, setKind] = useState<'homework' | 'quiz' | 'board'>('homework');
   const [quiz, setQuiz] = useState<QuizDraft>({ mode: 'practice', questionIds: [] });
   const isQuiz = kind === 'quiz';
+  const isBoard = kind === 'board';
+  // Tahta: Tahtalarım'dan seçilen
+  const [boards, setBoards] = useState<BoardSummary[] | null>(null);
+  const [boardId, setBoardId] = useState('');
+  useEffect(() => {
+    if (!isBoard || boards) return;
+    let alive = true;
+    listBoards().then((res) => { if (alive) setBoards(res.ok ? res.data : []); });
+    return () => { alive = false; };
+  }, [isBoard, boards]);
   // Ödev birden çok sınıfa aynı anda verilebilir; her sınıf için ayrı ödev kaydı oluşur
   const [targets, setTargets] = useState<string[]>(() => {
     const first = selectedClass && classNames.includes(selectedClass) ? selectedClass : classNames[0];
@@ -167,7 +178,11 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
       setNotice({ kind: 'error', text: 'Sınav modunda teslim tarihi zorunlu: sonuçlar o tarihte açıklanır.' });
       return;
     }
-    if (!isQuiz && !description.trim() && !attachedCount && !link.trim()) {
+    if (isBoard && !boardId) {
+      setNotice({ kind: 'error', text: 'Gönderilecek tahtayı seçin (Tahtalarım sayfasından oluşturabilirsiniz).' });
+      return;
+    }
+    if (!isQuiz && !isBoard && !description.trim() && !attachedCount && !link.trim()) {
       setNotice({ kind: 'error', text: 'Ödevin ne olduğunu yazın veya dosya / bağlantı ekleyin.' });
       return;
     }
@@ -183,7 +198,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
         return;
       }
     }
-    const title = autoTitle(subject, isQuiz);
+    const title = autoTitle(subject, kind);
     setBusy(true);
     // Her sınıf için ayrı kayıt (kontrol, puan ve teslim sınıf bazında ayrı kalır); dosyalar her birine yüklenir
     const sent: string[] = [];
@@ -192,8 +207,9 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
       if (targets.length > 1) setProgress(`${c} sınıfına gönderiliyor (${i + 1}/${targets.length})…`);
       const res = await createHomework({
         title, subject, description, className: c, dueDate, dueTime, points: 100, link, files, picks,
-        resultsReleased: releaseNow, acceptsSubmissions: isQuiz ? false : acceptsSubmissions,
+        resultsReleased: releaseNow, acceptsSubmissions: isQuiz || isBoard ? false : acceptsSubmissions,
         quiz: isQuiz ? quiz : undefined,
+        afterCreate: isBoard ? (id) => publishBoardToHomework(id, boardId) : undefined,
       });
       if (res.ok) sent.push(c);
       else failed.push({ cls: c, error: res.error });
@@ -321,7 +337,8 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     {hw.due_date && <span className={styles.assignmentDue}><Calendar size={16} aria-hidden="true" />{dueLabel(hw.due_date, hw.due_time)}</span>}
                     {!hw.results_released && <span>Sonuç gizli</span>}
                     {hw.accepts_submissions && <span>{submittedCounts[hw.id] || 0} teslim · {homeworkIsOpen(hw) ? 'teslim açık' : 'kapandı'}</span>}
-                    {hw.quiz_mode && <span>Quiz · {QUIZ_MODE_LABEL[hw.quiz_mode]}</span>}
+                    {hw.has_board && <span>Tahta{hw.quiz_mode ? ' · Mini Test' : ''}</span>}
+                    {hw.quiz_mode && !hw.has_board && <span>Quiz · {QUIZ_MODE_LABEL[hw.quiz_mode]}</span>}
                   </div>
                   {hw.description && <p className={styles.assignmentDescription}>{hw.description}</p>}
                   <AttachmentList attachments={hw.attachments} />
@@ -384,6 +401,9 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     <button type="button" className={styles.dueChip} aria-pressed={isQuiz} onClick={() => setKind('quiz')}>
                       Quiz<small>Çoktan seçmeli, otomatik puanlanır</small>
                     </button>
+                    <button type="button" className={styles.dueChip} aria-pressed={isBoard} onClick={() => setKind('board')}>
+                      Tahta<small>Öğrenci üzerine çizerek çözer</small>
+                    </button>
                   </div>
                 </fieldset>
                 <div className={`${styles.field} ${styles.fullRow}`}>
@@ -406,7 +426,18 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                     <QuizComposer value={quiz} onChange={setQuiz} subject={subject} />
                   </div>
                 )}
-                <label className={`${styles.field} ${styles.fullRow}`}>{isQuiz ? <span>Açıklama <span className={styles.optionalHint}>(isteğe bağlı)</span></span> : 'Ödev'}
+                {isBoard && (
+                  <div className={`${styles.field} ${styles.fullRow}`}>
+                    <span>Tahta</span>
+                    {!boards ? <Spinner label="Tahtalar yükleniyor…" /> : boards.length === 0 ? (
+                      <p className={styles.mutedText}>Henüz tahtanız yok. Ders ve değerlendirme → Tahtalarım sayfasından tahta oluşturun.</p>
+                    ) : (
+                      <CustomSelect value={boardId} onChange={setBoardId} placeholder="Tahta seçin" options={boards.map((b) => ({ value: b.id, label: b.title, description: `${b.pageCount} sayfa` }))} />
+                    )}
+                    <p className={styles.optionalHint} style={{ margin: '6px 0 0' }}>Gönderilen tahtanın o anki hâli öğrenciye gider; sonradan tahtada yaptığınız değişiklik bu ödevi etkilemez. Mini Test soruları quiz gibi puanlanır ve Ödev kontrolü’ne işlenir.</p>
+                  </div>
+                )}
+                <label className={`${styles.field} ${styles.fullRow}`}>{isQuiz || isBoard ? <span>Açıklama <span className={styles.optionalHint}>(isteğe bağlı)</span></span> : 'Ödev'}
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -517,9 +548,9 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                 </details>
                 {!(isQuiz && quiz.mode === 'exam') && (
                 <details className={styles.composerDetails}>
-                  <summary><span>{isQuiz ? 'Sonuç ayarı' : 'Teslim ve sonuç ayarları'}</span><small>{isQuiz ? '' : `${acceptsSubmissions ? 'Uygulamadan teslim' : 'Sınıfta kontrol'} · `}{releaseNow ? 'Sonuçlar hemen görünür' : 'Sonuçlar gizli'}</small></summary>
+                  <summary><span>{isQuiz || isBoard ? 'Sonuç ayarı' : 'Teslim ve sonuç ayarları'}</span><small>{isQuiz || isBoard ? '' : `${acceptsSubmissions ? 'Uygulamadan teslim' : 'Sınıfta kontrol'} · `}{releaseNow ? 'Sonuçlar hemen görünür' : 'Sonuçlar gizli'}</small></summary>
                   <div className={styles.composerDetailBody}>
-                    {!isQuiz && (
+                    {!isQuiz && !isBoard && (
                     <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
                       <legend>Teslim şekli</legend>
                       <div className={styles.subjectChips}>
@@ -558,7 +589,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   {progress && <span className={styles.mutedText} aria-live="polite">{progress}</span>}
                   <button type="submit" className={styles.primary} disabled={busy || !targets.length}>
                     <Send size={18} aria-hidden="true" />
-                    {busy ? (attachedCount ? 'Dosyalar ekleniyor…' : 'Gönderiliyor…') : targets.length > 1 ? `${targets.length} sınıfa gönder` : isQuiz ? 'Quizi gönder' : 'Ödevi gönder'}
+                    {busy ? (attachedCount ? 'Dosyalar ekleniyor…' : 'Gönderiliyor…') : targets.length > 1 ? `${targets.length} sınıfa gönder` : isQuiz ? 'Quizi gönder' : isBoard ? 'Tahtayı gönder' : 'Ödevi gönder'}
                   </button>
                 </div>
               </form>

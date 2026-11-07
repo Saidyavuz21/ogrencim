@@ -12,6 +12,7 @@ import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { settleQuiz } from '../../lib/quizData';
 import { QuizReport } from '../quiz/QuizReport';
+import { BoardDrawingsReview } from '../board/StudentBoardPlayer';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherCheckPageProps {
@@ -36,6 +37,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   const [homeworkId, setHomeworkId] = useState(initialHomeworkId || '');
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [loadedFor, setLoadedFor] = useState('');
+  const [reviewBoard, setReviewBoard] = useState(false);
   // Veritabanında kontrolü kayıtlı öğrenciler (işareti kaldırılınca silinmesi için)
   const [savedIds, setSavedIds] = useState<string[]>([]);
   // Not kutusu açılan öğrenciler (not yoksa kutu gizli durur)
@@ -255,6 +257,16 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   return (
     <div className={styles.pageBody}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
+      {activeHw?.has_board && (
+        <section className={styles.panel} aria-label="Tahta">
+          <h2 className={styles.panelTitle}>Etkileşimli tahta</h2>
+          <p className={styles.mutedText}>Öğrenciler tahtanın kendi kopyası üzerine çizer; çizimler 30 sn’de bir kaydedilir.</p>
+          <button type="button" className={styles.secondary} onClick={() => setReviewBoard(true)}>Öğrenci çizimlerini incele</button>
+        </section>
+      )}
+      {reviewBoard && activeHw && (
+        <BoardDrawingsReview homeworkId={activeHw.id} title={activeHw.title} students={students} onClose={() => setReviewBoard(false)} />
+      )}
       {activeHw?.quiz_mode && loadedFor === activeHw.id && (
         <QuizReport key={activeHw.id} homeworkId={activeHw.id} title={activeHw.title} mode={activeHw.quiz_mode} dueAt={activeHw.due_at} students={students} />
       )}

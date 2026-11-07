@@ -160,6 +160,8 @@ export interface HomeworkRow {
   due_at: string | null;
   /** Quiz ise 'practice' (alıştırma) ya da 'exam' (sınav); normal ödevde null */
   quiz_mode: 'practice' | 'exam' | null;
+  /** Ödeve etkileşimli tahta bağlı */
+  has_board: boolean;
 }
 
 /** Teslim alınıyor mu? (sunucudaki homework_is_open ile aynı kural; asıl kilit sunucuda) */
@@ -167,7 +169,7 @@ export function homeworkIsOpen(hw: { accepts_submissions: boolean; closed_at: st
   return hw.accepts_submissions && !hw.closed_at && (!hw.due_at || new Date(hw.due_at).getTime() > now);
 }
 
-const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at, quiz_mode';
+const HOMEWORK_COLUMNS = 'id, title, subject, description, class_name, due_date, due_time, points, file_url, attachments, teacher_id, teacher_name, created_at, results_released, accepts_submissions, closed_at, due_at, quiz_mode, has_board';
 
 export async function listMyHomeworks(className?: string): Promise<Result<HomeworkRow[]>> {
   const { data: auth } = await supabase.auth.getUser();
@@ -320,6 +322,8 @@ export async function createHomework(input: {
   acceptsSubmissions?: boolean;
   /** Quiz: mod ve bankadan seçilen sorular (sırasıyla) */
   quiz?: { mode: 'practice' | 'exam'; questionIds: string[] };
+  /** Ödev kaydından sonra (ör. tahtayı bağlamak); başarısız olursa ödev geri silinir */
+  afterCreate?: (homeworkId: string) => Promise<Result<unknown>>;
 }): Promise<Result> {
   const title = input.title.trim();
   if (!title) return { ok: false, error: 'Ödev başlığı zorunludur.' };
@@ -368,6 +372,13 @@ export async function createHomework(input: {
       // Dosyalar yüklenemediyse yarım ödev bırakma
       await supabase.from('homeworks').delete().eq('id', homeworkId);
       return up;
+    }
+  }
+  if (input.afterCreate) {
+    const after = await input.afterCreate(homeworkId);
+    if (!after.ok) {
+      await supabase.from('homeworks').delete().eq('id', homeworkId);
+      return { ok: false, error: after.error };
     }
   }
   return { ok: true, data: undefined };

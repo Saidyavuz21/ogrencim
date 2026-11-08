@@ -30,7 +30,7 @@ export interface ElementLib {
 }
 
 export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string; lib?: ElementLib }
-export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string; lib?: ElementLib }
+export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string; lib?: ElementLib; /** Dikdörtgen köşe yuvarlaklığı (yoksa 6) */ rx?: number }
 export interface NoteEl {
   id: string;
   type: 'note';

@@ -373,7 +373,7 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
     }
     case 'rect': {
       const b = bbox(el);
-      return <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={6} fill={el.fill || 'none'} stroke={el.color} strokeWidth={el.width} />;
+      return <rect x={b.x} y={b.y} width={b.w} height={b.h} rx={Math.min(el.rx ?? 6, b.w / 2, b.h / 2)} fill={el.fill || 'none'} stroke={el.color} strokeWidth={el.width} />;
     }
     case 'ellipse': {
       const b = bbox(el);

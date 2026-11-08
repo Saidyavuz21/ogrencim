@@ -22,13 +22,13 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
-| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 12 / 12 ✅ |
+| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **78 / 119** |
+| | **Toplam** | **79 / 120** |
 
 ---
 
@@ -154,6 +154,7 @@ Ortak kararlar:
 - [x] **Grup ve çoklu seçimi köşeden ölçekleme** (ayarlı parçalarda ölçek korunur) · 8 Kasım 2026 · `acb8a86`
 - [x] **Okul içi paylaşım**: öğretmen kütüphanesindeki parçayı okulundaki öğretmenlerle paylaşır · 8 Kasım 2026 · `b1df4cc`
 - [x] **Metinde kelime bazında biçim (kalın/italik/altı çizili/renk/vurgu) ve listeler** · 8 Kasım 2026 · `575eca5`
+- [x] **Metin kutusu (zemin/kenarlık/köşe), Okul yazı tipi (Andika), satır ve harf aralığı** · 8 Kasım 2026 · `f60c00c`
 
 ## 8. Canlı ders
 

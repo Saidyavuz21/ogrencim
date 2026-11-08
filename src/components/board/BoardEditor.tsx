@@ -149,8 +149,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
   useEffect(() => {
     preloadBoardFonts().catch(() => {});
-    loadUserLibrary();
-    loadSchoolLibrary();
+    void Promise.resolve().then(() => {
+      loadUserLibrary();
+      loadSchoolLibrary();
+    });
   }, []);
 
   useEffect(() => {
@@ -698,6 +700,36 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       return;
     }
     setNotice('Şekil kütüphanenizden silindi.');
+    loadUserLibrary();
+  };
+
+  const handleToggleSchoolShare = async (item: LibraryItem) => {
+    const rowId = item.rowId || item.id.replace(/^user:/, '');
+    const nextVisibility = item.visibility === 'school' ? 'private' : 'school';
+    const res = await updateLibraryItem(rowId, { visibility: nextVisibility });
+    if (!res.ok) {
+      setNotice(res.error);
+      return;
+    }
+    setNotice(nextVisibility === 'school' ? 'Okulunuzla paylaşıldı.' : 'Paylaşım kaldırıldı.');
+    loadUserLibrary();
+    loadSchoolLibrary();
+  };
+
+  const handleCopySchoolItem = async (item: LibraryItem) => {
+    setSaveBusy(true);
+    const res = await saveLibraryItem({
+      name: `${item.name} (kopya)`.slice(0, 80),
+      category: item.category,
+      elements: item.build(),
+      visibility: 'private',
+    });
+    setSaveBusy(false);
+    if (!res.ok) {
+      setNotice(`Kopyalanamadı: ${res.error}`);
+      return;
+    }
+    setNotice('Kütüphanenize kopyalandı.');
     loadUserLibrary();
   };
 
@@ -1734,7 +1766,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onReloadUserItems={loadUserLibrary}
             onEditItem={(it, f) => setEditModal({ item: it, initialField: f })}
             onDeleteItem={handleDeleteShape}
-            schoolSharingEnabled={false}
+            onToggleSchoolShare={handleToggleSchoolShare}
+            onCopySchoolItem={handleCopySchoolItem}
+            schoolSharingEnabled={true}
           />
         )}
         <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
@@ -1763,7 +1797,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onSave={handleSaveShape}
           onClose={() => setSaveModal(null)}
           busy={saveBusy}
-          schoolSharingEnabled={false}
+          schoolSharingEnabled={true}
         />
       )}
       {editModal && (
@@ -1773,7 +1807,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onSave={handleUpdateShape}
           onClose={() => setEditModal(null)}
           busy={saveBusy}
-          schoolSharingEnabled={false}
+          schoolSharingEnabled={true}
         />
       )}
     </div>

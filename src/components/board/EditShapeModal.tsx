@@ -49,7 +49,11 @@ export function EditShapeModal({
       const rowId = item.rowId || item.id.replace(/^user:/, '');
       await onSave(rowId, { name: trimmed, category, visibility });
     } catch (err) {
-      setError((err as Error).message || 'Kaydedilirken bir hata oluştu.');
+      const msg = (err as Error).message || 'Kaydedilirken bir hata oluştu.';
+      setError(msg);
+      if (msg.includes('Okulunuz tanımlı olmadığı')) {
+        setVisibility('private');
+      }
     }
   };
 

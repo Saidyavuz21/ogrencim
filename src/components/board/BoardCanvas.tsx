@@ -41,6 +41,27 @@ export function bbox(el: BoardEl): Box {
   return { x: el.x, y: el.y, w: el.w, h: el.h };
 }
 
+export function combinedBbox(boxes: Box[]): Box {
+  if (!boxes.length) return { x: 0, y: 0, w: 0, h: 0 };
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const b of boxes) {
+    minX = Math.min(minX, b.x);
+    minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.w);
+    maxY = Math.max(maxY, b.y + b.h);
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+export function boxContains(outer: Box, inner: Box): boolean {
+  return (
+    inner.x >= outer.x &&
+    inner.y >= outer.y &&
+    inner.x + inner.w <= outer.x + outer.w &&
+    inner.y + inner.h <= outer.y + outer.h
+  );
+}
+
 const distToSegment = (px: number, py: number, x1: number, y1: number, x2: number, y2: number) => {
   const dx = x2 - x1, dy = y2 - y1;
   const len = dx * dx + dy * dy;
@@ -73,7 +94,7 @@ export function hitTest(el: BoardEl, x: number, y: number, slack = 10): boolean 
   return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 }
 
-function translate(el: BoardEl, dx: number, dy: number): BoardEl {
+export function translate(el: BoardEl, dx: number, dy: number): BoardEl {
   if (el.type === 'stroke') return { ...el, points: el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx))) };
   if (isShape(el)) {
     return { ...el, x1: el.x1 + dx, y1: el.y1 + dy, x2: el.x2 + dx, y2: el.y2 + dy };
@@ -384,8 +405,9 @@ type Draft =
   | { kind: 'stroke'; el: StrokeEl }
   | { kind: 'shape'; el: ShapeEl }
   | { kind: 'erase'; removed: Set<string> }
-  | { kind: 'move'; id: string; sx: number; sy: number; orig: BoardEl }
-  | { kind: 'resize'; id: string; sx: number; sy: number; orig: BoardEl };
+  | { kind: 'move'; ids: string[]; sx: number; sy: number; origs: BoardEl[]; clickHitId?: string; dragged?: boolean }
+  | { kind: 'resize'; id: string; sx: number; sy: number; orig: BoardEl }
+  | { kind: 'marquee'; sx: number; sy: number; x: number; y: number; additive: boolean; base: string[] };
 
 export interface BoardCanvasProps {
   page: BoardPage;
@@ -399,8 +421,11 @@ export interface BoardCanvasProps {
   /** Öğrenci katmanı: verilirse kalem/silgi yalnızca bu katmana çizer */
   layer?: StrokeEl[];
   onLayerCommit?: (strokes: StrokeEl[]) => void;
-  selectedId?: string | null;
-  onSelect?: (id: string | null) => void;
+  selectedIds?: string[];
+  onSelect?: (ids: string[]) => void;
+  onDuplicate?: (ids: string[]) => void;
+  onOrder?: (dir: 'front' | 'back', ids: string[]) => void;
+  onDeleteSelected?: (ids: string[]) => void;
   onToolChange?: (tool: Tool) => void;
   editingNoteId?: string | null;
   onEditNote?: (id: string | null) => void;
@@ -636,6 +661,81 @@ function FormatBar({
   );
 }
 
+function MultiSelectBar({
+  elements,
+  onDuplicate,
+  onOrder,
+  onDelete,
+}: {
+  elements: BoardEl[];
+  onDuplicate?: () => void;
+  onOrder?: (dir: 'front' | 'back') => void;
+  onDelete?: () => void;
+}) {
+  const cb = combinedBbox(elements.map(bbox));
+  const topPct = cb.y < 70
+    ? ((cb.y + cb.h + 12) / BOARD_H) * 100
+    : (cb.y / BOARD_H) * 100;
+  const transform = cb.y < 70 ? 'none' : 'translateY(calc(-100% - 12px))';
+  const leftPct = Math.max(1, Math.min(65, (cb.x / BOARD_W) * 100));
+
+  return (
+    <div
+      className={styles.formatBar}
+      role="toolbar"
+      aria-label="Seçim işlemleri"
+      style={{
+        top: `${topPct}%`,
+        left: `${leftPct}%`,
+        transform,
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <span className={styles.multiSelectBadge}>
+        {elements.length} öğe
+      </span>
+      <span className={styles.formatDivider} aria-hidden="true" />
+      <button
+        type="button"
+        className={styles.formatBtn}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onDuplicate}
+        title="Çoğalt (Ctrl+D)"
+      >
+        Çoğalt
+      </button>
+      <button
+        type="button"
+        className={styles.formatBtn}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => onOrder?.('front')}
+        title="En öne getir"
+      >
+        Öne
+      </button>
+      <button
+        type="button"
+        className={styles.formatBtn}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => onOrder?.('back')}
+        title="En arkaya gönder"
+      >
+        Arkaya
+      </button>
+      <span className={styles.formatDivider} aria-hidden="true" />
+      <button
+        type="button"
+        className={`${styles.formatBtn} ${styles.formatDeleteBtn}`}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onDelete}
+        title="Sil (Delete)"
+      >
+        Sil
+      </button>
+    </div>
+  );
+}
+
 export function BoardCanvas(props: BoardCanvasProps) {
   const {
     page,
@@ -647,8 +747,11 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onCommit,
     layer,
     onLayerCommit,
-    selectedId,
+    selectedIds = [],
     onSelect,
+    onDuplicate,
+    onOrder,
+    onDeleteSelected,
     onToolChange,
     editingNoteId,
     onEditNote,
@@ -668,7 +771,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const patternId = `bg-${uid}`;
   const localSvg = useRef<SVGSVGElement | null>(null);
   const draft = useRef<Draft | null>(null);
-  const [preview, setPreview] = useState<{ el?: BoardEl; erased?: Set<string> } | null>(null);
+  const [preview, setPreview] = useState<{ el?: BoardEl; els?: BoardEl[]; erased?: Set<string>; marquee?: Box } | null>(null);
   const [editingHeight, setEditingHeight] = useState<{ id: string; h: number } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const formatBarRef = useRef<HTMLDivElement | null>(null);
@@ -744,7 +847,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     } else if (t === 'note') {
       const note: NoteEl = { id: newId(), type: 'note', x: Math.round(Math.min(x, BOARD_W - 420)), y: Math.round(Math.min(y, BOARD_H - 240)), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 32 };
       onCommit?.([...elements, note]);
-      onSelect?.(note.id);
+      onSelect?.([note.id]);
       onEditNote?.(note.id);
       onToolChange?.('select');
       return;
@@ -764,24 +867,40 @@ export function BoardCanvas(props: BoardCanvasProps) {
         fontSize: 42,
       };
       onCommit?.([...elements, textEl]);
-      onSelect?.(textEl.id);
+      onSelect?.([textEl.id]);
       onEditNote?.(textEl.id);
       onToolChange?.('select');
       return;
     } else {
-      // Seçim: önce seçili öğenin boyut tutamağı, sonra en üstteki öğe
-      const sel = selectedId ? elements.find((el) => el.id === selectedId) : undefined;
-      if (sel && sel.type !== 'stroke') {
-        const b = bbox(sel);
-        if (Math.hypot(x - (b.x + b.w), y - (b.y + b.h)) < 30) {
-          draft.current = { kind: 'resize', id: sel.id, sx: x, sy: y, orig: sel };
-          (e.target as Element).setPointerCapture?.(e.pointerId);
-          return;
+      // Seçim
+      if (selectedIds.length === 1) {
+        const sel = elements.find((el) => el.id === selectedIds[0]);
+        if (sel && sel.type !== 'stroke') {
+          const b = bbox(sel);
+          if (Math.hypot(x - (b.x + b.w), y - (b.y + b.h)) < 30) {
+            draft.current = { kind: 'resize', id: sel.id, sx: x, sy: y, orig: sel };
+            localSvg.current?.setPointerCapture(e.pointerId);
+            return;
+          }
         }
       }
       const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
-      onSelect?.(hit ? hit.id : null);
-      if (hit) draft.current = { kind: 'move', id: hit.id, sx: x, sy: y, orig: hit };
+      if (hit) {
+        if (e.shiftKey) {
+          const next = selectedIds.includes(hit.id)
+            ? selectedIds.filter((id) => id !== hit.id)
+            : [...selectedIds, hit.id];
+          onSelect?.(next);
+        } else if (selectedIds.includes(hit.id)) {
+          const origs = elements.filter((el) => selectedIds.includes(el.id));
+          draft.current = { kind: 'move', ids: selectedIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
+        } else {
+          onSelect?.([hit.id]);
+          draft.current = { kind: 'move', ids: [hit.id], sx: x, sy: y, origs: [hit], clickHitId: hit.id, dragged: false };
+        }
+      } else {
+        draft.current = { kind: 'marquee', sx: x, sy: y, x, y, additive: e.shiftKey, base: e.shiftKey ? selectedIds : [] };
+      }
     }
     localSvg.current?.setPointerCapture(e.pointerId);
   };
@@ -813,9 +932,22 @@ export function BoardCanvas(props: BoardCanvasProps) {
       d.el = { ...d.el, x2, y2 };
       setPreview({ el: d.el });
     } else if (d.kind === 'move') {
-      setPreview({ el: translate(d.orig, x - d.sx, y - d.sy) });
+      const dx = x - d.sx;
+      const dy = y - d.sy;
+      if (Math.hypot(dx, dy) >= 3) d.dragged = true;
+      setPreview({ els: d.origs.map((orig) => translate(orig, dx, dy)) });
     } else if (d.kind === 'resize') {
       setPreview({ el: resize(d.orig, x - d.sx, y - d.sy) });
+    } else if (d.kind === 'marquee') {
+      d.x = x;
+      d.y = y;
+      const mbox = {
+        x: Math.min(d.sx, x),
+        y: Math.min(d.sy, y),
+        w: Math.abs(x - d.sx),
+        h: Math.abs(y - d.sy),
+      };
+      setPreview({ marquee: mbox });
     }
   };
 
@@ -837,23 +969,54 @@ export function BoardCanvas(props: BoardCanvasProps) {
       const el = { ...d.el, x1: Math.round(d.el.x1), y1: Math.round(d.el.y1), x2: Math.round(d.el.x2), y2: Math.round(d.el.y2) };
       if (Math.hypot(el.x2 - el.x1, el.y2 - el.y1) < 6) return;
       onCommit?.([...elements, el]);
-      onSelect?.(el.id);
+      onSelect?.([el.id]);
       onToolChange?.('select');
-    } else if ((d.kind === 'move' || d.kind === 'resize') && p?.el) {
+    } else if (d.kind === 'move') {
+      if (d.dragged && p?.els && p.els.length) {
+        const idMap = new Map(p.els.map((el) => [el.id, el]));
+        onCommit?.(elements.map((el) => idMap.get(el.id) || el));
+      } else if (!d.dragged && d.clickHitId && d.ids.length > 1) {
+        onSelect?.([d.clickHitId]);
+      }
+    } else if (d.kind === 'resize' && p?.el) {
       const moved = p.el;
       const b0 = bbox(d.orig), b1 = bbox(moved);
       if (b0.x === b1.x && b0.y === b1.y && b0.w === b1.w && b0.h === b1.h) return;
       onCommit?.(elements.map((el) => (el.id === d.id ? moved : el)));
+    } else if (d.kind === 'marquee') {
+      const mbox = {
+        x: Math.min(d.sx, d.x),
+        y: Math.min(d.sy, d.y),
+        w: Math.abs(d.x - d.sx),
+        h: Math.abs(d.y - d.sy),
+      };
+      if (mbox.w < 4 && mbox.h < 4) {
+        if (!d.additive) onSelect?.([]);
+      } else {
+        const insideIds = elements.filter((el) => boxContains(mbox, bbox(el))).map((el) => el.id);
+        const finalIds = d.additive ? Array.from(new Set([...d.base, ...insideIds])) : insideIds;
+        onSelect?.(finalIds);
+      }
     }
   };
 
-  const shown = elements.map((el) => (preview?.el && preview.el.id === el.id ? preview.el : el)).filter((el) => !(!drawingOnLayer && preview?.erased?.has(el.id)));
+  const shown = elements
+    .map((el) => {
+      if (preview?.els) {
+        const found = preview.els.find((p) => p.id === el.id);
+        if (found) return found;
+      }
+      if (preview?.el && preview.el.id === el.id) return preview.el;
+      return el;
+    })
+    .filter((el) => !(!drawingOnLayer && preview?.erased?.has(el.id)));
   const draftNew = preview?.el && !elements.some((el) => el.id === preview.el!.id) && !layerStrokes.some((s) => s.id === preview.el!.id) ? preview.el : null;
   const shownLayer = layerStrokes.filter((s) => !(drawingOnLayer && preview?.erased?.has(s.id)));
-  const selected = selectedId ? shown.find((el) => el.id === selectedId) : undefined;
+  const selectedElements = shown.filter((el) => selectedIds.includes(el.id));
+  const selected = selectedElements.length === 1 ? selectedElements[0] : undefined;
   const editingNote = editingNoteId ? (elements.find((el) => el.id === editingNoteId) as NoteEl | undefined) : undefined;
   const activeNote = (editable && !widgetsPassive)
-    ? (shown.find((el) => (el.id === editingNoteId || el.id === selectedId) && el.type === 'note') as NoteEl | undefined)
+    ? (shown.find((el) => (el.id === editingNoteId || (selectedIds.length === 1 && el.id === selectedIds[0])) && el.type === 'note') as NoteEl | undefined)
     : undefined;
   const widgets = renderWidget ? shown.filter((el): el is WidgetEl => el.type === 'widget') : [];
   const cursor = !interactive ? 'default' : drawingOnLayer || DRAW_TOOLS.includes(tool) ? 'crosshair' : tool === 'select' ? 'default' : 'crosshair';
@@ -885,7 +1048,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
           if (!editable || tool !== 'select') return;
           const { x, y } = toPoint(e.clientX, e.clientY);
           const hit = [...elements].reverse().find((el) => el.type === 'note' && hitTest(el, x, y));
-          if (hit) { onSelect?.(hit.id); onEditNote?.(hit.id); }
+          if (hit) { onSelect?.([hit.id]); onEditNote?.(hit.id); }
         }}
       >
         <defs><BackgroundDefs id={patternId} bg={page.background} /></defs>
@@ -895,6 +1058,19 @@ export function BoardCanvas(props: BoardCanvasProps) {
         {shown.map((el) => <ElementView key={el.id} el={el} imageUrls={imageUrls} editingNote={el.id === editingNoteId} />)}
         {shownLayer.map((el) => <ElementView key={el.id} el={el} imageUrls={imageUrls} />)}
         {draftNew && <ElementView el={draftNew} imageUrls={imageUrls} />}
+        {preview?.marquee && (
+          <rect
+            x={preview.marquee.x}
+            y={preview.marquee.y}
+            width={preview.marquee.w}
+            height={preview.marquee.h}
+            fill="rgba(42, 120, 214, 0.08)"
+            stroke="#2a78d6"
+            strokeWidth={1.5}
+            strokeDasharray="6 4"
+            pointerEvents="none"
+          />
+        )}
         {editable && selected && (() => {
           const b = bbox(selected);
           return (
@@ -904,7 +1080,49 @@ export function BoardCanvas(props: BoardCanvasProps) {
             </g>
           );
         })()}
+        {editable && selectedElements.length > 1 && (() => {
+          const cb = combinedBbox(selectedElements.map(bbox));
+          return (
+            <g pointerEvents="none">
+              {selectedElements.map((el) => {
+                const b = bbox(el);
+                return (
+                  <rect
+                    key={`sel-${el.id}`}
+                    x={b.x - 4}
+                    y={b.y - 4}
+                    width={b.w + 8}
+                    height={b.h + 8}
+                    fill="none"
+                    stroke="rgba(42, 120, 214, 0.45)"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                  />
+                );
+              })}
+              <rect
+                x={cb.x - 8}
+                y={cb.y - 8}
+                width={cb.w + 16}
+                height={cb.h + 16}
+                fill="none"
+                stroke="#2a78d6"
+                strokeWidth={2}
+                strokeDasharray="8 6"
+              />
+            </g>
+          );
+        })()}
       </svg>
+
+      {editable && !widgetsPassive && selectedElements.length >= 2 && (
+        <MultiSelectBar
+          elements={selectedElements}
+          onDuplicate={() => onDuplicate?.(selectedIds)}
+          onOrder={(dir) => onOrder?.(dir, selectedIds)}
+          onDelete={() => onDeleteSelected?.(selectedIds)}
+        />
+      )}
 
       {activeNote && (
         <FormatBar

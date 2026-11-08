@@ -944,3 +944,22 @@
 .formatColorSwatch:hover {
   transform: scale(1.15);
 }
+
+.multiSelectBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #25634b;
+  white-space: nowrap;
+}
+
+.formatDeleteBtn {
+  color: #c92a2a;
+}
+.formatDeleteBtn:hover {
+  background: #ffe3e3;
+  color: #a61e1e;
+}

@@ -16,9 +16,12 @@ import {
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
 import { fileSlug } from '../../lib/reportData';
-import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, wrapTextLines } from './BoardCanvas';
+import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, translate, wrapTextLines } from './BoardCanvas';
 import { WidgetContext, WidgetView } from './Widgets';
 import styles from './Board.module.css';
+
+let boardClipboard: BoardEl[] | null = null;
+let boardClipboardPageId: string | null = null;
 
 const COLORS = ['#1f2a24', '#d03b3b', '#2a78d6', '#1e7a4c', '#eb6834', '#7a3fd0', '#e0a800', '#ffffff'];
 const WIDTHS = [3, 6, 12];
@@ -41,7 +44,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState(COLORS[0]);
   const [width, setWidth] = useState(WIDTHS[1]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [past, setPast] = useState<BoardContent[]>([]);
   const [future, setFuture] = useState<BoardContent[]>([]);
@@ -176,7 +179,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setFuture((f) => [content, ...f].slice(0, HISTORY_LIMIT));
     setContent(past[past.length - 1]);
     setPast((p) => p.slice(0, -1));
-    setSelectedId(null);
+    setSelectedIds([]);
     setSaveState('dirty');
   };
   const redo = () => {
@@ -184,8 +187,64 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setPast((p) => [...p, content].slice(-HISTORY_LIMIT));
     setContent(future[0]);
     setFuture((f) => f.slice(1));
-    setSelectedId(null);
+    setSelectedIds([]);
     setSaveState('dirty');
+  };
+
+  const deleteSelected = (idsToDelete?: string[]) => {
+    const targetIds = idsToDelete || selectedIds;
+    if (!page || !targetIds.length) return;
+    const idSet = new Set(targetIds);
+    commitElements(page.elements.filter((el) => !idSet.has(el.id)));
+    setSelectedIds([]);
+  };
+
+  const reorderElements = (dir: 'front' | 'back', targetIds?: string[]) => {
+    const ids = targetIds || selectedIds;
+    if (!page || !ids.length) return;
+    const idSet = new Set(ids);
+    const selectedList = page.elements.filter((el) => idSet.has(el.id));
+    const unselectedList = page.elements.filter((el) => !idSet.has(el.id));
+    const next = dir === 'front' ? [...unselectedList, ...selectedList] : [...selectedList, ...unselectedList];
+    commitElements(next);
+  };
+
+  const duplicateElements = (targetIds?: string[]) => {
+    const ids = targetIds || selectedIds;
+    if (!page || !ids.length) return;
+    const idSet = new Set(ids);
+    const toClone = page.elements.filter((el) => idSet.has(el.id));
+    if (!toClone.length) return;
+    const clones: BoardEl[] = toClone.map((el) => {
+      const cloned = translate(el, 24, 24);
+      return { ...cloned, id: newId() };
+    });
+    commitElements([...page.elements, ...clones]);
+    setSelectedIds(clones.map((c) => c.id));
+  };
+
+  const copySelected = () => {
+    if (!page || !selectedIds.length) return;
+    const idSet = new Set(selectedIds);
+    const toCopy = page.elements.filter((el) => idSet.has(el.id));
+    if (!toCopy.length) return;
+    boardClipboard = toCopy;
+    boardClipboardPageId = page.id;
+  };
+
+  const pasteClipboard = () => {
+    if (!page || !boardClipboard || !boardClipboard.length) return;
+    const isSamePage = boardClipboardPageId === page.id;
+    const offset = isSamePage ? 24 : 0;
+    const pasted: BoardEl[] = boardClipboard.map((el) => {
+      const moved = offset > 0 ? translate(el, offset, offset) : { ...el };
+      return { ...moved, id: newId() };
+    });
+    if (isSamePage) {
+      boardClipboard = pasted;
+    }
+    commitElements([...page.elements, ...pasted]);
+    setSelectedIds(pasted.map((p) => p.id));
   };
 
   // ---- Otomatik kayıt (değişiklikten 1,5 sn sonra) ----
@@ -210,7 +269,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const toggleFull = () => {
     if (!full) {
       setFull(true);
-      setSelectedId(null);
+      setSelectedIds([]);
       const req = rootRef.current?.requestFullscreen?.();
       req?.catch(() => {});
     } else {
@@ -291,23 +350,53 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && page) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && page) {
         e.preventDefault();
-        commitElements(page.elements.filter((el) => el.id !== selectedId));
-        setSelectedId(null);
+        setSelectedIds(page.elements.map((el) => el.id));
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selectedIds.length && page) {
+        e.preventDefault();
+        copySelected();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && page) {
+        e.preventDefault();
+        pasteClipboard();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && page) {
+        e.preventDefault();
+        duplicateElements();
+        return;
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length && page) {
+        e.preventDefault();
+        deleteSelected();
         return;
       }
       if (e.key === 'Escape') {
+        if (editingNoteId) {
+          setEditingNoteId(null);
+          return;
+        }
         if (activePopover) {
           setActivePopover(null);
           return;
         }
-        setSelectedId(null);
+        if (panelOpen) {
+          setPanelOpen(false);
+          return;
+        }
+        if (selectedIds.length) {
+          setSelectedIds([]);
+          return;
+        }
         if (full) toggleFull();
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && selectedId && page) {
-        const sel = page.elements.find((el) => el.id === selectedId);
+      if ((e.ctrlKey || e.metaKey) && selectedIds.length === 1 && page) {
+        const sel = page.elements.find((el) => el.id === selectedIds[0]);
         if (sel && sel.type === 'note') {
           const k = e.key.toLowerCase();
           if (k === 'b') {
@@ -373,7 +462,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!content || !page || content.pages.length <= 1) return;
     apply({ ...content, pages: content.pages.filter((p) => p.id !== page.id) });
     setPageIndex(Math.max(0, pageIndex - 1));
-    setSelectedId(null);
+    setSelectedIds([]);
   };
   /** Sayfayı başka bir sıraya taşır (sürükle-bırak) */
   const movePageTo = (from: number, to: number) => {
@@ -402,7 +491,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     const el: ImageEl = { id: newId(), type: 'image', bucket, path: img.path, x: Math.round(Math.max(0, Math.min(BOARD_W - w, cx - w / 2))), y: Math.round(Math.max(0, Math.min(BOARD_H - h, cy - h / 2))), w, h };
     commitElements([...page.elements, el]);
     setTool('select');
-    setSelectedId(el.id);
+    setSelectedIds([el.id]);
   };
   const upload = async (file: File | undefined) => {
     if (fileInput.current) fileInput.current.value = '';
@@ -426,7 +515,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : {} };
     commitElements([...page.elements, el]);
     setTool('select');
-    setSelectedId(el.id);
+    setSelectedIds([el.id]);
   };
 
   // ---- Dışa aktarma ----
@@ -444,7 +533,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   if (error) return <p className={styles.saveWarn} role="alert">Tahta açılamadı: {error}</p>;
   if (!content || !board || !page) return <Spinner center label="Tahta yükleniyor…" />;
 
-  const selected = selectedId ? page.elements.find((e) => e.id === selectedId) : undefined;
+  const selected = selectedIds.length === 1 ? page.elements.find((e) => e.id === selectedIds[0]) : undefined;
   const size = byteSize(content);
   const minitests = Array.from(allWidgets.values()).filter((w) => w.kind === 'minitest');
 
@@ -1055,11 +1144,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               />
               <button
                 type="button"
-                className={`${styles.toolIconBtn} ${panelOpen && !selectedId ? styles.toolActive : ''}`}
+                className={`${styles.toolIconBtn} ${panelOpen && !selectedIds.length ? styles.toolActive : ''}`}
                 onClick={() => {
                   setActivePopover(null);
-                  setSelectedId(null);
-                  setPanelOpen((v) => !(v && !selectedId));
+                  setSelectedIds([]);
+                  setPanelOpen((v) => !(v && !selectedIds.length));
                 }}
                 title="Görseller & Kütüphane paneli"
                 aria-label="Görseller ve Kütüphane"
@@ -1247,28 +1336,31 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           color={color}
           width={width}
           onCommit={commitElements}
-          selectedId={selectedId}
-          onSelect={(id) => {
-            setSelectedId(id);
+          selectedIds={selectedIds}
+          onSelect={(ids) => {
+            setSelectedIds(ids);
             // Not ve parçaların ayarları panelde: seçilince panel açılır
-            const el = id ? page.elements.find((e) => e.id === id) : undefined;
-            if (el && (el.type === 'widget' || el.type === 'note')) setPanelOpen(true);
+            if (ids.length === 1) {
+              const el = page.elements.find((e) => e.id === ids[0]);
+              if (el && (el.type === 'widget' || el.type === 'note')) setPanelOpen(true);
+            } else if (ids.length > 1) {
+              setPanelOpen(true);
+            }
           }}
+          onDuplicate={(ids) => duplicateElements(ids)}
+          onOrder={(dir, ids) => reorderElements(dir, ids)}
+          onDeleteSelected={(ids) => deleteSelected(ids)}
           onToolChange={setTool}
           editingNoteId={editingNoteId}
           onEditNote={setEditingNoteId}
           colors={COLORS}
           onPatchElement={patchElement}
-          onDeleteElement={(id) => {
-            commitElements(page.elements.filter((e) => e.id !== id));
-            if (selectedId === id) setSelectedId(null);
-          }}
+          onDeleteElement={(id) => deleteSelected([id])}
           onNoteText={(id, text) => {
             const el = page.elements.find((e) => e.id === id) as NoteEl | undefined;
             if (!el) return;
             if (el.variant === 'text' && !text.trim()) {
-              commitElements(page.elements.filter((e) => e.id !== id));
-              if (selectedId === id) setSelectedId(null);
+              deleteSelected([id]);
               return;
             }
             if (el.text !== text) patchElement(id, { text });
@@ -1290,8 +1382,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         <section className={styles.panel}>
           <h3>Sayfa {pageIndex + 1} / {content.pages.length}</h3>
           <div className={styles.pageTools}>
-            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.max(0, i - 1)); setSelectedId(null); }} disabled={pageIndex === 0} title="Önceki sayfa (←)"><ChevronUp size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
-            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.min(content.pages.length - 1, i + 1)); setSelectedId(null); }} disabled={pageIndex >= content.pages.length - 1} title="Sonraki sayfa (→)"><ChevronDown size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
+            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.max(0, i - 1)); setSelectedIds([]); }} disabled={pageIndex === 0} title="Önceki sayfa (←)"><ChevronUp size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
+            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.min(content.pages.length - 1, i + 1)); setSelectedIds([]); }} disabled={pageIndex >= content.pages.length - 1} title="Sonraki sayfa (→)"><ChevronDown size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
             <button type="button" className={styles.tool} onClick={addPage} title="Sayfa ekle"><Plus size={18} aria-hidden="true" /></button>
             <button type="button" className={styles.tool} onClick={duplicatePage} title="Sayfayı çoğalt"><Copy size={18} aria-hidden="true" /></button>
             <button type="button" className={styles.tool} onClick={() => movePage(-1)} disabled={pageIndex === 0} title="Sayfayı öne taşı"><ChevronUp size={18} aria-hidden="true" /></button>
@@ -1302,17 +1394,21 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             <CustomSelect value={page.background} onChange={(v) => updatePage({ background: v as Background })} options={(Object.keys(BACKGROUND_LABEL) as Background[]).map((b) => ({ value: b, label: BACKGROUND_LABEL[b] }))} />
           </label>
         </section>
-        {selected ? (
+        {selectedIds.length === 1 && selected ? (
           <SelectionPanel
             el={selected}
             questions={questions}
             minitests={minitests}
             onPatch={(patch) => patchElement(selected.id, patch)}
-            onDelete={() => { commitElements(page.elements.filter((e) => e.id !== selected.id)); setSelectedId(null); }}
-            onOrder={(dir) => {
-              const rest = page.elements.filter((e) => e.id !== selected.id);
-              commitElements(dir === 'front' ? [...rest, selected] : [selected, ...rest]);
-            }}
+            onDelete={() => deleteSelected([selected.id])}
+            onOrder={(dir) => reorderElements(dir, [selected.id])}
+          />
+        ) : selectedIds.length > 1 ? (
+          <MultiSelectionPanel
+            count={selectedIds.length}
+            onDuplicate={() => duplicateElements()}
+            onOrder={(dir) => reorderElements(dir)}
+            onDelete={() => deleteSelected()}
           />
         ) : (
           <MediaDrawer
@@ -1324,7 +1420,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             busy={busy}
           />
         )}
-        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
+        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
       </aside>
       {deleteConfirm}
       {printArea}
@@ -1704,6 +1800,41 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }}><Trash2 size={18} aria-hidden="true" /> Sil</button>
       </div>
       {el.type === 'widget' && <p className={styles.hintText}>Parçanın düğmeleri “Seç” aracında da çalışır; taşımak için düğme olmayan yerinden tutup sürükleyin.</p>}
+    </section>
+  );
+}
+
+function MultiSelectionPanel({
+  count,
+  onDuplicate,
+  onOrder,
+  onDelete,
+}: {
+  count: number;
+  onDuplicate: () => void;
+  onOrder: (dir: 'front' | 'back') => void;
+  onDelete: () => void;
+}) {
+  return (
+    <section className={styles.panel}>
+      <h3>Çoklu seçim</h3>
+      <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#6b7280' }}>
+        {count} öğe seçili
+      </p>
+      <div className={styles.pageTools} style={{ flexWrap: 'wrap', gap: '8px' }}>
+        <button type="button" className={styles.tool} onClick={onDuplicate} title="Çoğalt (Ctrl+D)">
+          <Copy size={16} aria-hidden="true" /> Çoğalt
+        </button>
+        <button type="button" className={styles.tool} onClick={() => onOrder('front')} title="En öne getir">
+          Öne getir
+        </button>
+        <button type="button" className={styles.tool} onClick={() => onOrder('back')} title="En arkaya gönder">
+          Arkaya gönder
+        </button>
+        <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }} title="Sil (Delete)">
+          <Trash2 size={16} aria-hidden="true" /> Sil
+        </button>
+      </div>
     </section>
   );
 }

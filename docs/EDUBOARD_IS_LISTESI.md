@@ -18,7 +18,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 2 | Ödev sistemini güçlendirme | 8 / 8 ✅ |
 | 2b | Okuma yarışması (bizde ek) | 5 / 5 ✅ |
 | 3 | Öğretmen dosyaları ve içerik düzeni | 8 / 8 ✅ |
-| 4 | Quiz motoru | 10 / 10 ✅ |
+| 4 | Quiz motoru | 11 / 11 ✅ |
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
@@ -28,7 +28,7 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **79 / 120** |
+| | **Toplam** | **80 / 121** |
 
 ---
 
@@ -96,6 +96,7 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 - [x] Gelen cevabın quiz'in sorularına ait olduğunun doğrulanması — *K-6* · 7 Kasım 2026 · `c8a8d9e`
 - [x] Sayfa kapanırken son cevapların kaybolmaması (sınav modu) — *K-7* · 7 Kasım 2026 · `c8a8d9e` (her seçim anında kaydedilir; kaydedilemeyen cihazda bekler, bağlantı gelince ya da sayfa açılınca gönderilir; kapanırken uyarı)
 - [x] Öğrenci quiz ekranı (mobil uyumlu) ve sonuç ekranı — *K-6* · 7 Kasım 2026 · `c8a8d9e` (sonuç Ödev kontrolü'ne işlenir: %70+ yaptı, %40–69 kısmen; öğretmene sonuç paneli)
+- [x] **Soru bankası ve quiz sayfalarında formül ve zengin metin (iyileştir)** · 8 Kasım 2026 · `a8d7ea5` (RichTextField bileşeni: B/I/U, renk, vurgu, listeler, MathPalette, canlı önizleme; KaTeX tembel yükleme; soru, şık, çözüm, quiz çözme ve sonuç ekranları)
 
 ## 5. Analitik ve raporlama
 
@@ -233,3 +234,4 @@ Ortak kararlar:
 | 7 Kasım 2026 | Isı haritası, sınıf karnesi, öğrenci gelişimi, Excel/PDF/PNG dışa aktarma, quiz cevaplarını inceleme — Paket 5 tamam | `b7879b1` |
 | 7 Kasım 2026 | Ek gruplar ve sınıf kodu, okul yöneticisi, kampüs, okul alanı/zümre, grup mesajında okundu — Paket 6 tamam | `6eb93a1` |
 | 7 Kasım 2026 | Etkileşimli tahta: çizim, şekil, zemin, not/görsel, parçalar, sunum, ödev olarak çözme, PDF/PNG — Paket 7 tamam | `73358e2` |
+| 8 Kasım 2026 | Soru bankası ve quiz: formül ve zengin metin (ortak RichTextField, tahtayla aynı altyapı) | `a8d7ea5` |

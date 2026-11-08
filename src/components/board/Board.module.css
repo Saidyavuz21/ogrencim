@@ -257,6 +257,14 @@
   to { transform: rotate(360deg); }
 }
 
+/* Neutralize any inherited dashboard button styles */
+.toolbar button,
+.popoverCard button {
+  min-height: 0 !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
 /* ===== Canva Stili Açılır Menü (Popover Card) ===== */
 .popoverCard {
   position: absolute;
@@ -265,8 +273,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  width: 310px;
-  max-width: min(330px, calc(100vw - 24px));
+  width: 336px;
+  max-width: min(336px, calc(100vw - 24px));
   box-sizing: border-box;
   padding: 16px;
   border: 1px solid var(--teacher-border, #dedad0);
@@ -325,6 +333,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  min-height: 0 !important;
   transition: all 140ms ease;
 }
 .brushCard:hover {
@@ -351,20 +360,28 @@
 
 /* Renk Paleti (Canva mor aktif halkalı) */
 .colorPalette {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 6px;
-  padding: 2px;
+  padding: 4px 2px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .colorSwatch {
   position: relative;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  max-width: 28px;
+  max-height: 28px;
   padding: 0;
   border: 2px solid #ffffff;
   border-radius: 50%;
   box-shadow: 0 0 0 1px #d5d1c5;
   cursor: pointer;
+  flex-shrink: 0;
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 .colorSwatch:hover {
@@ -372,7 +389,7 @@
 }
 .colorSwatchActive {
   transform: scale(1.15);
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4.5px #7a3fd0, 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #7a3fd0, 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* Kalınlık Seçimi */

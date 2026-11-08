@@ -391,7 +391,40 @@ async function toDataUrl(url: string): Promise<string | null> {
   }
 }
 
+import { stripMathDelimiters } from './math/parseMath';
+
 const fontCache: Record<string, string> = {};
+let katexCssDataCache: string | null = null;
+
+async function getEmbeddedKatexCss(): Promise<string | null> {
+  if (katexCssDataCache) return katexCssDataCache;
+  try {
+    const res = await fetch('/fonts/katex/katex.min.css');
+    if (!res.ok) return null;
+    let cssText = await res.text();
+    const fontNames = [
+      'KaTeX_Main-Regular', 'KaTeX_Main-Bold', 'KaTeX_Main-Italic', 'KaTeX_Main-BoldItalic',
+      'KaTeX_Math-Italic', 'KaTeX_Math-BoldItalic',
+      'KaTeX_Size1-Regular', 'KaTeX_Size2-Regular', 'KaTeX_Size3-Regular', 'KaTeX_Size4-Regular',
+      'KaTeX_AMS-Regular', 'KaTeX_SansSerif-Regular', 'KaTeX_SansSerif-Bold', 'KaTeX_SansSerif-Italic',
+      'KaTeX_Script-Regular', 'KaTeX_Typewriter-Regular', 'KaTeX_Caligraphic-Regular', 'KaTeX_Caligraphic-Bold',
+      'KaTeX_Fraktur-Regular', 'KaTeX_Fraktur-Bold',
+    ];
+    await Promise.all(
+      fontNames.map(async (name) => {
+        const dataUrl = await fetchFontDataUrl(`/fonts/katex/${name}.woff2`);
+        if (dataUrl) {
+          const regex = new RegExp(`url\\([^)]*${name}[^)]*\\.woff2[^)]*\\)`, 'g');
+          cssText = cssText.replace(regex, `url("${dataUrl}")`);
+        }
+      })
+    );
+    katexCssDataCache = cssText;
+    return cssText;
+  } catch {
+    return null;
+  }
+}
 
 async function fetchFontDataUrl(url: string): Promise<string | null> {
   if (fontCache[url]) return fontCache[url];
@@ -414,79 +447,153 @@ async function fetchFontDataUrl(url: string): Promise<string | null> {
   }
 }
 
-export async function exportBoardPng(svg: SVGSVGElement, filename: string): Promise<void> {
-  const clone = svg.cloneNode(true) as SVGSVGElement;
-  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  clone.setAttribute('width', String(BOARD_W));
-  clone.setAttribute('height', String(BOARD_H));
+export async function exportBoardPng(
+  svg: SVGSVGElement,
+  filename: string,
+  onNotice?: (msg: string) => void
+): Promise<void> {
+  const hasForeignObject = !!svg.querySelector('foreignObject');
 
-  // CSS değişkenlerini somut yazı tipine çevir ve kullanılan web fontlarını bul
-  const textElements = Array.from(clone.querySelectorAll('text, tspan'));
-  let usesPatrickHand = false;
-  let usesFredoka = false;
+  const renderToBlob = async (targetSvg: SVGSVGElement): Promise<Blob> => {
+    const clone = targetSvg.cloneNode(true) as SVGSVGElement;
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(BOARD_W));
+    clone.setAttribute('height', String(BOARD_H));
 
-  for (const el of textElements) {
-    const styleAttr = el.getAttribute('style') || '';
-    if (styleAttr.includes('var(--font-geist-sans)')) {
-      el.setAttribute('style', styleAttr.replace(/var\(--font-geist-sans\)/g, 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'));
+    // CSS değişkenlerini somut yazı tipine çevir ve kullanılan web fontlarını bul
+    const textElements = Array.from(clone.querySelectorAll('text, tspan'));
+    let usesPatrickHand = false;
+    let usesFredoka = false;
+
+    for (const el of textElements) {
+      const styleAttr = el.getAttribute('style') || '';
+      if (styleAttr.includes('var(--font-geist-sans)')) {
+        el.setAttribute('style', styleAttr.replace(/var\(--font-geist-sans\)/g, 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'));
+      }
+      const family = (el.getAttribute('font-family') || '') + ' ' + styleAttr;
+      if (family.includes('Patrick Hand')) usesPatrickHand = true;
+      if (family.includes('Fredoka')) usesFredoka = true;
     }
-    const family = (el.getAttribute('font-family') || '') + ' ' + styleAttr;
-    if (family.includes('Patrick Hand')) usesPatrickHand = true;
-    if (family.includes('Fredoka')) usesFredoka = true;
-  }
 
-  // Web yazı tiplerini SVG içine göm
-  const fontCssRules: string[] = [];
-  if (usesPatrickHand) {
-    const patrickData = await fetchFontDataUrl('/fonts/patrick-hand.woff2');
-    if (patrickData) {
-      fontCssRules.push(`@font-face { font-family: 'Patrick Hand'; font-style: normal; font-weight: 400; src: url(${patrickData}) format('woff2'); }`);
+    // Web yazı tiplerini SVG içine göm
+    const fontCssRules: string[] = [];
+    if (usesPatrickHand) {
+      const patrickData = await fetchFontDataUrl('/fonts/patrick-hand.woff2');
+      if (patrickData) {
+        fontCssRules.push(`@font-face { font-family: 'Patrick Hand'; font-style: normal; font-weight: 400; src: url(${patrickData}) format('woff2'); }`);
+      }
     }
-  }
-  if (usesFredoka) {
-    const [regular, light, bold] = await Promise.all([
-      fetchFontDataUrl('/fonts/fredoka-regular.woff2'),
-      fetchFontDataUrl('/fonts/fredoka-light.woff2'),
-      fetchFontDataUrl('/fonts/fredoka-bold.woff2'),
-    ]);
-    if (regular) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 400; src: url(${regular}) format('woff2'); }`);
-    if (light) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 300; src: url(${light}) format('woff2'); }`);
-    if (bold) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 700; src: url(${bold}) format('woff2'); }`);
-  }
-
-  if (fontCssRules.length > 0) {
-    let defs = clone.querySelector('defs');
-    if (!defs) {
-      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-      clone.insertBefore(defs, clone.firstChild);
+    if (usesFredoka) {
+      const [regular, light, bold] = await Promise.all([
+        fetchFontDataUrl('/fonts/fredoka-regular.woff2'),
+        fetchFontDataUrl('/fonts/fredoka-light.woff2'),
+        fetchFontDataUrl('/fonts/fredoka-bold.woff2'),
+      ]);
+      if (regular) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 400; src: url(${regular}) format('woff2'); }`);
+      if (light) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 300; src: url(${light}) format('woff2'); }`);
+      if (bold) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 700; src: url(${bold}) format('woff2'); }`);
     }
-    const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-    styleEl.textContent = fontCssRules.join('\n');
-    defs.appendChild(styleEl);
-  }
 
-  const images = Array.from(clone.querySelectorAll('image'));
-  await Promise.all(images.map(async (img) => {
-    const href = img.getAttribute('href');
-    if (!href || href.startsWith('data:')) return;
-    const data = await toDataUrl(href);
-    if (data) img.setAttribute('href', data);
-    else img.remove();
-  }));
-  const xml = new XMLSerializer().serializeToString(clone);
-  const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
-  const img = new Image();
-  await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error('Görsel oluşturulamadı')); img.src = url; });
-  const canvas = document.createElement('canvas');
-  canvas.width = BOARD_W;
-  canvas.height = BOARD_H;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Tarayıcı desteklemiyor');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, BOARD_W, BOARD_H);
-  ctx.drawImage(img, 0, 0, BOARD_W, BOARD_H);
-  URL.revokeObjectURL(url);
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-  if (!blob) throw new Error('Görsel oluşturulamadı');
-  downloadBlob(blob, filename);
+    // foreignObject varsa KaTeX CSS ve fontlarını göm
+    const foreignObjects = Array.from(clone.querySelectorAll('foreignObject'));
+    if (foreignObjects.length > 0) {
+      for (const fo of foreignObjects) {
+        for (const child of Array.from(fo.children)) {
+          if (!child.getAttribute('xmlns')) {
+            child.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+          }
+        }
+      }
+      const katexCss = await getEmbeddedKatexCss();
+      if (katexCss) {
+        fontCssRules.push(katexCss);
+      }
+    }
+
+    if (fontCssRules.length > 0) {
+      let defs = clone.querySelector('defs');
+      if (!defs) {
+        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        clone.insertBefore(defs, clone.firstChild);
+      }
+      const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+      styleEl.textContent = fontCssRules.join('\n');
+      defs.appendChild(styleEl);
+    }
+
+    const images = Array.from(clone.querySelectorAll('image'));
+    await Promise.all(images.map(async (img) => {
+      const href = img.getAttribute('href');
+      if (!href || href.startsWith('data:')) return;
+      const data = await toDataUrl(href);
+      if (data) img.setAttribute('href', data);
+      else img.remove();
+    }));
+
+    const xml = new XMLSerializer().serializeToString(clone);
+    const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
+    const img = new Image();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Görsel oluşturulamadı'));
+        img.src = url;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = BOARD_W;
+      canvas.height = BOARD_H;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Tarayıcı desteklemiyor');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+      ctx.drawImage(img, 0, 0, BOARD_W, BOARD_H);
+
+      const blob = await new Promise<Blob | null>((resolve, reject) => {
+        try {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Canvas toBlob başarısız'));
+          }, 'image/png');
+        } catch (err) {
+          reject(err);
+        }
+      });
+      if (!blob) throw new Error('Görsel oluşturulamadı');
+      return blob;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  try {
+    const blob = await renderToBlob(svg);
+    downloadBlob(blob, filename);
+  } catch (err) {
+    if (hasForeignObject) {
+      try {
+        const fallbackSvg = svg.cloneNode(true) as SVGSVGElement;
+        const fos = Array.from(fallbackSvg.querySelectorAll('foreignObject'));
+        for (const fo of fos) {
+          const rawText = fo.textContent || '';
+          const cleanText = stripMathDelimiters(rawText);
+          const x = fo.getAttribute('x') || '0';
+          const y = fo.getAttribute('y') || '0';
+          const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          textEl.setAttribute('x', String(Number(x) + 8));
+          textEl.setAttribute('y', String(Number(y) + 36));
+          textEl.setAttribute('font-size', '36');
+          textEl.setAttribute('fill', '#1f2a24');
+          textEl.textContent = cleanText;
+          fo.parentNode?.replaceChild(textEl, fo);
+        }
+        const blob = await renderToBlob(fallbackSvg);
+        downloadBlob(blob, filename);
+        onNotice?.('Formüller resimde düz yazı olarak çıktı.');
+        return;
+      } catch {
+        // Fallback da başarısız olursa orijinal hatayı fırlat
+      }
+    }
+    throw err;
+  }
 }

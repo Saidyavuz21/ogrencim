@@ -6,6 +6,9 @@ import {
   Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
 import { LIBRARY_ITEMS } from '../../lib/boardLibrary';
+import { MathText } from '../math/MathText';
+import { MathPalette, insertMathTemplate } from '../math/MathPalette';
+import { hasMath } from '../../lib/math/parseMath';
 import styles from './Board.module.css';
 
 export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'note' | 'text';
@@ -28,6 +31,9 @@ export function pointsToSvg(points: number[]): string {
 }
 
 export const isShape = (el: BoardEl): el is ShapeEl => el.type === 'line' || el.type === 'arrow' || el.type === 'rect' || el.type === 'ellipse';
+
+export const measuredMathHeights = new Map<string, number>();
+
 export function bbox(el: BoardEl): Box {
   if (el.type === 'stroke' || el.type === 'poly') {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -42,12 +48,22 @@ export function bbox(el: BoardEl): Box {
   if (isShape(el)) {
     return { x: Math.min(el.x1, el.x2), y: Math.min(el.y1, el.y2), w: Math.abs(el.x2 - el.x1), h: Math.abs(el.y2 - el.y1) };
   }
-  if (el.type === 'note' && el.variant === 'text') {
-    const pad = 8;
-    const lines = wrapTextLines(el.text || ' ', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic);
-    const lineCount = Math.max(1, lines.length);
-    const calcH = Math.round(Math.max(el.fontSize + 16, lineCount * el.fontSize * 1.3 + 16));
-    return { x: el.x, y: el.y, w: el.w, h: calcH };
+  if (el.type === 'note') {
+    if (el.variant === 'text') {
+      const measuredH = measuredMathHeights.get(el.id);
+      if (measuredH) {
+        return { x: el.x, y: el.y, w: el.w, h: measuredH };
+      }
+      const pad = 8;
+      const lines = wrapTextLines(el.text || ' ', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic);
+      const lineCount = Math.max(1, lines.length);
+      const calcH = Math.round(Math.max(el.fontSize + 16, lineCount * el.fontSize * 1.3 + 16));
+      return { x: el.x, y: el.y, w: el.w, h: calcH };
+    }
+    const measuredH = measuredMathHeights.get(el.id);
+    if (measuredH && measuredH > el.h) {
+      return { x: el.x, y: el.y, w: el.w, h: measuredH };
+    }
   }
   return { x: el.x, y: el.y, w: el.w, h: el.h };
 }
@@ -401,36 +417,82 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
       const anchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start';
       const textX = align === 'center' ? el.x + el.w / 2 : align === 'right' ? el.x + el.w - pad : el.x + pad;
       const textY = el.y + pad + el.fontSize;
+      const containsMath = hasMath(el.text || '');
 
       const lines = isText
         ? wrapTextLines(el.text || '', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic)
         : wrapLines(el.text, el.w - 40, el.fontSize);
 
+      const measuredH = measuredMathHeights.get(el.id);
+      const renderH = measuredH ? Math.max(el.h, measuredH) : el.h;
+
       return (
         <g>
           {!isText && (
-            <rect x={el.x} y={el.y} width={el.w} height={el.h} rx={14} fill={el.color} stroke="rgba(0,0,0,0.12)" strokeWidth={2} />
+            <rect x={el.x} y={el.y} width={el.w} height={renderH} rx={14} fill={el.color} stroke="rgba(0,0,0,0.12)" strokeWidth={2} />
           )}
           {!editingNote && (
-            <text
-              x={textX}
-              y={textY}
-              fontSize={el.fontSize}
-              fill={fill}
-              textAnchor={anchor}
-              style={{
-                fontFamily,
-                fontWeight,
-                fontStyle,
-                textDecoration,
-              }}
-            >
-              {lines.map((l, i) => (
-                <tspan key={i} x={textX} dy={i ? el.fontSize * 1.3 : 0}>
-                  {l || ' '}
-                </tspan>
-              ))}
-            </text>
+            containsMath ? (
+              <foreignObject
+                x={el.x}
+                y={el.y}
+                width={el.w}
+                height={renderH}
+                style={{ overflow: 'visible' }}
+              >
+                <div
+                  {...{ xmlns: 'http://www.w3.org/1999/xhtml' }}
+                  ref={(node) => {
+                    if (node) {
+                      const h = Math.ceil(node.scrollHeight || node.offsetHeight || node.getBoundingClientRect().height);
+                      if (h && h !== measuredMathHeights.get(el.id)) {
+                        measuredMathHeights.set(el.id, h);
+                      }
+                    }
+                  }}
+                  style={{
+                    boxSizing: 'border-box',
+                    width: `${el.w}px`,
+                    minHeight: `${el.h}px`,
+                    padding: `${pad}px`,
+                    fontFamily,
+                    fontSize: `${el.fontSize}px`,
+                    fontWeight,
+                    fontStyle,
+                    textDecoration,
+                    color: fill,
+                    textAlign: align,
+                    lineHeight: 1.3,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere',
+                    userSelect: 'none',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <MathText text={el.text} inline={false} />
+                </div>
+              </foreignObject>
+            ) : (
+              <text
+                x={textX}
+                y={textY}
+                fontSize={el.fontSize}
+                fill={fill}
+                textAnchor={anchor}
+                style={{
+                  fontFamily,
+                  fontWeight,
+                  fontStyle,
+                  textDecoration,
+                }}
+              >
+                {lines.map((l, i) => (
+                  <tspan key={i} x={textX} dy={i ? el.fontSize * 1.3 : 0}>
+                    {l || ' '}
+                  </tspan>
+                ))}
+              </text>
+            )
           )}
         </g>
       );
@@ -509,14 +571,17 @@ function FormatBar({
   el,
   colors,
   barRef,
+  textareaRef,
   onPatch,
 }: {
   el: NoteEl;
   colors: string[];
   barRef?: React.RefObject<HTMLDivElement | null>;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   onPatch: (patch: Partial<NoteEl>) => void;
 }) {
   const [colorOpen, setColorOpen] = useState(false);
+  const [mathOpen, setMathOpen] = useState(false);
 
   const b = bbox(el);
   const topPct = b.y < 70
@@ -715,6 +780,43 @@ function FormatBar({
       >
         <AlignRight size={16} aria-hidden="true" />
       </button>
+
+      <span className={styles.formatDivider} aria-hidden="true" />
+
+      {/* Formül Paleti (∑) */}
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          className={styles.formatBtn}
+          aria-pressed={mathOpen}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setMathOpen((v) => !v)}
+          title="Formül ekle (∑)"
+          aria-label="Formül ekle"
+        >
+          <span style={{ fontWeight: 700, fontSize: 16 }}>∑</span>
+        </button>
+
+        {mathOpen && (
+          <MathPalette
+            onInsert={(tpl) => {
+              if (textareaRef?.current) {
+                insertMathTemplate(textareaRef.current, tpl, (nextText) => {
+                  onPatch({ text: nextText });
+                });
+              } else {
+                const cur = el.text || '';
+                const unescapedDollars = (cur.match(/(?<!\\)\$/g) || []).length;
+                const inside = unescapedDollars % 2 === 1;
+                const addition = inside ? tpl : `$${tpl}$`;
+                const next = cur ? `${cur} ${addition}` : addition;
+                onPatch({ text: next });
+              }
+            }}
+            onClose={() => setMathOpen(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -885,6 +987,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const draft = useRef<Draft | null>(null);
   const [preview, setPreview] = useState<{ el?: BoardEl; els?: BoardEl[]; erased?: Set<string>; marquee?: Box } | null>(null);
   const [editingHeight, setEditingHeight] = useState<{ id: string; h: number } | null>(null);
+  const [editingTextOverride, setEditingTextOverride] = useState<{ id: string; text: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const formatBarRef = useRef<HTMLDivElement | null>(null);
   const [enteredGroupId, setEnteredGroupId] = useState<string | null>(null);
@@ -1177,6 +1280,14 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const selectedElements = shown.filter((el) => selectedIds.includes(el.id));
   const selected = selectedElements.length === 1 ? selectedElements[0] : undefined;
   const editingNote = editingNoteId ? (elements.find((el) => el.id === editingNoteId) as NoteEl | undefined) : undefined;
+  const editingText = (editingNote && editingTextOverride?.id === editingNote.id)
+    ? editingTextOverride.text
+    : (editingNote?.text || '');
+  const currentEditingHeight = editingNote
+    ? ((editingNote.variant === 'text' && editingHeight?.id === editingNote.id)
+      ? editingHeight.h
+      : bbox(editingNote).h)
+    : 0;
   const activeNote = (editable && !widgetsPassive)
     ? (shown.find((el) => (el.id === editingNoteId || (selectedIds.length === 1 && el.id === selectedIds[0])) && el.type === 'note') as NoteEl | undefined)
     : undefined;
@@ -1355,6 +1466,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
           el={activeNote}
           colors={colors}
           barRef={formatBarRef}
+          textareaRef={textareaRef}
           onPatch={(patch) => {
             let finalPatch: Partial<NoteEl> = { ...patch };
             if (activeNote.variant === 'text') {
@@ -1397,7 +1509,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
       )}
 
       {editingNote && (
-        <textarea
+        <>
+          <textarea
           ref={textareaRef}
           className={`${styles.noteEditor} ${editingNote.variant === 'text' ? styles.textEditor : ''}`}
           autoFocus
@@ -1408,7 +1521,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
             left: `${(editingNote.x / BOARD_W) * 100}%`,
             top: `${(editingNote.y / BOARD_H) * 100}%`,
             width: `${(editingNote.w / BOARD_W) * 100}%`,
-            height: `${(((editingNote.variant === 'text' && editingHeight?.id === editingNote.id) ? editingHeight.h : bbox(editingNote).h) / BOARD_H) * 100}%`,
+            height: `${(currentEditingHeight / BOARD_H) * 100}%`,
             background: editingNote.color,
             color: editingNote.textColor || '#1f2a24',
             fontSize: `${(editingNote.fontSize / BOARD_W) * 100}cqw`,
@@ -1421,6 +1534,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
           }}
           onInput={(e) => {
             const val = (e.target as HTMLTextAreaElement).value;
+            setEditingTextOverride({ id: editingNote.id, text: val });
             if (editingNote.variant === 'text') {
               const pad = 8;
               const lines = wrapTextLines(val || ' ', editingNote.w - pad * 2, editingNote.fontSize, editingNote.fontFamily, editingNote.fontWeight, editingNote.italic);
@@ -1451,6 +1565,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
             } else {
               onNoteText?.(editingNote.id, val);
             }
+            setEditingTextOverride(null);
             setEditingHeight(null);
             onEditNote?.(null);
           }}
@@ -1472,6 +1587,44 @@ export function BoardCanvas(props: BoardCanvasProps) {
             }
           }}
         />
+        {hasMath(editingText) && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${(editingNote.x / BOARD_W) * 100}%`,
+              top: `calc(${((editingNote.y + currentEditingHeight) / BOARD_H) * 100}% + 8px)`,
+              minWidth: `${Math.max(16, (editingNote.w / BOARD_W) * 100)}%`,
+              maxWidth: '80%',
+              background: '#ffffff',
+              border: '1px solid #25634b',
+              borderRadius: '8px',
+              padding: '6px 12px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.14)',
+              zIndex: 35,
+              pointerEvents: 'none',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#25634b', marginBottom: 2 }}>
+              Canlı Formül Önizleme
+            </div>
+            <div
+              style={{
+                color: editingNote.textColor || '#1f2a24',
+                fontSize: `${(editingNote.fontSize / BOARD_W) * 100}cqw`,
+                fontFamily: getFontFamily(editingNote.fontFamily),
+                fontWeight: editingNote.fontWeight || 400,
+                fontStyle: editingNote.italic ? 'italic' : 'normal',
+                textDecoration: editingNote.underline ? 'underline' : 'none',
+                textAlign: editingNote.align || 'left',
+                lineHeight: 1.3,
+              }}
+            >
+              <MathText text={editingText} inline={false} />
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

@@ -29,6 +29,9 @@ import {
   setLastUsedParams,
 } from '../../lib/boardLibrary';
 import { ShapeConfigModal } from './ShapeConfigModal';
+import { MathPalette, insertMathTemplate } from '../math/MathPalette';
+import { MathText } from '../math/MathText';
+import { hasMath } from '../../lib/math/parseMath';
 import styles from './Board.module.css';
 
 let boardClipboard: BoardEl[] | null = null;
@@ -701,7 +704,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const exportPng = async () => {
     if (!svgRef.current || !board) return;
     setBusy(true);
-    try { await exportBoardPng(svgRef.current, `${fileSlug(board.title)}-sayfa-${pageIndex + 1}.png`); } catch (e) { setNotice((e as Error).message); }
+    try {
+      await exportBoardPng(
+        svgRef.current,
+        `${fileSlug(board.title)}-sayfa-${pageIndex + 1}.png`,
+        (msg) => setNotice(msg)
+      );
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
     setBusy(false);
   };
   const exportPdf = () => {
@@ -1644,6 +1655,8 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, 
   onOrder: (dir: 'front' | 'back') => void;
   onConfigure?: () => void;
 }) {
+  const [mathStepIdx, setMathStepIdx] = useState<number | null>(null);
+  const stepTextareaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
   const title = el.type === 'widget' ? WIDGET_LABEL[el.kind] : (el.type === 'note' && el.variant === 'text') ? 'Metin' : { stroke: 'Çizim', line: 'Çizgi', arrow: 'Ok', rect: 'Dikdörtgen', ellipse: 'Daire', note: 'Not', image: 'Görsel', poly: 'Çokgen' }[el.type];
   return (
     <section className={styles.panel}>
@@ -1914,6 +1927,33 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, 
                             {isResultStep && <span className={styles.stepRowResultTag}>Sonuç</span>}
                           </span>
                           <div className={styles.stepRowActions}>
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                type="button"
+                                className={styles.stepActionBtn}
+                                onClick={() => setMathStepIdx(mathStepIdx === idx ? null : idx)}
+                                title="Formül ekle (∑)"
+                                aria-label={`${idx + 1}. adıma formül ekle`}
+                              >
+                                <span style={{ fontWeight: 700, fontSize: 13 }}>∑</span>
+                              </button>
+                              {mathStepIdx === idx && (
+                                <MathPalette
+                                  style={{ right: 0, left: 'auto', top: '100%' }}
+                                  onInsert={(tpl) => {
+                                    const textarea = stepTextareaRefs.current[idx];
+                                    if (textarea) {
+                                      insertMathTemplate(textarea, tpl, (newVal) => {
+                                        updateStep(idx, newVal);
+                                      });
+                                    } else {
+                                      updateStep(idx, stepText ? `${stepText} $${tpl}$` : `$${tpl}$`);
+                                    }
+                                  }}
+                                  onClose={() => setMathStepIdx(null)}
+                                />
+                              )}
+                            </div>
                             <button
                               type="button"
                               className={styles.stepActionBtn}
@@ -1946,12 +1986,19 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, 
                           </div>
                         </div>
                         <textarea
+                          ref={(el) => { stepTextareaRefs.current[idx] = el; }}
                           className={styles.stepTextarea}
                           rows={2}
                           value={stepText}
                           placeholder={`${idx + 1}. adımı yazın (satır sonu serbest)…`}
                           onChange={(e) => updateStep(idx, e.target.value)}
                         />
+                        {hasMath(stepText) && (
+                          <div style={{ marginTop: 4, padding: '4px 8px', background: '#f5faf7', border: '1px solid #d4e7dd', borderRadius: 6, fontSize: 13 }}>
+                            <span style={{ fontSize: 11, color: '#25634b', fontWeight: 600, display: 'block', marginBottom: 2 }}>Önizleme:</span>
+                            <MathText text={stepText} />
+                          </div>
+                        )}
                       </div>
                     );
                   })}

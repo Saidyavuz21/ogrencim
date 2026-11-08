@@ -1105,6 +1105,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             const el = id ? page.elements.find((e) => e.id === id) : undefined;
             if (el && (el.type === 'widget' || el.type === 'note')) setPanelOpen(true);
           }}
+          onToolChange={setTool}
           editingNoteId={editingNoteId}
           onEditNote={setEditingNoteId}
           onNoteText={(id, text) => { const el = page.elements.find((e) => e.id === id) as NoteEl | undefined; if (el && el.text !== text) patchElement(id, { text }); }}

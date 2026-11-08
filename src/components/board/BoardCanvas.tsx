@@ -242,6 +242,7 @@ export interface BoardCanvasProps {
   onLayerCommit?: (strokes: StrokeEl[]) => void;
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  onToolChange?: (tool: Tool) => void;
   editingNoteId?: string | null;
   onEditNote?: (id: string | null) => void;
   onNoteText?: (id: string, text: string) => void;
@@ -261,7 +262,7 @@ export interface BoardCanvasProps {
 }
 
 export function BoardCanvas(props: BoardCanvasProps) {
-  const { page, editable, tool = 'select', color = '#1f2a24', width = 6, onCommit, layer, onLayerCommit, selectedId, onSelect, editingNoteId, onEditNote, onNoteText, imageUrls, renderWidget, widgetsPassive, widgetsControlsOnly, onDropMedia, svgRef, thumbnail, ariaLabel } = props;
+  const { page, editable, tool = 'select', color = '#1f2a24', width = 6, onCommit, layer, onLayerCommit, selectedId, onSelect, onToolChange, editingNoteId, onEditNote, onNoteText, imageUrls, renderWidget, widgetsPassive, widgetsControlsOnly, onDropMedia, svgRef, thumbnail, ariaLabel } = props;
   const uid = useId().replace(/:/g, '');
   const patternId = `bg-${uid}`;
   const localSvg = useRef<SVGSVGElement | null>(null);
@@ -314,6 +315,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
       onCommit?.([...elements, note]);
       onSelect?.(note.id);
       onEditNote?.(note.id);
+      onToolChange?.('select');
       return;
     } else {
       // Seçim: önce seçili öğenin boyut tutamağı, sonra en üstteki öğe
@@ -384,6 +386,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
       const el = { ...d.el, x1: Math.round(d.el.x1), y1: Math.round(d.el.y1), x2: Math.round(d.el.x2), y2: Math.round(d.el.y2) };
       if (Math.hypot(el.x2 - el.x1, el.y2 - el.y1) < 6) return;
       onCommit?.([...elements, el]);
+      onSelect?.(el.id);
+      onToolChange?.('select');
     } else if ((d.kind === 'move' || d.kind === 'resize') && p?.el) {
       const moved = p.el;
       const b0 = bbox(d.orig), b1 = bbox(moved);

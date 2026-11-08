@@ -1333,6 +1333,34 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const widgets = renderWidget ? shown.filter((el): el is WidgetEl => el.type === 'widget') : [];
   const cursor = !interactive ? 'default' : drawingOnLayer || DRAW_TOOLS.includes(tool) ? 'crosshair' : tool === 'select' ? 'default' : 'crosshair';
 
+  // Boyut tutamağı: çoklu seçim / grup için birleşik çerçevenin, tek seçimde öğenin sağ alt köşesi
+  let handlePos: { x: number; y: number; kind: 'multi' } | { x: number; y: number; kind: 'single'; sel: BoardEl } | null = null;
+  if (editable) {
+    if (selectedElements.length > 1 && !activeGroupId) {
+      const cb = combinedBbox(selectedElements.map(bbox));
+      handlePos = { x: cb.x + cb.w, y: cb.y + cb.h, kind: 'multi' };
+    } else if (selected && selected.type !== 'stroke') {
+      const b = bbox(selected);
+      handlePos = { x: b.x + b.w, y: b.y + b.h, kind: 'single', sel: selected };
+    }
+  }
+  const onHandlePointerDown = (e: React.PointerEvent<SVGRectElement>) => {
+    if (!handlePos) return;
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const { x, y } = toPoint(e.clientX, e.clientY);
+    if (handlePos.kind === 'multi') {
+      const cb = combinedBbox(selectedElements.map(bbox));
+      const origs = elements.filter((el) => selectedIds.includes(el.id));
+      draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs, origBbox: cb };
+    } else if (handlePos.sel.groupId && !activeGroupId) {
+      draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs: [handlePos.sel], origBbox: bbox(handlePos.sel) };
+    } else {
+      draft.current = { kind: 'resize', id: handlePos.sel.id, sx: x, sy: y, orig: handlePos.sel };
+    }
+    setIsResizing(true);
+  };
+
   return (
     <div
       className={`${styles.canvas} ${thumbnail ? styles.thumb : ''}`}
@@ -1549,57 +1577,29 @@ export function BoardCanvas(props: BoardCanvasProps) {
       )}
 
       {/* Widget katmanının üzerinde tutamak overlay'i */}
-      {editable && (() => {
-        let handlePos: { x: number; y: number; kind: 'multi' } | { x: number; y: number; kind: 'single'; sel: BoardEl } | null = null;
-        if (selectedElements.length > 1 && !activeGroupId) {
-          const cb = combinedBbox(selectedElements.map(bbox));
-          handlePos = { x: cb.x + cb.w, y: cb.y + cb.h, kind: 'multi' };
-        } else if (selected && selected.type !== 'stroke') {
-          const b = bbox(selected);
-          handlePos = { x: b.x + b.w, y: b.y + b.h, kind: 'single', sel: selected };
-        }
-        if (!handlePos) return null;
-
-        return (
-          <svg
-            className={styles.overlay}
-            viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
-            style={{ zIndex: 15, pointerEvents: 'none' }}
-          >
-            <rect
-              x={handlePos.x - 9}
-              y={handlePos.y - 9}
-              width={18}
-              height={18}
-              rx={2}
-              fill="#ffffff"
-              stroke="#2a78d6"
-              strokeWidth={2}
-              style={{ cursor: 'nwse-resize', pointerEvents: 'auto' }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                e.currentTarget.setPointerCapture(e.pointerId);
-                const { x, y } = toPoint(e.clientX, e.clientY);
-                if (handlePos!.kind === 'multi') {
-                  const cb = combinedBbox(selectedElements.map(bbox));
-                  const origs = elements.filter((el) => selectedIds.includes(el.id));
-                  draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs, origBbox: cb };
-                } else {
-                  if (handlePos!.sel.groupId && !activeGroupId) {
-                    draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs: [handlePos!.sel], origBbox: bbox(handlePos!.sel) };
-                  } else {
-                    draft.current = { kind: 'resize', id: handlePos!.sel.id, sx: x, sy: y, orig: handlePos!.sel };
-                  }
-                }
-                setIsResizing(true);
-              }}
-              onPointerMove={onPointerMove}
-              onPointerUp={finish}
-              onPointerCancel={finish}
-            />
-          </svg>
-        );
-      })()}
+      {handlePos && (
+        <svg
+          className={styles.overlay}
+          viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
+          style={{ zIndex: 15, pointerEvents: 'none' }}
+        >
+          <rect
+            x={handlePos.x - 9}
+            y={handlePos.y - 9}
+            width={18}
+            height={18}
+            rx={2}
+            fill="#ffffff"
+            stroke="#2a78d6"
+            strokeWidth={2}
+            style={{ cursor: 'nwse-resize', pointerEvents: 'auto' }}
+            onPointerDown={onHandlePointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={finish}
+            onPointerCancel={finish}
+          />
+        </svg>
+      )}
 
       {editingNote && (
         <>

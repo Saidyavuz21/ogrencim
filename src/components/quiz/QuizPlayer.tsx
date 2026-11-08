@@ -10,6 +10,7 @@ import {
   readPending, writePending,
 } from '../../lib/quizData';
 import { useQuizImages } from './useQuizImages';
+import { RichText } from '../math/RichText';
 import styles from './Quiz.module.css';
 import f from '../files/Files.module.css';
 
@@ -295,7 +296,7 @@ function QuestionView({ state, item, index, urls, busy, wrongTried, message, onG
         Soru {index + 1} / {state.items.length}
         {practice && !item.resolved && ` · ${PRACTICE_TRIES - item.tries} deneme hakkı`}
       </p>
-      <p className={styles.qText}>{item.body}</p>
+      <div className={styles.qText}><RichText text={item.body} /></div>
       {item.image_path && urls[item.image_path] && (
         // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
         <img className={styles.questionImage} src={urls[item.image_path]} alt="Soru görseli" />
@@ -318,7 +319,7 @@ function QuestionView({ state, item, index, urls, busy, wrongTried, message, onG
                 aria-pressed={!practice ? isChosen : undefined}
               >
                 <span className={styles.choiceLetter} aria-hidden="true">{CHOICE_LETTERS[ci]}</span>
-                <span>{c}</span>
+                <span><RichText text={c} inline /></span>
                 {item.correct_index != null && isCorrect && <span className={styles.choiceMark}><Check size={16} aria-hidden="true" />Doğru</span>}
                 {item.correct_index != null && !isCorrect && wasWrong && <span className={styles.choiceMark}><X size={16} aria-hidden="true" />Yanlış</span>}
                 {practice && item.correct_index == null && tried.includes(ci) && <span className={styles.choiceMark}><X size={16} aria-hidden="true" />Yanlış</span>}
@@ -333,7 +334,7 @@ function QuestionView({ state, item, index, urls, busy, wrongTried, message, onG
           {message.text}
         </p>
       )}
-      {item.explanation && item.correct_index != null && <p className={styles.explanation}><b>Çözüm: </b>{item.explanation}</p>}
+      {item.explanation && item.correct_index != null && <div className={styles.explanation}><b>Çözüm: </b><RichText text={item.explanation} inline /></div>}
       {!practice && !state.revealed && <p className={f.muted}>Sınav modu: cevabını istediğin zaman değiştirebilirsin. Doğru cevaplar teslim tarihi geçince açıklanır.</p>}
     </>
   );
@@ -365,7 +366,7 @@ function QuizResult({ state, urls }: { state: QuizState; urls: Record<string, st
               {i + 1}. soru · {it.correct ? 'Doğru' : it.choice == null ? 'Boş' : 'Yanlış'}
               {state.mode === 'practice' && it.points != null && it.points > 0 && ` · ${it.points} puan`}
             </p>
-            <p className={styles.qText} style={{ fontSize: 16 }}>{it.body}</p>
+            <div className={styles.qText} style={{ fontSize: 16 }}><RichText text={it.body} /></div>
             {it.image_path && urls[it.image_path] && (
               // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
               <img className={styles.questionImage} src={urls[it.image_path]} alt="Soru görseli" style={{ maxHeight: 180 }} />
@@ -373,14 +374,14 @@ function QuizResult({ state, urls }: { state: QuizState; urls: Record<string, st
             <ul className={styles.qChoices}>
               {it.choices.map((c, ci) => (
                 <li key={ci} className={ci === it.correct_index ? styles.qCorrect : undefined} style={ci === it.choice && ci !== it.correct_index ? { color: '#8f2232' } : undefined}>
-                  <b>{CHOICE_LETTERS[ci]})</b>{c}
+                  <b>{CHOICE_LETTERS[ci]}) </b><RichText text={c} inline />
                   {ci === it.correct_index && <span> · doğru cevap</span>}
                   {ci === it.choice && ci !== it.correct_index && <span> · senin cevabın</span>}
                   {ci === it.choice && ci === it.correct_index && <span> (senin cevabın)</span>}
                 </li>
               ))}
             </ul>
-            {it.explanation && <p className={styles.explanation}><b>Çözüm: </b>{it.explanation}</p>}
+            {it.explanation && <div className={styles.explanation}><b>Çözüm: </b><RichText text={it.explanation} inline /></div>}
           </li>
         ))}
       </ol>

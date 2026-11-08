@@ -11,6 +11,13 @@ import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { hasMath } from '../../lib/math/parseMath';
 import { hasRich, stripRich } from '../../lib/math/parseRich';
 import {
+  applyEditToElement,
+  handleListEnter,
+  toggleList,
+  toggleTextList,
+  wrapSelection,
+} from '../math/richEditing';
+import {
   BOARD_FONT,
   computeTextHeight,
   getFontFamily,
@@ -497,55 +504,8 @@ function applyTagToSelection(
   tag: 'b' | 'i' | 'u',
   onChange: (nextText: string) => void
 ) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const text = textarea.value;
-  if (start >= end) return false;
-
-  const selected = text.slice(start, end);
-  const openTag = `[${tag}]`;
-  const closeTag = `[/${tag}]`;
-
-  // 1. Seçim doğrudan [tag]...[/tag] ile mi sarılı?
-  if (
-    selected.toLowerCase().startsWith(openTag) &&
-    selected.toLowerCase().endsWith(closeTag) &&
-    selected.length >= openTag.length + closeTag.length
-  ) {
-    const inner = selected.slice(openTag.length, -closeTag.length);
-    const next = text.slice(0, start) + inner + text.slice(end);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(start, start + inner.length);
-    });
-    return true;
-  }
-
-  // 2. Seçimin hemen dışı [tag]...[/tag] mı?
-  if (
-    start >= openTag.length &&
-    end + closeTag.length <= text.length &&
-    text.slice(start - openTag.length, start).toLowerCase() === openTag &&
-    text.slice(end, end + closeTag.length).toLowerCase() === closeTag
-  ) {
-    const next = text.slice(0, start - openTag.length) + selected + text.slice(end + closeTag.length);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(start - openTag.length, start - openTag.length + selected.length);
-    });
-    return true;
-  }
-
-  // 3. Etiketle sar
-  const wrapped = `${openTag}${selected}${closeTag}`;
-  const next = text.slice(0, start) + wrapped + text.slice(end);
-  onChange(next);
-  requestAnimationFrame(() => {
-    textarea.value = next;
-    textarea.setSelectionRange(start, start + wrapped.length);
-  });
+  const res = wrapSelection(textarea.value, textarea.selectionStart, textarea.selectionEnd, tag);
+  applyEditToElement(textarea, res, onChange);
   return true;
 }
 
@@ -554,48 +514,8 @@ function applyColorToSelection(
   color: string,
   onChange: (nextText: string) => void
 ) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const text = textarea.value;
-  if (start >= end) return false;
-
-  const selected = text.slice(start, end);
-  const openTag = `[c=${color}]`;
-  const closeTag = `[/c]`;
-
-  const cMatch = /^\[c=#[0-9a-fA-F]{6}\]([\s\S]*)\[\/c\]$/i.exec(selected);
-  if (cMatch) {
-    const inner = cMatch[1];
-    const wrapped = `${openTag}${inner}${closeTag}`;
-    const next = text.slice(0, start) + wrapped + text.slice(end);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(start, start + wrapped.length);
-    });
-    return true;
-  }
-
-  const before = text.slice(0, start);
-  const after = text.slice(end);
-  const beforeMatch = /\[c=#[0-9a-fA-F]{6}\]$/i.exec(before);
-  if (beforeMatch && after.toLowerCase().startsWith('[/c]')) {
-    const next = before.slice(0, -beforeMatch[0].length) + openTag + selected + closeTag + after.slice(4);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(start - beforeMatch[0].length, start - beforeMatch[0].length + openTag.length + selected.length + closeTag.length);
-    });
-    return true;
-  }
-
-  const wrapped = `${openTag}${selected}${closeTag}`;
-  const next = text.slice(0, start) + wrapped + text.slice(end);
-  onChange(next);
-  requestAnimationFrame(() => {
-    textarea.value = next;
-    textarea.setSelectionRange(start, start + wrapped.length);
-  });
+  const res = wrapSelection(textarea.value, textarea.selectionStart, textarea.selectionEnd, 'c', color);
+  applyEditToElement(textarea, res, onChange);
   return true;
 }
 
@@ -604,76 +524,8 @@ function applyHighlightToSelection(
   color: string | null,
   onChange: (nextText: string) => void
 ) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const text = textarea.value;
-  if (start >= end) return false;
-
-  const selected = text.slice(start, end);
-
-  if (!color) {
-    const hMatch = /^\[h=#[0-9a-fA-F]{6}\]([\s\S]*)\[\/h\]$/i.exec(selected);
-    if (hMatch) {
-      const inner = hMatch[1];
-      const next = text.slice(0, start) + inner + text.slice(end);
-      onChange(next);
-      requestAnimationFrame(() => {
-        textarea.value = next;
-        textarea.setSelectionRange(start, start + inner.length);
-      });
-      return true;
-    }
-    const before = text.slice(0, start);
-    const after = text.slice(end);
-    const beforeMatch = /\[h=#[0-9a-fA-F]{6}\]$/i.exec(before);
-    if (beforeMatch && after.toLowerCase().startsWith('[/h]')) {
-      const next = before.slice(0, -beforeMatch[0].length) + selected + after.slice(4);
-      onChange(next);
-      requestAnimationFrame(() => {
-        textarea.value = next;
-        textarea.setSelectionRange(start - beforeMatch[0].length, start - beforeMatch[0].length + selected.length);
-      });
-      return true;
-    }
-    return false;
-  }
-
-  const openTag = `[h=${color}]`;
-  const closeTag = `[/h]`;
-
-  const hMatch = /^\[h=#[0-9a-fA-F]{6}\]([\s\S]*)\[\/h\]$/i.exec(selected);
-  if (hMatch) {
-    const inner = hMatch[1];
-    const wrapped = `${openTag}${inner}${closeTag}`;
-    const next = text.slice(0, start) + wrapped + text.slice(end);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(start, start + wrapped.length);
-    });
-    return true;
-  }
-
-  const before = text.slice(0, start);
-  const after = text.slice(end);
-  const beforeMatch = /\[h=#[0-9a-fA-F]{6}\]$/i.exec(before);
-  if (beforeMatch && after.toLowerCase().startsWith('[/h]')) {
-    const next = before.slice(0, -beforeMatch[0].length) + openTag + selected + closeTag + after.slice(4);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(start - beforeMatch[0].length, start - beforeMatch[0].length + openTag.length + selected.length + closeTag.length);
-    });
-    return true;
-  }
-
-  const wrapped = `${openTag}${selected}${closeTag}`;
-  const next = text.slice(0, start) + wrapped + text.slice(end);
-  onChange(next);
-  requestAnimationFrame(() => {
-    textarea.value = next;
-    textarea.setSelectionRange(start, start + wrapped.length);
-  });
+  const res = wrapSelection(textarea.value, textarea.selectionStart, textarea.selectionEnd, 'h', color);
+  applyEditToElement(textarea, res, onChange);
   return true;
 }
 
@@ -682,73 +534,8 @@ function toggleListLines(
   type: 'bullet' | 'number',
   onChange: (nextText: string) => void
 ) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const text = textarea.value;
-
-  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-  let lineEnd = text.indexOf('\n', end);
-  if (lineEnd === -1) lineEnd = text.length;
-
-  const block = text.slice(lineStart, lineEnd);
-  const lines = block.split('\n');
-
-  if (type === 'bullet') {
-    const allBullet = lines.every((l) => /^\s*•\s*/.test(l));
-    let newLines: string[];
-    if (allBullet) {
-      newLines = lines.map((l) => l.replace(/^\s*•\s*/, ''));
-    } else {
-      newLines = lines.map((l) => {
-        const clean = l.replace(/^\s*(?:•|\d+\.)\s*/, '');
-        return `• ${clean}`;
-      });
-    }
-    const newBlock = newLines.join('\n');
-    const next = text.slice(0, lineStart) + newBlock + text.slice(lineEnd);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(lineStart, lineStart + newBlock.length);
-    });
-  } else {
-    const allNumber = lines.every((l) => /^\s*\d+\.\s*/.test(l));
-    let newLines: string[];
-    if (allNumber) {
-      newLines = lines.map((l) => l.replace(/^\s*\d+\.\s*/, ''));
-    } else {
-      let count = 1;
-      newLines = lines.map((l) => {
-        const clean = l.replace(/^\s*(?:•|\d+\.)\s*/, '');
-        return `${count++}. ${clean}`;
-      });
-    }
-    const newBlock = newLines.join('\n');
-    const next = text.slice(0, lineStart) + newBlock + text.slice(lineEnd);
-    onChange(next);
-    requestAnimationFrame(() => {
-      textarea.value = next;
-      textarea.setSelectionRange(lineStart, lineStart + newBlock.length);
-    });
-  }
-}
-
-function toggleTextList(text: string, type: 'bullet' | 'number'): string {
-  const lines = text.split('\n');
-  if (type === 'bullet') {
-    const allBullet = lines.every((l) => /^\s*•\s*/.test(l));
-    if (allBullet) {
-      return lines.map((l) => l.replace(/^\s*•\s*/, '')).join('\n');
-    }
-    return lines.map((l) => `• ${l.replace(/^\s*(?:•|\d+\.)\s*/, '')}`).join('\n');
-  } else {
-    const allNumber = lines.every((l) => /^\s*\d+\.\s*/.test(l));
-    if (allNumber) {
-      return lines.map((l) => l.replace(/^\s*\d+\.\s*/, '')).join('\n');
-    }
-    let count = 1;
-    return lines.map((l) => `${count++}. ${l.replace(/^\s*(?:•|\d+\.)\s*/, '')}`).join('\n');
-  }
+  const res = toggleList(textarea.value, textarea.selectionStart, textarea.selectionEnd, type);
+  applyEditToElement(textarea, res, onChange);
 }
 
 function FormatBar({
@@ -2333,57 +2120,12 @@ export function BoardCanvas(props: BoardCanvasProps) {
             } else if (e.key === 'Enter' && !e.shiftKey) {
               const ta = textareaRef.current;
               if (ta) {
-                const pos = ta.selectionStart;
-                const val = ta.value;
-                const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
-                let lineEnd = val.indexOf('\n', pos);
-                if (lineEnd === -1) lineEnd = val.length;
-                const line = val.slice(lineStart, lineEnd);
-
-                const bulletMatch = /^\s*•\s*(.*)$/.exec(line);
-                if (bulletMatch) {
+                const res = handleListEnter(ta.value, ta.selectionStart, ta.selectionEnd);
+                if (res.handled) {
                   e.preventDefault();
-                  const content = bulletMatch[1];
-                  if (content.trim() === '') {
-                    const next = val.slice(0, lineStart) + val.slice(lineEnd);
+                  applyEditToElement(ta, res, (next) => {
                     setEditingTextOverride({ id: editingNote.id, text: next });
-                    requestAnimationFrame(() => {
-                      ta.value = next;
-                      ta.setSelectionRange(lineStart, lineStart);
-                    });
-                  } else {
-                    const insert = '\n• ';
-                    const next = val.slice(0, pos) + insert + val.slice(pos);
-                    setEditingTextOverride({ id: editingNote.id, text: next });
-                    requestAnimationFrame(() => {
-                      ta.value = next;
-                      ta.setSelectionRange(pos + insert.length, pos + insert.length);
-                    });
-                  }
-                  return;
-                }
-
-                const numMatch = /^\s*(\d+)\.\s*(.*)$/.exec(line);
-                if (numMatch) {
-                  e.preventDefault();
-                  const num = parseInt(numMatch[1], 10);
-                  const content = numMatch[2];
-                  if (content.trim() === '') {
-                    const next = val.slice(0, lineStart) + val.slice(lineEnd);
-                    setEditingTextOverride({ id: editingNote.id, text: next });
-                    requestAnimationFrame(() => {
-                      ta.value = next;
-                      ta.setSelectionRange(lineStart, lineStart);
-                    });
-                  } else {
-                    const insert = `\n${num + 1}. `;
-                    const next = val.slice(0, pos) + insert + val.slice(pos);
-                    setEditingTextOverride({ id: editingNote.id, text: next });
-                    requestAnimationFrame(() => {
-                      ta.value = next;
-                      ta.setSelectionRange(pos + insert.length, pos + insert.length);
-                    });
-                  }
+                  });
                   return;
                 }
               }

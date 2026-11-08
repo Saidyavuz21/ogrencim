@@ -9,6 +9,7 @@ import { CHOICE_LETTERS, listQuestions, QuestionInput, QuestionRow, QuizMode } f
 import { SUBJECT_OPTIONS } from '../files/FileDialogs';
 import { Modal, normalize } from '../files/FilesUi';
 import { QuestionEditor } from './QuestionBankPage';
+import { stripRichAndMath } from '../math/richEditing';
 import f from '../files/Files.module.css';
 import styles from './Quiz.module.css';
 import ts from '../teacher/TeacherDashboard.module.css';
@@ -75,7 +76,7 @@ export function QuizComposer({ value, onChange, subject }: {
           <ol className={styles.quizList}>
             {chosen.map((q, i) => (
               <li key={q.id}>
-                <span title={q.body}><b>{i + 1}.</b>{q.body}</span>
+                <span title={stripRichAndMath(q.body)}><b>{i + 1}. </b>{stripRichAndMath(q.body)}</span>
                 <span className={f.orderButtons} style={{ flex: 'none' }}>
                   <button type="button" className={f.iconButton} onClick={() => move(q.id, -1)} disabled={i === 0} aria-label={`${i + 1}. soruyu yukarı taşı`}><ChevronUp size={18} aria-hidden="true" /></button>
                   <button type="button" className={f.iconButton} onClick={() => move(q.id, 1)} disabled={i === chosen.length - 1} aria-label={`${i + 1}. soruyu aşağı taşı`}><ChevronDown size={18} aria-hidden="true" /></button>
@@ -167,7 +168,7 @@ function QuestionPicker({ bank, already, defaultSubject, onClose, onPick }: {
                 <label className={isIn ? f.pickDisabled : undefined}>
                   <input type="checkbox" className={f.check} checked={isIn || picked.includes(x.id)} disabled={isIn} onChange={() => toggle(x.id)} />
                   <span className={f.pickText}>
-                    <strong title={x.body}>{x.body}</strong>
+                    <strong title={stripRichAndMath(x.body)}>{stripRichAndMath(x.body)}</strong>
                     <small>{isIn ? 'Quizde zaten var' : `Doğru: ${CHOICE_LETTERS[x.correct_index]} · ${x.choices.length} şık${x.subject ? ` · ${x.subject}` : ''}${x.topic ? ` · ${x.topic}` : ''}`}</small>
                   </span>
                 </label>

@@ -7,6 +7,8 @@ import { CHOICE_LETTERS, getQuizReport, QUIZ_MODE_LABEL, QuizAnswerRow, QuizMode
 import { downloadCsv, fileSlug } from '../../lib/reportData';
 import { Modal } from '../files/FilesUi';
 import { useQuizImages } from './useQuizImages';
+import { RichText } from '../math/RichText';
+import { stripRichAndMath } from '../math/richEditing';
 import f from '../files/Files.module.css';
 import styles from './Quiz.module.css';
 import r from '../reports/Reports.module.css';
@@ -139,7 +141,7 @@ export function QuizReport({ homeworkId, title, mode, dueAt, students }: { homew
                     {data.items.map((it, i) => (
                       <tr key={it.id}>
                         <th scope="row" style={{ fontWeight: 600, maxWidth: 220 }}>
-                          <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={it.body}>{i + 1}. {it.body}</span>
+                          <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={stripRichAndMath(it.body)}>{i + 1}. {stripRichAndMath(it.body)}</span>
                           <small className={f.muted} style={{ fontSize: 12 }}>Doğru: {CHOICE_LETTERS[it.correct_index]}</small>
                         </th>
                         <td>
@@ -194,7 +196,7 @@ function HeatMap({ data, mode, onInspect }: { data: HeatModel; mode: QuizMode; o
             <tr>
               <th scope="col" style={{ textAlign: 'left', paddingLeft: 4 }}>Öğrenci</th>
               {data.items.map((it, i) => (
-                <th key={it.id} scope="col" title={it.body}>
+                <th key={it.id} scope="col" title={stripRichAndMath(it.body)}>
                   {i + 1}
                   <small style={it.rate == null ? { background: '#f0efec', color: '#898781' } : { background: rateColor(it.rate), color: rateInk(it.rate) }}>
                     {it.rate == null ? '—' : `%${it.rate}`}
@@ -257,7 +259,7 @@ function AnswersDialog({ student, report, mode, onClose }: { student: Student; r
                   {i + 1}. soru · {!answered ? 'Boş' : a!.correct ? 'Doğru' : 'Yanlış'}
                   {answered && mode === 'practice' && ` · ${a!.tries} deneme · ${a!.points} puan`}
                 </p>
-                <p className={styles.qText} style={{ fontSize: 16 }}>{it.body}</p>
+                <div className={styles.qText} style={{ fontSize: 16 }}><RichText text={it.body} /></div>
                 {it.image_path && urls[it.image_path] && (
                   // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
                   <img className={styles.questionImage} src={urls[it.image_path]} alt="Soru görseli" style={{ maxHeight: 160 }} />
@@ -265,7 +267,7 @@ function AnswersDialog({ student, report, mode, onClose }: { student: Student; r
                 <ul className={styles.qChoices}>
                   {it.choices.map((c, ci) => (
                     <li key={ci} className={ci === it.correct_index ? styles.qCorrect : undefined} style={answered && ci === a!.choice && ci !== it.correct_index ? { color: '#8f2232', fontWeight: 600 } : undefined}>
-                      <b>{CHOICE_LETTERS[ci]})</b>{c}
+                      <b>{CHOICE_LETTERS[ci]}) </b><RichText text={c} inline />
                       {ci === it.correct_index && <span> · doğru cevap</span>}
                       {answered && ci === a!.choice && <span> · öğrencinin {mode === 'practice' ? 'son ' : ''}cevabı</span>}
                     </li>

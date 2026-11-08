@@ -16,6 +16,8 @@ import { HomeworkFilePicker } from '../files/HomeworkFilePicker';
 import { Modal, normalize, TagInput } from '../files/FilesUi';
 import f from '../files/Files.module.css';
 import { useQuizImages } from './useQuizImages';
+import { RichText } from '../math/RichText';
+import { RichTextField } from '../math/RichTextField';
 import styles from './Quiz.module.css';
 
 const ANY = '';
@@ -109,7 +111,7 @@ export function QuestionBankPage() {
                       // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
                       <img className={styles.qThumb} src={urls[x.image_path]} alt="" />
                     )}
-                    <p className={styles.qBody}>{x.body}</p>
+                    <div className={styles.qBody}><RichText text={x.body} /></div>
                     <div className={f.rowActions}>
                       <button type="button" className={f.iconButton} onClick={() => setEditing({ id: x.id, value: asInput(x) })} aria-label="Soruyu düzenle" title="Düzenle"><Edit size={18} aria-hidden="true" /></button>
                       <button type="button" className={f.iconButton} onClick={() => setEditing({ id: null, value: asInput(x) })} aria-label="Sorunun kopyasını oluştur" title="Kopyasını oluştur"><Copy size={18} aria-hidden="true" /></button>
@@ -119,7 +121,7 @@ export function QuestionBankPage() {
                   <ol className={styles.qChoices} aria-label="Şıklar">
                     {x.choices.map((c, i) => (
                       <li key={i} className={i === x.correct_index ? styles.qCorrect : undefined}>
-                        <b>{CHOICE_LETTERS[i]})</b>{c}{i === x.correct_index && <span className={f.srOnly}> (doğru cevap)</span>}
+                        <b>{CHOICE_LETTERS[i]}) </b><RichText text={c} inline />{i === x.correct_index && <span className={f.srOnly}> (doğru cevap)</span>}
                         {i === x.correct_index && <Check size={14} aria-hidden="true" />}
                       </li>
                     ))}
@@ -220,10 +222,19 @@ export function QuestionEditor({ id, initial, tagSuggestions, onClose, onSaved }
   return (
     <Modal title={id ? 'Soruyu düzenle' : 'Yeni soru'} onClose={close} busy={busy} wide>
       <form className={f.form} onSubmit={submit}>
-        <label className={f.field} htmlFor={ids.body}>
-          Soru
-          <textarea id={ids.body} value={v.body} maxLength={2000} rows={4} onChange={(e) => setV({ ...v, body: e.target.value })} placeholder="Soru metnini yazın" data-autofocus />
-        </label>
+        <div className={f.field}>
+          <label htmlFor={ids.body}>Soru</label>
+          <RichTextField
+            id={ids.body}
+            value={v.body}
+            maxLength={2000}
+            rows={4}
+            multiline
+            onChange={(body) => setV({ ...v, body })}
+            placeholder="Soru metnini yazın"
+            data-autofocus
+          />
+        </div>
 
         <div className={f.field}>
           <span>Görsel <span className={f.hint}>(isteğe bağlı · JPG, PNG, WEBP, GIF · 5 MB)</span></span>
@@ -262,7 +273,14 @@ export function QuestionEditor({ id, initial, tagSuggestions, onClose, onSaved }
                 >
                   {v.correct_index === i ? <Check size={16} aria-hidden="true" /> : null}{CHOICE_LETTERS[i]}
                 </button>
-                <input type="text" value={c} maxLength={300} onChange={(e) => setChoice(i, e.target.value)} aria-label={`${CHOICE_LETTERS[i]} şıkkı`} placeholder={`${CHOICE_LETTERS[i]} şıkkı`} />
+                <RichTextField
+                  value={c}
+                  maxLength={300}
+                  multiline={false}
+                  onChange={(val) => setChoice(i, val)}
+                  aria-label={`${CHOICE_LETTERS[i]} şıkkı`}
+                  placeholder={`${CHOICE_LETTERS[i]} şıkkı`}
+                />
                 <button type="button" className={f.iconButton} onClick={() => removeChoice(i)} disabled={v.choices.length <= MIN_CHOICES} aria-label={`${CHOICE_LETTERS[i]} şıkkını sil`} title="Şıkkı sil">
                   <Trash2 size={18} aria-hidden="true" />
                 </button>
@@ -276,10 +294,19 @@ export function QuestionEditor({ id, initial, tagSuggestions, onClose, onSaved }
           )}
         </fieldset>
 
-        <label className={f.field} htmlFor={ids.expl}>
-          Çözüm / açıklama <span className={f.hint}>(isteğe bağlı; öğrenci cevabı görünce gösterilir)</span>
-          <textarea id={ids.expl} value={v.explanation || ''} maxLength={1000} rows={2} onChange={(e) => setV({ ...v, explanation: e.target.value })} />
-        </label>
+        <div className={f.field}>
+          <label htmlFor={ids.expl}>
+            Çözüm / açıklama <span className={f.hint}>(isteğe bağlı; öğrenci cevabı görünce gösterilir)</span>
+          </label>
+          <RichTextField
+            id={ids.expl}
+            value={v.explanation || ''}
+            maxLength={1000}
+            rows={2}
+            multiline
+            onChange={(explanation) => setV({ ...v, explanation })}
+          />
+        </div>
 
         <div className={f.grid2}>
           <div className={f.field}>

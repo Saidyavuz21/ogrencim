@@ -22,12 +22,13 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
+| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 0 / 10 |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **66 / 107** |
+| | **Toplam** | **66 / 117** |
 
 ---
 
@@ -131,6 +132,26 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 - [x] Öğrenci çiziminin otomatik kaydı (30 sn) — *K-7* · 7 Kasım 2026 · `73358e2` (sekme gizlenince ve kapatınca da)
 - [x] Ortak medya çekmecesinden tahtaya sürükle-bırak — *K-3* · 7 Kasım 2026 · `73358e2` (Dosyalarım ve kütüphane resimleri)
 - [x] Tahtayı PDF/PNG olarak dışa aktarma (5. paketten taşındı) — *K-8* · 7 Kasım 2026 · `73358e2` (sayfa PNG, bütün sayfalar yazdır / PDF)
+
+## 7b. Tahta: metin, gruplama, şekil kütüphanesi (bizde ek)
+
+Hedef: Excalidraw'daki kütüphane gibi, hazır parçaların tahtaya **düzenlenebilir öğeler** (çizgi, şekil, metin) olarak geldiği bir Şekiller kütüphanesi. Sıra önemli: her iş bir öncekinin üstüne kurulur.
+
+Ortak kararlar:
+- Grup = öğelerde isteğe bağlı `groupId` alanı (ayrı kap öğesi yok, iç içe grup yok). Eski tahtalar olduğu gibi açılır.
+- Kütüphane parçası = `{ id, name, category, elements: BoardEl[] }`; öğeler (0,0) başlangıçlı. Eklerken yeni kimlik + yeni `groupId` + bırakılan yere kaydırma. Önizleme resmi dosya değil, aynı öğelerden SVG olarak çizilir.
+- Hazır setler kodla gelir (`src/lib/boardLibrary/`); bazıları "ayarlı" üretici olur (ör. sayı doğrusu: başlangıç, bitiş, aralık).
+
+- [ ] **Metin aracı**: zeminsiz yazı; yazı tipi (Düz / El yazısı / Başlık), boyut, kalın/ince/italik/altı çizili, renk, hizalama; seçiliyken yüzen biçim çubuğu; PNG'de yazı tipi gömülü
+- [ ] **Çoklu seçim**: sürükleyerek dikdörtgen seçim, Shift+tık; seçilenleri birlikte taşı, sil, kopyala (Ctrl+C/V, Ctrl+D)
+- [ ] **Gruplama**: Ctrl+G / Ctrl+Shift+G; gruba tıklayınca bütün grup seçilir, çift tıklayınca grubun içindeki tek öğe
+- [ ] **Şekiller kütüphanesi altyapısı**: medya çekmecesinde Şekiller sekmesi, arama + kategori, tıkla ya da sürükle-bırak ile grup olarak ekleme
+- [ ] Hazır set — **Matematik**: sayı doğrusu, koordinat düzlemi, kesir pastası ve çubukları, açıölçer, cetvel, üçgen/dörtgen çeşitleri, onluk taban blokları
+- [ ] **Ayarlı parçalar**: eklerken küçük pencere (sayı doğrusu aralığı, kesir dilim sayısı, ızgara satır/sütun)
+- [ ] Hazır set — **Fen ve Genel**: devre elemanları, besin zinciri, hücre şeması; konuşma balonu, ok çeşitleri, tablo ızgarası
+- [ ] **Kütüphaneme kaydet**: seçili öğeler → ad + kategori; Supabase tablosu, yalnızca sahibi görür (RLS), boyut sınırı
+- [ ] **Formül desteği**: KaTeX ile kesir, üs, kök, denklem; düğmelerle ekleme (Metin, Not, Adım adım, Mini Test)
+- [ ] **Okul içi paylaşım**: öğretmen kütüphanesindeki parçayı okulundaki öğretmenlerle paylaşır
 
 ## 8. Canlı ders
 

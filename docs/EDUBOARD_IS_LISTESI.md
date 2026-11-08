@@ -22,13 +22,13 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
-| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 9 / 11 |
+| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 10 / 11 |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **75 / 118** |
+| | **Toplam** | **76 / 118** |
 
 ---
 
@@ -149,7 +149,7 @@ Ortak kararlar:
 - [x] Hazır set — **Matematik**: sayı doğrusu, koordinat düzlemi, kesir pastası ve çubukları, açıölçer, cetvel, üçgen/dörtgen çeşitleri, onluk taban blokları (çokgen öğesi eklendi) · 8 Kasım 2026 · `c9d0f9e`, `dd4558c`
 - [x] **Ayarlı parçalar**: eklerken küçük pencere (sayı doğrusu aralığı, kesir dilim sayısı, ızgara satır/sütun) (eklenmiş parçanın ayarını değiştirme dahil) · 8 Kasım 2026 · `8e73e7d`
 - [x] Hazır set — **Fen ve Genel**: devre elemanları, besin zinciri, hücre şeması; konuşma balonu, ok çeşitleri, tablo ızgarası · 8 Kasım 2026 · `edbab50`
-- [ ] **Kütüphaneme kaydet**: seçili öğeler → ad + kategori; Supabase tablosu, yalnızca sahibi görür (RLS), boyut sınırı
+- [x] **Kütüphaneme kaydet**: seçili öğeler → ad + kategori; Supabase tablosu, yalnızca sahibi görür (RLS), boyut sınırı · 8 Kasım 2026 · `3b50174`
 - [x] **Formül desteği**: KaTeX ile kesir, üs, kök, denklem; düğmelerle ekleme (Metin, Not, Adım adım, Mini Test) · 8 Kasım 2026 · `65527bd`
 - [x] **Grup ve çoklu seçimi köşeden ölçekleme** (ayarlı parçalarda ölçek korunur) · 8 Kasım 2026 · `acb8a86`
 - [ ] **Okul içi paylaşım**: öğretmen kütüphanesindeki parçayı okulundaki öğretmenlerle paylaşır

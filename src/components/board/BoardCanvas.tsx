@@ -1660,6 +1660,19 @@ export function BoardCanvas(props: BoardCanvasProps) {
     };
   }, [usedFontKey]);
 
+  // Yazma kutusu açılınca odak bir kare sonra da verilir (tıklamanın odak değişimi kutuyu kapatmasın)
+  useEffect(() => {
+    if (!editingNoteId) return;
+    const raf = requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (ta && document.activeElement !== ta) {
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [editingNoteId]);
+
   const drawingOnLayer = !!onLayerCommit;
   const interactive = !thumbnail && (editable || drawingOnLayer);
 
@@ -1715,6 +1728,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
       setPreview({ el: draft.current.el });
     } else if (t === 'note') {
       const note: NoteEl = { id: newId(), type: 'note', x: Math.round(Math.min(x, BOARD_W - 420)), y: Math.round(Math.min(y, BOARD_H - 240)), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 32 };
+      // Tarayıcının bu tıklamadaki varsayılan odak değişimi yeni açılan yazma kutusunun odağını
+      // hemen çalıyordu (kutu kapanıyor, boş metin siliniyordu); engellenir.
+      e.preventDefault();
       onCommit?.([...elements, note]);
       onSelect?.([note.id]);
       onEditNote?.(note.id);
@@ -1735,6 +1751,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
         textColor: color,
         fontSize: 42,
       };
+      e.preventDefault(); // bkz. Not: yazma kutusunun odağı korunur
       onCommit?.([...elements, textEl]);
       onSelect?.([textEl.id]);
       onEditNote?.(textEl.id);

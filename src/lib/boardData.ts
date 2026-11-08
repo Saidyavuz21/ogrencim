@@ -24,8 +24,8 @@ export const BOARD_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'imag
 export type Background = 'blank' | 'grid' | 'lines' | 'dots' | 'coord';
 export const BACKGROUND_LABEL: Record<Background, string> = { blank: 'Düz', grid: 'Kareli', lines: 'Çizgili', dots: 'Noktalı', coord: 'Koordinat' };
 
-export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean }
-export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null }
+export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string }
+export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string }
 export interface NoteEl {
   id: string;
   type: 'note';
@@ -43,8 +43,9 @@ export interface NoteEl {
   italic?: boolean;
   underline?: boolean;
   align?: 'left' | 'center' | 'right';         // varsayılan 'left'
+  groupId?: string;
 }
-export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string }
+export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string }
 export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer';
 export interface WidgetData {
   /** Mini Test (öğretmenin tahtasında): bankadaki soru */
@@ -60,7 +61,7 @@ export interface WidgetData {
   /** Kronometre: 0 = ileri sayım, >0 = geri sayım (sn) */
   seconds?: number;
 }
-export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData }
+export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string }
 export type BoardEl = StrokeEl | ShapeEl | NoteEl | ImageEl | WidgetEl;
 export interface BoardPage { id: string; background: Background; elements: BoardEl[] }
 export interface BoardContent { version: 1; pages: BoardPage[] }

@@ -426,6 +426,8 @@ export interface BoardCanvasProps {
   onDuplicate?: (ids: string[]) => void;
   onOrder?: (dir: 'front' | 'back', ids: string[]) => void;
   onDeleteSelected?: (ids: string[]) => void;
+  onGroup?: (ids: string[]) => void;
+  onUngroup?: (ids: string[]) => void;
   onToolChange?: (tool: Tool) => void;
   editingNoteId?: string | null;
   onEditNote?: (id: string | null) => void;
@@ -666,11 +668,15 @@ function MultiSelectBar({
   onDuplicate,
   onOrder,
   onDelete,
+  onGroup,
+  onUngroup,
 }: {
   elements: BoardEl[];
   onDuplicate?: () => void;
   onOrder?: (dir: 'front' | 'back') => void;
   onDelete?: () => void;
+  onGroup?: () => void;
+  onUngroup?: () => void;
 }) {
   const cb = combinedBbox(elements.map(bbox));
   const topPct = cb.y < 70
@@ -678,6 +684,12 @@ function MultiSelectBar({
     : (cb.y / BOARD_H) * 100;
   const transform = cb.y < 70 ? 'none' : 'translateY(calc(-100% - 12px))';
   const leftPct = Math.max(1, Math.min(65, (cb.x / BOARD_W) * 100));
+
+  const hasGroup = elements.some((el) => !!el.groupId);
+  const firstGid = elements[0]?.groupId;
+  const allSameGroup = hasGroup && elements.every((el) => el.groupId && el.groupId === firstGid);
+  const canGroup = elements.length >= 2 && !allSameGroup;
+  const canUngroup = hasGroup;
 
   return (
     <div
@@ -692,8 +704,30 @@ function MultiSelectBar({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <span className={styles.multiSelectBadge}>
-        {elements.length} öğe
+        {allSameGroup ? 'Grup' : `${elements.length} öğe`}
       </span>
+      {canGroup && (
+        <button
+          type="button"
+          className={styles.formatBtn}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onGroup}
+          title="Grupla (Ctrl+G)"
+        >
+          Grupla
+        </button>
+      )}
+      {canUngroup && (
+        <button
+          type="button"
+          className={styles.formatBtn}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onUngroup}
+          title="Grubu çöz (Ctrl+Shift+G)"
+        >
+          Grubu çöz
+        </button>
+      )}
       <span className={styles.formatDivider} aria-hidden="true" />
       <button
         type="button"
@@ -752,6 +786,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onDuplicate,
     onOrder,
     onDeleteSelected,
+    onGroup,
+    onUngroup,
     onToolChange,
     editingNoteId,
     onEditNote,
@@ -775,6 +811,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const [editingHeight, setEditingHeight] = useState<{ id: string; h: number } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const formatBarRef = useRef<HTMLDivElement | null>(null);
+  const [enteredGroupId, setEnteredGroupId] = useState<string | null>(null);
   const [, setFontsReady] = useState(0);
 
   useEffect(() => {
@@ -806,6 +843,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   };
 
   const elements = page.elements;
+  const activeGroupId = (enteredGroupId && selectedIds.length && elements.some((e) => e.groupId === enteredGroupId && selectedIds.includes(e.id))) ? enteredGroupId : null;
   const layerStrokes = layer || [];
 
   const eraseAt = (x: number, y: number, d: Extract<Draft, { kind: 'erase' }>) => {
@@ -884,21 +922,57 @@ export function BoardCanvas(props: BoardCanvasProps) {
           }
         }
       }
-      const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
+
+      // Hit tespiti:
+      // Eğer activeGroupId varsa sadece o gruptaki öğeleri ara
+      const hit = activeGroupId
+        ? [...elements].reverse().find((el) => el.groupId === activeGroupId && hitTest(el, x, y))
+        : [...elements].reverse().find((el) => hitTest(el, x, y));
+
       if (hit) {
-        if (e.shiftKey) {
-          const next = selectedIds.includes(hit.id)
-            ? selectedIds.filter((id) => id !== hit.id)
-            : [...selectedIds, hit.id];
-          onSelect?.(next);
-        } else if (selectedIds.includes(hit.id)) {
-          const origs = elements.filter((el) => selectedIds.includes(el.id));
-          draft.current = { kind: 'move', ids: selectedIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
+        if (activeGroupId && hit.groupId === activeGroupId) {
+          // Grup içi kipindeyiz: tekil öğe seçimi / taşıması
+          if (e.shiftKey) {
+            const next = selectedIds.includes(hit.id)
+              ? selectedIds.filter((id) => id !== hit.id)
+              : [...selectedIds, hit.id];
+            onSelect?.(next);
+          } else if (selectedIds.includes(hit.id)) {
+            const origs = elements.filter((el) => selectedIds.includes(el.id));
+            draft.current = { kind: 'move', ids: selectedIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
+          } else {
+            onSelect?.([hit.id]);
+            draft.current = { kind: 'move', ids: [hit.id], sx: x, sy: y, origs: [hit], clickHitId: hit.id, dragged: false };
+          }
         } else {
-          onSelect?.([hit.id]);
-          draft.current = { kind: 'move', ids: [hit.id], sx: x, sy: y, origs: [hit], clickHitId: hit.id, dragged: false };
+          // Normal seçim: eğer öğenin grubu varsa tüm grup seçilir
+          const targetIds = hit.groupId
+            ? elements.filter((el) => el.groupId === hit.groupId).map((el) => el.id)
+            : [hit.id];
+
+          if (e.shiftKey) {
+            const isAnySelected = targetIds.some((id) => selectedIds.includes(id));
+            const next = isAnySelected
+              ? selectedIds.filter((id) => !targetIds.includes(id))
+              : Array.from(new Set([...selectedIds, ...targetIds]));
+            onSelect?.(next);
+          } else {
+            const isAllSelected = targetIds.every((id) => selectedIds.includes(id));
+            if (isAllSelected && selectedIds.length >= targetIds.length) {
+              const origs = elements.filter((el) => selectedIds.includes(el.id));
+              draft.current = { kind: 'move', ids: selectedIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
+            } else {
+              onSelect?.(targetIds);
+              const origs = elements.filter((el) => targetIds.includes(el.id));
+              draft.current = { kind: 'move', ids: targetIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
+            }
+          }
         }
       } else {
+        // Boş alana tıklandı: grup içi kipindeysek çık
+        if (activeGroupId) {
+          setEnteredGroupId(null);
+        }
         draft.current = { kind: 'marquee', sx: x, sy: y, x, y, additive: e.shiftKey, base: e.shiftKey ? selectedIds : [] };
       }
     }
@@ -993,8 +1067,17 @@ export function BoardCanvas(props: BoardCanvasProps) {
       if (mbox.w < 4 && mbox.h < 4) {
         if (!d.additive) onSelect?.([]);
       } else {
-        const insideIds = elements.filter((el) => boxContains(mbox, bbox(el))).map((el) => el.id);
-        const finalIds = d.additive ? Array.from(new Set([...d.base, ...insideIds])) : insideIds;
+        const insideElements = elements.filter((el) => boxContains(mbox, bbox(el)));
+        let finalInsideIds: string[];
+        if (activeGroupId) {
+          finalInsideIds = insideElements.filter((el) => el.groupId === activeGroupId).map((el) => el.id);
+        } else {
+          const groupIds = new Set(insideElements.map((el) => el.groupId).filter(Boolean));
+          finalInsideIds = elements
+            .filter((el) => boxContains(mbox, bbox(el)) || (el.groupId && groupIds.has(el.groupId)))
+            .map((el) => el.id);
+        }
+        const finalIds = d.additive ? Array.from(new Set([...d.base, ...finalInsideIds])) : finalInsideIds;
         onSelect?.(finalIds);
       }
     }
@@ -1047,15 +1130,33 @@ export function BoardCanvas(props: BoardCanvasProps) {
         onDoubleClick={(e) => {
           if (!editable || tool !== 'select') return;
           const { x, y } = toPoint(e.clientX, e.clientY);
-          const hit = [...elements].reverse().find((el) => el.type === 'note' && hitTest(el, x, y));
-          if (hit) { onSelect?.([hit.id]); onEditNote?.(hit.id); }
+          const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
+          if (!hit) return;
+
+          if (!activeGroupId && hit.groupId) {
+            setEnteredGroupId(hit.groupId);
+            onSelect?.([hit.id]);
+            return;
+          }
+
+          if (hit.type === 'note') {
+            onSelect?.([hit.id]);
+            onEditNote?.(hit.id);
+          }
         }}
       >
         <defs><BackgroundDefs id={patternId} bg={page.background} /></defs>
         <rect x={0} y={0} width={BOARD_W} height={BOARD_H} fill="#ffffff" />
         {page.background !== 'blank' && <rect x={0} y={0} width={BOARD_W} height={BOARD_H} fill={`url(#${patternId})`} />}
         {page.background === 'coord' && <CoordAxes />}
-        {shown.map((el) => <ElementView key={el.id} el={el} imageUrls={imageUrls} editingNote={el.id === editingNoteId} />)}
+        {shown.map((el) => {
+          const isMuted = activeGroupId && el.groupId !== activeGroupId;
+          return (
+            <g key={el.id} opacity={isMuted ? 0.4 : 1} style={{ transition: 'opacity 150ms ease' }}>
+              <ElementView el={el} imageUrls={imageUrls} editingNote={el.id === editingNoteId} />
+            </g>
+          );
+        })}
         {shownLayer.map((el) => <ElementView key={el.id} el={el} imageUrls={imageUrls} />)}
         {draftNew && <ElementView el={draftNew} imageUrls={imageUrls} />}
         {preview?.marquee && (
@@ -1082,6 +1183,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
         })()}
         {editable && selectedElements.length > 1 && (() => {
           const cb = combinedBbox(selectedElements.map(bbox));
+          const hasCommonGroup = selectedElements.every((el) => el.groupId && el.groupId === selectedElements[0].groupId);
           return (
             <g pointerEvents="none">
               {selectedElements.map((el) => {
@@ -1110,6 +1212,29 @@ export function BoardCanvas(props: BoardCanvasProps) {
                 strokeWidth={2}
                 strokeDasharray="8 6"
               />
+              {hasCommonGroup && !activeGroupId && (
+                <g transform={`translate(${cb.x - 8}, ${cb.y - 28})`}>
+                  <rect
+                    x={0}
+                    y={0}
+                    width={48}
+                    height={18}
+                    rx={4}
+                    fill="#2a78d6"
+                  />
+                  <text
+                    x={24}
+                    y={13}
+                    textAnchor="middle"
+                    fill="#ffffff"
+                    fontSize={11}
+                    fontWeight={700}
+                    fontFamily="sans-serif"
+                  >
+                    Grup
+                  </text>
+                </g>
+              )}
             </g>
           );
         })()}
@@ -1121,6 +1246,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
           onDuplicate={() => onDuplicate?.(selectedIds)}
           onOrder={(dir) => onOrder?.(dir, selectedIds)}
           onDelete={() => onDeleteSelected?.(selectedIds)}
+          onGroup={() => onGroup?.(selectedIds)}
+          onUngroup={() => onUngroup?.(selectedIds)}
         />
       )}
 

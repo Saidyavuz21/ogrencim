@@ -215,9 +215,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     const idSet = new Set(ids);
     const toClone = page.elements.filter((el) => idSet.has(el.id));
     if (!toClone.length) return;
+    const groupMap = new Map<string, string>();
     const clones: BoardEl[] = toClone.map((el) => {
       const cloned = translate(el, 24, 24);
-      return { ...cloned, id: newId() };
+      let nextGid = el.groupId;
+      if (el.groupId) {
+        if (!groupMap.has(el.groupId)) groupMap.set(el.groupId, newId());
+        nextGid = groupMap.get(el.groupId);
+      }
+      return { ...cloned, id: newId(), groupId: nextGid };
     });
     commitElements([...page.elements, ...clones]);
     setSelectedIds(clones.map((c) => c.id));
@@ -236,15 +242,47 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!page || !boardClipboard || !boardClipboard.length) return;
     const isSamePage = boardClipboardPageId === page.id;
     const offset = isSamePage ? 24 : 0;
+    const groupMap = new Map<string, string>();
     const pasted: BoardEl[] = boardClipboard.map((el) => {
       const moved = offset > 0 ? translate(el, offset, offset) : { ...el };
-      return { ...moved, id: newId() };
+      let nextGid = el.groupId;
+      if (el.groupId) {
+        if (!groupMap.has(el.groupId)) groupMap.set(el.groupId, newId());
+        nextGid = groupMap.get(el.groupId);
+      }
+      return { ...moved, id: newId(), groupId: nextGid };
     });
     if (isSamePage) {
       boardClipboard = pasted;
     }
     commitElements([...page.elements, ...pasted]);
     setSelectedIds(pasted.map((p) => p.id));
+  };
+
+  const groupSelected = (targetIds?: string[]) => {
+    const ids = targetIds || selectedIds;
+    if (!page || ids.length < 2) return;
+    const gid = newId();
+    const idSet = new Set(ids);
+    commitElements(page.elements.map((el) => (idSet.has(el.id) ? { ...el, groupId: gid } : el)));
+  };
+
+  const ungroupSelected = (targetIds?: string[]) => {
+    const ids = targetIds || selectedIds;
+    if (!page || !ids.length) return;
+    const idSet = new Set(ids);
+    const selectedElements = page.elements.filter((el) => idSet.has(el.id));
+    const targetGroupIds = new Set(selectedElements.map((el) => el.groupId).filter(Boolean));
+    commitElements(
+      page.elements.map((el) => {
+        if (idSet.has(el.id) || (el.groupId && targetGroupIds.has(el.groupId))) {
+          const next = { ...el };
+          delete next.groupId;
+          return next;
+        }
+        return el;
+      })
+    );
   };
 
   // ---- Otomatik kayıt (değişiklikten 1,5 sn sonra) ----
@@ -368,6 +406,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && page) {
         e.preventDefault();
         duplicateElements();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g' && page) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          ungroupSelected();
+        } else {
+          groupSelected();
+        }
         return;
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length && page) {
@@ -1350,6 +1397,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onDuplicate={(ids) => duplicateElements(ids)}
           onOrder={(dir, ids) => reorderElements(dir, ids)}
           onDeleteSelected={(ids) => deleteSelected(ids)}
+          onGroup={(ids) => groupSelected(ids)}
+          onUngroup={(ids) => ungroupSelected(ids)}
           onToolChange={setTool}
           editingNoteId={editingNoteId}
           onEditNote={setEditingNoteId}
@@ -1405,10 +1454,12 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           />
         ) : selectedIds.length > 1 ? (
           <MultiSelectionPanel
-            count={selectedIds.length}
+            elements={page.elements.filter((el) => selectedIds.includes(el.id))}
             onDuplicate={() => duplicateElements()}
             onOrder={(dir) => reorderElements(dir)}
             onDelete={() => deleteSelected()}
+            onGroup={() => groupSelected()}
+            onUngroup={() => ungroupSelected()}
           />
         ) : (
           <MediaDrawer
@@ -1420,7 +1471,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             busy={busy}
           />
         )}
-        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
+        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
       </aside>
       {deleteConfirm}
       {printArea}
@@ -1805,23 +1856,43 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
 }
 
 function MultiSelectionPanel({
-  count,
+  elements,
   onDuplicate,
   onOrder,
   onDelete,
+  onGroup,
+  onUngroup,
 }: {
-  count: number;
+  elements: BoardEl[];
   onDuplicate: () => void;
   onOrder: (dir: 'front' | 'back') => void;
   onDelete: () => void;
+  onGroup: () => void;
+  onUngroup: () => void;
 }) {
+  const hasGroup = elements.some((el) => !!el.groupId);
+  const firstGid = elements[0]?.groupId;
+  const allSameGroup = hasGroup && elements.every((el) => el.groupId && el.groupId === firstGid);
+  const canGroup = elements.length >= 2 && !allSameGroup;
+  const canUngroup = hasGroup;
+
   return (
     <section className={styles.panel}>
-      <h3>Çoklu seçim</h3>
+      <h3>{allSameGroup ? 'Grup' : 'Çoklu seçim'}</h3>
       <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#6b7280' }}>
-        {count} öğe seçili
+        {elements.length} öğe seçili
       </p>
       <div className={styles.pageTools} style={{ flexWrap: 'wrap', gap: '8px' }}>
+        {canGroup && (
+          <button type="button" className={styles.tool} onClick={onGroup} title="Grupla (Ctrl+G)">
+            <Component size={16} aria-hidden="true" /> Grupla
+          </button>
+        )}
+        {canUngroup && (
+          <button type="button" className={styles.tool} onClick={onUngroup} title="Grubu çöz (Ctrl+Shift+G)">
+            <Layers size={16} aria-hidden="true" /> Grubu çöz
+          </button>
+        )}
         <button type="button" className={styles.tool} onClick={onDuplicate} title="Çoğalt (Ctrl+D)">
           <Copy size={16} aria-hidden="true" /> Çoğalt
         </button>

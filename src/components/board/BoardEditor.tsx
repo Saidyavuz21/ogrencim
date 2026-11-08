@@ -11,7 +11,7 @@ import { Spinner } from '../Spinner';
 import {
   Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl, boardImageUrls, BoardPage, BoardRow,
   byteSize, cloneElements, copyImageToBoard, exportBoardPng, getBoard, HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, MAX_PAGES, newId, newPage, NoteEl,
-  saveBoard, StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
+  saveBoard, scaleElements, StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
@@ -644,14 +644,18 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     );
     if (!targetElements.length) return;
 
+    const prevScale = targetElements[0]?.lib?.scale ?? 1;
     const oldBbox = getElementsBbox(targetElements);
     const resolved = resolveParams(item, newParams);
     if (item.params && item.params.length > 0) {
       setLastUsedParams(item.id, resolved);
     }
 
-    const raw = item.build(resolved);
+    let raw = item.build(resolved);
     if (!raw.length) return;
+    if (prevScale !== 1) {
+      raw = scaleElements(raw, 0, 0, prevScale, wrapTextLines);
+    }
     const rawBbox = getElementsBbox(raw);
 
     let destX = oldBbox.x;
@@ -669,7 +673,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     const gid = targetGroupId || (regenerated.length >= 2 ? newId() : undefined);
     for (const el of regenerated) {
       if (gid) el.groupId = gid;
-      el.lib = { id: item.id, params: resolved };
+      el.lib = { id: item.id, params: resolved, scale: prevScale };
     }
 
     const oldIdSet = new Set(targetElements.map((el) => el.id));

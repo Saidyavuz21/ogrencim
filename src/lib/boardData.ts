@@ -27,6 +27,7 @@ export const BACKGROUND_LABEL: Record<Background, string> = { blank: 'Düz', gri
 export interface ElementLib {
   id: string;
   params?: Record<string, number>;
+  scale?: number;
 }
 
 export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string; lib?: ElementLib }
@@ -108,7 +109,13 @@ export function cloneElements(els: BoardEl[], dx = 0, dy = 0): BoardEl[] {
       nextGid = groupMap.get(el.groupId);
     }
     const id = newId();
-    const lib = el.lib ? { id: el.lib.id, params: el.lib.params ? { ...el.lib.params } : undefined } : undefined;
+    const lib = el.lib
+      ? {
+          id: el.lib.id,
+          params: el.lib.params ? { ...el.lib.params } : undefined,
+          scale: el.lib.scale,
+        }
+      : undefined;
     if (el.type === 'stroke') {
       const points = (dx === 0 && dy === 0)
         ? [...el.points]
@@ -141,6 +148,129 @@ export function cloneElements(els: BoardEl[], dx = 0, dy = 0): BoardEl[] {
       groupId: nextGid,
       lib,
     };
+  });
+}
+
+function defaultWrapLinesFallback(text: string, maxWidth: number, fontSize: number): string[] {
+  const perLine = Math.max(4, Math.floor(maxWidth / (fontSize * 0.54)));
+  const out: string[] = [];
+  for (const para of text.split('\n')) {
+    let line = '';
+    for (const word of para.split(/\s+/)) {
+      if (!word) continue;
+      if ((line ? `${line} ${word}` : word).length <= perLine) {
+        line = line ? `${line} ${word}` : word;
+      } else {
+        if (line) out.push(line);
+        let w = word;
+        while (w.length > perLine) {
+          out.push(w.slice(0, perLine));
+          w = w.slice(perLine);
+        }
+        line = w;
+      }
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+export type TextWrapLinesFn = (
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  family?: 'sans' | 'hand' | 'display',
+  weight?: number,
+  italic?: boolean
+) => string[];
+
+/**
+ * Öğeleri verilen (ox, oy) dayanağına göre orantılı olarak ölçekler.
+ * - stroke ve poly: tüm noktalar
+ * - line/arrow/rect/ellipse: x1, y1, x2, y2 (çizgi kalınlığı değişmez)
+ * - image: x, y, w, h
+ * - widget: x, y, w, h (en az 160×100)
+ * - note/metin: x, y, w; fontSize (12-200); metinde h wrapFn ile, notta h de ölçeklenir
+ * - lib varsa lib.scale = (eski scale ?? 1) * s
+ */
+export function scaleElements(
+  els: BoardEl[],
+  ox: number,
+  oy: number,
+  s: number,
+  wrapFn?: TextWrapLinesFn
+): BoardEl[] {
+  if (s <= 0) return els;
+  return els.map((el) => {
+    const nextLib: ElementLib | undefined = el.lib
+      ? {
+          ...el.lib,
+          params: el.lib.params ? { ...el.lib.params } : undefined,
+          scale: Number(((el.lib.scale ?? 1) * s).toFixed(4)),
+        }
+      : undefined;
+
+    if (el.type === 'stroke') {
+      const points = el.points.map((val, idx) =>
+        Math.round(idx % 2 === 0 ? ox + (val - ox) * s : oy + (val - oy) * s)
+      );
+      return { ...el, points, lib: nextLib };
+    }
+
+    if (el.type === 'poly') {
+      const points = el.points.map((val, idx) =>
+        Math.round(idx % 2 === 0 ? ox + (val - ox) * s : oy + (val - oy) * s)
+      );
+      return { ...el, points, lib: nextLib };
+    }
+
+    if (isShape(el)) {
+      const x1 = Math.round(ox + (el.x1 - ox) * s);
+      const y1 = Math.round(oy + (el.y1 - oy) * s);
+      const x2 = Math.round(ox + (el.x2 - ox) * s);
+      const y2 = Math.round(oy + (el.y2 - oy) * s);
+      const rx = el.rx != null ? Math.max(1, Math.round(el.rx * s)) : undefined;
+      return { ...el, x1, y1, x2, y2, rx, lib: nextLib };
+    }
+
+    if (el.type === 'image') {
+      const x = Math.round(ox + (el.x - ox) * s);
+      const y = Math.round(oy + (el.y - oy) * s);
+      const w = Math.max(20, Math.round(el.w * s));
+      const h = Math.max(20, Math.round(el.h * s));
+      return { ...el, x, y, w, h, lib: nextLib };
+    }
+
+    if (el.type === 'widget') {
+      const x = Math.round(ox + (el.x - ox) * s);
+      const y = Math.round(oy + (el.y - oy) * s);
+      const w = Math.max(160, Math.round(el.w * s));
+      const h = Math.max(100, Math.round(el.h * s));
+      return { ...el, x, y, w, h, lib: nextLib };
+    }
+
+    if (el.type === 'note') {
+      const x = Math.round(ox + (el.x - ox) * s);
+      const y = Math.round(oy + (el.y - oy) * s);
+      const w = Math.max(40, Math.round(el.w * s));
+      const fontSize = Math.round(Math.max(12, Math.min(200, (el.fontSize || 42) * s)));
+
+      if (el.variant === 'text') {
+        const pad = 8;
+        const availableW = Math.max(20, w - pad * 2);
+        const lines = wrapFn
+          ? wrapFn(el.text || ' ', availableW, fontSize, el.fontFamily, el.fontWeight, el.italic)
+          : defaultWrapLinesFallback(el.text || ' ', availableW, fontSize);
+        const lineCount = Math.max(1, lines.length);
+        const h = Math.round(Math.max(fontSize + 16, lineCount * fontSize * 1.3 + 16));
+        return { ...el, x, y, w, h, fontSize, lib: nextLib };
+      }
+
+      const h = Math.max(40, Math.round(el.h * s));
+      return { ...el, x, y, w, h, fontSize, lib: nextLib };
+    }
+
+    return el;
   });
 }
 

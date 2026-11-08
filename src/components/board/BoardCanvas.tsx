@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from '../icons';
 import {
-  Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
+  Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, scaleElements, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
 import { LIBRARY_ITEMS } from '../../lib/boardLibrary';
 import { MathText } from '../math/MathText';
@@ -523,6 +523,7 @@ type Draft =
   | { kind: 'erase'; removed: Set<string> }
   | { kind: 'move'; ids: string[]; sx: number; sy: number; origs: BoardEl[]; clickHitId?: string; dragged?: boolean }
   | { kind: 'resize'; id: string; sx: number; sy: number; orig: BoardEl }
+  | { kind: 'resizeMulti'; sx: number; sy: number; origs: BoardEl[]; origBbox: Box }
   | { kind: 'marquee'; sx: number; sy: number; x: number; y: number; additive: boolean; base: string[] };
 
 export interface BoardCanvasProps {
@@ -986,6 +987,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const localSvg = useRef<SVGSVGElement | null>(null);
   const draft = useRef<Draft | null>(null);
   const [preview, setPreview] = useState<{ el?: BoardEl; els?: BoardEl[]; erased?: Set<string>; marquee?: Box } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
   const [editingHeight, setEditingHeight] = useState<{ id: string; h: number } | null>(null);
   const [editingTextOverride, setEditingTextOverride] = useState<{ id: string; text: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -1090,12 +1092,26 @@ export function BoardCanvas(props: BoardCanvasProps) {
       return;
     } else {
       // Seçim
-      if (selectedIds.length === 1) {
-        const sel = elements.find((el) => el.id === selectedIds[0]);
-        if (sel && sel.type !== 'stroke') {
+      const curSelectedEls = elements.filter((el) => selectedIds.includes(el.id));
+      if (curSelectedEls.length > 1 && !activeGroupId) {
+        const cb = combinedBbox(curSelectedEls.map(bbox));
+        if (Math.hypot(x - (cb.x + cb.w), y - (cb.y + cb.h)) < 24) {
+          draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs: curSelectedEls, origBbox: cb };
+          setIsResizing(true);
+          localSvg.current?.setPointerCapture(e.pointerId);
+          return;
+        }
+      } else if (curSelectedEls.length === 1) {
+        const sel = curSelectedEls[0];
+        if (sel.type !== 'stroke') {
           const b = bbox(sel);
-          if (Math.hypot(x - (b.x + b.w), y - (b.y + b.h)) < 30) {
-            draft.current = { kind: 'resize', id: sel.id, sx: x, sy: y, orig: sel };
+          if (Math.hypot(x - (b.x + b.w), y - (b.y + b.h)) < 24) {
+            if (sel.groupId && !activeGroupId) {
+              draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs: [sel], origBbox: b };
+            } else {
+              draft.current = { kind: 'resize', id: sel.id, sx: x, sy: y, orig: sel };
+            }
+            setIsResizing(true);
             localSvg.current?.setPointerCapture(e.pointerId);
             return;
           }
@@ -1161,7 +1177,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     localSvg.current?.setPointerCapture(e.pointerId);
   };
 
-  const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+  const onPointerMove = (e: React.PointerEvent<SVGSVGElement | SVGRectElement>) => {
     const d = draft.current;
     if (!d) return;
     const { x, y } = toPoint(e.clientX, e.clientY);
@@ -1194,6 +1210,23 @@ export function BoardCanvas(props: BoardCanvasProps) {
       setPreview({ els: d.origs.map((orig) => translate(orig, dx, dy)) });
     } else if (d.kind === 'resize') {
       setPreview({ el: resize(d.orig, x - d.sx, y - d.sy) });
+    } else if (d.kind === 'resizeMulti') {
+      const cb = d.origBbox;
+      const w = Math.max(1, cb.w);
+      const h = Math.max(1, cb.h);
+      const dx = x - d.sx;
+      const dy = y - d.sy;
+      const rawS = Math.max((w + dx) / w, (h + dy) / h);
+      const sMin = Math.max(40 / w, 40 / h);
+      const sMax = Math.min((BOARD_W - cb.x) / w, (BOARD_H - cb.y) / h);
+      let s = rawS;
+      if (sMax >= sMin) {
+        s = Math.min(sMax, Math.max(sMin, rawS));
+      } else {
+        s = sMin;
+      }
+      const scaledEls = scaleElements(d.origs, cb.x, cb.y, s, wrapTextLines);
+      setPreview({ els: scaledEls });
     } else if (d.kind === 'marquee') {
       d.x = x;
       d.y = y;
@@ -1212,6 +1245,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     draft.current = null;
     const p = preview;
     setPreview(null);
+    setIsResizing(false);
     if (!d) return;
     if (d.kind === 'stroke') {
       const el = { ...d.el, points: simplifyPoints(d.el.points) };
@@ -1233,6 +1267,11 @@ export function BoardCanvas(props: BoardCanvasProps) {
         onCommit?.(elements.map((el) => idMap.get(el.id) || el));
       } else if (!d.dragged && d.clickHitId && d.ids.length > 1) {
         onSelect?.([d.clickHitId]);
+      }
+    } else if (d.kind === 'resizeMulti') {
+      if (p?.els && p.els.length) {
+        const idMap = new Map(p.els.map((el) => [el.id, el]));
+        onCommit?.(elements.map((el) => idMap.get(el.id) || el));
       }
     } else if (d.kind === 'resize' && p?.el) {
       const moved = p.el;
@@ -1386,13 +1425,24 @@ export function BoardCanvas(props: BoardCanvasProps) {
           return (
             <g pointerEvents="none">
               <rect x={b.x - 8} y={b.y - 8} width={b.w + 16} height={b.h + 16} fill="none" stroke="#2a78d6" strokeWidth={3} strokeDasharray="12 8" />
-              {selected.type !== 'stroke' && <rect x={b.x + b.w - 14} y={b.y + b.h - 14} width={28} height={28} rx={6} fill="#2a78d6" stroke="#fff" strokeWidth={3} />}
+              {selected.type !== 'stroke' && (
+                <rect
+                  x={b.x + b.w - 9}
+                  y={b.y + b.h - 9}
+                  width={18}
+                  height={18}
+                  rx={2}
+                  fill="#ffffff"
+                  stroke="#2a78d6"
+                  strokeWidth={2}
+                  style={{ cursor: 'nwse-resize', pointerEvents: 'auto' }}
+                />
+              )}
             </g>
           );
         })()}
         {editable && selectedElements.length > 1 && (() => {
           const cb = combinedBbox(selectedElements.map(bbox));
-          const hasCommonGroup = selectedElements.every((el) => el.groupId && el.groupId === selectedElements[0].groupId);
           return (
             <g pointerEvents="none">
               {selectedElements.map((el) => {
@@ -1421,35 +1471,25 @@ export function BoardCanvas(props: BoardCanvasProps) {
                 strokeWidth={2}
                 strokeDasharray="8 6"
               />
-              {hasCommonGroup && !activeGroupId && (
-                <g transform={`translate(${cb.x - 8}, ${cb.y - 28})`}>
-                  <rect
-                    x={0}
-                    y={0}
-                    width={48}
-                    height={18}
-                    rx={4}
-                    fill="#2a78d6"
-                  />
-                  <text
-                    x={24}
-                    y={13}
-                    textAnchor="middle"
-                    fill="#ffffff"
-                    fontSize={11}
-                    fontWeight={700}
-                    fontFamily="sans-serif"
-                  >
-                    Grup
-                  </text>
-                </g>
+              {!activeGroupId && (
+                <rect
+                  x={cb.x + cb.w - 9}
+                  y={cb.y + cb.h - 9}
+                  width={18}
+                  height={18}
+                  rx={2}
+                  fill="#ffffff"
+                  stroke="#2a78d6"
+                  strokeWidth={2}
+                  style={{ cursor: 'nwse-resize', pointerEvents: 'auto' }}
+                />
               )}
             </g>
           );
         })()}
       </svg>
 
-      {editable && !widgetsPassive && selectedElements.length >= 2 && (
+      {editable && !widgetsPassive && selectedElements.length >= 2 && !isResizing && (
         <MultiSelectBar
           elements={selectedElements}
           onDuplicate={() => onDuplicate?.(selectedIds)}
@@ -1461,7 +1501,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
         />
       )}
 
-      {activeNote && (
+      {activeNote && !isResizing && (
         <FormatBar
           el={activeNote}
           colors={colors}
@@ -1507,6 +1547,59 @@ export function BoardCanvas(props: BoardCanvasProps) {
           ))}
         </div>
       )}
+
+      {/* Widget katmanının üzerinde tutamak overlay'i */}
+      {editable && (() => {
+        let handlePos: { x: number; y: number; kind: 'multi' } | { x: number; y: number; kind: 'single'; sel: BoardEl } | null = null;
+        if (selectedElements.length > 1 && !activeGroupId) {
+          const cb = combinedBbox(selectedElements.map(bbox));
+          handlePos = { x: cb.x + cb.w, y: cb.y + cb.h, kind: 'multi' };
+        } else if (selected && selected.type !== 'stroke') {
+          const b = bbox(selected);
+          handlePos = { x: b.x + b.w, y: b.y + b.h, kind: 'single', sel: selected };
+        }
+        if (!handlePos) return null;
+
+        return (
+          <svg
+            className={styles.overlay}
+            viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
+            style={{ zIndex: 15, pointerEvents: 'none' }}
+          >
+            <rect
+              x={handlePos.x - 9}
+              y={handlePos.y - 9}
+              width={18}
+              height={18}
+              rx={2}
+              fill="#ffffff"
+              stroke="#2a78d6"
+              strokeWidth={2}
+              style={{ cursor: 'nwse-resize', pointerEvents: 'auto' }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                e.currentTarget.setPointerCapture(e.pointerId);
+                const { x, y } = toPoint(e.clientX, e.clientY);
+                if (handlePos!.kind === 'multi') {
+                  const cb = combinedBbox(selectedElements.map(bbox));
+                  const origs = elements.filter((el) => selectedIds.includes(el.id));
+                  draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs, origBbox: cb };
+                } else {
+                  if (handlePos!.sel.groupId && !activeGroupId) {
+                    draft.current = { kind: 'resizeMulti', sx: x, sy: y, origs: [handlePos!.sel], origBbox: bbox(handlePos!.sel) };
+                  } else {
+                    draft.current = { kind: 'resize', id: handlePos!.sel.id, sx: x, sy: y, orig: handlePos!.sel };
+                  }
+                }
+                setIsResizing(true);
+              }}
+              onPointerMove={onPointerMove}
+              onPointerUp={finish}
+              onPointerCancel={finish}
+            />
+          </svg>
+        );
+      })()}
 
       {editingNote && (
         <>

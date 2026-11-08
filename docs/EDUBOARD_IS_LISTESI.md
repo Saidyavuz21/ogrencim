@@ -22,13 +22,13 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
-| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 8 / 10 |
+| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 9 / 11 |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **74 / 117** |
+| | **Toplam** | **75 / 118** |
 
 ---
 
@@ -151,6 +151,7 @@ Ortak kararlar:
 - [x] Hazır set — **Fen ve Genel**: devre elemanları, besin zinciri, hücre şeması; konuşma balonu, ok çeşitleri, tablo ızgarası · 8 Kasım 2026 · `edbab50`
 - [ ] **Kütüphaneme kaydet**: seçili öğeler → ad + kategori; Supabase tablosu, yalnızca sahibi görür (RLS), boyut sınırı
 - [x] **Formül desteği**: KaTeX ile kesir, üs, kök, denklem; düğmelerle ekleme (Metin, Not, Adım adım, Mini Test) · 8 Kasım 2026 · `65527bd`
+- [x] **Grup ve çoklu seçimi köşeden ölçekleme** (ayarlı parçalarda ölçek korunur) · 8 Kasım 2026 · `acb8a86`
 - [ ] **Okul içi paylaşım**: öğretmen kütüphanesindeki parçayı okulundaki öğretmenlerle paylaşır
 
 ## 8. Canlı ders

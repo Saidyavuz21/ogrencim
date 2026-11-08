@@ -255,23 +255,10 @@ function Steps({ el, ctx }: { el: WidgetEl; ctx?: WidgetContext }) {
                   if (isLatest) lastOpenedRef.current = node;
                 }}
                 className={`${styles.timelineItem} ${isOpen ? styles.itemOpen : styles.itemHidden}`}
-                onClick={() => setOpenCount(i + 1)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setOpenCount(i + 1);
-                  }
-                }}
-                aria-label={
-                  isOpen
-                    ? `${i + 1}. adım${isResult ? ' (Sonuç)' : ''}: ${text}`
-                    : `${i + 1}. adım${isResult ? ' (Sonuç)' : ''}, gizli`
-                }
               >
-                <div className={styles.timelineGutter} aria-hidden="true">
-                  <span
+                <div className={styles.timelineGutter}>
+                  <button
+                    type="button"
                     className={`${styles.timelineBadge} ${
                       isOpen
                         ? isResult
@@ -281,10 +268,12 @@ function Steps({ el, ctx }: { el: WidgetEl; ctx?: WidgetContext }) {
                           ? styles.badgeResultHidden
                           : styles.badgeHidden
                     }`}
+                    onClick={() => setOpenCount(i + 1)}
+                    aria-label={`${i + 1}. adım${isResult ? ' (Sonuç)' : ''}, ${isOpen ? 'açık' : 'gizli'}`}
                   >
                     {i + 1}
-                  </span>
-                  {i < steps.length - 1 && <span className={styles.timelineLine} />}
+                  </button>
+                  {i < steps.length - 1 && <span className={styles.timelineLine} aria-hidden="true" />}
                 </div>
 
                 <div

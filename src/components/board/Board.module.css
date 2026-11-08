@@ -31,8 +31,8 @@
 .widgetButton.secondary { background: #fff; color: #25634b; }
 .widgetButton:disabled { opacity: 0.5; cursor: not-allowed; }
 .widgetRow { display: flex; flex-wrap: wrap; gap: 0.6cqw; align-items: center; }
-.stepList { display: grid; gap: 0.5cqw; margin: 0; padding: 0 0 0 1.6cqw; font-size: 1.35cqw; line-height: 1.4; }
-.stepList li.stepHidden { list-style: none; margin-left: -1.6cqw; color: #a3aca6; }
+
+
 
 /* Adım Adım (Steps) Parçası */
 .stepsHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.6cqw; }
@@ -40,17 +40,17 @@
 .stepsProgressTrack { width: 100%; height: 0.35cqw; background: #e6e4dc; border-radius: 0.2cqw; overflow: hidden; margin-top: -0.1cqw; margin-bottom: 0.3cqw; }
 .stepsProgressBar { height: 100%; background: #25634b; border-radius: 0.2cqw; transition: width 0.2s ease-out; }
 .timeline { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; flex: 1 1 auto; gap: 0.6cqw; }
-.timelineItem { position: relative; display: flex; align-items: stretch; gap: 0.7cqw; cursor: pointer; border-radius: 0.5cqw; }
-.timelineItem:focus-visible { outline: 0.2cqw solid #25634b; outline-offset: 0.15cqw; }
+.timelineItem { position: relative; display: flex; align-items: stretch; gap: 0.7cqw; border-radius: 0.5cqw; cursor: default; }
+
 .timelineGutter { position: relative; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 2.2cqw; }
-.timelineBadge { display: grid; place-items: center; width: 2.2cqw; height: 2.2cqw; border-radius: 50%; font-size: 1.05cqw; font-weight: 700; box-sizing: border-box; flex-shrink: 0; z-index: 1; }
+.timelineBadge { display: grid; place-items: center; width: 2.2cqw; height: 2.2cqw; min-width: 2.2cqw; min-height: 2.2cqw; border-radius: 50%; font: inherit; font-size: 1.05cqw; font-weight: 700; box-sizing: border-box; flex-shrink: 0; z-index: 1; padding: 0; cursor: pointer; }
 .badgeOpen { background: #25634b; color: #ffffff; border: 0.12cqw solid #25634b; }
 .badgeHidden { background: transparent; color: #a3aca6; border: 0.12cqw dashed #c9c5b8; }
 .badgeResult { background: #935610; color: #ffffff; border: 0.12cqw solid #935610; }
 .badgeResultHidden { background: transparent; color: #b07830; border: 0.12cqw dashed #d4a76a; }
 .timelineLine { position: absolute; top: 2.2cqw; bottom: -0.6cqw; left: calc(50% - 0.06cqw); width: 0.12cqw; background: #c9c5b8; }
 .timelineItem:last-child .timelineLine { display: none; }
-.stepContent { flex: 1 1 auto; min-width: 0; border-radius: 0.6cqw; padding: 0.45cqw 0.7cqw; box-sizing: border-box; font-size: 1.35cqw; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.stepContent { flex: 1 1 auto; min-width: 0; border-radius: 0.6cqw; padding: 0.45cqw 0.7cqw; box-sizing: border-box; font-size: 1.35cqw; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; cursor: default; }
 .stepCardOpen { background: #fafaf8; border: 0.12cqw solid #e2ded5; color: #1f2a24; }
 .stepCardLatest { background: #e8f3ee; border-color: #a3c9b5; animation: stepAppear 0.2s ease-out; }
 .stepCardResult { border-color: #d4a76a; background: #fdf8f0; }

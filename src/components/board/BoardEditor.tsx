@@ -17,6 +17,7 @@ import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
 import { fileSlug } from '../../lib/reportData';
 import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, wrapTextLines } from './BoardCanvas';
+import { computeTextHeight } from './textLayout';
 import { WidgetContext, WidgetView } from './Widgets';
 import { ShapeLibraryPanel } from './ShapeLibraryPanel';
 import {
@@ -235,10 +236,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       if (e.id !== id) return e;
       let next = { ...e, ...patch } as BoardEl;
       if (next.type === 'note' && next.variant === 'text') {
-        const pad = 8;
-        const lines = wrapTextLines(next.text || ' ', next.w - pad * 2, next.fontSize, next.fontFamily, next.fontWeight, next.italic);
-        const lineCount = Math.max(1, lines.length);
-        const autoH = Math.round(Math.max(next.fontSize + 16, lineCount * next.fontSize * 1.3 + 16));
+        const autoH = computeTextHeight(next);
         next = { ...next, h: autoH };
       }
       return next;
@@ -1840,11 +1838,12 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, 
           <label>Yazı tipi
             <CustomSelect
               value={el.fontFamily || 'sans'}
-              onChange={(v) => onPatch({ fontFamily: v as 'sans' | 'hand' | 'display' })}
+              onChange={(v) => onPatch({ fontFamily: v as 'sans' | 'hand' | 'display' | 'school' })}
               options={[
                 { value: 'sans', label: 'Düz' },
                 { value: 'hand', label: 'El yazısı' },
                 { value: 'display', label: 'Başlık' },
+                { value: 'school', label: 'Okul' },
               ]}
             />
           </label>
@@ -1968,6 +1967,123 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, 
               ))}
             </div>
           </label>
+
+          {el.variant === 'text' && (
+            <>
+              <label>Kutu zemini
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className={styles.swatch}
+                    style={{ background: '#ffffff', border: '1px dashed #c9c5b8', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    aria-pressed={!el.boxFill}
+                    onClick={() => onPatch({ boxFill: null })}
+                    title="Yok"
+                  >
+                    ✕
+                  </button>
+                  {[
+                    { c: '#fff3bf', label: 'Sarı' },
+                    { c: '#d3f9d8', label: 'Yeşil' },
+                    { c: '#d0ebff', label: 'Mavi' },
+                    { c: '#ffdeeb', label: 'Pembe' },
+                    { c: '#f1f3f5', label: 'Gri' },
+                    { c: '#25634b', label: 'Koyu Yeşil' },
+                  ].map(({ c, label }) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={styles.swatch}
+                      style={{ background: c, outline: el.boxFill === c ? '2px solid #25634b' : undefined }}
+                      aria-pressed={el.boxFill === c}
+                      onClick={() => {
+                        if (c === '#25634b') {
+                          onPatch({ boxFill: c, textColor: '#ffffff' });
+                        } else {
+                          onPatch({ boxFill: c });
+                        }
+                      }}
+                      title={label}
+                      aria-label={`Kutu zemini ${label}`}
+                    />
+                  ))}
+                </div>
+                {el.boxFill === '#25634b' && (
+                  <button
+                    type="button"
+                    style={{ marginTop: 6, fontSize: 11, padding: '2px 8px', borderRadius: 4, border: '1px solid #25634b', background: '#e4f0ea', color: '#25634b', cursor: 'pointer' }}
+                    onClick={() => onPatch({ textColor: '#ffffff' })}
+                  >
+                    Yazı rengini beyaz yap
+                  </button>
+                )}
+              </label>
+
+              <label>Kutu kenarlığı
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className={styles.swatch}
+                    style={{ background: '#ffffff', border: '1px dashed #c9c5b8', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    aria-pressed={!el.boxBorder}
+                    onClick={() => onPatch({ boxBorder: null })}
+                    title="Yok"
+                  >
+                    ✕
+                  </button>
+                  {['#1f2a24', '#25634b', '#e03131', '#1971c2', '#f08c00'].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={styles.swatch}
+                      style={{ background: c, outline: el.boxBorder === c ? '2px solid #25634b' : undefined }}
+                      aria-pressed={el.boxBorder === c}
+                      onClick={() => onPatch({ boxBorder: c })}
+                      title={`Kenarlık ${c}`}
+                      aria-label={`Kutu kenarlığı ${c}`}
+                    />
+                  ))}
+                </div>
+              </label>
+
+              <label>Köşe biçimi
+                <CustomSelect
+                  value={String(el.boxRadius ?? 0)}
+                  onChange={(v) => onPatch({ boxRadius: Number(v) as 0 | 12 | 999 })}
+                  options={[
+                    { value: '0', label: 'Keskin' },
+                    { value: '12', label: 'Yuvarlak' },
+                    { value: '999', label: 'Hap' },
+                  ]}
+                />
+              </label>
+
+              <label>Satır aralığı
+                <CustomSelect
+                  value={String(el.lineHeight ?? 1.3)}
+                  onChange={(v) => onPatch({ lineHeight: Number(v) as 1 | 1.3 | 1.6 | 2 })}
+                  options={[
+                    { value: '1', label: '1' },
+                    { value: '1.3', label: '1.3 (Varsayılan)' },
+                    { value: '1.6', label: '1.6' },
+                    { value: '2', label: '2' },
+                  ]}
+                />
+              </label>
+
+              <label>Harf aralığı
+                <CustomSelect
+                  value={String(el.letterSpacing ?? 0)}
+                  onChange={(v) => onPatch({ letterSpacing: Number(v) as 0 | 0.05 | 0.1 })}
+                  options={[
+                    { value: '0', label: 'Normal' },
+                    { value: '0.05', label: 'Geniş' },
+                    { value: '0.1', label: 'Çok geniş' },
+                  ]}
+                />
+              </label>
+            </>
+          )}
 
           {el.variant !== 'text' && (
             <label>Zemin rengi

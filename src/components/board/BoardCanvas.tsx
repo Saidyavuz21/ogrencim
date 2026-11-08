@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { AlignCenter, AlignLeft, AlignRight, Bold, Highlighter, Italic, Underline } from '../icons';
+import { AlignCenter, AlignLeft, AlignRight, Bold, Highlighter, Italic, Square, Underline } from '../icons';
 import {
   Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, scaleElements, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
@@ -10,14 +10,23 @@ import { RichText } from '../math/RichText';
 import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { hasMath } from '../../lib/math/parseMath';
 import { hasRich, stripRich } from '../../lib/math/parseRich';
+import {
+  BOARD_FONT,
+  computeTextHeight,
+  getFontFamily,
+  lineHeightOf,
+  textPad,
+  wrapLines,
+  wrapTextLines,
+} from './textLayout';
 import styles from './Board.module.css';
+
+export { getFontFamily, wrapLines, wrapTextLines };
 
 export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'note' | 'text';
 export const DRAW_TOOLS: Tool[] = ['pen', 'highlighter', 'eraser'];
 
 type Box = { x: number; y: number; w: number; h: number };
-/** Uygulamanın yazı tipi (tahtadaki notlar ve parça başlıkları) */
-const BOARD_FONT = 'var(--font-geist-sans), system-ui, sans-serif';
 
 // --------------------------------------------------------
 // Geometri
@@ -56,11 +65,7 @@ export function bbox(el: BoardEl): Box {
       if (measuredH) {
         return { x: el.x, y: el.y, w: el.w, h: measuredH };
       }
-      const pad = 8;
-      const lines = wrapTextLines(el.text || ' ', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic);
-      const lineCount = Math.max(1, lines.length);
-      const calcH = Math.round(Math.max(el.fontSize + 16, lineCount * el.fontSize * 1.3 + 16));
-      return { x: el.x, y: el.y, w: el.w, h: calcH };
+      return { x: el.x, y: el.y, w: el.w, h: computeTextHeight(el) };
     }
     const measuredH = measuredHtmlHeights.get(el.id);
     if (measuredH && measuredH > el.h) {
@@ -150,12 +155,6 @@ export function translate(el: BoardEl, dx: number, dy: number): BoardEl {
   return { ...el, x: Math.round(el.x + dx), y: Math.round(el.y + dy) };
 }
 
-export function getFontFamily(family?: 'sans' | 'hand' | 'display'): string {
-  if (family === 'hand') return "'Patrick Hand', cursive, sans-serif";
-  if (family === 'display') return "'Fredoka', sans-serif";
-  return BOARD_FONT;
-}
-
 export const FONT_SIZES = [24, 32, 42, 56, 72, 96];
 
 export function getFontSizeOptions(currentSize?: number): number[] {
@@ -174,22 +173,12 @@ export async function preloadBoardFonts(): Promise<void> {
       document.fonts.load("300 42px 'Fredoka'"),
       document.fonts.load("400 42px 'Fredoka'"),
       document.fonts.load("700 42px 'Fredoka'"),
+      document.fonts.load("400 42px 'Andika'"),
+      document.fonts.load("700 42px 'Andika'"),
     ]);
   } catch {
     // Tarayıcı font yükleme hatası yutulur
   }
-}
-
-let measureCanvas: HTMLCanvasElement | null = null;
-let measureCtx: CanvasRenderingContext2D | null = null;
-
-function getMeasureContext(): CanvasRenderingContext2D | null {
-  if (typeof document === 'undefined') return null;
-  if (!measureCtx) {
-    measureCanvas = document.createElement('canvas');
-    measureCtx = measureCanvas.getContext('2d');
-  }
-  return measureCtx;
 }
 
 function resize(el: BoardEl, dx: number, dy: number): BoardEl {
@@ -214,106 +203,15 @@ function resize(el: BoardEl, dx: number, dy: number): BoardEl {
   }
   if (el.type === 'note' && el.variant === 'text') {
     const w = Math.round(Math.max(80, el.w + dx));
-    const pad = 8;
-    const lines = wrapTextLines(el.text || ' ', w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic);
-    const lineCount = Math.max(1, lines.length);
-    const h = Math.round(Math.max(el.fontSize + 16, lineCount * el.fontSize * 1.3 + 16));
-    return { ...el, w, h };
+    const nextEl = { ...el, w };
+    const h = computeTextHeight(nextEl);
+    return { ...nextEl, h };
   }
   if (el.type === 'note' || el.type === 'widget') return { ...el, w: Math.round(Math.max(160, el.w + dx)), h: Math.round(Math.max(100, el.h + dy)) };
   return el;
 }
 
 const clampPt = (v: number, max: number) => Math.max(0, Math.min(max, v));
-
-/** Not metnini kutuya sığacak satırlara böler (yaklaşık karakter genişliğiyle) */
-export function wrapLines(text: string, width: number, fontSize: number): string[] {
-  const perLine = Math.max(4, Math.floor(width / (fontSize * 0.54)));
-  const out: string[] = [];
-  for (const para of text.split('\n')) {
-    let line = '';
-    for (const word of para.split(/\s+/)) {
-      if (!word) continue;
-      if ((line ? `${line} ${word}` : word).length <= perLine) line = line ? `${line} ${word}` : word;
-      else {
-        if (line) out.push(line);
-        let w = word;
-        while (w.length > perLine) { out.push(w.slice(0, perLine)); w = w.slice(perLine); }
-        line = w;
-      }
-    }
-    out.push(line);
-  }
-  return out;
-}
-
-/** Metin öğesi için canvas measureText ile gerçek genişliğe göre satır böler */
-export function wrapTextLines(
-  text: string,
-  maxWidth: number,
-  fontSize: number,
-  family: 'sans' | 'hand' | 'display' = 'sans',
-  weight: number = 400,
-  italic: boolean = false
-): string[] {
-  const clean = stripRich(text);
-  const ctx = getMeasureContext();
-  const fontFamily = getFontFamily(family);
-  const targetWidth = Math.max(20, maxWidth);
-
-  if (!ctx) {
-    return wrapLines(clean, targetWidth, fontSize);
-  }
-
-  ctx.font = `${italic ? 'italic ' : ''}${weight} ${fontSize}px ${fontFamily}`;
-
-  const out: string[] = [];
-  const paragraphs = clean.split('\n');
-
-  for (const para of paragraphs) {
-    if (!para) {
-      out.push('');
-      continue;
-    }
-
-    const words = para.split(/\s+/);
-    let currentLine = '';
-
-    for (const word of words) {
-      if (!word) continue;
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const metrics = ctx.measureText(testLine);
-
-      if (metrics.width <= targetWidth) {
-        currentLine = testLine;
-      } else {
-        if (currentLine) {
-          out.push(currentLine);
-          currentLine = '';
-        }
-        if (ctx.measureText(word).width > targetWidth) {
-          let chunk = '';
-          for (const char of word) {
-            const testChunk = chunk + char;
-            if (ctx.measureText(testChunk).width <= targetWidth) {
-              chunk = testChunk;
-            } else {
-              if (chunk) out.push(chunk);
-              chunk = char;
-            }
-          }
-          currentLine = chunk;
-        } else {
-          currentLine = word;
-        }
-      }
-    }
-    if (currentLine) {
-      out.push(currentLine);
-    }
-  }
-  return out;
-}
 
 // --------------------------------------------------------
 // Çizim
@@ -410,7 +308,7 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
       );
     case 'note': {
       const isText = el.variant === 'text';
-      const pad = isText ? 8 : 20;
+      const pad = textPad(el);
       const fontFamily = getFontFamily(el.fontFamily);
       const fontWeight = el.fontWeight || 400;
       const fontStyle = el.italic ? 'italic' : 'normal';
@@ -423,18 +321,34 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
       const containsMath = hasMath(el.text || '');
       const containsRich = hasRich(el.text || '');
       const useHtml = containsMath || containsRich;
+      const lh = lineHeightOf(el);
+      const ls = el.letterSpacing ? `${el.letterSpacing}em` : undefined;
 
       const lines = isText
-        ? wrapTextLines(el.text || '', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic)
+        ? wrapTextLines(el.text || '', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic, el.letterSpacing)
         : wrapLines(stripRich(el.text || ''), el.w - 40, el.fontSize);
 
       const measuredH = measuredHtmlHeights.get(el.id);
       const renderH = measuredH ? Math.max(el.h, measuredH) : el.h;
+      const boxRadius = el.boxRadius ?? 0;
+      const effectiveRx = Math.min(boxRadius, renderH / 2);
 
       return (
         <g>
           {!isText && (
             <rect x={el.x} y={el.y} width={el.w} height={renderH} rx={14} fill={el.color} stroke="rgba(0,0,0,0.12)" strokeWidth={2} />
+          )}
+          {isText && (el.boxFill || el.boxBorder) && (
+            <rect
+              x={el.x}
+              y={el.y}
+              width={el.w}
+              height={renderH}
+              rx={effectiveRx}
+              fill={el.boxFill || 'none'}
+              stroke={el.boxBorder || 'none'}
+              strokeWidth={el.boxBorder ? 2 : 0}
+            />
           )}
           {!editingNote && (
             useHtml ? (
@@ -467,7 +381,8 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
                     textDecoration,
                     color: fill,
                     textAlign: align,
-                    lineHeight: 1.3,
+                    lineHeight: lh,
+                    letterSpacing: ls,
                     wordBreak: 'break-word',
                     overflowWrap: 'anywhere',
                     userSelect: 'none',
@@ -484,6 +399,7 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
                 fontSize={el.fontSize}
                 fill={fill}
                 textAnchor={anchor}
+                letterSpacing={ls}
                 style={{
                   fontFamily,
                   fontWeight,
@@ -492,7 +408,7 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
                 }}
               >
                 {lines.map((l, i) => (
-                  <tspan key={i} x={textX} dy={i ? el.fontSize * 1.3 : 0}>
+                  <tspan key={i} x={textX} dy={i ? el.fontSize * lh : 0}>
                     {l || ' '}
                   </tspan>
                 ))}
@@ -848,6 +764,8 @@ function FormatBar({
 }) {
   const [colorOpen, setColorOpen] = useState(false);
   const [highlightOpen, setHighlightOpen] = useState(false);
+  const [boxOpen, setBoxOpen] = useState(false);
+  const [spacingOpen, setSpacingOpen] = useState(false);
   const [mathOpen, setMathOpen] = useState(false);
 
   const b = bbox(el);
@@ -876,12 +794,13 @@ function FormatBar({
       <select
         className={styles.formatSelect}
         value={el.fontFamily || 'sans'}
-        onChange={(e) => onPatch({ fontFamily: e.target.value as 'sans' | 'hand' | 'display' })}
+        onChange={(e) => onPatch({ fontFamily: e.target.value as 'sans' | 'hand' | 'display' | 'school' })}
         aria-label="Yazı tipi"
       >
         <option value="sans">Düz</option>
         <option value="hand">El yazısı</option>
         <option value="display">Başlık</option>
+        <option value="school">Okul</option>
       </select>
 
       {/* Boyut */}
@@ -1153,6 +1072,307 @@ function FormatBar({
       >
         <AlignRight size={16} aria-hidden="true" />
       </button>
+
+      <span className={styles.formatDivider} aria-hidden="true" />
+
+      {/* Kutu (Zemin, Kenarlık, Köşe) */}
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          className={styles.formatBtn}
+          aria-pressed={boxOpen || Boolean(el.boxFill || el.boxBorder)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            setBoxOpen((v) => !v);
+            setColorOpen(false);
+            setHighlightOpen(false);
+            setSpacingOpen(false);
+            setMathOpen(false);
+          }}
+          title="Metin kutusu (zemin, kenarlık, köşe)"
+          aria-label="Metin kutusu"
+          aria-haspopup="true"
+          aria-expanded={boxOpen}
+        >
+          <Square size={16} aria-hidden="true" />
+          <span style={{ fontSize: 12, marginLeft: 2 }}>Kutu</span>
+        </button>
+
+        {boxOpen && (
+          <div
+            className={styles.formatColorPopover}
+            style={{
+              minWidth: 220,
+              padding: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+            }}
+          >
+            {/* Zemin */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3c4b44', marginBottom: 4 }}>
+                Zemin
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={styles.formatBtn}
+                  style={{
+                    height: 24,
+                    minHeight: 24,
+                    minWidth: 32,
+                    padding: '0 4px',
+                    fontSize: 11,
+                    border: '1px solid #d4d0c5',
+                    borderRadius: 4,
+                  }}
+                  aria-pressed={!el.boxFill}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => onPatch({ boxFill: null })}
+                >
+                  Yok
+                </button>
+                {[
+                  { c: '#fff3bf', label: 'Sarı' },
+                  { c: '#d3f9d8', label: 'Yeşil' },
+                  { c: '#d0ebff', label: 'Mavi' },
+                  { c: '#ffdeeb', label: 'Pembe' },
+                  { c: '#f1f3f5', label: 'Gri' },
+                  { c: '#25634b', label: 'Koyu Yeşil' },
+                ].map(({ c, label }) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={styles.formatColorSwatch}
+                    style={{
+                      backgroundColor: c,
+                      outline: el.boxFill === c ? '2px solid #25634b' : 'none',
+                      outlineOffset: 1,
+                    }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      if (c === '#25634b') {
+                        onPatch({ boxFill: c, textColor: '#ffffff' });
+                      } else {
+                        onPatch({ boxFill: c });
+                      }
+                    }}
+                    title={label}
+                    aria-label={label}
+                  />
+                ))}
+              </div>
+              {el.boxFill === '#25634b' && (
+                <button
+                  type="button"
+                  className={styles.formatBtn}
+                  style={{
+                    marginTop: 6,
+                    width: '100%',
+                    height: 22,
+                    minHeight: 22,
+                    fontSize: 11,
+                    border: '1px solid #25634b',
+                    borderRadius: 4,
+                    color: '#25634b',
+                  }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => onPatch({ textColor: '#ffffff' })}
+                >
+                  Yazı rengini beyaz yap
+                </button>
+              )}
+            </div>
+
+            {/* Kenarlık */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3c4b44', marginBottom: 4 }}>
+                Kenarlık
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={styles.formatBtn}
+                  style={{
+                    height: 24,
+                    minHeight: 24,
+                    minWidth: 32,
+                    padding: '0 4px',
+                    fontSize: 11,
+                    border: '1px solid #d4d0c5',
+                    borderRadius: 4,
+                  }}
+                  aria-pressed={!el.boxBorder}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => onPatch({ boxBorder: null })}
+                >
+                  Yok
+                </button>
+                {['#1f2a24', '#25634b', '#e03131', '#1971c2', '#f08c00'].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={styles.formatColorSwatch}
+                    style={{
+                      backgroundColor: c,
+                      outline: el.boxBorder === c ? '2px solid #25634b' : 'none',
+                      outlineOffset: 1,
+                    }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onPatch({ boxBorder: c })}
+                    title={`Kenarlık ${c}`}
+                    aria-label={`Kenarlık ${c}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Köşe */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3c4b44', marginBottom: 4 }}>
+                Köşe
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[
+                  { r: 0 as const, label: 'Keskin' },
+                  { r: 12 as const, label: 'Yuvarlak' },
+                  { r: 999 as const, label: 'Hap' },
+                ].map(({ r, label }) => (
+                  <button
+                    key={r}
+                    type="button"
+                    className={styles.formatBtn}
+                    style={{
+                      flex: 1,
+                      height: 26,
+                      minHeight: 26,
+                      padding: '0 4px',
+                      fontSize: 11,
+                      border: '1px solid #d4d0c5',
+                      borderRadius: 4,
+                    }}
+                    aria-pressed={(el.boxRadius ?? 0) === r}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onPatch({ boxRadius: r })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Aralık (Satır & Harf) */}
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          className={styles.formatBtn}
+          aria-pressed={spacingOpen || Boolean(el.lineHeight && el.lineHeight !== 1.3) || Boolean(el.letterSpacing)}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            setSpacingOpen((v) => !v);
+            setColorOpen(false);
+            setHighlightOpen(false);
+            setBoxOpen(false);
+            setMathOpen(false);
+          }}
+          title="Satır ve harf aralığı"
+          aria-label="Aralık"
+          aria-haspopup="true"
+          aria-expanded={spacingOpen}
+        >
+          <span style={{ fontSize: 12, fontWeight: 600 }}>Aralık</span>
+        </button>
+
+        {spacingOpen && (
+          <div
+            className={styles.formatColorPopover}
+            style={{
+              minWidth: 180,
+              padding: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+            }}
+          >
+            {/* Satır Aralığı */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3c4b44', marginBottom: 4 }}>
+                Satır Aralığı
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[
+                  { lh: 1 as const, label: '1' },
+                  { lh: 1.3 as const, label: '1.3' },
+                  { lh: 1.6 as const, label: '1.6' },
+                  { lh: 2 as const, label: '2' },
+                ].map(({ lh, label }) => (
+                  <button
+                    key={lh}
+                    type="button"
+                    className={styles.formatBtn}
+                    style={{
+                      flex: 1,
+                      height: 26,
+                      minHeight: 26,
+                      padding: '0 4px',
+                      fontSize: 11,
+                      border: '1px solid #d4d0c5',
+                      borderRadius: 4,
+                    }}
+                    aria-pressed={(el.lineHeight ?? 1.3) === lh}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onPatch({ lineHeight: lh })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Harf Aralığı */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3c4b44', marginBottom: 4 }}>
+                Harf Aralığı
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[
+                  { ls: 0 as const, label: 'Normal' },
+                  { ls: 0.05 as const, label: 'Geniş' },
+                  { ls: 0.1 as const, label: 'Çok geniş' },
+                ].map(({ ls, label }) => (
+                  <button
+                    key={ls}
+                    type="button"
+                    className={styles.formatBtn}
+                    style={{
+                      flex: 1,
+                      height: 26,
+                      minHeight: 26,
+                      padding: '0 4px',
+                      fontSize: 10,
+                      border: '1px solid #d4d0c5',
+                      borderRadius: 4,
+                    }}
+                    aria-pressed={(el.letterSpacing ?? 0) === ls}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onPatch({ letterSpacing: ls })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <span className={styles.formatDivider} aria-hidden="true" />
 
@@ -1497,7 +1717,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
       onToolChange?.('select');
       return;
     } else if (t === 'text') {
-      const initialH = Math.round(42 * 1.3 + 16);
+      const initialH = computeTextHeight({ id: '', type: 'note', variant: 'text', x: 0, y: 0, w: 520, h: 0, text: '', color: 'transparent', fontSize: 42 });
       const textEl: NoteEl = {
         id: newId(),
         type: 'note',
@@ -1968,14 +2188,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
               const curText = (editingNote && editingNote.id === activeNote.id && textareaRef.current)
                 ? textareaRef.current.value
                 : (activeNote.text || ' ');
-              const nextFont = patch.fontFamily ?? activeNote.fontFamily;
-              const nextSize = patch.fontSize ?? activeNote.fontSize;
-              const nextWeight = patch.fontWeight ?? activeNote.fontWeight;
-              const nextItalic = patch.italic ?? activeNote.italic;
-              const pad = 8;
-              const lines = wrapTextLines(curText || ' ', activeNote.w - pad * 2, nextSize, nextFont, nextWeight, nextItalic);
-              const lineCount = Math.max(1, lines.length);
-              const autoH = Math.round(Math.max(nextSize + 16, lineCount * nextSize * 1.3 + 16));
+              const nextNote: NoteEl = { ...activeNote, ...patch, text: curText };
+              const autoH = computeTextHeight(nextNote, curText);
               finalPatch = { ...finalPatch, h: autoH };
               if (editingNote && editingNote.id === activeNote.id) {
                 setEditingHeight({ id: activeNote.id, h: autoH });
@@ -2042,7 +2256,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
             top: `${(editingNote.y / BOARD_H) * 100}%`,
             width: `${(editingNote.w / BOARD_W) * 100}%`,
             height: `${(currentEditingHeight / BOARD_H) * 100}%`,
-            background: editingNote.color,
+            background: editingNote.variant === 'text' ? (editingNote.boxFill || 'transparent') : editingNote.color,
             color: editingNote.textColor || '#1f2a24',
             fontSize: `${(editingNote.fontSize / BOARD_W) * 100}cqw`,
             fontFamily: getFontFamily(editingNote.fontFamily),
@@ -2050,7 +2264,11 @@ export function BoardCanvas(props: BoardCanvasProps) {
             fontStyle: editingNote.italic ? 'italic' : 'normal',
             textDecoration: editingNote.underline ? 'underline' : 'none',
             textAlign: editingNote.align || 'left',
-            padding: editingNote.variant === 'text' ? '0.42cqw' : '1.04cqw',
+            lineHeight: lineHeightOf(editingNote),
+            letterSpacing: editingNote.letterSpacing ? `${editingNote.letterSpacing}em` : undefined,
+            padding: `${(textPad(editingNote) / BOARD_W) * 100}cqw`,
+            border: (editingNote.variant === 'text' && editingNote.boxBorder) ? `2px solid ${editingNote.boxBorder}` : undefined,
+            borderRadius: (editingNote.variant === 'text' && editingNote.boxRadius) ? `${(Math.min(editingNote.boxRadius, currentEditingHeight / 2) / BOARD_W) * 100}cqw` : undefined,
           }}
           spellCheck={true}
           lang="tr"
@@ -2058,10 +2276,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
             const val = (e.target as HTMLTextAreaElement).value;
             setEditingTextOverride({ id: editingNote.id, text: val });
             if (editingNote.variant === 'text') {
-              const pad = 8;
-              const lines = wrapTextLines(val || ' ', editingNote.w - pad * 2, editingNote.fontSize, editingNote.fontFamily, editingNote.fontWeight, editingNote.italic);
-              const lineCount = Math.max(1, lines.length);
-              const autoH = Math.round(Math.max(editingNote.fontSize + 16, lineCount * editingNote.fontSize * 1.3 + 16));
+              const autoH = computeTextHeight(editingNote, val);
               setEditingHeight({ id: editingNote.id, h: autoH });
             }
           }}
@@ -2220,7 +2435,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
                 fontStyle: editingNote.italic ? 'italic' : 'normal',
                 textDecoration: editingNote.underline ? 'underline' : 'none',
                 textAlign: editingNote.align || 'left',
-                lineHeight: 1.3,
+                lineHeight: lineHeightOf(editingNote),
+                letterSpacing: editingNote.letterSpacing ? `${editingNote.letterSpacing}em` : undefined,
               }}
             >
               <RichText text={editingText} inline={false} />

@@ -44,11 +44,16 @@ export interface NoteEl {
   fontSize: number;
   variant?: 'text';                            // yoksa eski Not
   textColor?: string;                          // varsayılan #1f2a24
-  fontFamily?: 'sans' | 'hand' | 'display';    // varsayılan 'sans'
+  fontFamily?: 'sans' | 'hand' | 'display' | 'school'; // varsayılan 'sans'
   fontWeight?: 300 | 400 | 700;                // ince / normal / kalın, varsayılan 400
   italic?: boolean;
   underline?: boolean;
   align?: 'left' | 'center' | 'right';         // varsayılan 'left'
+  lineHeight?: 1 | 1.3 | 1.6 | 2;              // satır aralığı
+  letterSpacing?: 0 | 0.05 | 0.1;              // em
+  boxFill?: string | null;                     // yalnızca variant 'text': kutu zemini
+  boxBorder?: string | null;                   // kutu kenarlığı rengi (2 px)
+  boxRadius?: 0 | 12 | 999;                    // Keskin / Yuvarlak / Hap
   groupId?: string;
   lib?: ElementLib;
 }
@@ -179,9 +184,10 @@ export type TextWrapLinesFn = (
   text: string,
   maxWidth: number,
   fontSize: number,
-  family?: 'sans' | 'hand' | 'display',
+  family?: 'sans' | 'hand' | 'display' | 'school',
   weight?: number,
-  italic?: boolean
+  italic?: boolean,
+  letterSpacing?: number
 ) => string[];
 
 /**
@@ -256,13 +262,14 @@ export function scaleElements(
       const fontSize = Math.round(Math.max(12, Math.min(200, (el.fontSize || 42) * s)));
 
       if (el.variant === 'text') {
-        const pad = 8;
+        const pad = el.boxFill || el.boxBorder ? 16 : 8;
         const availableW = Math.max(20, w - pad * 2);
         const lines = wrapFn
-          ? wrapFn(el.text || ' ', availableW, fontSize, el.fontFamily, el.fontWeight, el.italic)
+          ? wrapFn(el.text || ' ', availableW, fontSize, el.fontFamily, el.fontWeight, el.italic, el.letterSpacing)
           : defaultWrapLinesFallback(el.text || ' ', availableW, fontSize);
         const lineCount = Math.max(1, lines.length);
-        const h = Math.round(Math.max(fontSize + 16, lineCount * fontSize * 1.3 + 16));
+        const lh = el.lineHeight ?? 1.3;
+        const h = Math.round(Math.max(fontSize + pad * 2, lineCount * fontSize * lh + pad * 2));
         return { ...el, x, y, w, h, fontSize, lib: nextLib };
       }
 
@@ -595,6 +602,7 @@ export async function exportBoardPng(
     const textElements = Array.from(clone.querySelectorAll('text, tspan'));
     let usesPatrickHand = false;
     let usesFredoka = false;
+    let usesAndika = false;
 
     for (const el of textElements) {
       const styleAttr = el.getAttribute('style') || '';
@@ -604,6 +612,7 @@ export async function exportBoardPng(
       const family = (el.getAttribute('font-family') || '') + ' ' + styleAttr;
       if (family.includes('Patrick Hand')) usesPatrickHand = true;
       if (family.includes('Fredoka')) usesFredoka = true;
+      if (family.includes('Andika')) usesAndika = true;
     }
 
     // Web yazı tiplerini SVG içine göm
@@ -623,6 +632,14 @@ export async function exportBoardPng(
       if (regular) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 400; src: url(${regular}) format('woff2'); }`);
       if (light) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 300; src: url(${light}) format('woff2'); }`);
       if (bold) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 700; src: url(${bold}) format('woff2'); }`);
+    }
+    if (usesAndika) {
+      const [regular, bold] = await Promise.all([
+        fetchFontDataUrl('/fonts/andika-regular.woff2'),
+        fetchFontDataUrl('/fonts/andika-bold.woff2'),
+      ]);
+      if (regular) fontCssRules.push(`@font-face { font-family: 'Andika'; font-style: normal; font-weight: 400; src: url(${regular}) format('woff2'); }`);
+      if (bold) fontCssRules.push(`@font-face { font-family: 'Andika'; font-style: normal; font-weight: 700; src: url(${bold}) format('woff2'); }`);
     }
 
     // foreignObject varsa KaTeX CSS ve fontlarını göm

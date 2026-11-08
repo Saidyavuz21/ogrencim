@@ -26,7 +26,24 @@ export const BACKGROUND_LABEL: Record<Background, string> = { blank: 'Düz', gri
 
 export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean }
 export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null }
-export interface NoteEl { id: string; type: 'note'; x: number; y: number; w: number; h: number; text: string; color: string; fontSize: number }
+export interface NoteEl {
+  id: string;
+  type: 'note';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: string;
+  color: string;
+  fontSize: number;
+  variant?: 'text';                            // yoksa eski Not
+  textColor?: string;                          // varsayılan #1f2a24
+  fontFamily?: 'sans' | 'hand' | 'display';    // varsayılan 'sans'
+  fontWeight?: 300 | 400 | 700;                // ince / normal / kalın, varsayılan 400
+  italic?: boolean;
+  underline?: boolean;
+  align?: 'left' | 'center' | 'right';         // varsayılan 'left'
+}
 export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string }
 export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer';
 export interface WidgetData {
@@ -307,11 +324,80 @@ async function toDataUrl(url: string): Promise<string | null> {
   }
 }
 
+const fontCache: Record<string, string> = {};
+
+async function fetchFontDataUrl(url: string): Promise<string | null> {
+  if (fontCache[url]) return fontCache[url];
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result);
+        fontCache[url] = result;
+        resolve(result);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function exportBoardPng(svg: SVGSVGElement, filename: string): Promise<void> {
   const clone = svg.cloneNode(true) as SVGSVGElement;
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   clone.setAttribute('width', String(BOARD_W));
   clone.setAttribute('height', String(BOARD_H));
+
+  // CSS değişkenlerini somut yazı tipine çevir ve kullanılan web fontlarını bul
+  const textElements = Array.from(clone.querySelectorAll('text, tspan'));
+  let usesPatrickHand = false;
+  let usesFredoka = false;
+
+  for (const el of textElements) {
+    const styleAttr = el.getAttribute('style') || '';
+    if (styleAttr.includes('var(--font-geist-sans)')) {
+      el.setAttribute('style', styleAttr.replace(/var\(--font-geist-sans\)/g, 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'));
+    }
+    const family = (el.getAttribute('font-family') || '') + ' ' + styleAttr;
+    if (family.includes('Patrick Hand')) usesPatrickHand = true;
+    if (family.includes('Fredoka')) usesFredoka = true;
+  }
+
+  // Web yazı tiplerini SVG içine göm
+  const fontCssRules: string[] = [];
+  if (usesPatrickHand) {
+    const patrickData = await fetchFontDataUrl('/fonts/patrick-hand.woff2');
+    if (patrickData) {
+      fontCssRules.push(`@font-face { font-family: 'Patrick Hand'; font-style: normal; font-weight: 400; src: url(${patrickData}) format('woff2'); }`);
+    }
+  }
+  if (usesFredoka) {
+    const [regular, light, bold] = await Promise.all([
+      fetchFontDataUrl('/fonts/fredoka-regular.woff2'),
+      fetchFontDataUrl('/fonts/fredoka-light.woff2'),
+      fetchFontDataUrl('/fonts/fredoka-bold.woff2'),
+    ]);
+    if (regular) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 400; src: url(${regular}) format('woff2'); }`);
+    if (light) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 300; src: url(${light}) format('woff2'); }`);
+    if (bold) fontCssRules.push(`@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: 700; src: url(${bold}) format('woff2'); }`);
+  }
+
+  if (fontCssRules.length > 0) {
+    let defs = clone.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      clone.insertBefore(defs, clone.firstChild);
+    }
+    const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    styleEl.textContent = fontCssRules.join('\n');
+    defs.appendChild(styleEl);
+  }
+
   const images = Array.from(clone.querySelectorAll('image'));
   await Promise.all(images.map(async (img) => {
     const href = img.getAttribute('href');

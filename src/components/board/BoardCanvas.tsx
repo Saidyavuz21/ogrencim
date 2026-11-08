@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useId, useRef, useState } from 'react';
+import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from '../icons';
 import {
   Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
 import styles from './Board.module.css';
 
-export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'note';
+export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'note' | 'text';
 export const DRAW_TOOLS: Tool[] = ['pen', 'highlighter', 'eraser'];
 
 type Box = { x: number; y: number; w: number; h: number };
@@ -73,11 +74,37 @@ function translate(el: BoardEl, dx: number, dy: number): BoardEl {
   return { ...el, x: Math.round(el.x + dx), y: Math.round(el.y + dy) };
 }
 
+export function getFontFamily(family?: 'sans' | 'hand' | 'display'): string {
+  if (family === 'hand') return "'Patrick Hand', cursive, sans-serif";
+  if (family === 'display') return "'Fredoka', sans-serif";
+  return BOARD_FONT;
+}
+
+let measureCanvas: HTMLCanvasElement | null = null;
+let measureCtx: CanvasRenderingContext2D | null = null;
+
+function getMeasureContext(): CanvasRenderingContext2D | null {
+  if (typeof document === 'undefined') return null;
+  if (!measureCtx) {
+    measureCanvas = document.createElement('canvas');
+    measureCtx = measureCanvas.getContext('2d');
+  }
+  return measureCtx;
+}
+
 function resize(el: BoardEl, dx: number, dy: number): BoardEl {
   if (isShape(el)) return { ...el, x2: el.x2 + dx, y2: el.y2 + dy };
   if (el.type === 'image') {
     const w = Math.max(60, el.w + dx);
     return { ...el, w: Math.round(w), h: Math.round((w * el.h) / el.w) };
+  }
+  if (el.type === 'note' && el.variant === 'text') {
+    const w = Math.round(Math.max(80, el.w + dx));
+    const pad = 8;
+    const lines = wrapTextLines(el.text || ' ', w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic);
+    const lineCount = Math.max(1, lines.length);
+    const h = Math.round(Math.max(el.fontSize + 16, lineCount * el.fontSize * 1.3 + 16));
+    return { ...el, w, h };
   }
   if (el.type === 'note' || el.type === 'widget') return { ...el, w: Math.round(Math.max(160, el.w + dx)), h: Math.round(Math.max(100, el.h + dy)) };
   return el;
@@ -102,6 +129,73 @@ export function wrapLines(text: string, width: number, fontSize: number): string
       }
     }
     out.push(line);
+  }
+  return out;
+}
+
+/** Metin öğesi için canvas measureText ile gerçek genişliğe göre satır böler */
+export function wrapTextLines(
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  family: 'sans' | 'hand' | 'display' = 'sans',
+  weight: number = 400,
+  italic: boolean = false
+): string[] {
+  const ctx = getMeasureContext();
+  const fontFamily = getFontFamily(family);
+  const targetWidth = Math.max(20, maxWidth);
+
+  if (!ctx) {
+    return wrapLines(text, targetWidth, fontSize);
+  }
+
+  ctx.font = `${italic ? 'italic ' : ''}${weight} ${fontSize}px ${fontFamily}`;
+
+  const out: string[] = [];
+  const paragraphs = text.split('\n');
+
+  for (const para of paragraphs) {
+    if (!para) {
+      out.push('');
+      continue;
+    }
+
+    const words = para.split(/\s+/);
+    let currentLine = '';
+
+    for (const word of words) {
+      if (!word) continue;
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const metrics = ctx.measureText(testLine);
+
+      if (metrics.width <= targetWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          out.push(currentLine);
+          currentLine = '';
+        }
+        if (ctx.measureText(word).width > targetWidth) {
+          let chunk = '';
+          for (const char of word) {
+            const testChunk = chunk + char;
+            if (ctx.measureText(testChunk).width <= targetWidth) {
+              chunk = testChunk;
+            } else {
+              if (chunk) out.push(chunk);
+              chunk = char;
+            }
+          }
+          currentLine = chunk;
+        } else {
+          currentLine = word;
+        }
+      }
+    }
+    if (currentLine) {
+      out.push(currentLine);
+    }
   }
   return out;
 }
@@ -190,13 +284,46 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
       return <ellipse cx={b.x + b.w / 2} cy={b.y + b.h / 2} rx={b.w / 2} ry={b.h / 2} fill={el.fill || 'none'} stroke={el.color} strokeWidth={el.width} />;
     }
     case 'note': {
-      const lines = wrapLines(el.text, el.w - 40, el.fontSize);
+      const isText = el.variant === 'text';
+      const pad = isText ? 8 : 20;
+      const fontFamily = getFontFamily(el.fontFamily);
+      const fontWeight = el.fontWeight || 400;
+      const fontStyle = el.italic ? 'italic' : 'normal';
+      const textDecoration = el.underline ? 'underline' : 'none';
+      const fill = el.textColor || '#1f2a24';
+      const align = el.align || 'left';
+      const anchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start';
+      const textX = align === 'center' ? el.x + el.w / 2 : align === 'right' ? el.x + el.w - pad : el.x + pad;
+      const textY = el.y + pad + el.fontSize;
+
+      const lines = isText
+        ? wrapTextLines(el.text || '', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic)
+        : wrapLines(el.text, el.w - 40, el.fontSize);
+
       return (
         <g>
-          <rect x={el.x} y={el.y} width={el.w} height={el.h} rx={14} fill={el.color} stroke="rgba(0,0,0,0.12)" strokeWidth={2} />
+          {!isText && (
+            <rect x={el.x} y={el.y} width={el.w} height={el.h} rx={14} fill={el.color} stroke="rgba(0,0,0,0.12)" strokeWidth={2} />
+          )}
           {!editingNote && (
-            <text x={el.x + 20} y={el.y + 20 + el.fontSize} fontSize={el.fontSize} fill="#1f2a24" style={{ fontFamily: BOARD_FONT }}>
-              {lines.map((l, i) => <tspan key={i} x={el.x + 20} dy={i ? el.fontSize * 1.3 : 0}>{l || ' '}</tspan>)}
+            <text
+              x={textX}
+              y={textY}
+              fontSize={el.fontSize}
+              fill={fill}
+              textAnchor={anchor}
+              style={{
+                fontFamily,
+                fontWeight,
+                fontStyle,
+                textDecoration,
+              }}
+            >
+              {lines.map((l, i) => (
+                <tspan key={i} x={textX} dy={i ? el.fontSize * 1.3 : 0}>
+                  {l || ' '}
+                </tspan>
+              ))}
             </text>
           )}
         </g>
@@ -236,6 +363,7 @@ export interface BoardCanvasProps {
   tool?: Tool;
   color?: string;
   width?: number;
+  colors?: string[];
   onCommit?: (elements: BoardEl[]) => void;
   /** Öğrenci katmanı: verilirse kalem/silgi yalnızca bu katmana çizer */
   layer?: StrokeEl[];
@@ -246,6 +374,8 @@ export interface BoardCanvasProps {
   editingNoteId?: string | null;
   onEditNote?: (id: string | null) => void;
   onNoteText?: (id: string, text: string) => void;
+  onPatchElement?: (id: string, patch: Partial<BoardEl>) => void;
+  onDeleteElement?: (id: string) => void;
   imageUrls: Record<string, string>;
   /** Parçaların etkileşimli HTML katmanı (sunum / öğrenci) */
   renderWidget?: (el: WidgetEl) => React.ReactNode;
@@ -261,8 +391,231 @@ export interface BoardCanvasProps {
   ariaLabel?: string;
 }
 
+function FormatBar({
+  el,
+  colors,
+  onPatch,
+}: {
+  el: NoteEl;
+  colors: string[];
+  onPatch: (patch: Partial<NoteEl>) => void;
+}) {
+  const [colorOpen, setColorOpen] = useState(false);
+
+  const topPct = el.y < 70
+    ? ((el.y + el.h + 12) / BOARD_H) * 100
+    : (el.y / BOARD_H) * 100;
+  const transform = el.y < 70 ? 'none' : 'translateY(calc(-100% - 12px))';
+  const leftPct = Math.max(1, Math.min(65, (el.x / BOARD_W) * 100));
+
+  return (
+    <div
+      className={styles.formatBar}
+      role="toolbar"
+      aria-label="Metin biçimlendirme"
+      style={{
+        top: `${topPct}%`,
+        left: `${leftPct}%`,
+        transform,
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {/* Yazı tipi */}
+      <select
+        className={styles.formatSelect}
+        value={el.fontFamily || 'sans'}
+        onChange={(e) => onPatch({ fontFamily: e.target.value as 'sans' | 'hand' | 'display' })}
+        aria-label="Yazı tipi"
+      >
+        <option value="sans">Düz</option>
+        <option value="hand">El yazısı</option>
+        <option value="display">Başlık</option>
+      </select>
+
+      {/* Boyut */}
+      <select
+        className={styles.formatSelect}
+        value={String(el.fontSize || 42)}
+        onChange={(e) => onPatch({ fontSize: Number(e.target.value) })}
+        aria-label="Yazı boyutu"
+      >
+        {[24, 32, 42, 56, 72, 96].map((sz) => (
+          <option key={sz} value={sz}>{sz}</option>
+        ))}
+      </select>
+
+      <span className={styles.formatDivider} aria-hidden="true" />
+
+      {/* B */}
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={el.fontWeight === 700}
+        onClick={() => onPatch({ fontWeight: el.fontWeight === 700 ? 400 : 700 })}
+        title="Kalın (Ctrl+B)"
+        aria-label="Kalın"
+      >
+        <Bold size={16} aria-hidden="true" />
+      </button>
+
+      {/* I */}
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={Boolean(el.italic)}
+        onClick={() => onPatch({ italic: !el.italic })}
+        title="İtalik (Ctrl+I)"
+        aria-label="İtalik"
+      >
+        <Italic size={16} aria-hidden="true" />
+      </button>
+
+      {/* U */}
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={Boolean(el.underline)}
+        onClick={() => onPatch({ underline: !el.underline })}
+        title="Altı çizili (Ctrl+U)"
+        aria-label="Altı çizili"
+      >
+        <Underline size={16} aria-hidden="true" />
+      </button>
+
+      <span className={styles.formatDivider} aria-hidden="true" />
+
+      {/* İnce · Normal · Kalın */}
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={el.fontWeight === 300}
+        onClick={() => onPatch({ fontWeight: 300 })}
+        title="İnce yazı"
+      >
+        İnce
+      </button>
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={(el.fontWeight ?? 400) === 400}
+        onClick={() => onPatch({ fontWeight: 400 })}
+        title="Normal yazı"
+      >
+        Normal
+      </button>
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={el.fontWeight === 700}
+        onClick={() => onPatch({ fontWeight: 700 })}
+        title="Kalın yazı"
+      >
+        Kalın
+      </button>
+
+      <span className={styles.formatDivider} aria-hidden="true" />
+
+      {/* Renk */}
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          className={styles.formatColorTrigger}
+          onClick={() => setColorOpen((v) => !v)}
+          title="Yazı rengi"
+          aria-label="Yazı rengi"
+          aria-haspopup="true"
+          aria-expanded={colorOpen}
+        >
+          <span
+            className={styles.formatColorDot}
+            style={{ backgroundColor: el.textColor || '#1f2a24' }}
+          />
+        </button>
+
+        {colorOpen && (
+          <div className={styles.formatColorPopover}>
+            {colors.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={styles.formatColorSwatch}
+                style={{ backgroundColor: c }}
+                onClick={() => {
+                  onPatch({ textColor: c });
+                  setColorOpen(false);
+                }}
+                aria-label={`Renk ${c}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <span className={styles.formatDivider} aria-hidden="true" />
+
+      {/* Hizalama */}
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={(!el.align || el.align === 'left')}
+        onClick={() => onPatch({ align: 'left' })}
+        title="Sola hizala"
+        aria-label="Sola hizala"
+      >
+        <AlignLeft size={16} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={el.align === 'center'}
+        onClick={() => onPatch({ align: 'center' })}
+        title="Ortaya hizala"
+        aria-label="Ortaya hizala"
+      >
+        <AlignCenter size={16} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className={styles.formatBtn}
+        aria-pressed={el.align === 'right'}
+        onClick={() => onPatch({ align: 'right' })}
+        title="Sağa hizala"
+        aria-label="Sağa hizala"
+      >
+        <AlignRight size={16} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export function BoardCanvas(props: BoardCanvasProps) {
-  const { page, editable, tool = 'select', color = '#1f2a24', width = 6, onCommit, layer, onLayerCommit, selectedId, onSelect, onToolChange, editingNoteId, onEditNote, onNoteText, imageUrls, renderWidget, widgetsPassive, widgetsControlsOnly, onDropMedia, svgRef, thumbnail, ariaLabel } = props;
+  const {
+    page,
+    editable,
+    tool = 'select',
+    color = '#1f2a24',
+    width = 6,
+    colors = ['#1f2a24', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5', '#ffd43b', '#ffffff'],
+    onCommit,
+    layer,
+    onLayerCommit,
+    selectedId,
+    onSelect,
+    onToolChange,
+    editingNoteId,
+    onEditNote,
+    onNoteText,
+    onPatchElement,
+    onDeleteElement,
+    imageUrls,
+    renderWidget,
+    widgetsPassive,
+    widgetsControlsOnly,
+    onDropMedia,
+    svgRef,
+    thumbnail,
+    ariaLabel,
+  } = props;
   const uid = useId().replace(/:/g, '');
   const patternId = `bg-${uid}`;
   const localSvg = useRef<SVGSVGElement | null>(null);
@@ -315,6 +668,26 @@ export function BoardCanvas(props: BoardCanvasProps) {
       onCommit?.([...elements, note]);
       onSelect?.(note.id);
       onEditNote?.(note.id);
+      onToolChange?.('select');
+      return;
+    } else if (t === 'text') {
+      const initialH = Math.round(42 * 1.3 + 16);
+      const textEl: NoteEl = {
+        id: newId(),
+        type: 'note',
+        variant: 'text',
+        x: Math.round(Math.min(x, BOARD_W - 520)),
+        y: Math.round(Math.min(y, BOARD_H - initialH)),
+        w: 520,
+        h: initialH,
+        text: '',
+        color: 'transparent',
+        textColor: color,
+        fontSize: 42,
+      };
+      onCommit?.([...elements, textEl]);
+      onSelect?.(textEl.id);
+      onEditNote?.(textEl.id);
       onToolChange?.('select');
       return;
     } else {
@@ -401,6 +774,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const shownLayer = layerStrokes.filter((s) => !(drawingOnLayer && preview?.erased?.has(s.id)));
   const selected = selectedId ? shown.find((el) => el.id === selectedId) : undefined;
   const editingNote = editingNoteId ? (elements.find((el) => el.id === editingNoteId) as NoteEl | undefined) : undefined;
+  const activeNote = (editable && !widgetsPassive)
+    ? (shown.find((el) => (el.id === editingNoteId || el.id === selectedId) && el.type === 'note') as NoteEl | undefined)
+    : undefined;
   const widgets = renderWidget ? shown.filter((el): el is WidgetEl => el.type === 'widget') : [];
   const cursor = !interactive ? 'default' : drawingOnLayer || DRAW_TOOLS.includes(tool) ? 'crosshair' : tool === 'select' ? 'default' : 'crosshair';
 
@@ -452,6 +828,32 @@ export function BoardCanvas(props: BoardCanvasProps) {
         })()}
       </svg>
 
+      {activeNote && (
+        <FormatBar
+          el={activeNote}
+          colors={colors}
+          onPatch={(patch) => {
+            let finalPatch: Partial<NoteEl> = { ...patch };
+            if (activeNote.variant === 'text') {
+              const nextFont = patch.fontFamily ?? activeNote.fontFamily;
+              const nextSize = patch.fontSize ?? activeNote.fontSize;
+              const nextWeight = patch.fontWeight ?? activeNote.fontWeight;
+              const nextItalic = patch.italic ?? activeNote.italic;
+              const pad = 8;
+              const lines = wrapTextLines(activeNote.text || ' ', activeNote.w - pad * 2, nextSize, nextFont, nextWeight, nextItalic);
+              const lineCount = Math.max(1, lines.length);
+              const autoH = Math.round(Math.max(nextSize + 16, lineCount * nextSize * 1.3 + 16));
+              finalPatch = { ...finalPatch, h: autoH };
+            }
+            if (onPatchElement) {
+              onPatchElement(activeNote.id, finalPatch);
+            } else {
+              onCommit?.(elements.map((el) => (el.id === activeNote.id ? ({ ...el, ...finalPatch } as NoteEl) : el)));
+            }
+          }}
+        />
+      )}
+
       {widgets.length > 0 && (
         <div className={styles.overlay}>
           {widgets.map((w) => (
@@ -464,18 +866,72 @@ export function BoardCanvas(props: BoardCanvasProps) {
 
       {editingNote && (
         <textarea
-          className={styles.noteEditor}
+          className={`${styles.noteEditor} ${editingNote.variant === 'text' ? styles.textEditor : ''}`}
           autoFocus
-          aria-label="Not metni"
+          aria-label={editingNote.variant === 'text' ? 'Metin içeriği' : 'Not metni'}
           defaultValue={editingNote.text}
           maxLength={2000}
           style={{
-            left: `${(editingNote.x / BOARD_W) * 100}%`, top: `${(editingNote.y / BOARD_H) * 100}%`,
-            width: `${(editingNote.w / BOARD_W) * 100}%`, height: `${(editingNote.h / BOARD_H) * 100}%`,
-            background: editingNote.color, fontSize: `${(editingNote.fontSize / BOARD_W) * 100}cqw`,
+            left: `${(editingNote.x / BOARD_W) * 100}%`,
+            top: `${(editingNote.y / BOARD_H) * 100}%`,
+            width: `${(editingNote.w / BOARD_W) * 100}%`,
+            height: `${(editingNote.h / BOARD_H) * 100}%`,
+            background: editingNote.color,
+            color: editingNote.textColor || '#1f2a24',
+            fontSize: `${(editingNote.fontSize / BOARD_W) * 100}cqw`,
+            fontFamily: getFontFamily(editingNote.fontFamily),
+            fontWeight: editingNote.fontWeight || 400,
+            fontStyle: editingNote.italic ? 'italic' : 'normal',
+            textDecoration: editingNote.underline ? 'underline' : 'none',
+            textAlign: editingNote.align || 'left',
+            padding: editingNote.variant === 'text' ? '0.42cqw' : '1.04cqw',
           }}
-          onBlur={(e) => { onNoteText?.(editingNote.id, e.target.value); onEditNote?.(null); }}
-          onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLTextAreaElement).blur(); }}
+          onInput={(e) => {
+            const val = (e.target as HTMLTextAreaElement).value;
+            if (editingNote.variant === 'text') {
+              const pad = 8;
+              const lines = wrapTextLines(val || ' ', editingNote.w - pad * 2, editingNote.fontSize, editingNote.fontFamily, editingNote.fontWeight, editingNote.italic);
+              const lineCount = Math.max(1, lines.length);
+              const autoH = Math.round(Math.max(editingNote.fontSize + 16, lineCount * editingNote.fontSize * 1.3 + 16));
+              if (autoH !== editingNote.h) {
+                if (onPatchElement) {
+                  onPatchElement(editingNote.id, { h: autoH });
+                } else {
+                  onCommit?.(elements.map((el) => (el.id === editingNote.id ? ({ ...el, h: autoH } as NoteEl) : el)));
+                }
+              }
+            }
+          }}
+          onBlur={(e) => {
+            const val = e.target.value.trim();
+            if (editingNote.variant === 'text' && !val) {
+              if (onDeleteElement) {
+                onDeleteElement(editingNote.id);
+              } else {
+                onCommit?.(elements.filter((el) => el.id !== editingNote.id));
+              }
+            } else {
+              onNoteText?.(editingNote.id, e.target.value);
+            }
+            onEditNote?.(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              (e.target as HTMLTextAreaElement).blur();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+              e.preventDefault();
+              const newWeight = editingNote.fontWeight === 700 ? 400 : 700;
+              if (onPatchElement) onPatchElement(editingNote.id, { fontWeight: newWeight });
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
+              e.preventDefault();
+              const newItalic = !editingNote.italic;
+              if (onPatchElement) onPatchElement(editingNote.id, { italic: newItalic });
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
+              e.preventDefault();
+              const newUnderline = !editingNote.underline;
+              if (onPatchElement) onPatchElement(editingNote.id, { underline: newUnderline });
+            }
+          }}
         />
       )}
     </div>

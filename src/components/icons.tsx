@@ -947,3 +947,54 @@ export const Component = createIcon('Component', (
   </>
 ));
 
+export const Type = createIcon('Type', (
+  <>
+    <polyline points="4 7 4 4 20 4 20 7" />
+    <line x1="9" y1="20" x2="15" y2="20" />
+    <line x1="12" y1="4" x2="12" y2="20" />
+  </>
+));
+
+export const Bold = createIcon('Bold', (
+  <path d="M6 12h9a4 4 0 0 1 0 8H6v-8zm0 0h8a3.5 3.5 0 0 0 0-7H6v7z" />
+));
+
+export const Italic = createIcon('Italic', (
+  <>
+    <line x1="19" y1="4" x2="10" y2="4" />
+    <line x1="14" y1="20" x2="5" y2="20" />
+    <line x1="15" y1="4" x2="9" y2="20" />
+  </>
+));
+
+export const Underline = createIcon('Underline', (
+  <>
+    <path d="M6 3v7a6 6 0 0 0 12 0V3" />
+    <line x1="4" y1="21" x2="20" y2="21" />
+  </>
+));
+
+export const AlignLeft = createIcon('AlignLeft', (
+  <>
+    <line x1="21" y1="6" x2="3" y2="6" />
+    <line x1="15" y1="12" x2="3" y2="12" />
+    <line x1="17" y1="18" x2="3" y2="18" />
+  </>
+));
+
+export const AlignCenter = createIcon('AlignCenter', (
+  <>
+    <line x1="21" y1="6" x2="3" y2="6" />
+    <line x1="17" y1="12" x2="7" y2="12" />
+    <line x1="19" y1="18" x2="5" y2="18" />
+  </>
+));
+
+export const AlignRight = createIcon('AlignRight', (
+  <>
+    <line x1="21" y1="6" x2="3" y2="6" />
+    <line x1="21" y1="12" x2="9" y2="12" />
+    <line x1="21" y1="18" x2="7" y2="18" />
+  </>
+));
+

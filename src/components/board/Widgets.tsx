@@ -254,7 +254,7 @@ function Steps({ el, ctx }: { el: WidgetEl; ctx?: WidgetContext }) {
                 ref={(node) => {
                   if (isLatest) lastOpenedRef.current = node;
                 }}
-                className={`${styles.timelineItem} ${isOpen ? styles.itemOpen : styles.itemHidden}`}
+                className={styles.timelineItem}
               >
                 <div className={styles.timelineGutter}>
                   <button

@@ -32,8 +32,6 @@
 .widgetButton:disabled { opacity: 0.5; cursor: not-allowed; }
 .widgetRow { display: flex; flex-wrap: wrap; gap: 0.6cqw; align-items: center; }
 
-
-
 /* Adım Adım (Steps) Parçası */
 .stepsHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.6cqw; }
 .stepsCounter { font-size: 1.15cqw; font-weight: 700; color: #58665f; font-variant-numeric: tabular-nums; }
@@ -41,7 +39,6 @@
 .stepsProgressBar { height: 100%; background: #25634b; border-radius: 0.2cqw; transition: width 0.2s ease-out; }
 .timeline { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; flex: 1 1 auto; gap: 0.6cqw; }
 .timelineItem { position: relative; display: flex; align-items: stretch; gap: 0.7cqw; border-radius: 0.5cqw; cursor: default; }
-
 .timelineGutter { position: relative; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 2.2cqw; }
 .timelineBadge { display: grid; place-items: center; width: 2.2cqw; height: 2.2cqw; min-width: 2.2cqw; min-height: 2.2cqw; border-radius: 50%; font: inherit; font-size: 1.05cqw; font-weight: 700; box-sizing: border-box; flex-shrink: 0; z-index: 1; padding: 0; cursor: pointer; }
 .badgeOpen { background: #25634b; color: #ffffff; border: 0.12cqw solid #25634b; }
@@ -814,4 +811,136 @@
   font-size: 11px;
   color: #a3283a;
   font-weight: 500;
+}
+
+/* Metin yerinde düzenleyici */
+.textEditor {
+  padding: 0.42cqw !important;
+  border: 0.16cqw dashed #2a78d6 !important;
+  border-radius: 0.2cqw !important;
+  background: transparent !important;
+}
+
+/* Metin / Not biçimlendirme araç çubuğu */
+.formatBar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 96%;
+  overflow-x: auto;
+  padding: 4px 6px;
+  background: #ffffff;
+  border: 1px solid #d4d0c5;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(20, 35, 28, 0.14);
+  z-index: 40;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.formatSelect {
+  height: 36px;
+  padding: 2px 8px;
+  border: 1px solid #d4d0c5;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1f2a24;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.formatSelect:focus-visible {
+  border-color: #25634b;
+  box-shadow: 0 0 0 2px rgba(37, 99, 75, 0.2);
+}
+
+.formatBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #3c4b44;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.formatBtn:hover {
+  background: #f0eee6;
+  color: #1f2a24;
+}
+
+.formatBtn[aria-pressed='true'] {
+  background: #e4f0ea;
+  color: #25634b;
+  border-color: #25634b;
+}
+
+.formatDivider {
+  width: 1px;
+  height: 20px;
+  background: #d4d0c5;
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.formatColorTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid #d4d0c5;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  padding: 0;
+}
+
+.formatColorDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.formatColorPopover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #ffffff;
+  border: 1px solid #d4d0c5;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(20, 35, 28, 0.18);
+  z-index: 50;
+}
+
+.formatColorSwatch {
+  min-width: 24px;
+  min-height: 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.12s;
+}
+
+.formatColorSwatch:hover {
+  transform: scale(1.15);
 }

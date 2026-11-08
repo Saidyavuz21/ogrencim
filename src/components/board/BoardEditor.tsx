@@ -2,9 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Download, Eraser, Eye, EyeOff, Highlighter, Image as ImageIcon, Layers, Maximize, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Sliders, Square, StickyNote, Trash2, Upload,
+  AlertCircle, AlignCenter, AlignLeft, AlignRight, ArrowLeft, ArrowRight, Bold, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
+  Copy, Download, Eraser, Eye, EyeOff, Highlighter, Image as ImageIcon, Italic, Layers, Maximize, Minimize, Minus, MousePointer,
+  Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Sliders, Square, StickyNote, Trash2, Type, Underline, Upload,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -16,7 +16,7 @@ import {
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
 import { fileSlug } from '../../lib/reportData';
-import { BoardCanvas, Tool } from './BoardCanvas';
+import { BoardCanvas, Tool, wrapTextLines } from './BoardCanvas';
 import { WidgetContext, WidgetView } from './Widgets';
 import styles from './Board.module.css';
 
@@ -27,6 +27,7 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'select', label: 'Seç', key: 'v' }, { id: 'pen', label: 'Kalem', key: 'p' }, { id: 'highlighter', label: 'Vurgu', key: 'h' },
   { id: 'eraser', label: 'Silgi', key: 'e' }, { id: 'line', label: 'Çizgi', key: 'l' }, { id: 'arrow', label: 'Ok', key: 'a' },
   { id: 'rect', label: 'Dikdörtgen', key: 'r' }, { id: 'ellipse', label: 'Daire', key: 'o' }, { id: 'note', label: 'Not', key: 'n' },
+  { id: 'text', label: 'Metin', key: 't' },
 ];
 
 type MediaItem = { key: string; bucket: string; path: string; name: string };
@@ -153,7 +154,18 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const commitElements = (elements: BoardEl[]) => updatePage({ elements });
   const patchElement = (id: string, patch: Partial<BoardEl>) => {
     if (!page) return;
-    commitElements(page.elements.map((e) => (e.id === id ? ({ ...e, ...patch } as BoardEl) : e)));
+    commitElements(page.elements.map((e) => {
+      if (e.id !== id) return e;
+      let next = { ...e, ...patch } as BoardEl;
+      if (next.type === 'note' && next.variant === 'text') {
+        const pad = 8;
+        const lines = wrapTextLines(next.text || ' ', next.w - pad * 2, next.fontSize, next.fontFamily, next.fontWeight, next.italic);
+        const lineCount = Math.max(1, lines.length);
+        const autoH = Math.round(Math.max(next.fontSize + 16, lineCount * next.fontSize * 1.3 + 16));
+        next = { ...next, h: autoH };
+      }
+      return next;
+    }));
   };
   const undo = () => {
     if (!past.length || !content) return;
@@ -289,6 +301,27 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         setSelectedId(null);
         if (full) toggleFull();
         return;
+      }
+      if ((e.ctrlKey || e.metaKey) && selectedId && page) {
+        const sel = page.elements.find((el) => el.id === selectedId);
+        if (sel && sel.type === 'note') {
+          const k = e.key.toLowerCase();
+          if (k === 'b') {
+            e.preventDefault();
+            patchElement(sel.id, { fontWeight: sel.fontWeight === 700 ? 400 : 700 });
+            return;
+          }
+          if (k === 'i') {
+            e.preventDefault();
+            patchElement(sel.id, { italic: !sel.italic });
+            return;
+          }
+          if (k === 'u') {
+            e.preventDefault();
+            patchElement(sel.id, { underline: !sel.underline });
+            return;
+          }
+        }
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const t = TOOLS.find((x) => x.key === e.key.toLowerCase());
@@ -985,6 +1018,21 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 <StickyNote size={19} aria-hidden="true" />
               </button>
 
+              {/* Metin */}
+              <button
+                type="button"
+                className={`${styles.toolIconBtn} ${tool === 'text' ? styles.toolActive : ''}`}
+                aria-pressed={tool === 'text'}
+                onClick={() => {
+                  setTool('text');
+                  setActivePopover(null);
+                }}
+                title="Metin (T)"
+                aria-label="Metin"
+              >
+                <Type size={19} aria-hidden="true" />
+              </button>
+
               {/* Görsel (Kütüphane ve Medya Çekmecesi) */}
               <input
                 ref={fileInput}
@@ -1205,7 +1253,22 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onToolChange={setTool}
           editingNoteId={editingNoteId}
           onEditNote={setEditingNoteId}
-          onNoteText={(id, text) => { const el = page.elements.find((e) => e.id === id) as NoteEl | undefined; if (el && el.text !== text) patchElement(id, { text }); }}
+          colors={COLORS}
+          onPatchElement={patchElement}
+          onDeleteElement={(id) => {
+            commitElements(page.elements.filter((e) => e.id !== id));
+            if (selectedId === id) setSelectedId(null);
+          }}
+          onNoteText={(id, text) => {
+            const el = page.elements.find((e) => e.id === id) as NoteEl | undefined;
+            if (!el) return;
+            if (el.variant === 'text' && !text.trim()) {
+              commitElements(page.elements.filter((e) => e.id !== id));
+              if (selectedId === id) setSelectedId(null);
+              return;
+            }
+            if (el.text !== text) patchElement(id, { text });
+          }}
           imageUrls={imageUrls}
           renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
           widgetsControlsOnly={tool === 'select'}
@@ -1257,7 +1320,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             busy={busy}
           />
         )}
-        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
+        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
       </aside>
       {deleteConfirm}
       {printArea}
@@ -1276,19 +1339,163 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
   onDelete: () => void;
   onOrder: (dir: 'front' | 'back') => void;
 }) {
-  const title = el.type === 'widget' ? WIDGET_LABEL[el.kind] : { stroke: 'Çizim', line: 'Çizgi', arrow: 'Ok', rect: 'Dikdörtgen', ellipse: 'Daire', note: 'Not', image: 'Görsel' }[el.type];
+  const title = el.type === 'widget' ? WIDGET_LABEL[el.kind] : (el.type === 'note' && el.variant === 'text') ? 'Metin' : { stroke: 'Çizim', line: 'Çizgi', arrow: 'Ok', rect: 'Dikdörtgen', ellipse: 'Daire', note: 'Not', image: 'Görsel' }[el.type];
   return (
     <section className={styles.panel}>
       <h3>{title}</h3>
       {el.type === 'note' && (
         <>
           <label>Metin<textarea value={el.text} maxLength={2000} onChange={(e) => onPatch({ text: e.target.value })} /></label>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {NOTE_COLORS.map((c) => <button key={c} type="button" className={styles.swatch} style={{ background: c }} aria-pressed={el.color === c} onClick={() => onPatch({ color: c })} aria-label={`Not rengi ${c}`} />)}
-          </div>
-          <label>Yazı boyutu
-            <CustomSelect value={String(el.fontSize)} onChange={(v) => onPatch({ fontSize: Number(v) })} options={[24, 30, 34, 42, 56].map((n) => ({ value: String(n), label: `${n}` }))} />
+
+          <label>Yazı tipi
+            <CustomSelect
+              value={el.fontFamily || 'sans'}
+              onChange={(v) => onPatch({ fontFamily: v as 'sans' | 'hand' | 'display' })}
+              options={[
+                { value: 'sans', label: 'Düz' },
+                { value: 'hand', label: 'El yazısı' },
+                { value: 'display', label: 'Başlık' },
+              ]}
+            />
           </label>
+
+          <label>Yazı boyutu
+            <CustomSelect
+              value={String(el.fontSize || 42)}
+              onChange={(v) => onPatch({ fontSize: Number(v) })}
+              options={[24, 32, 42, 56, 72, 96].map((n) => ({ value: String(n), label: `${n}` }))}
+            />
+          </label>
+
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              className={`${styles.tool} ${el.fontWeight === 700 ? styles.toolActive : ''}`}
+              aria-pressed={el.fontWeight === 700}
+              onClick={() => onPatch({ fontWeight: el.fontWeight === 700 ? 400 : 700 })}
+              title="Kalın"
+              aria-label="Kalın"
+            >
+              <Bold size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.tool} ${el.italic ? styles.toolActive : ''}`}
+              aria-pressed={Boolean(el.italic)}
+              onClick={() => onPatch({ italic: !el.italic })}
+              title="İtalik"
+              aria-label="İtalik"
+            >
+              <Italic size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.tool} ${el.underline ? styles.toolActive : ''}`}
+              aria-pressed={Boolean(el.underline)}
+              onClick={() => onPatch({ underline: !el.underline })}
+              title="Altı çizili"
+              aria-label="Altı çizili"
+            >
+              <Underline size={16} aria-hidden="true" />
+            </button>
+
+            <span style={{ width: 1, height: 18, background: '#c9c5b8', margin: '0 2px' }} />
+
+            <button
+              type="button"
+              className={`${styles.tool} ${el.fontWeight === 300 ? styles.toolActive : ''}`}
+              aria-pressed={el.fontWeight === 300}
+              onClick={() => onPatch({ fontWeight: 300 })}
+              style={{ fontSize: 12, padding: '4px 8px' }}
+            >
+              İnce
+            </button>
+            <button
+              type="button"
+              className={`${styles.tool} ${(el.fontWeight ?? 400) === 400 ? styles.toolActive : ''}`}
+              aria-pressed={(el.fontWeight ?? 400) === 400}
+              onClick={() => onPatch({ fontWeight: 400 })}
+              style={{ fontSize: 12, padding: '4px 8px' }}
+            >
+              Normal
+            </button>
+            <button
+              type="button"
+              className={`${styles.tool} ${el.fontWeight === 700 ? styles.toolActive : ''}`}
+              aria-pressed={el.fontWeight === 700}
+              onClick={() => onPatch({ fontWeight: 700 })}
+              style={{ fontSize: 12, padding: '4px 8px' }}
+            >
+              Kalın
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              type="button"
+              className={`${styles.tool} ${(!el.align || el.align === 'left') ? styles.toolActive : ''}`}
+              aria-pressed={!el.align || el.align === 'left'}
+              onClick={() => onPatch({ align: 'left' })}
+              title="Sola hizala"
+              aria-label="Sola hizala"
+            >
+              <AlignLeft size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.tool} ${el.align === 'center' ? styles.toolActive : ''}`}
+              aria-pressed={el.align === 'center'}
+              onClick={() => onPatch({ align: 'center' })}
+              title="Ortaya hizala"
+              aria-label="Ortaya hizala"
+            >
+              <AlignCenter size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.tool} ${el.align === 'right' ? styles.toolActive : ''}`}
+              aria-pressed={el.align === 'right'}
+              onClick={() => onPatch({ align: 'right' })}
+              title="Sağa hizala"
+              aria-label="Sağa hizala"
+            >
+              <AlignRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+
+          <label>Yazı rengi
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+              {COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={styles.swatch}
+                  style={{ background: c }}
+                  aria-pressed={(el.textColor || '#1f2a24') === c}
+                  onClick={() => onPatch({ textColor: c })}
+                  aria-label={`Yazı rengi ${c}`}
+                />
+              ))}
+            </div>
+          </label>
+
+          {el.variant !== 'text' && (
+            <label>Zemin rengi
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                {NOTE_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={styles.swatch}
+                    style={{ background: c }}
+                    aria-pressed={el.color === c}
+                    onClick={() => onPatch({ color: c })}
+                    aria-label={`Not zemin rengi ${c}`}
+                  />
+                ))}
+              </div>
+            </label>
+          )}
         </>
       )}
       {(el.type === 'rect' || el.type === 'ellipse') && (

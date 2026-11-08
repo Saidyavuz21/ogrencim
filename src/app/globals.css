@@ -102,3 +102,33 @@ select option:disabled {
   .print-only { display: block !important; }
 }
 .print-only { display: none; }
+
+/* Tahta metin yazı tipleri (display: swap) */
+@font-face {
+  font-family: 'Patrick Hand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/patrick-hand.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/fredoka-light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/fredoka-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/fredoka-bold.woff2') format('woff2');
+}

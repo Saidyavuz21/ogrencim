@@ -16,7 +16,7 @@ import {
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
 import { fileSlug } from '../../lib/reportData';
-import { BoardCanvas, Tool, wrapTextLines } from './BoardCanvas';
+import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, wrapTextLines } from './BoardCanvas';
 import { WidgetContext, WidgetView } from './Widgets';
 import styles from './Board.module.css';
 
@@ -77,6 +77,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [activePopover, setActivePopover] = useState<'draw' | 'shapes' | 'widget' | null>(null);
   // Sun kipi ve ortak adım durumu: widget kimliği → açık adım sayısı
   const [stepOpen, setStepOpen] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    preloadBoardFonts().catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onFocus = () => {
@@ -1363,7 +1367,7 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
             <CustomSelect
               value={String(el.fontSize || 42)}
               onChange={(v) => onPatch({ fontSize: Number(v) })}
-              options={[24, 32, 42, 56, 72, 96].map((n) => ({ value: String(n), label: `${n}` }))}
+              options={getFontSizeOptions(el.fontSize).map((n) => ({ value: String(n), label: `${n}` }))}
             />
           </label>
 

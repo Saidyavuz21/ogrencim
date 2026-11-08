@@ -9,7 +9,7 @@ import {
 } from '../../lib/boardData';
 import { getQuizReport, getQuizState, QuizStateItem } from '../../lib/quizData';
 import { Modal } from '../files/FilesUi';
-import { BoardCanvas, Tool } from './BoardCanvas';
+import { BoardCanvas, preloadBoardFonts, Tool } from './BoardCanvas';
 import { WidgetContext, WidgetView } from './Widgets';
 import styles from './Board.module.css';
 import f from '../files/Files.module.css';
@@ -23,6 +23,10 @@ function useHomeworkBoard(homeworkId: string) {
   const [content, setContent] = useState<BoardContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    preloadBoardFonts().catch(() => {});
+  }, []);
   useEffect(() => {
     let alive = true;
     getHomeworkBoard(homeworkId).then(async (res) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from '../icons';
 import {
   Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
@@ -30,6 +30,13 @@ export function bbox(el: BoardEl): Box {
   }
   if (isShape(el)) {
     return { x: Math.min(el.x1, el.x2), y: Math.min(el.y1, el.y2), w: Math.abs(el.x2 - el.x1), h: Math.abs(el.y2 - el.y1) };
+  }
+  if (el.type === 'note' && el.variant === 'text') {
+    const pad = 8;
+    const lines = wrapTextLines(el.text || ' ', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic);
+    const lineCount = Math.max(1, lines.length);
+    const calcH = Math.round(Math.max(el.fontSize + 16, lineCount * el.fontSize * 1.3 + 16));
+    return { x: el.x, y: el.y, w: el.w, h: calcH };
   }
   return { x: el.x, y: el.y, w: el.w, h: el.h };
 }
@@ -78,6 +85,30 @@ export function getFontFamily(family?: 'sans' | 'hand' | 'display'): string {
   if (family === 'hand') return "'Patrick Hand', cursive, sans-serif";
   if (family === 'display') return "'Fredoka', sans-serif";
   return BOARD_FONT;
+}
+
+export const FONT_SIZES = [24, 32, 42, 56, 72, 96];
+
+export function getFontSizeOptions(currentSize?: number): number[] {
+  const base = [24, 32, 42, 56, 72, 96];
+  if (currentSize && !base.includes(currentSize)) {
+    return [...base, currentSize].sort((a, b) => a - b);
+  }
+  return base;
+}
+
+export async function preloadBoardFonts(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts?.load) return;
+  try {
+    await Promise.all([
+      document.fonts.load("400 42px 'Patrick Hand'"),
+      document.fonts.load("300 42px 'Fredoka'"),
+      document.fonts.load("400 42px 'Fredoka'"),
+      document.fonts.load("700 42px 'Fredoka'"),
+    ]);
+  } catch {
+    // Tarayıcı font yükleme hatası yutulur
+  }
 }
 
 let measureCanvas: HTMLCanvasElement | null = null;
@@ -394,22 +425,28 @@ export interface BoardCanvasProps {
 function FormatBar({
   el,
   colors,
+  barRef,
   onPatch,
 }: {
   el: NoteEl;
   colors: string[];
+  barRef?: React.RefObject<HTMLDivElement | null>;
   onPatch: (patch: Partial<NoteEl>) => void;
 }) {
   const [colorOpen, setColorOpen] = useState(false);
 
-  const topPct = el.y < 70
-    ? ((el.y + el.h + 12) / BOARD_H) * 100
-    : (el.y / BOARD_H) * 100;
-  const transform = el.y < 70 ? 'none' : 'translateY(calc(-100% - 12px))';
-  const leftPct = Math.max(1, Math.min(65, (el.x / BOARD_W) * 100));
+  const b = bbox(el);
+  const topPct = b.y < 70
+    ? ((b.y + b.h + 12) / BOARD_H) * 100
+    : (b.y / BOARD_H) * 100;
+  const transform = b.y < 70 ? 'none' : 'translateY(calc(-100% - 12px))';
+  const leftPct = Math.max(1, Math.min(65, (b.x / BOARD_W) * 100));
+
+  const fontSizes = getFontSizeOptions(el.fontSize);
 
   return (
     <div
+      ref={barRef}
       className={styles.formatBar}
       role="toolbar"
       aria-label="Metin biçimlendirme"
@@ -439,7 +476,7 @@ function FormatBar({
         onChange={(e) => onPatch({ fontSize: Number(e.target.value) })}
         aria-label="Yazı boyutu"
       >
-        {[24, 32, 42, 56, 72, 96].map((sz) => (
+        {fontSizes.map((sz) => (
           <option key={sz} value={sz}>{sz}</option>
         ))}
       </select>
@@ -451,6 +488,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={el.fontWeight === 700}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ fontWeight: el.fontWeight === 700 ? 400 : 700 })}
         title="Kalın (Ctrl+B)"
         aria-label="Kalın"
@@ -463,6 +501,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={Boolean(el.italic)}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ italic: !el.italic })}
         title="İtalik (Ctrl+I)"
         aria-label="İtalik"
@@ -475,6 +514,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={Boolean(el.underline)}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ underline: !el.underline })}
         title="Altı çizili (Ctrl+U)"
         aria-label="Altı çizili"
@@ -489,6 +529,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={el.fontWeight === 300}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ fontWeight: 300 })}
         title="İnce yazı"
       >
@@ -498,6 +539,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={(el.fontWeight ?? 400) === 400}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ fontWeight: 400 })}
         title="Normal yazı"
       >
@@ -507,6 +549,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={el.fontWeight === 700}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ fontWeight: 700 })}
         title="Kalın yazı"
       >
@@ -520,6 +563,7 @@ function FormatBar({
         <button
           type="button"
           className={styles.formatColorTrigger}
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => setColorOpen((v) => !v)}
           title="Yazı rengi"
           aria-label="Yazı rengi"
@@ -540,6 +584,7 @@ function FormatBar({
                 type="button"
                 className={styles.formatColorSwatch}
                 style={{ backgroundColor: c }}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   onPatch({ textColor: c });
                   setColorOpen(false);
@@ -558,6 +603,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={(!el.align || el.align === 'left')}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ align: 'left' })}
         title="Sola hizala"
         aria-label="Sola hizala"
@@ -568,6 +614,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={el.align === 'center'}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ align: 'center' })}
         title="Ortaya hizala"
         aria-label="Ortaya hizala"
@@ -578,6 +625,7 @@ function FormatBar({
         type="button"
         className={styles.formatBtn}
         aria-pressed={el.align === 'right'}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => onPatch({ align: 'right' })}
         title="Sağa hizala"
         aria-label="Sağa hizala"
@@ -621,6 +669,26 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const localSvg = useRef<SVGSVGElement | null>(null);
   const draft = useRef<Draft | null>(null);
   const [preview, setPreview] = useState<{ el?: BoardEl; erased?: Set<string> } | null>(null);
+  const [editingHeight, setEditingHeight] = useState<{ id: string; h: number } | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const formatBarRef = useRef<HTMLDivElement | null>(null);
+  const [, setFontsReady] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    preloadBoardFonts().then(() => {
+      if (active) setFontsReady((c) => c + 1);
+    });
+    const onDone = () => {
+      if (active) setFontsReady((c) => c + 1);
+    };
+    document.fonts?.addEventListener?.('loadingdone', onDone);
+    return () => {
+      active = false;
+      document.fonts?.removeEventListener?.('loadingdone', onDone);
+    };
+  }, []);
+
   const drawingOnLayer = !!onLayerCommit;
   const interactive = !thumbnail && (editable || drawingOnLayer);
 
@@ -650,7 +718,17 @@ export function BoardCanvas(props: BoardCanvasProps) {
     if (!interactive || (e.pointerType === 'mouse' && e.button !== 0)) return;
     const { x, y } = toPoint(e.clientX, e.clientY);
     const t: Tool = drawingOnLayer && !DRAW_TOOLS.includes(tool) ? 'pen' : tool;
-    if (editingNoteId) onEditNote?.(null);
+    if (editingNoteId) {
+      const curVal = textareaRef.current ? textareaRef.current.value : (editingNote?.text || '');
+      if (editingNote && editingNote.variant === 'text' && !curVal.trim()) {
+        if (onDeleteElement) onDeleteElement(editingNote.id);
+        else onCommit?.(elements.filter((el) => el.id !== editingNote.id));
+      } else if (editingNote && curVal !== editingNote.text) {
+        onNoteText?.(editingNote.id, curVal);
+      }
+      setEditingHeight(null);
+      onEditNote?.(null);
+    }
     if (t === 'pen' || t === 'highlighter') {
       const hl = t === 'highlighter';
       draft.current = { kind: 'stroke', el: { id: newId(), type: 'stroke', points: [x, y], color, width: hl ? Math.max(18, width * 3) : width, highlighter: hl || undefined } };
@@ -664,7 +742,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
       draft.current = { kind: 'shape', el: { id: newId(), type: t, x1: x, y1: y, x2: x, y2: y, color, width } };
       setPreview({ el: draft.current.el });
     } else if (t === 'note') {
-      const note: NoteEl = { id: newId(), type: 'note', x: Math.round(Math.min(x, BOARD_W - 420)), y: Math.round(Math.min(y, BOARD_H - 240)), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 34 };
+      const note: NoteEl = { id: newId(), type: 'note', x: Math.round(Math.min(x, BOARD_W - 420)), y: Math.round(Math.min(y, BOARD_H - 240)), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 32 };
       onCommit?.([...elements, note]);
       onSelect?.(note.id);
       onEditNote?.(note.id);
@@ -832,18 +910,28 @@ export function BoardCanvas(props: BoardCanvasProps) {
         <FormatBar
           el={activeNote}
           colors={colors}
+          barRef={formatBarRef}
           onPatch={(patch) => {
             let finalPatch: Partial<NoteEl> = { ...patch };
             if (activeNote.variant === 'text') {
+              const curText = (editingNote && editingNote.id === activeNote.id && textareaRef.current)
+                ? textareaRef.current.value
+                : (activeNote.text || ' ');
               const nextFont = patch.fontFamily ?? activeNote.fontFamily;
               const nextSize = patch.fontSize ?? activeNote.fontSize;
               const nextWeight = patch.fontWeight ?? activeNote.fontWeight;
               const nextItalic = patch.italic ?? activeNote.italic;
               const pad = 8;
-              const lines = wrapTextLines(activeNote.text || ' ', activeNote.w - pad * 2, nextSize, nextFont, nextWeight, nextItalic);
+              const lines = wrapTextLines(curText || ' ', activeNote.w - pad * 2, nextSize, nextFont, nextWeight, nextItalic);
               const lineCount = Math.max(1, lines.length);
               const autoH = Math.round(Math.max(nextSize + 16, lineCount * nextSize * 1.3 + 16));
               finalPatch = { ...finalPatch, h: autoH };
+              if (editingNote && editingNote.id === activeNote.id) {
+                setEditingHeight({ id: activeNote.id, h: autoH });
+                if (curText !== activeNote.text) {
+                  finalPatch.text = curText;
+                }
+              }
             }
             if (onPatchElement) {
               onPatchElement(activeNote.id, finalPatch);
@@ -866,6 +954,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
 
       {editingNote && (
         <textarea
+          ref={textareaRef}
           className={`${styles.noteEditor} ${editingNote.variant === 'text' ? styles.textEditor : ''}`}
           autoFocus
           aria-label={editingNote.variant === 'text' ? 'Metin içeriği' : 'Not metni'}
@@ -875,7 +964,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
             left: `${(editingNote.x / BOARD_W) * 100}%`,
             top: `${(editingNote.y / BOARD_H) * 100}%`,
             width: `${(editingNote.w / BOARD_W) * 100}%`,
-            height: `${(editingNote.h / BOARD_H) * 100}%`,
+            height: `${(((editingNote.variant === 'text' && editingHeight?.id === editingNote.id) ? editingHeight.h : bbox(editingNote).h) / BOARD_H) * 100}%`,
             background: editingNote.color,
             color: editingNote.textColor || '#1f2a24',
             fontSize: `${(editingNote.fontSize / BOARD_W) * 100}cqw`,
@@ -893,26 +982,32 @@ export function BoardCanvas(props: BoardCanvasProps) {
               const lines = wrapTextLines(val || ' ', editingNote.w - pad * 2, editingNote.fontSize, editingNote.fontFamily, editingNote.fontWeight, editingNote.italic);
               const lineCount = Math.max(1, lines.length);
               const autoH = Math.round(Math.max(editingNote.fontSize + 16, lineCount * editingNote.fontSize * 1.3 + 16));
-              if (autoH !== editingNote.h) {
-                if (onPatchElement) {
-                  onPatchElement(editingNote.id, { h: autoH });
-                } else {
-                  onCommit?.(elements.map((el) => (el.id === editingNote.id ? ({ ...el, h: autoH } as NoteEl) : el)));
-                }
-              }
+              setEditingHeight({ id: editingNote.id, h: autoH });
             }
           }}
           onBlur={(e) => {
-            const val = e.target.value.trim();
-            if (editingNote.variant === 'text' && !val) {
+            const related = e.relatedTarget as Node | null;
+            const isInsideFormatBar = related && formatBarRef.current?.contains(related);
+            const val = e.target.value;
+            const trimmed = val.trim();
+
+            if (isInsideFormatBar) {
+              if (val !== editingNote.text) {
+                onNoteText?.(editingNote.id, val);
+              }
+              return;
+            }
+
+            if (editingNote.variant === 'text' && !trimmed) {
               if (onDeleteElement) {
                 onDeleteElement(editingNote.id);
               } else {
                 onCommit?.(elements.filter((el) => el.id !== editingNote.id));
               }
             } else {
-              onNoteText?.(editingNote.id, e.target.value);
+              onNoteText?.(editingNote.id, val);
             }
+            setEditingHeight(null);
             onEditNote?.(null);
           }}
           onKeyDown={(e) => {

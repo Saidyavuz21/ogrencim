@@ -142,7 +142,7 @@ Ortak kararlar:
 - Kütüphane parçası = `{ id, name, category, elements: BoardEl[] }`; öğeler (0,0) başlangıçlı. Eklerken yeni kimlik + yeni `groupId` + bırakılan yere kaydırma. Önizleme resmi dosya değil, aynı öğelerden SVG olarak çizilir.
 - Hazır setler kodla gelir (`src/lib/boardLibrary/`); bazıları "ayarlı" üretici olur (ör. sayı doğrusu: başlangıç, bitiş, aralık).
 
-- [x] **Metin aracı**: zeminsiz yazı; yazı tipi (Düz / El yazısı / Başlık), boyut, kalın/ince/italik/altı çizili, renk, hizalama; seçiliyken yüzen biçim çubuğu; PNG'de yazı tipi gömülü · 8 Kasım 2026 · `3a8ebd4`
+- [x] **Metin aracı**: zeminsiz yazı; yazı tipi (Düz / El yazısı / Başlık), boyut, kalın/ince/italik/altı çizili, renk, hizalama; seçiliyken yüzen biçim çubuğu; PNG'de yazı tipi gömülü · 8 Kasım 2026 · `9359545`
 - [ ] **Çoklu seçim**: sürükleyerek dikdörtgen seçim, Shift+tık; seçilenleri birlikte taşı, sil, kopyala (Ctrl+C/V, Ctrl+D)
 - [ ] **Gruplama**: Ctrl+G / Ctrl+Shift+G; gruba tıklayınca bütün grup seçilir, çift tıklayınca grubun içindeki tek öğe
 - [ ] **Şekiller kütüphanesi altyapısı**: medya çekmecesinde Şekiller sekmesi, arama + kategori, tıkla ya da sürükle-bırak ile grup olarak ekleme

@@ -165,17 +165,19 @@ export function getFontSizeOptions(currentSize?: number): number[] {
   return base;
 }
 
-export async function preloadBoardFonts(): Promise<void> {
+const FONT_FACES: Record<string, string[]> = {
+  hand: ["400 42px 'Patrick Hand'"],
+  display: ["300 42px 'Fredoka'", "400 42px 'Fredoka'", "700 42px 'Fredoka'"],
+  school: ["400 42px 'Andika'", "700 42px 'Andika'"],
+};
+
+/** Yalnızca verilen yazı tiplerini yükler (Andika gibi büyük dosyalar kullanılmıyorsa indirilmez) */
+export async function preloadBoardFonts(families: Iterable<string>): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts?.load) return;
+  const faces = Array.from(new Set(families)).flatMap((f) => FONT_FACES[f] || []);
+  if (!faces.length) return;
   try {
-    await Promise.all([
-      document.fonts.load("400 42px 'Patrick Hand'"),
-      document.fonts.load("300 42px 'Fredoka'"),
-      document.fonts.load("400 42px 'Fredoka'"),
-      document.fonts.load("700 42px 'Fredoka'"),
-      document.fonts.load("400 42px 'Andika'"),
-      document.fonts.load("700 42px 'Andika'"),
-    ]);
+    await Promise.all(faces.map((f) => document.fonts.load(f)));
   } catch {
     // Tarayıcı font yükleme hatası yutulur
   }
@@ -1641,9 +1643,11 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const [enteredGroupId, setEnteredGroupId] = useState<string | null>(null);
   const [, setFontsReady] = useState(0);
 
+  // Sayfada kullanılan web yazı tipleri (Düz = sistem/Geist, yüklemeye gerek yok)
+  const usedFontKey = Array.from(new Set(page.elements.flatMap((el) => (el.type === 'note' && el.fontFamily && el.fontFamily !== 'sans' ? [el.fontFamily] : [])))).sort().join(',');
   useEffect(() => {
     let active = true;
-    preloadBoardFonts().then(() => {
+    preloadBoardFonts(usedFontKey ? usedFontKey.split(',') : []).then(() => {
       if (active) setFontsReady((c) => c + 1);
     });
     const onDone = () => {
@@ -1654,7 +1658,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
       active = false;
       document.fonts?.removeEventListener?.('loadingdone', onDone);
     };
-  }, []);
+  }, [usedFontKey]);
 
   const drawingOnLayer = !!onLayerCommit;
   const interactive = !thumbnail && (editable || drawingOnLayer);

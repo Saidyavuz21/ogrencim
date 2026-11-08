@@ -16,7 +16,7 @@ import {
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
 import { fileSlug } from '../../lib/reportData';
-import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, wrapTextLines } from './BoardCanvas';
+import { BoardCanvas, getFontSizeOptions, Tool, wrapTextLines } from './BoardCanvas';
 import { computeTextHeight } from './textLayout';
 import { WidgetContext, WidgetView } from './Widgets';
 import { ShapeLibraryPanel } from './ShapeLibraryPanel';
@@ -149,7 +149,6 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   };
 
   useEffect(() => {
-    preloadBoardFonts().catch(() => {});
     void Promise.resolve().then(() => {
       loadUserLibrary();
       loadSchoolLibrary();

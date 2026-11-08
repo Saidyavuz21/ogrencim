@@ -126,7 +126,7 @@ Doğru cevaplar asla tarayıcıya gönderilmez; değerlendirme sunucuda yapılı
 - [x] Öğretmen düzenler, öğrenci görüntüler/çözer modu — *K-3* · 7 Kasım 2026 · `73358e2` (ödev türü Tahta: kopya dondurulur, öğrenci kendi katmanına çizer, öğretmen tek tek inceler)
 - [x] Tahtaya **Mini Test** parçası (quiz motorunu kullanır) — *K-4* · 7 Kasım 2026 · `73358e2` (soru sunucuda dondurulur, doğru cevap tarayıcıya gitmez, sonuç Ödev kontrolü'ne)
 - [x] Tahtaya **Cevabı Göster** parçası (sınav modunda sunucuda kapalı) — *K-4* · 7 Kasım 2026 · `73358e2` (o sorudan puan alınmaz)
-- [x] Tahtaya **Adım Adım** çözüm parçası — *K-4* · 7 Kasım 2026 · `73358e2`
+- [x] Tahtaya **Adım Adım** çözüm parçası — *K-4* · 7 Kasım 2026 · `73358e2` (8 Kasım 2026 `f110e85` ile güçlendirildi: zaman çizelgesi, Sun kipi klavye bağlantısı, çok satırlı adım düzenleyici, sonuç adımı)
 - [x] Tahtaya **Kronometre** parçası — *K-4* · 7 Kasım 2026 · `73358e2` (0 sn = ileri, değilse geri sayım)
 - [x] Öğrenci çiziminin otomatik kaydı (30 sn) — *K-7* · 7 Kasım 2026 · `73358e2` (sekme gizlenince ve kapatınca da)
 - [x] Ortak medya çekmecesinden tahtaya sürükle-bırak — *K-3* · 7 Kasım 2026 · `73358e2` (Dosyalarım ve kütüphane resimleri)

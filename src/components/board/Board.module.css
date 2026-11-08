@@ -33,6 +33,38 @@
 .widgetRow { display: flex; flex-wrap: wrap; gap: 0.6cqw; align-items: center; }
 .stepList { display: grid; gap: 0.5cqw; margin: 0; padding: 0 0 0 1.6cqw; font-size: 1.35cqw; line-height: 1.4; }
 .stepList li.stepHidden { list-style: none; margin-left: -1.6cqw; color: #a3aca6; }
+
+/* Adım Adım (Steps) Parçası */
+.stepsHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.6cqw; }
+.stepsCounter { font-size: 1.15cqw; font-weight: 700; color: #58665f; font-variant-numeric: tabular-nums; }
+.stepsProgressTrack { width: 100%; height: 0.35cqw; background: #e6e4dc; border-radius: 0.2cqw; overflow: hidden; margin-top: -0.1cqw; margin-bottom: 0.3cqw; }
+.stepsProgressBar { height: 100%; background: #25634b; border-radius: 0.2cqw; transition: width 0.2s ease-out; }
+.timeline { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; flex: 1 1 auto; gap: 0.6cqw; }
+.timelineItem { position: relative; display: flex; align-items: stretch; gap: 0.7cqw; cursor: pointer; border-radius: 0.5cqw; }
+.timelineItem:focus-visible { outline: 0.2cqw solid #25634b; outline-offset: 0.15cqw; }
+.timelineGutter { position: relative; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 2.2cqw; }
+.timelineBadge { display: grid; place-items: center; width: 2.2cqw; height: 2.2cqw; border-radius: 50%; font-size: 1.05cqw; font-weight: 700; box-sizing: border-box; flex-shrink: 0; z-index: 1; }
+.badgeOpen { background: #25634b; color: #ffffff; border: 0.12cqw solid #25634b; }
+.badgeHidden { background: transparent; color: #a3aca6; border: 0.12cqw dashed #c9c5b8; }
+.badgeResult { background: #935610; color: #ffffff; border: 0.12cqw solid #935610; }
+.badgeResultHidden { background: transparent; color: #b07830; border: 0.12cqw dashed #d4a76a; }
+.timelineLine { position: absolute; top: 2.2cqw; bottom: -0.6cqw; left: calc(50% - 0.06cqw); width: 0.12cqw; background: #c9c5b8; }
+.timelineItem:last-child .timelineLine { display: none; }
+.stepContent { flex: 1 1 auto; min-width: 0; border-radius: 0.6cqw; padding: 0.45cqw 0.7cqw; box-sizing: border-box; font-size: 1.35cqw; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.stepCardOpen { background: #fafaf8; border: 0.12cqw solid #e2ded5; color: #1f2a24; }
+.stepCardLatest { background: #e8f3ee; border-color: #a3c9b5; animation: stepAppear 0.2s ease-out; }
+.stepCardResult { border-color: #d4a76a; background: #fdf8f0; }
+.stepCardHidden { min-height: 2.2cqw; background: transparent; border: 0.12cqw dashed #c9c5b8; display: flex; align-items: center; }
+.stepCardHiddenResult { border-color: #d4a76a; }
+.resultTag { display: inline-block; margin-right: 0.5cqw; padding: 0.1cqw 0.45cqw; border-radius: 0.3cqw; background: #935610; color: #ffffff; font-size: 0.95cqw; font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; text-transform: uppercase; }
+.resultTagMuted { display: inline-block; margin-left: 0.4cqw; padding: 0.05cqw 0.4cqw; border-radius: 0.3cqw; background: transparent; border: 0.1cqw solid #d4a76a; color: #b07830; font-size: 0.9cqw; font-weight: 600; vertical-align: middle; text-transform: uppercase; }
+@keyframes stepAppear {
+  from { opacity: 0; transform: translateY(-0.35cqw); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stepsFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.5cqw; margin-top: auto; padding-top: 0.4cqw; }
+.stepNavBtn { display: inline-flex; align-items: center; justify-content: center; gap: 0.3cqw; min-height: 3cqw; padding: 0 1cqw; font-size: 1.2cqw; }
+.stepNavIconBtn { display: inline-flex; align-items: center; justify-content: center; min-height: 3cqw; min-width: 3cqw; padding: 0; }
 .timerValue { margin: 0; font-size: 5cqw; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; text-align: center; }
 .timerSoon { color: #a3283a; }
 .widget :is(button):focus-visible { outline: 0.25cqw solid #2a78d6; outline-offset: 0.15cqw; }
@@ -62,7 +94,7 @@
   transform: none;
   width: max-content;
   max-width: calc(100vw - 20px);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 20px rgb(24 46 34 / 10%);
 }
 .toolsReveal {
   position: absolute;
@@ -596,4 +628,190 @@
 @media (prefers-reduced-motion: reduce) {
   .widget * { transition: none !important; animation: none !important; }
   .drawer { transition: none; }
+}
+
+/* Board dock: grouped tools, generous touch targets, quiet elevation. */
+.toolbar { gap: 8px; padding: 8px; box-sizing: border-box; border-radius: 16px; background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 6px 20px rgb(24 46 34 / 10%); }
+.toolGroup { display: flex; align-items: center; gap: 2px; }
+.toolGroup:first-child { padding: 3px; border-radius: 12px; background: #f4f5f1; }
+.toolbar .toolIconBtn, .toolbar .colorPickerTrigger { width: 44px; height: 44px; }
+.toolDisclosure { position: absolute; right: 3px; top: 4px; }
+.saveStatusBadge { gap: 6px; width: auto; min-height: 32px; padding: 0 8px; border-radius: 8px; background: #f2f6f2; color: #25634b; }
+.saveStatusText { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.toolbar .toolIconBtn svg { stroke-width: 1.75; }
+.toolbar .toolIconBtn[aria-pressed='true'] { border-color: #9ab8a5; background: #e6f1e9; color: #1d503d; }
+.toolbar .toolIconBtn:focus-visible, .colorPickerTrigger:focus-visible { outline-color: #25634b; }
+@media (max-width: 1000px) {
+  .toolbar { flex-wrap: wrap; justify-content: center; gap: 4px; }
+  .toolGroup { gap: 0; }
+  .saveStatusText { display: none; }
+}
+@media (max-width: 600px) {
+  .editorFull .dockWrapper, .editorFull .toolbar { width: calc(100vw - 20px); }
+  .toolbar { padding: 6px; }
+  .toolGroup, .toolGroup:first-child { display: contents; }
+  .toolbar .sep { display: none; }
+  .saveStatusBadge { padding: 0 6px; }
+  .popoverCard { max-height: calc(100dvh - 200px); overflow-y: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toolIconBtn, .colorPickerTrigger, .toolsReveal { transition: none; }
+  .popoverCard { animation: none; }
+}
+
+/* Steps düzenleyici (SelectionPanel) */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2a24;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.checkboxLabel input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #25634b;
+  cursor: pointer;
+}
+.stepEditorSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+.stepEditorHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.stepEditorTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #25634b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.stepStatsText {
+  font-size: 11px;
+  color: #58665f;
+  font-variant-numeric: tabular-nums;
+}
+.stepEditorList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.stepEditorRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #e2ded5;
+  border-radius: 8px;
+  background: #fdfdfc;
+}
+.stepRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.stepRowBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #1f2a24;
+}
+.stepRowResultTag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #935610;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+.stepRowActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.stepActionBtn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #d8d4c9;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #1f2a24;
+  cursor: pointer;
+}
+.stepActionBtn:hover:not(:disabled) {
+  border-color: #25634b;
+  color: #25634b;
+}
+.stepActionBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.stepDeleteBtn:hover:not(:disabled) {
+  border-color: #b3283b;
+  color: #b3283b;
+}
+.stepTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  border: 1px solid #d8d4c9;
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 48px;
+}
+.stepTextarea:focus {
+  outline: none;
+  border-color: #25634b;
+  box-shadow: 0 0 0 2px rgb(37 99 75 / 15%);
+}
+.addStepBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px dashed #25634b;
+  border-radius: 8px;
+  background: #f2f7f4;
+  color: #25634b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.addStepBtn:hover:not(:disabled) {
+  background: #e3ede7;
+}
+.addStepBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #c9c5b8;
+  color: #888;
+  background: #f8f8f6;
+}
+.limitWarnText {
+  margin: 0;
+  font-size: 11px;
+  color: #a3283a;
+  font-weight: 500;
 }

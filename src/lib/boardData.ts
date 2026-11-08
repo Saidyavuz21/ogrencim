@@ -39,6 +39,7 @@ export interface WidgetData {
   /** Adım Adım */
   title?: string;
   steps?: string[];
+  lastIsResult?: boolean;
   /** Kronometre: 0 = ileri sayım, >0 = geri sayım (sn) */
   seconds?: number;
 }

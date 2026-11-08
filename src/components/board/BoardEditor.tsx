@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Download, Eraser, Eye, EyeOff, Highlighter, Image as ImageIcon, Layers, Maximize, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Shuffle, Sliders, Square, StickyNote, Trash2, Upload, Users,
+  Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Sliders, Square, StickyNote, Trash2, Upload,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -74,6 +74,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const dockRef = useRef<HTMLDivElement>(null);
   // Canva stili açılır menü (çizim/kalem, şekiller, parçalar)
   const [activePopover, setActivePopover] = useState<'draw' | 'shapes' | 'widget' | null>(null);
+  // Sun kipi ve ortak adım durumu: widget kimliği → açık adım sayısı
+  const [stepOpen, setStepOpen] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const onFocus = () => {
@@ -116,7 +118,16 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const page = content?.pages[Math.min(pageIndex, (content?.pages.length || 1) - 1)];
   const questionMap = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const allWidgets = useMemo(() => new Map((content?.pages || []).flatMap((p) => p.elements.filter((e): e is WidgetEl => e.type === 'widget')).map((w) => [w.id, w])), [content]);
-  const ctx: WidgetContext = { mode: 'teacher', questions: questionMap, allWidgets };
+  const stepState = useMemo(() => ({
+    get: (id: string) => stepOpen[id] ?? 0,
+    set: (id: string, n: number) => setStepOpen((prev) => ({ ...prev, [id]: n })),
+  }), [stepOpen]);
+  const ctx: WidgetContext = useMemo(() => ({
+    mode: 'teacher',
+    questions: questionMap,
+    allWidgets,
+    stepState,
+  }), [questionMap, allWidgets, stepState]);
 
   // Görsel adresleri
   const imageKeys = useMemo(() => Array.from(new Set((content?.pages || []).flatMap((p) => p.elements.filter((e): e is ImageEl => e.type === 'image').map((e) => imageKey(e))))).sort().join('|'), [content]);
@@ -197,10 +208,47 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setAnnot({});
     setAnnotPast([]);
     setEditingNoteId(null);
+    setStepOpen({});
     toggleFull();
   };
   const nextPage = () => { if (content) setPageIndex((i) => Math.min(content.pages.length - 1, i + 1)); };
   const prevPage = () => setPageIndex((i) => Math.max(0, i - 1));
+
+  const advancePresentStepOrPage = () => {
+    if (!page) { nextPage(); return; }
+    const stepsWidgets = page.elements
+      .filter((e): e is WidgetEl => e.type === 'widget' && e.kind === 'steps')
+      .sort((a, b) => (a.y !== b.y ? a.y - b.y : a.x - b.x));
+
+    for (const w of stepsWidgets) {
+      const validSteps = (w.data.steps || []).filter((s) => s.trim());
+      const total = validSteps.length;
+      const current = stepOpen[w.id] ?? 0;
+      if (current < total) {
+        setStepOpen((prev) => ({ ...prev, [w.id]: current + 1 }));
+        return;
+      }
+    }
+    nextPage();
+  };
+
+  const revertPresentStepOrPage = () => {
+    if (!page) { prevPage(); return; }
+    const stepsWidgets = page.elements
+      .filter((e): e is WidgetEl => e.type === 'widget' && e.kind === 'steps')
+      .sort((a, b) => (a.y !== b.y ? a.y - b.y : a.x - b.x));
+
+    for (let i = stepsWidgets.length - 1; i >= 0; i--) {
+      const w = stepsWidgets[i];
+      const current = stepOpen[w.id] ?? 0;
+      if (current > 0) {
+        setStepOpen((prev) => ({ ...prev, [w.id]: current - 1 }));
+        return;
+      }
+    }
+    prevPage();
+  };
+
   const undoAnnot = () => {
     if (!annotPast.length) return;
     setAnnot(annotPast[annotPast.length - 1]);
@@ -214,8 +262,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       if (typing) return;
       // Sunum: sayfa ok tuşları, Page Up/Down, boşluk (akıllı tahta kumandaları da bunları gönderir)
       if (presenting) {
-        if (['ArrowRight', 'PageDown', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); nextPage(); return; }
-        if (['ArrowLeft', 'PageUp', 'ArrowUp'].includes(e.key)) { e.preventDefault(); prevPage(); return; }
+        if (['ArrowRight', 'PageDown', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); advancePresentStepOrPage(); return; }
+        if (['ArrowLeft', 'PageUp', 'ArrowUp'].includes(e.key)) { e.preventDefault(); revertPresentStepOrPage(); return; }
         if (e.key === 'Escape') { toggleFull(); return; }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoAnnot(); return; }
         if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -338,7 +386,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
     const size = WIDGET_SIZE[kind];
-    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım çözüm', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : {} };
+    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : {} };
     commitElements([...page.elements, el]);
     setTool('select');
     setSelectedId(el.id);
@@ -660,11 +708,16 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                   </div>
                 )}
 
+                {tool === 'eraser' ? (
+                  <p className={styles.hintText}>
+                    Dokunduğunuz çizgi veya şeklin tamamını siler. Geri al ile geri getirebilirsiniz.
+                  </p>
+                ) : (
                 <div className={styles.popoverSection}>
                   <div className={styles.popoverHeaderRow}>
                     <span className={styles.popoverLabel}>
                       <Sliders size={14} aria-hidden="true" />
-                      {tool === 'eraser' ? 'Silgi boyutu' : 'Çizgi kalınlığı'}
+                      Çizgi kalınlığı
                     </span>
                     <span className={styles.widthValue}>{width} px</span>
                   </div>
@@ -691,7 +744,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                           style={{
                             width: preset.dot,
                             height: preset.dot,
-                            backgroundColor: tool === 'eraser' ? '#1f2a24' : color,
+                            backgroundColor: color,
                           }}
                         />
                         <span>{preset.label}</span>
@@ -713,6 +766,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                     aria-label="Çizgi kalınlığı ayar kaydırıcısı"
                   />
                 </div>
+                )}
               </div>
             )}
 
@@ -829,6 +883,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
             {/* Alt Yüzen Araç Çubuğu (Yalnızca İkonlar) */}
             <div className={styles.toolbar} role="toolbar" aria-label="Tahta araçları">
+              <div className={styles.toolGroup} role="group" aria-label="Çizim araçları">
               {/* Seçim */}
               <button
                 type="button"
@@ -857,6 +912,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 aria-label="Kalem"
               >
                 <Pen size={19} aria-hidden="true" />
+                <ChevronDown className={styles.toolDisclosure} size={9} aria-hidden="true" />
                 <span className={styles.toolColorBadge} style={{ backgroundColor: color }} />
               </button>
 
@@ -891,6 +947,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 <Eraser size={19} aria-hidden="true" />
               </button>
 
+              </div>
+              <div className={styles.toolGroup} role="group" aria-label="İçerik ekle">
               {/* Şekiller */}
               <button
                 type="button"
@@ -969,8 +1027,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 <Component size={19} aria-hidden="true" />
               </button>
 
+              </div>
               <span className={styles.sep} aria-hidden="true" />
 
+              <div className={styles.toolGroup} role="group" aria-label="Renk ve geçmiş">
               {/* Renk & Kalınlık Seçici Buton */}
               <button
                 type="button"
@@ -990,8 +1050,6 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                   />
                 </span>
               </button>
-
-              <span className={styles.sep} aria-hidden="true" />
 
               {/* Geri Al */}
               <button
@@ -1019,6 +1077,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
               <span className={styles.sep} aria-hidden="true" />
 
+              </div>
               {/* Kayıt Durumu */}
               <span
                 className={`${styles.saveStatusBadge} ${saveState === 'error' ? styles.saveWarn : ''}`}
@@ -1044,10 +1103,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 ) : (
                   <span className={styles.dirtyDot} aria-hidden="true" />
                 )}
+                <span className={styles.saveStatusText}>
+                  {saveState === 'saved' ? 'Kaydedildi' : saveState === 'saving' ? 'Kaydediliyor…' : saveState === 'error' ? 'Kayıt hatası' : 'Değişiklik var'}
+                </span>
               </span>
 
               <span className={styles.sep} aria-hidden="true" />
 
+              <div className={styles.toolGroup} role="group" aria-label="Belge ve görünüm">
               {/* Panel */}
               <button
                 type="button"
@@ -1120,6 +1183,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               >
                 <Minimize size={19} aria-hidden="true" />
               </button>
+              </div>
             </div>
           </div>
         )}
@@ -1259,14 +1323,149 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
           )}
         </label>
       )}
-      {el.type === 'widget' && el.kind === 'steps' && (
-        <>
-          <label>Başlık<input type="text" value={el.data.title || ''} maxLength={80} onChange={(e) => onPatch({ data: { ...el.data, title: e.target.value } } as Partial<BoardEl>)} /></label>
-          <label>Adımlar (her satır bir adım)
-            <textarea value={(el.data.steps || []).join('\n')} maxLength={3000} onChange={(e) => onPatch({ data: { ...el.data, steps: e.target.value.split('\n').slice(0, 20) } } as Partial<BoardEl>)} />
-          </label>
-        </>
-      )}
+      {el.type === 'widget' && el.kind === 'steps' && (() => {
+        const stepsList = el.data.steps || [];
+        const totalChars = stepsList.reduce((acc, s) => acc + s.length, 0);
+        const atMaxSteps = stepsList.length >= 20;
+        const atMaxChars = totalChars >= 3000;
+
+        const updateStep = (idx: number, text: string) => {
+          const currentLen = stepsList[idx]?.length || 0;
+          const otherChars = totalChars - currentLen;
+          const maxAllowed = Math.max(0, 3000 - otherChars);
+          const clamped = text.slice(0, maxAllowed);
+          const next = [...stepsList];
+          next[idx] = clamped;
+          onPatch({ data: { ...el.data, steps: next } } as Partial<BoardEl>);
+        };
+
+        const moveStep = (from: number, to: number) => {
+          if (to < 0 || to >= stepsList.length) return;
+          const next = [...stepsList];
+          const [moved] = next.splice(from, 1);
+          next.splice(to, 0, moved);
+          onPatch({ data: { ...el.data, steps: next } } as Partial<BoardEl>);
+        };
+
+        const removeStep = (idx: number) => {
+          const next = stepsList.filter((_, i) => i !== idx);
+          onPatch({ data: { ...el.data, steps: next } } as Partial<BoardEl>);
+        };
+
+        const addStep = () => {
+          if (atMaxSteps || atMaxChars) return;
+          const next = [...stepsList, ''];
+          onPatch({ data: { ...el.data, steps: next } } as Partial<BoardEl>);
+        };
+
+        return (
+          <>
+            <label>
+              Başlık
+              <input
+                type="text"
+                value={el.data.title ?? ''}
+                placeholder="Adım adım"
+                maxLength={80}
+                onChange={(e) => onPatch({ data: { ...el.data, title: e.target.value } } as Partial<BoardEl>)}
+              />
+            </label>
+
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={Boolean(el.data.lastIsResult)}
+                onChange={(e) => onPatch({ data: { ...el.data, lastIsResult: e.target.checked } } as Partial<BoardEl>)}
+              />
+              <span>Son adımı sonuç olarak göster</span>
+            </label>
+
+            <div className={styles.stepEditorSection}>
+              <div className={styles.stepEditorHeaderRow}>
+                <span className={styles.stepEditorTitle}>Adımlar</span>
+                <span className={styles.stepStatsText}>
+                  {stepsList.length} / 20 adım · {totalChars} / 3000 k.
+                </span>
+              </div>
+
+              {stepsList.length === 0 ? (
+                <p className={styles.hintText}>Henüz adım eklenmedi.</p>
+              ) : (
+                <div className={styles.stepEditorList}>
+                  {stepsList.map((stepText, idx) => {
+                    const isResultStep = Boolean(el.data.lastIsResult && idx === stepsList.length - 1);
+                    return (
+                      <div key={idx} className={styles.stepEditorRow}>
+                        <div className={styles.stepRowHeader}>
+                          <span className={styles.stepRowBadge}>
+                            <b>{idx + 1}.</b>
+                            {isResultStep && <span className={styles.stepRowResultTag}>Sonuç</span>}
+                          </span>
+                          <div className={styles.stepRowActions}>
+                            <button
+                              type="button"
+                              className={styles.stepActionBtn}
+                              onClick={() => moveStep(idx, idx - 1)}
+                              disabled={idx === 0}
+                              title="Yukarı taşı"
+                              aria-label={`${idx + 1}. adımı yukarı taşı`}
+                            >
+                              <ChevronUp size={14} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.stepActionBtn}
+                              onClick={() => moveStep(idx, idx + 1)}
+                              disabled={idx === stepsList.length - 1}
+                              title="Aşağı taşı"
+                              aria-label={`${idx + 1}. adımı aşağı taşı`}
+                            >
+                              <ChevronDown size={14} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.stepActionBtn} ${styles.stepDeleteBtn}`}
+                              onClick={() => removeStep(idx)}
+                              title="Sil"
+                              aria-label={`${idx + 1}. adımı sil`}
+                            >
+                              <Trash2 size={13} aria-hidden="true" />
+                            </button>
+                          </div>
+                        </div>
+                        <textarea
+                          className={styles.stepTextarea}
+                          rows={2}
+                          value={stepText}
+                          placeholder={`${idx + 1}. adımı yazın (satır sonu serbest)…`}
+                          onChange={(e) => updateStep(idx, e.target.value)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <button
+                type="button"
+                className={styles.addStepBtn}
+                onClick={addStep}
+                disabled={atMaxSteps || atMaxChars}
+              >
+                + Adım ekle
+              </button>
+
+              {(atMaxSteps || atMaxChars) && (
+                <p className={styles.limitWarnText}>
+                  {atMaxSteps
+                    ? 'En fazla 20 adım eklenebilir.'
+                    : 'Toplam 3000 karakter sınırına ulaşıldı.'}
+                </p>
+              )}
+            </div>
+          </>
+        );
+      })()}
       {el.type === 'widget' && el.kind === 'timer' && (
         <fieldset className={styles.timeField}>
           <legend>Geri sayım süresi</legend>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Pause, Play, RotateCcw } from '../icons';
+import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from '../icons';
 import { useDialog } from '../ConfirmDialog';
 import { playAlarm } from '../teacher/classtools/Countdown';
 import { revealAnswer, WidgetEl } from '../../lib/boardData';
@@ -25,12 +25,17 @@ export interface WidgetContext {
   allWidgets: Map<string, WidgetEl>;
   /** Öğrencinin ödevi kapandıysa */
   locked?: boolean;
+  /** Sun kipi ve ortak adım durumu: widget kimliği → açık adım sayısı */
+  stepState?: {
+    get: (id: string) => number;
+    set: (id: string, n: number) => void;
+  };
 }
 
 export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
   if (el.kind === 'minitest') return <MiniTest el={el} ctx={ctx} />;
   if (el.kind === 'reveal') return <Reveal el={el} ctx={ctx} />;
-  if (el.kind === 'steps') return <Steps el={el} />;
+  if (el.kind === 'steps') return <Steps el={el} ctx={ctx} />;
   return <Timer el={el} />;
 }
 
@@ -174,27 +179,178 @@ function Reveal({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
 // --------------------------------------------------------
 // Adım Adım
 // --------------------------------------------------------
-function Steps({ el }: { el: WidgetEl }) {
+function Steps({ el, ctx }: { el: WidgetEl; ctx?: WidgetContext }) {
   const steps = (el.data.steps || []).filter((s) => s.trim());
-  const [open, setOpen] = useState(0);
+  const title = el.data.title?.trim() || 'Adım adım';
+  const lastIsResult = Boolean(el.data.lastIsResult);
+
+  const [localOpen, setLocalOpen] = useState(0);
+  const hasExternalState = Boolean(ctx?.stepState);
+  const open = hasExternalState && ctx?.stepState
+    ? Math.min(steps.length, ctx.stepState.get(el.id))
+    : Math.min(steps.length, localOpen);
+
+  const setOpenCount = (n: number) => {
+    const clamped = Math.max(0, Math.min(steps.length, n));
+    if (hasExternalState && ctx?.stepState) {
+      ctx.stepState.set(el.id, clamped);
+    } else {
+      setLocalOpen(clamped);
+    }
+  };
+
+  const lastOpenedRef = useRef<HTMLLIElement | null>(null);
+  const prevOpenRef = useRef(open);
+
+  useEffect(() => {
+    if (open > prevOpenRef.current && lastOpenedRef.current) {
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      lastOpenedRef.current.scrollIntoView({
+        block: 'nearest',
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
+    }
+    prevOpenRef.current = open;
+  }, [open]);
+
+  const percent = steps.length > 0 ? (open / steps.length) * 100 : 0;
+
   return (
     <div className={styles.widget}>
-      <p className={styles.widgetTitle}>{el.data.title?.trim() || 'Adım adım çözüm'}</p>
-      {steps.length === 0 ? <p className={styles.widgetNote}>Adım eklenmedi.</p> : (
-        <ol className={styles.stepList}>
-          {steps.map((s, i) => (
-            <li key={i} className={i < open ? undefined : styles.stepHidden} aria-hidden={i >= open || undefined}>
-              {i < open ? s : `${i + 1}. adım gizli`}
-            </li>
-          ))}
+      <div className={styles.stepsHeader}>
+        <p className={styles.widgetTitle}>{title}</p>
+        {steps.length > 0 && (
+          <span className={styles.stepsCounter}>{open} / {steps.length}</span>
+        )}
+      </div>
+
+      {steps.length > 0 && (
+        <div
+          className={styles.stepsProgressTrack}
+          role="progressbar"
+          aria-valuenow={open}
+          aria-valuemin={0}
+          aria-valuemax={steps.length}
+          aria-valuetext={`${open} / ${steps.length} adım`}
+        >
+          <div className={styles.stepsProgressBar} style={{ width: `${percent}%` }} />
+        </div>
+      )}
+
+      {steps.length === 0 ? (
+        <p className={styles.widgetNote}>Adım eklenmedi.</p>
+      ) : (
+        <ol className={styles.timeline}>
+          {steps.map((text, i) => {
+            const isOpen = i < open;
+            const isLatest = isOpen && i === open - 1;
+            const isResult = lastIsResult && i === steps.length - 1;
+
+            return (
+              <li
+                key={i}
+                ref={(node) => {
+                  if (isLatest) lastOpenedRef.current = node;
+                }}
+                className={`${styles.timelineItem} ${isOpen ? styles.itemOpen : styles.itemHidden}`}
+                onClick={() => setOpenCount(i + 1)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setOpenCount(i + 1);
+                  }
+                }}
+                aria-label={
+                  isOpen
+                    ? `${i + 1}. adım${isResult ? ' (Sonuç)' : ''}: ${text}`
+                    : `${i + 1}. adım${isResult ? ' (Sonuç)' : ''}, gizli`
+                }
+              >
+                <div className={styles.timelineGutter} aria-hidden="true">
+                  <span
+                    className={`${styles.timelineBadge} ${
+                      isOpen
+                        ? isResult
+                          ? styles.badgeResult
+                          : styles.badgeOpen
+                        : isResult
+                          ? styles.badgeResultHidden
+                          : styles.badgeHidden
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  {i < steps.length - 1 && <span className={styles.timelineLine} />}
+                </div>
+
+                <div
+                  className={`${styles.stepContent} ${
+                    isOpen
+                      ? `${styles.stepCardOpen} ${isLatest ? styles.stepCardLatest : ''} ${isResult ? styles.stepCardResult : ''}`
+                      : `${styles.stepCardHidden} ${isResult ? styles.stepCardHiddenResult : ''}`
+                  }`}
+                >
+                  {isOpen ? (
+                    <>
+                      {isResult && <span className={styles.resultTag}>Sonuç</span>}
+                      <span>{text}</span>
+                    </>
+                  ) : isResult ? (
+                    <span className={styles.resultTagMuted}>Sonuç</span>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ol>
       )}
-      <div className={styles.widgetRow}>
-        <button type="button" className={styles.widgetButton} onClick={() => setOpen((n) => Math.min(steps.length, n + 1))} disabled={open >= steps.length}>
-          {open === 0 ? 'İlk adımı göster' : open >= steps.length ? 'Bütün adımlar açık' : 'Sonraki adım'}
-        </button>
-        {open > 0 && <button type="button" className={`${styles.widgetButton} ${styles.secondary}`} onClick={() => setOpen(0)}>Başa al</button>}
-      </div>
+
+      {steps.length > 0 && (
+        <div className={styles.stepsFooter}>
+          <button
+            type="button"
+            className={`${styles.widgetButton} ${styles.secondary} ${styles.stepNavIconBtn}`}
+            onClick={() => setOpenCount(open - 1)}
+            disabled={open === 0}
+            aria-label="Önceki adım"
+            title="Önceki adım"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.widgetButton} ${styles.stepNavBtn}`}
+            onClick={() => setOpenCount(open + 1)}
+            disabled={open >= steps.length}
+          >
+            <span>{open === 0 ? 'İlk adımı göster' : 'Sonraki'}</span>
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.widgetButton} ${styles.secondary} ${styles.stepNavBtn}`}
+            onClick={() => setOpenCount(steps.length)}
+            disabled={open >= steps.length}
+          >
+            Tümünü aç
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.widgetButton} ${styles.secondary} ${styles.stepNavBtn}`}
+            onClick={() => setOpenCount(0)}
+            disabled={open === 0}
+          >
+            Başa al
+          </button>
+        </div>
+      )}
     </div>
   );
 }

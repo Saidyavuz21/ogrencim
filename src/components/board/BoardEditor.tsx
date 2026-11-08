@@ -463,7 +463,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           <button type="button" className={styles.tool} onClick={() => fileInput.current?.click()} disabled={busy} title="Görsel yükle"><ImageIcon size={20} aria-hidden="true" /></button>
           <details style={{ position: 'relative' }}>
             <summary className={styles.tool} style={{ listStyle: 'none' }}>+ Parça</summary>
-            <div style={{ position: 'absolute', zIndex: 30, top: '110%', left: 0, display: 'grid', minWidth: 180, padding: 6, border: '1px solid #dedad0', borderRadius: 12, background: '#fff', boxShadow: '0 10px 30px rgb(0 0 0 / 15%)' }}>
+            <div style={{ position: 'absolute', zIndex: 30, bottom: '115%', left: 0, display: 'grid', minWidth: 180, padding: 6, border: '1px solid #dedad0', borderRadius: 12, background: '#fff', boxShadow: '0 10px 30px rgb(0 0 0 / 15%)' }}>
               {(Object.keys(WIDGET_LABEL) as WidgetKind[]).map((k) => (
                 <button key={k} type="button" className={styles.tool} style={{ justifyContent: 'start' }} onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; addWidget(k); }}>{WIDGET_LABEL[k]}</button>
               ))}

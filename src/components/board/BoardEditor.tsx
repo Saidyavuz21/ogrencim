@@ -10,14 +10,16 @@ import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import {
   Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl, boardImageUrls, BoardPage, BoardRow,
-  byteSize, copyImageToBoard, exportBoardPng, getBoard, HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, MAX_PAGES, newId, newPage, NoteEl,
+  byteSize, cloneElements, copyImageToBoard, exportBoardPng, getBoard, HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, MAX_PAGES, newId, newPage, NoteEl,
   saveBoard, StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, listQuestions, QuestionRow } from '../../lib/quizData';
 import { fileSlug } from '../../lib/reportData';
-import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, translate, wrapTextLines } from './BoardCanvas';
+import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, wrapTextLines } from './BoardCanvas';
 import { WidgetContext, WidgetView } from './Widgets';
+import { ShapeLibraryPanel } from './ShapeLibraryPanel';
+import { instantiateItem, LIBRARY_ITEMS } from '../../lib/boardLibrary';
 import styles from './Board.module.css';
 
 let boardClipboard: BoardEl[] | null = null;
@@ -215,16 +217,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     const idSet = new Set(ids);
     const toClone = page.elements.filter((el) => idSet.has(el.id));
     if (!toClone.length) return;
-    const groupMap = new Map<string, string>();
-    const clones: BoardEl[] = toClone.map((el) => {
-      const cloned = translate(el, 24, 24);
-      let nextGid = el.groupId;
-      if (el.groupId) {
-        if (!groupMap.has(el.groupId)) groupMap.set(el.groupId, newId());
-        nextGid = groupMap.get(el.groupId);
-      }
-      return { ...cloned, id: newId(), groupId: nextGid };
-    });
+    const clones = cloneElements(toClone, 24, 24);
     commitElements([...page.elements, ...clones]);
     setSelectedIds(clones.map((c) => c.id));
   };
@@ -242,16 +235,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!page || !boardClipboard || !boardClipboard.length) return;
     const isSamePage = boardClipboardPageId === page.id;
     const offset = isSamePage ? 24 : 0;
-    const groupMap = new Map<string, string>();
-    const pasted: BoardEl[] = boardClipboard.map((el) => {
-      const moved = offset > 0 ? translate(el, offset, offset) : { ...el };
-      let nextGid = el.groupId;
-      if (el.groupId) {
-        if (!groupMap.has(el.groupId)) groupMap.set(el.groupId, newId());
-        nextGid = groupMap.get(el.groupId);
-      }
-      return { ...moved, id: newId(), groupId: nextGid };
-    });
+    const pasted = cloneElements(boardClipboard, offset, offset);
     if (isSamePage) {
       boardClipboard = pasted;
     }
@@ -494,7 +478,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const duplicatePage = () => {
     if (!content || !page) return;
     if (content.pages.length >= MAX_PAGES) { setNotice(`En fazla ${MAX_PAGES} sayfa olabilir.`); return; }
-    const copy: BoardPage = { ...page, id: newId(), elements: page.elements.map((e) => ({ ...e, id: newId() })) };
+    const copy: BoardPage = { ...page, id: newId(), elements: cloneElements(page.elements) };
     const pages = [...content.pages];
     pages.splice(pageIndex + 1, 0, copy);
     apply({ ...content, pages });
@@ -555,6 +539,26 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setBusy(false);
     if (!res.ok) { setNotice(`Görsel eklenemedi: ${res.error}`); return; }
     placeImage(res.data, x, y);
+  };
+  const insertShape = (shapeId: string, cx = BOARD_W / 2, cy = BOARD_H / 2) => {
+    if (!page) return;
+    const item = LIBRARY_ITEMS.find((it) => it.id === shapeId);
+    if (!item) return;
+    const newElements = instantiateItem(item, { x: cx, y: cy });
+    if (!newElements.length) return;
+
+    const nextElements = [...page.elements, ...newElements];
+    if (content) {
+      const nextPages = content.pages.map((p) => (p.id === page.id ? { ...p, elements: nextElements } : p));
+      if (byteSize({ ...content, pages: nextPages }) > MAX_BOARD_BYTES) {
+        setNotice('Tahta boyutu sınırına ulaşıldı, şekil eklenemedi.');
+        return;
+      }
+    }
+
+    commitElements(nextElements);
+    setSelectedIds(newElements.map((el) => el.id));
+    setTool('select');
   };
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
@@ -1418,6 +1422,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
           widgetsControlsOnly={tool === 'select'}
           onDropMedia={(payload, x, y) => { try { insertMedia(JSON.parse(payload), x, y); } catch { /* geçersiz */ } }}
+          onDropShape={(id, x, y) => insertShape(id, x, y)}
           svgRef={(node) => { svgRef.current = node; }}
           ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa`}
         />
@@ -1464,6 +1469,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         ) : (
           <MediaDrawer
             onInsert={(m) => insertMedia(m)}
+            onInsertShape={(shapeId) => insertShape(shapeId)}
             onUpload={() => {
               isUploadingRef.current = true;
               fileInput.current?.click();
@@ -1913,21 +1919,31 @@ function MultiSelectionPanel({
 // --------------------------------------------------------
 // Medya çekmecesi: Dosyalarım ve ortak kütüphanedeki resimler
 // --------------------------------------------------------
-function MediaDrawer({ onInsert, onUpload, busy }: { onInsert: (m: MediaItem) => void; onUpload?: () => void; busy: boolean }) {
-  const [source, setSource] = useState<'mine' | 'library'>('mine');
+function MediaDrawer({
+  onInsert,
+  onInsertShape,
+  onUpload,
+  busy,
+}: {
+  onInsert: (m: MediaItem) => void;
+  onInsertShape?: (shapeId: string) => void;
+  onUpload?: () => void;
+  busy: boolean;
+}) {
+  const [source, setSource] = useState<'mine' | 'library' | 'shapes'>('mine');
   const [items, setItems] = useState<Record<string, MediaItem[] | null>>({ mine: null, library: null });
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const list = items[source];
+  const list = source === 'shapes' ? null : items[source];
 
   useEffect(() => {
-    if (items[source]) return;
+    if (source === 'shapes' || items[source]) return;
     let alive = true;
     (async () => {
       let out: MediaItem[] = [];
       if (source === 'mine') {
         const r = await listMyFiles();
         if (r.ok) out = r.data.filter((f) => BOARD_IMAGE_TYPES.includes(f.mime)).map((f) => ({ key: f.id, bucket: FILES_BUCKET, path: f.path, name: f.name }));
-      } else {
+      } else if (source === 'library') {
         const r = await listLibrary();
         if (r.ok) out = r.data.filter((f) => BOARD_IMAGE_TYPES.includes(f.mime)).map((f) => ({ key: f.id, bucket: LIBRARY_BUCKET, path: f.path, name: libraryFileName(f) }));
       }
@@ -1945,13 +1961,16 @@ function MediaDrawer({ onInsert, onUpload, busy }: { onInsert: (m: MediaItem) =>
       <div className={styles.pageTools}>
         <button type="button" className={styles.tool} aria-pressed={source === 'mine'} onClick={() => setSource('mine')}>Dosyalarım</button>
         <button type="button" className={styles.tool} aria-pressed={source === 'library'} onClick={() => setSource('library')}>Kütüphane</button>
-        {onUpload && (
+        <button type="button" className={styles.tool} aria-pressed={source === 'shapes'} onClick={() => setSource('shapes')}>Şekiller</button>
+        {source !== 'shapes' && onUpload && (
           <button type="button" className={styles.tool} onClick={onUpload} disabled={busy} title="Bilgisayardan yeni görsel yükle">
             <Upload size={16} aria-hidden="true" /> Yükle
           </button>
         )}
       </div>
-      {!list ? <Spinner label="Yükleniyor…" /> : list.length === 0 ? <p className={styles.saveState}>Burada resim yok.</p> : (
+      {source === 'shapes' ? (
+        <ShapeLibraryPanel onInsert={(shapeId) => onInsertShape?.(shapeId)} />
+      ) : !list ? <Spinner label="Yükleniyor…" /> : list.length === 0 ? <p className={styles.saveState}>Burada resim yok.</p> : (
         <div className={styles.mediaGrid}>
           {list.map((m) => (
             <button

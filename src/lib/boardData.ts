@@ -78,6 +78,47 @@ export const newPage = (background: Background = 'blank'): BoardPage => ({ id: n
 export const emptyContent = (): BoardContent => ({ version: 1, pages: [newPage()] });
 export const byteSize = (x: unknown) => new TextEncoder().encode(JSON.stringify(x)).length;
 
+export function isShape(el: BoardEl): el is ShapeEl {
+  return el.type === 'line' || el.type === 'arrow' || el.type === 'rect' || el.type === 'ellipse';
+}
+
+/** Öğeleri kopyalar; yeni kimlikler verir, grupları kendi içinde yeni bağımsız gruplara eşler ve isteğe bağlı öteler */
+export function cloneElements(els: BoardEl[], dx = 0, dy = 0): BoardEl[] {
+  const groupMap = new Map<string, string>();
+  return els.map((el) => {
+    let nextGid = el.groupId;
+    if (el.groupId) {
+      if (!groupMap.has(el.groupId)) groupMap.set(el.groupId, newId());
+      nextGid = groupMap.get(el.groupId);
+    }
+    const id = newId();
+    if (el.type === 'stroke') {
+      const points = (dx === 0 && dy === 0)
+        ? [...el.points]
+        : el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx)));
+      return { ...el, id, points, groupId: nextGid };
+    }
+    if (isShape(el)) {
+      return {
+        ...el,
+        id,
+        x1: Math.round(el.x1 + dx),
+        y1: Math.round(el.y1 + dy),
+        x2: Math.round(el.x2 + dx),
+        y2: Math.round(el.y2 + dy),
+        groupId: nextGid,
+      };
+    }
+    return {
+      ...el,
+      id,
+      x: Math.round(el.x + dx),
+      y: Math.round(el.y + dy),
+      groupId: nextGid,
+    };
+  });
+}
+
 /** Eski/eksik içeriği güvenli biçime getirir */
 export function normalizeContent(raw: unknown): BoardContent {
   const c = raw as Partial<BoardContent> | null;

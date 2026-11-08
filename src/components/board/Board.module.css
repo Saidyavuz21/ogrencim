@@ -963,3 +963,9 @@
   background: #ffe3e3;
   color: #a61e1e;
 }
+
+.shapeLibraryPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

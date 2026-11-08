@@ -442,6 +442,7 @@ export interface BoardCanvasProps {
   /** Parçanın yalnızca düğme/alanları tıklanır; geri kalanı seçme ve taşıma için tuvale geçer */
   widgetsControlsOnly?: boolean;
   onDropMedia?: (payload: string, x: number, y: number) => void;
+  onDropShape?: (id: string, x: number, y: number) => void;
   /** Dışa aktarma için SVG öğesi */
   svgRef?: (node: SVGSVGElement | null) => void;
   /** Etkileşimsiz küçük önizleme */
@@ -799,6 +800,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     widgetsPassive,
     widgetsControlsOnly,
     onDropMedia,
+    onDropShape,
     svgRef,
     thumbnail,
     ariaLabel,
@@ -923,11 +925,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
         }
       }
 
-      // Hit tespiti:
-      // Eğer activeGroupId varsa sadece o gruptaki öğeleri ara
-      const hit = activeGroupId
-        ? [...elements].reverse().find((el) => el.groupId === activeGroupId && hitTest(el, x, y))
-        : [...elements].reverse().find((el) => hitTest(el, x, y));
+      // Hit tespiti: önce tıklanan öğeyi bul
+      const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
 
       if (hit) {
         if (activeGroupId && hit.groupId === activeGroupId) {
@@ -945,6 +944,12 @@ export function BoardCanvas(props: BoardCanvasProps) {
             draft.current = { kind: 'move', ids: [hit.id], sx: x, sy: y, origs: [hit], clickHitId: hit.id, dragged: false };
           }
         } else {
+          // Eğer grup içi kipindeysek ve grup dışındaki bir öğeye tıklandıysa:
+          // Kipten çık ve tıklanan öğeyi (ya da grubunu) seç!
+          if (activeGroupId) {
+            setEnteredGroupId(null);
+          }
+
           // Normal seçim: eğer öğenin grubu varsa tüm grup seçilir
           const targetIds = hit.groupId
             ? elements.filter((el) => el.groupId === hit.groupId).map((el) => el.id)
@@ -1107,8 +1112,27 @@ export function BoardCanvas(props: BoardCanvasProps) {
   return (
     <div
       className={`${styles.canvas} ${thumbnail ? styles.thumb : ''}`}
-      onDragOver={(e) => { if (onDropMedia && e.dataTransfer.types.includes('application/x-board-media')) e.preventDefault(); }}
+      onDragOver={(e) => {
+        if (
+          (onDropMedia && e.dataTransfer.types.includes('application/x-board-media')) ||
+          (onDropShape && e.dataTransfer.types.includes('application/x-board-shape'))
+        ) {
+          e.preventDefault();
+        }
+      }}
       onDrop={(e) => {
+        if (onDropShape && e.dataTransfer.types.includes('application/x-board-shape')) {
+          const payload = e.dataTransfer.getData('application/x-board-shape');
+          if (payload) {
+            e.preventDefault();
+            try {
+              const data = JSON.parse(payload);
+              const { x, y } = toPoint(e.clientX, e.clientY);
+              onDropShape(data.id, x, y);
+            } catch { /* geçersiz */ }
+            return;
+          }
+        }
         const payload = e.dataTransfer.getData('application/x-board-media');
         if (!payload || !onDropMedia) return;
         e.preventDefault();

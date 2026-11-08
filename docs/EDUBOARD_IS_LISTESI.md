@@ -22,13 +22,13 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 5 | Analitik ve raporlama | 6 / 6 ✅ |
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
-| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 1 / 10 |
+| 7b | Tahta: metin, gruplama, şekil kütüphanesi | 2 / 10 |
 | 8 | Canlı ders | 0 / 7 |
 | 9 | Güvenlik ve KVKK | 0 / 13 |
 | 10 | Kalite: test, CI, izleme | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **67 / 117** |
+| | **Toplam** | **68 / 117** |
 
 ---
 
@@ -143,7 +143,7 @@ Ortak kararlar:
 - Hazır setler kodla gelir (`src/lib/boardLibrary/`); bazıları "ayarlı" üretici olur (ör. sayı doğrusu: başlangıç, bitiş, aralık).
 
 - [x] **Metin aracı**: zeminsiz yazı; yazı tipi (Düz / El yazısı / Başlık), boyut, kalın/ince/italik/altı çizili, renk, hizalama; seçiliyken yüzen biçim çubuğu; PNG'de yazı tipi gömülü · 8 Kasım 2026 · `9359545`
-- [ ] **Çoklu seçim**: sürükleyerek dikdörtgen seçim, Shift+tık; seçilenleri birlikte taşı, sil, kopyala (Ctrl+C/V, Ctrl+D)
+- [x] **Çoklu seçim**: sürükleyerek dikdörtgen seçim, Shift+tık; seçilenleri birlikte taşı, sil, kopyala (Ctrl+C/V, Ctrl+D) · 8 Kasım 2026 · `1aebe36`
 - [ ] **Gruplama**: Ctrl+G / Ctrl+Shift+G; gruba tıklayınca bütün grup seçilir, çift tıklayınca grubun içindeki tek öğe
 - [ ] **Şekiller kütüphanesi altyapısı**: medya çekmecesinde Şekiller sekmesi, arama + kategori, tıkla ya da sürükle-bırak ile grup olarak ekleme
 - [ ] Hazır set — **Matematik**: sayı doğrusu, koordinat düzlemi, kesir pastası ve çubukları, açıölçer, cetvel, üçgen/dörtgen çeşitleri, onluk taban blokları

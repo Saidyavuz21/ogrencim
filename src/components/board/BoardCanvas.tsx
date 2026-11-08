@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from '../icons';
+import { AlignCenter, AlignLeft, AlignRight, Bold, Highlighter, Italic, Underline } from '../icons';
 import {
   Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, scaleElements, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
 import { LIBRARY_ITEMS } from '../../lib/boardLibrary';
-import { MathText } from '../math/MathText';
+import { RichText } from '../math/RichText';
 import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { hasMath } from '../../lib/math/parseMath';
+import { hasRich, stripRich } from '../../lib/math/parseRich';
 import styles from './Board.module.css';
 
 export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'note' | 'text';
@@ -32,7 +33,8 @@ export function pointsToSvg(points: number[]): string {
 
 export const isShape = (el: BoardEl): el is ShapeEl => el.type === 'line' || el.type === 'arrow' || el.type === 'rect' || el.type === 'ellipse';
 
-export const measuredMathHeights = new Map<string, number>();
+export const measuredHtmlHeights = new Map<string, number>();
+export const measuredMathHeights = measuredHtmlHeights;
 
 export function bbox(el: BoardEl): Box {
   if (el.type === 'stroke' || el.type === 'poly') {
@@ -50,7 +52,7 @@ export function bbox(el: BoardEl): Box {
   }
   if (el.type === 'note') {
     if (el.variant === 'text') {
-      const measuredH = measuredMathHeights.get(el.id);
+      const measuredH = measuredHtmlHeights.get(el.id);
       if (measuredH) {
         return { x: el.x, y: el.y, w: el.w, h: measuredH };
       }
@@ -60,7 +62,7 @@ export function bbox(el: BoardEl): Box {
       const calcH = Math.round(Math.max(el.fontSize + 16, lineCount * el.fontSize * 1.3 + 16));
       return { x: el.x, y: el.y, w: el.w, h: calcH };
     }
-    const measuredH = measuredMathHeights.get(el.id);
+    const measuredH = measuredHtmlHeights.get(el.id);
     if (measuredH && measuredH > el.h) {
       return { x: el.x, y: el.y, w: el.w, h: measuredH };
     }
@@ -254,18 +256,19 @@ export function wrapTextLines(
   weight: number = 400,
   italic: boolean = false
 ): string[] {
+  const clean = stripRich(text);
   const ctx = getMeasureContext();
   const fontFamily = getFontFamily(family);
   const targetWidth = Math.max(20, maxWidth);
 
   if (!ctx) {
-    return wrapLines(text, targetWidth, fontSize);
+    return wrapLines(clean, targetWidth, fontSize);
   }
 
   ctx.font = `${italic ? 'italic ' : ''}${weight} ${fontSize}px ${fontFamily}`;
 
   const out: string[] = [];
-  const paragraphs = text.split('\n');
+  const paragraphs = clean.split('\n');
 
   for (const para of paragraphs) {
     if (!para) {
@@ -418,12 +421,14 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
       const textX = align === 'center' ? el.x + el.w / 2 : align === 'right' ? el.x + el.w - pad : el.x + pad;
       const textY = el.y + pad + el.fontSize;
       const containsMath = hasMath(el.text || '');
+      const containsRich = hasRich(el.text || '');
+      const useHtml = containsMath || containsRich;
 
       const lines = isText
         ? wrapTextLines(el.text || '', el.w - pad * 2, el.fontSize, el.fontFamily, el.fontWeight, el.italic)
-        : wrapLines(el.text, el.w - 40, el.fontSize);
+        : wrapLines(stripRich(el.text || ''), el.w - 40, el.fontSize);
 
-      const measuredH = measuredMathHeights.get(el.id);
+      const measuredH = measuredHtmlHeights.get(el.id);
       const renderH = measuredH ? Math.max(el.h, measuredH) : el.h;
 
       return (
@@ -432,7 +437,7 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
             <rect x={el.x} y={el.y} width={el.w} height={renderH} rx={14} fill={el.color} stroke="rgba(0,0,0,0.12)" strokeWidth={2} />
           )}
           {!editingNote && (
-            containsMath ? (
+            useHtml ? (
               <foreignObject
                 x={el.x}
                 y={el.y}
@@ -445,8 +450,8 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
                   ref={(node) => {
                     if (node) {
                       const h = Math.ceil(node.scrollHeight || node.offsetHeight || node.getBoundingClientRect().height);
-                      if (h && h !== measuredMathHeights.get(el.id)) {
-                        measuredMathHeights.set(el.id, h);
+                      if (h && h !== measuredHtmlHeights.get(el.id)) {
+                        measuredHtmlHeights.set(el.id, h);
                       }
                     }
                   }}
@@ -469,7 +474,7 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
                     pointerEvents: 'none',
                   }}
                 >
-                  <MathText text={el.text} inline={false} />
+                  <RichText text={el.text || ''} inline={false} />
                 </div>
               </foreignObject>
             ) : (
@@ -569,6 +574,265 @@ export interface BoardCanvasProps {
   ariaLabel?: string;
 }
 
+function applyTagToSelection(
+  textarea: HTMLTextAreaElement,
+  tag: 'b' | 'i' | 'u',
+  onChange: (nextText: string) => void
+) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const text = textarea.value;
+  if (start >= end) return false;
+
+  const selected = text.slice(start, end);
+  const openTag = `[${tag}]`;
+  const closeTag = `[/${tag}]`;
+
+  // 1. Seçim doğrudan [tag]...[/tag] ile mi sarılı?
+  if (
+    selected.toLowerCase().startsWith(openTag) &&
+    selected.toLowerCase().endsWith(closeTag) &&
+    selected.length >= openTag.length + closeTag.length
+  ) {
+    const inner = selected.slice(openTag.length, -closeTag.length);
+    const next = text.slice(0, start) + inner + text.slice(end);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(start, start + inner.length);
+    });
+    return true;
+  }
+
+  // 2. Seçimin hemen dışı [tag]...[/tag] mı?
+  if (
+    start >= openTag.length &&
+    end + closeTag.length <= text.length &&
+    text.slice(start - openTag.length, start).toLowerCase() === openTag &&
+    text.slice(end, end + closeTag.length).toLowerCase() === closeTag
+  ) {
+    const next = text.slice(0, start - openTag.length) + selected + text.slice(end + closeTag.length);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(start - openTag.length, start - openTag.length + selected.length);
+    });
+    return true;
+  }
+
+  // 3. Etiketle sar
+  const wrapped = `${openTag}${selected}${closeTag}`;
+  const next = text.slice(0, start) + wrapped + text.slice(end);
+  onChange(next);
+  requestAnimationFrame(() => {
+    textarea.value = next;
+    textarea.setSelectionRange(start, start + wrapped.length);
+  });
+  return true;
+}
+
+function applyColorToSelection(
+  textarea: HTMLTextAreaElement,
+  color: string,
+  onChange: (nextText: string) => void
+) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const text = textarea.value;
+  if (start >= end) return false;
+
+  const selected = text.slice(start, end);
+  const openTag = `[c=${color}]`;
+  const closeTag = `[/c]`;
+
+  const cMatch = /^\[c=#[0-9a-fA-F]{6}\]([\s\S]*)\[\/c\]$/i.exec(selected);
+  if (cMatch) {
+    const inner = cMatch[1];
+    const wrapped = `${openTag}${inner}${closeTag}`;
+    const next = text.slice(0, start) + wrapped + text.slice(end);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(start, start + wrapped.length);
+    });
+    return true;
+  }
+
+  const before = text.slice(0, start);
+  const after = text.slice(end);
+  const beforeMatch = /\[c=#[0-9a-fA-F]{6}\]$/i.exec(before);
+  if (beforeMatch && after.toLowerCase().startsWith('[/c]')) {
+    const next = before.slice(0, -beforeMatch[0].length) + openTag + selected + closeTag + after.slice(4);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(start - beforeMatch[0].length, start - beforeMatch[0].length + openTag.length + selected.length + closeTag.length);
+    });
+    return true;
+  }
+
+  const wrapped = `${openTag}${selected}${closeTag}`;
+  const next = text.slice(0, start) + wrapped + text.slice(end);
+  onChange(next);
+  requestAnimationFrame(() => {
+    textarea.value = next;
+    textarea.setSelectionRange(start, start + wrapped.length);
+  });
+  return true;
+}
+
+function applyHighlightToSelection(
+  textarea: HTMLTextAreaElement,
+  color: string | null,
+  onChange: (nextText: string) => void
+) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const text = textarea.value;
+  if (start >= end) return false;
+
+  const selected = text.slice(start, end);
+
+  if (!color) {
+    const hMatch = /^\[h=#[0-9a-fA-F]{6}\]([\s\S]*)\[\/h\]$/i.exec(selected);
+    if (hMatch) {
+      const inner = hMatch[1];
+      const next = text.slice(0, start) + inner + text.slice(end);
+      onChange(next);
+      requestAnimationFrame(() => {
+        textarea.value = next;
+        textarea.setSelectionRange(start, start + inner.length);
+      });
+      return true;
+    }
+    const before = text.slice(0, start);
+    const after = text.slice(end);
+    const beforeMatch = /\[h=#[0-9a-fA-F]{6}\]$/i.exec(before);
+    if (beforeMatch && after.toLowerCase().startsWith('[/h]')) {
+      const next = before.slice(0, -beforeMatch[0].length) + selected + after.slice(4);
+      onChange(next);
+      requestAnimationFrame(() => {
+        textarea.value = next;
+        textarea.setSelectionRange(start - beforeMatch[0].length, start - beforeMatch[0].length + selected.length);
+      });
+      return true;
+    }
+    return false;
+  }
+
+  const openTag = `[h=${color}]`;
+  const closeTag = `[/h]`;
+
+  const hMatch = /^\[h=#[0-9a-fA-F]{6}\]([\s\S]*)\[\/h\]$/i.exec(selected);
+  if (hMatch) {
+    const inner = hMatch[1];
+    const wrapped = `${openTag}${inner}${closeTag}`;
+    const next = text.slice(0, start) + wrapped + text.slice(end);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(start, start + wrapped.length);
+    });
+    return true;
+  }
+
+  const before = text.slice(0, start);
+  const after = text.slice(end);
+  const beforeMatch = /\[h=#[0-9a-fA-F]{6}\]$/i.exec(before);
+  if (beforeMatch && after.toLowerCase().startsWith('[/h]')) {
+    const next = before.slice(0, -beforeMatch[0].length) + openTag + selected + closeTag + after.slice(4);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(start - beforeMatch[0].length, start - beforeMatch[0].length + openTag.length + selected.length + closeTag.length);
+    });
+    return true;
+  }
+
+  const wrapped = `${openTag}${selected}${closeTag}`;
+  const next = text.slice(0, start) + wrapped + text.slice(end);
+  onChange(next);
+  requestAnimationFrame(() => {
+    textarea.value = next;
+    textarea.setSelectionRange(start, start + wrapped.length);
+  });
+  return true;
+}
+
+function toggleListLines(
+  textarea: HTMLTextAreaElement,
+  type: 'bullet' | 'number',
+  onChange: (nextText: string) => void
+) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const text = textarea.value;
+
+  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+  let lineEnd = text.indexOf('\n', end);
+  if (lineEnd === -1) lineEnd = text.length;
+
+  const block = text.slice(lineStart, lineEnd);
+  const lines = block.split('\n');
+
+  if (type === 'bullet') {
+    const allBullet = lines.every((l) => /^\s*•\s*/.test(l));
+    let newLines: string[];
+    if (allBullet) {
+      newLines = lines.map((l) => l.replace(/^\s*•\s*/, ''));
+    } else {
+      newLines = lines.map((l) => {
+        const clean = l.replace(/^\s*(?:•|\d+\.)\s*/, '');
+        return `• ${clean}`;
+      });
+    }
+    const newBlock = newLines.join('\n');
+    const next = text.slice(0, lineStart) + newBlock + text.slice(lineEnd);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(lineStart, lineStart + newBlock.length);
+    });
+  } else {
+    const allNumber = lines.every((l) => /^\s*\d+\.\s*/.test(l));
+    let newLines: string[];
+    if (allNumber) {
+      newLines = lines.map((l) => l.replace(/^\s*\d+\.\s*/, ''));
+    } else {
+      let count = 1;
+      newLines = lines.map((l) => {
+        const clean = l.replace(/^\s*(?:•|\d+\.)\s*/, '');
+        return `${count++}. ${clean}`;
+      });
+    }
+    const newBlock = newLines.join('\n');
+    const next = text.slice(0, lineStart) + newBlock + text.slice(lineEnd);
+    onChange(next);
+    requestAnimationFrame(() => {
+      textarea.value = next;
+      textarea.setSelectionRange(lineStart, lineStart + newBlock.length);
+    });
+  }
+}
+
+function toggleTextList(text: string, type: 'bullet' | 'number'): string {
+  const lines = text.split('\n');
+  if (type === 'bullet') {
+    const allBullet = lines.every((l) => /^\s*•\s*/.test(l));
+    if (allBullet) {
+      return lines.map((l) => l.replace(/^\s*•\s*/, '')).join('\n');
+    }
+    return lines.map((l) => `• ${l.replace(/^\s*(?:•|\d+\.)\s*/, '')}`).join('\n');
+  } else {
+    const allNumber = lines.every((l) => /^\s*\d+\.\s*/.test(l));
+    if (allNumber) {
+      return lines.map((l) => l.replace(/^\s*\d+\.\s*/, '')).join('\n');
+    }
+    let count = 1;
+    return lines.map((l) => `${count++}. ${l.replace(/^\s*(?:•|\d+\.)\s*/, '')}`).join('\n');
+  }
+}
+
 function FormatBar({
   el,
   colors,
@@ -583,6 +847,7 @@ function FormatBar({
   onPatch: (patch: Partial<NoteEl>) => void;
 }) {
   const [colorOpen, setColorOpen] = useState(false);
+  const [highlightOpen, setHighlightOpen] = useState(false);
   const [mathOpen, setMathOpen] = useState(false);
 
   const b = bbox(el);
@@ -639,7 +904,14 @@ function FormatBar({
         className={styles.formatBtn}
         aria-pressed={el.fontWeight === 700}
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onPatch({ fontWeight: el.fontWeight === 700 ? 400 : 700 })}
+        onClick={() => {
+          const ta = textareaRef?.current;
+          if (ta && ta.selectionStart < ta.selectionEnd) {
+            applyTagToSelection(ta, 'b', (nextText) => onPatch({ text: nextText }));
+          } else {
+            onPatch({ fontWeight: el.fontWeight === 700 ? 400 : 700 });
+          }
+        }}
         title="Kalın (Ctrl+B)"
         aria-label="Kalın"
       >
@@ -652,7 +924,14 @@ function FormatBar({
         className={styles.formatBtn}
         aria-pressed={Boolean(el.italic)}
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onPatch({ italic: !el.italic })}
+        onClick={() => {
+          const ta = textareaRef?.current;
+          if (ta && ta.selectionStart < ta.selectionEnd) {
+            applyTagToSelection(ta, 'i', (nextText) => onPatch({ text: nextText }));
+          } else {
+            onPatch({ italic: !el.italic });
+          }
+        }}
         title="İtalik (Ctrl+I)"
         aria-label="İtalik"
       >
@@ -665,7 +944,14 @@ function FormatBar({
         className={styles.formatBtn}
         aria-pressed={Boolean(el.underline)}
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onPatch({ underline: !el.underline })}
+        onClick={() => {
+          const ta = textareaRef?.current;
+          if (ta && ta.selectionStart < ta.selectionEnd) {
+            applyTagToSelection(ta, 'u', (nextText) => onPatch({ text: nextText }));
+          } else {
+            onPatch({ underline: !el.underline });
+          }
+        }}
         title="Altı çizili (Ctrl+U)"
         aria-label="Altı çizili"
       >
@@ -736,12 +1022,97 @@ function FormatBar({
                 style={{ backgroundColor: c }}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
-                  onPatch({ textColor: c });
+                  const ta = textareaRef?.current;
+                  if (ta && ta.selectionStart < ta.selectionEnd) {
+                    applyColorToSelection(ta, c, (nextText) => onPatch({ text: nextText }));
+                  } else {
+                    onPatch({ textColor: c });
+                  }
                   setColorOpen(false);
                 }}
                 aria-label={`Renk ${c}`}
               />
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Vurgu (Highlighter) */}
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          className={styles.formatBtn}
+          aria-pressed={highlightOpen}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setHighlightOpen((v) => !v)}
+          title="Vurgu rengi (Fosforlu kalem)"
+          aria-label="Vurgu rengi"
+          aria-haspopup="true"
+          aria-expanded={highlightOpen}
+        >
+          <Highlighter size={16} aria-hidden="true" />
+        </button>
+
+        {highlightOpen && (
+          <div
+            className={styles.formatColorPopover}
+            style={{
+              minWidth: 140,
+              padding: '6px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[
+                { c: '#ffe066', name: 'Sarı' },
+                { c: '#b2f2bb', name: 'Yeşil' },
+                { c: '#fcc2d7', name: 'Pembe' },
+                { c: '#a5d8ff', name: 'Mavi' },
+              ].map(({ c, name }) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={styles.formatColorSwatch}
+                  style={{ backgroundColor: c, border: '1px solid rgba(0,0,0,0.15)' }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    const ta = textareaRef?.current;
+                    if (ta && ta.selectionStart < ta.selectionEnd) {
+                      applyHighlightToSelection(ta, c, (nextText) => onPatch({ text: nextText }));
+                    }
+                    setHighlightOpen(false);
+                  }}
+                  title={name}
+                  aria-label={name}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              className={styles.formatBtn}
+              style={{
+                width: '100%',
+                fontSize: '11px',
+                height: '24px',
+                minHeight: '24px',
+                padding: '0 4px',
+                justifyContent: 'center',
+                border: '1px solid #d4d0c5',
+                borderRadius: '4px',
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                const ta = textareaRef?.current;
+                if (ta && ta.selectionStart < ta.selectionEnd) {
+                  applyHighlightToSelection(ta, null, (nextText) => onPatch({ text: nextText }));
+                }
+                setHighlightOpen(false);
+              }}
+            >
+              Vurguyu kaldır
+            </button>
           </div>
         )}
       </div>
@@ -781,6 +1152,46 @@ function FormatBar({
         aria-label="Sağa hizala"
       >
         <AlignRight size={16} aria-hidden="true" />
+      </button>
+
+      <span className={styles.formatDivider} aria-hidden="true" />
+
+      {/* • Liste */}
+      <button
+        type="button"
+        className={styles.formatBtn}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          const ta = textareaRef?.current;
+          if (ta) {
+            toggleListLines(ta, 'bullet', (nextText) => onPatch({ text: nextText }));
+          } else {
+            onPatch({ text: toggleTextList(el.text || '', 'bullet') });
+          }
+        }}
+        title="Madde işaretli liste"
+        aria-label="Madde işaretli liste"
+      >
+        <span style={{ fontWeight: 700, fontSize: 13 }}>• Liste</span>
+      </button>
+
+      {/* 1. Liste */}
+      <button
+        type="button"
+        className={styles.formatBtn}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          const ta = textareaRef?.current;
+          if (ta) {
+            toggleListLines(ta, 'number', (nextText) => onPatch({ text: nextText }));
+          } else {
+            onPatch({ text: toggleTextList(el.text || '', 'number') });
+          }
+        }}
+        title="Numaralı liste"
+        aria-label="Numaralı liste"
+      >
+        <span style={{ fontWeight: 700, fontSize: 13 }}>1. Liste</span>
       </button>
 
       <span className={styles.formatDivider} aria-hidden="true" />
@@ -1641,6 +2052,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
             textAlign: editingNote.align || 'left',
             padding: editingNote.variant === 'text' ? '0.42cqw' : '1.04cqw',
           }}
+          spellCheck={true}
+          lang="tr"
           onInput={(e) => {
             const val = (e.target as HTMLTextAreaElement).value;
             setEditingTextOverride({ id: editingNote.id, text: val });
@@ -1681,22 +2094,103 @@ export function BoardCanvas(props: BoardCanvasProps) {
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               (e.target as HTMLTextAreaElement).blur();
+            } else if (e.key === 'Enter' && !e.shiftKey) {
+              const ta = textareaRef.current;
+              if (ta) {
+                const pos = ta.selectionStart;
+                const val = ta.value;
+                const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+                let lineEnd = val.indexOf('\n', pos);
+                if (lineEnd === -1) lineEnd = val.length;
+                const line = val.slice(lineStart, lineEnd);
+
+                const bulletMatch = /^\s*•\s*(.*)$/.exec(line);
+                if (bulletMatch) {
+                  e.preventDefault();
+                  const content = bulletMatch[1];
+                  if (content.trim() === '') {
+                    const next = val.slice(0, lineStart) + val.slice(lineEnd);
+                    setEditingTextOverride({ id: editingNote.id, text: next });
+                    requestAnimationFrame(() => {
+                      ta.value = next;
+                      ta.setSelectionRange(lineStart, lineStart);
+                    });
+                  } else {
+                    const insert = '\n• ';
+                    const next = val.slice(0, pos) + insert + val.slice(pos);
+                    setEditingTextOverride({ id: editingNote.id, text: next });
+                    requestAnimationFrame(() => {
+                      ta.value = next;
+                      ta.setSelectionRange(pos + insert.length, pos + insert.length);
+                    });
+                  }
+                  return;
+                }
+
+                const numMatch = /^\s*(\d+)\.\s*(.*)$/.exec(line);
+                if (numMatch) {
+                  e.preventDefault();
+                  const num = parseInt(numMatch[1], 10);
+                  const content = numMatch[2];
+                  if (content.trim() === '') {
+                    const next = val.slice(0, lineStart) + val.slice(lineEnd);
+                    setEditingTextOverride({ id: editingNote.id, text: next });
+                    requestAnimationFrame(() => {
+                      ta.value = next;
+                      ta.setSelectionRange(lineStart, lineStart);
+                    });
+                  } else {
+                    const insert = `\n${num + 1}. `;
+                    const next = val.slice(0, pos) + insert + val.slice(pos);
+                    setEditingTextOverride({ id: editingNote.id, text: next });
+                    requestAnimationFrame(() => {
+                      ta.value = next;
+                      ta.setSelectionRange(pos + insert.length, pos + insert.length);
+                    });
+                  }
+                  return;
+                }
+              }
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
               e.preventDefault();
-              const newWeight = editingNote.fontWeight === 700 ? 400 : 700;
-              if (onPatchElement) onPatchElement(editingNote.id, { fontWeight: newWeight });
+              const ta = textareaRef.current;
+              if (ta && ta.selectionStart < ta.selectionEnd) {
+                applyTagToSelection(ta, 'b', (next) => {
+                  setEditingTextOverride({ id: editingNote.id, text: next });
+                  onNoteText?.(editingNote.id, next);
+                });
+              } else {
+                const newWeight = editingNote.fontWeight === 700 ? 400 : 700;
+                if (onPatchElement) onPatchElement(editingNote.id, { fontWeight: newWeight });
+              }
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
               e.preventDefault();
-              const newItalic = !editingNote.italic;
-              if (onPatchElement) onPatchElement(editingNote.id, { italic: newItalic });
+              const ta = textareaRef.current;
+              if (ta && ta.selectionStart < ta.selectionEnd) {
+                applyTagToSelection(ta, 'i', (next) => {
+                  setEditingTextOverride({ id: editingNote.id, text: next });
+                  onNoteText?.(editingNote.id, next);
+                });
+              } else {
+                const newItalic = !editingNote.italic;
+                if (onPatchElement) onPatchElement(editingNote.id, { italic: newItalic });
+              }
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
               e.preventDefault();
-              const newUnderline = !editingNote.underline;
-              if (onPatchElement) onPatchElement(editingNote.id, { underline: newUnderline });
+              const ta = textareaRef.current;
+              if (ta && ta.selectionStart < ta.selectionEnd) {
+                applyTagToSelection(ta, 'u', (next) => {
+                  setEditingTextOverride({ id: editingNote.id, text: next });
+                  onNoteText?.(editingNote.id, next);
+                });
+              } else {
+                const newUnderline = !editingNote.underline;
+                if (onPatchElement) onPatchElement(editingNote.id, { underline: newUnderline });
+              }
             }
           }}
         />
-        {hasMath(editingText) && (
+        {(hasMath(editingText) || hasRich(editingText)) && (
           <div
             style={{
               position: 'absolute',
@@ -1715,7 +2209,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
             }}
           >
             <div style={{ fontSize: 11, fontWeight: 700, color: '#25634b', marginBottom: 2 }}>
-              Canlı Formül Önizleme
+              Canlı Önizleme
             </div>
             <div
               style={{
@@ -1729,7 +2223,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
                 lineHeight: 1.3,
               }}
             >
-              <MathText text={editingText} inline={false} />
+              <RichText text={editingText} inline={false} />
             </div>
           </div>
         )}

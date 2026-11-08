@@ -6,7 +6,7 @@ import { useDialog } from '../ConfirmDialog';
 import { playAlarm } from '../teacher/classtools/Countdown';
 import { revealAnswer, WidgetEl } from '../../lib/boardData';
 import { answerQuiz, CHOICE_LETTERS, PRACTICE_TRIES, PracticeAnswerResult, QuestionRow, QuizStateItem } from '../../lib/quizData';
-import { MathText } from '../math/MathText';
+import { RichText } from '../math/RichText';
 import styles from './Board.module.css';
 
 /**
@@ -58,7 +58,7 @@ function MiniTest({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
     return (
       <div className={styles.widget}>
         <p className={styles.widgetTitle}>Mini Test</p>
-        <p className={styles.widgetText}><MathText text={q.body} /></p>
+        <p className={styles.widgetText}><RichText text={q.body} inline /></p>
         <ul className={styles.widgetChoices}>
           {q.choices.map((c, i) => {
             const show = review || picked != null;
@@ -66,7 +66,7 @@ function MiniTest({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
             return (
               <li key={i}>
                 <button type="button" className={`${styles.widgetChoice} ${cls}`} onClick={() => setPicked(i)} disabled={review}>
-                  <b>{CHOICE_LETTERS[i]}</b><span><MathText text={c} /></span>
+                  <b>{CHOICE_LETTERS[i]}</b><span><RichText text={c} inline /></span>
                 </button>
               </li>
             );
@@ -102,21 +102,21 @@ function MiniTest({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
   return (
     <div className={styles.widget}>
       <p className={styles.widgetTitle}>Mini Test{!item.resolved && ` · ${PRACTICE_TRIES - item.tries} hak`}</p>
-      <p className={styles.widgetText}><MathText text={item.body} /></p>
+      <p className={styles.widgetText}><RichText text={item.body} inline /></p>
       <ul className={styles.widgetChoices}>
         {item.choices.map((c, i) => {
           const cls = item.correct_index != null ? (i === item.correct_index ? styles.choiceOk : tried.includes(i) || (item.choice === i) ? styles.choiceBad : '') : tried.includes(i) ? styles.choiceBad : '';
           return (
             <li key={i}>
               <button type="button" className={`${styles.widgetChoice} ${cls}`} onClick={() => choose(i)} disabled={busy || item.resolved || ctx.locked || tried.includes(i)}>
-                <b>{CHOICE_LETTERS[i]}</b><span><MathText text={c} /></span>
+                <b>{CHOICE_LETTERS[i]}</b><span><RichText text={c} inline /></span>
               </button>
             </li>
           );
         })}
       </ul>
       {msg && <p className={`${styles.widgetFeedback} ${msg.ok ? styles.fbOk : styles.fbBad}`} role="status">{msg.text}</p>}
-      {item.explanation && item.correct_index != null && <p className={styles.widgetNote}><b>Çözüm:</b> <MathText text={item.explanation} /></p>}
+      {item.explanation && item.correct_index != null && <p className={styles.widgetNote}><b>Çözüm:</b> <RichText text={item.explanation} inline /></p>}
     </div>
   );
 }
@@ -168,7 +168,7 @@ function Reveal({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
     <div className={styles.widget}>
       <p className={styles.widgetTitle}>Cevabı Göster</p>
       {item?.correct_index != null ? (
-        <p className={styles.widgetText}><b>Doğru cevap: {CHOICE_LETTERS[item.correct_index]}</b> · <MathText text={item.choices[item.correct_index]} /></p>
+        <p className={styles.widgetText}><b>Doğru cevap: {CHOICE_LETTERS[item.correct_index]}</b> · <RichText text={item.choices[item.correct_index]} inline /></p>
       ) : (
         <button type="button" className={styles.widgetButton} onClick={reveal} disabled={busy || !item || ctx.locked}>{busy ? 'Açılıyor…' : 'Cevabı göster'}</button>
       )}
@@ -287,7 +287,7 @@ function Steps({ el, ctx }: { el: WidgetEl; ctx?: WidgetContext }) {
                   {isOpen ? (
                     <>
                       {isResult && <span className={styles.resultTag}>Sonuç</span>}
-                      <span><MathText text={text} /></span>
+                      <span><RichText text={text} inline /></span>
                     </>
                   ) : isResult ? (
                     <span className={styles.resultTagMuted}>Sonuç</span>

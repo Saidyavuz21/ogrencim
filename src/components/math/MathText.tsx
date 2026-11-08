@@ -26,6 +26,13 @@ export function getLoadedKatex(): typeof katexType | null {
   return katexModule;
 }
 
+export function subscribeKatex(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+
 export interface MathTextProps {
   text: string;
   className?: string;

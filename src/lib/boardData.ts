@@ -522,6 +522,7 @@ async function toDataUrl(url: string): Promise<string | null> {
 }
 
 import { stripMathDelimiters } from './math/parseMath';
+import { stripRich } from './math/parseRich';
 
 const fontCache: Record<string, string> = {};
 let katexCssDataCache: string | null = null;
@@ -705,7 +706,7 @@ export async function exportBoardPng(
         const fos = Array.from(fallbackSvg.querySelectorAll('foreignObject'));
         for (const fo of fos) {
           const rawText = fo.textContent || '';
-          const cleanText = stripMathDelimiters(rawText);
+          const cleanText = stripMathDelimiters(stripRich(rawText));
           const x = fo.getAttribute('x') || '0';
           const y = fo.getAttribute('y') || '0';
           const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');

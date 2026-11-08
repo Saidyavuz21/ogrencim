@@ -644,6 +644,18 @@ export const ArrowLeft = createIcon('ArrowLeft', (
   </>
 ));
 
+export const Bookmark = createIcon('Bookmark', (
+  <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+));
+
+export const MoreHorizontal = createIcon('MoreHorizontal', (
+  <>
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+    <circle cx="5" cy="12" r="1" />
+  </>
+));
+
 export const MoreVertical = createIcon('MoreVertical', (
   <>
     <circle cx="12" cy="12" r="1" />

@@ -1,6 +1,6 @@
 import { BoardEl } from '../boardData';
 
-export type LibraryCategory = 'matematik' | 'fen' | 'genel';
+export type LibraryCategory = 'matematik' | 'fen' | 'genel' | 'diger';
 
 export interface LibraryParam {
   key: string;
@@ -15,12 +15,16 @@ export interface LibraryParam {
 }
 
 export interface LibraryItem {
-  id: string; // kalıcı, ör. 'math.number-line'
+  id: string; // kalıcı, ör. 'math.number-line' ya da 'user:<uuid>'
   name: string; // 'Sayı doğrusu'
   category: LibraryCategory;
   keywords?: string[]; // arama için: ['sayı', 'doğru', 'tam sayı']
   params?: LibraryParam[];
   build: (params?: Record<string, number>) => BoardEl[]; // (0,0) başlangıçlı öğeler; id'ler önemsiz, eklerken yenilenir
+  source?: 'mine' | 'school';
+  rowId?: string;
+  authorName?: string;
+  visibility?: 'private' | 'school';
 }
 
 /**

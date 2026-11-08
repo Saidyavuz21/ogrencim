@@ -546,6 +546,7 @@ export interface BoardCanvasProps {
   onGroup?: (ids: string[]) => void;
   onUngroup?: (ids: string[]) => void;
   onConfigureShape?: () => void;
+  onSaveToLibrary?: (selectedIds: string[]) => void;
   onToolChange?: (tool: Tool) => void;
   editingNoteId?: string | null;
   onEditNote?: (id: string | null) => void;
@@ -830,6 +831,7 @@ function MultiSelectBar({
   onGroup,
   onUngroup,
   onConfigure,
+  onSaveToLibrary,
 }: {
   elements: BoardEl[];
   onDuplicate?: () => void;
@@ -838,6 +840,7 @@ function MultiSelectBar({
   onGroup?: () => void;
   onUngroup?: () => void;
   onConfigure?: () => void;
+  onSaveToLibrary?: () => void;
 }) {
   const cb = combinedBbox(elements.map(bbox));
   const topPct = cb.y < 70
@@ -915,6 +918,17 @@ function MultiSelectBar({
       >
         Çoğalt
       </button>
+      {onSaveToLibrary && (
+        <button
+          type="button"
+          className={styles.formatBtn}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onSaveToLibrary}
+          title="Kütüphaneye kaydet"
+        >
+          Kaydet
+        </button>
+      )}
       <button
         type="button"
         className={styles.formatBtn}
@@ -966,6 +980,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onGroup,
     onUngroup,
     onConfigureShape,
+    onSaveToLibrary,
     onToolChange,
     editingNoteId,
     onEditNote,
@@ -1526,6 +1541,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
           onGroup={() => onGroup?.(selectedIds)}
           onUngroup={() => onUngroup?.(selectedIds)}
           onConfigure={onConfigureShape}
+          onSaveToLibrary={onSaveToLibrary ? () => onSaveToLibrary(selectedIds) : undefined}
         />
       )}
 

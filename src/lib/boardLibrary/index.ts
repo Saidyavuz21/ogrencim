@@ -34,11 +34,13 @@ export * from './insert';
 export * from './items';
 export * from './itemsFen';
 export * from './itemsGenel';
+export * from './userLibrary';
 
 export const LIBRARY_CATEGORY_LABEL: Record<LibraryCategory, string> = {
   matematik: 'Matematik',
   fen: 'Fen',
   genel: 'Genel',
+  diger: 'Diğer',
 };
 
 export const LIBRARY_ITEMS: LibraryItem[] = [

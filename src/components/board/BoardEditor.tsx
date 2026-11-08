@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertCircle, AlignCenter, AlignLeft, AlignRight, ArrowLeft, ArrowRight, Bold, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
+  AlertCircle, AlignCenter, AlignLeft, AlignRight, ArrowLeft, ArrowRight, Bold, Bookmark, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Download, Eraser, Eye, EyeOff, Highlighter, Image as ImageIcon, Italic, Layers, Maximize, Minimize, Minus, MousePointer,
   Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Sliders, Square, StickyNote, Trash2, Type, Underline, Upload,
 } from '../icons';
@@ -24,11 +24,19 @@ import {
   getElementsBbox,
   instantiateItem,
   LIBRARY_ITEMS,
+  LibraryCategory,
   LibraryItem,
+  listMyLibraryItems,
+  listSchoolLibraryItems,
   resolveParams,
+  saveLibraryItem,
   setLastUsedParams,
+  updateLibraryItem,
+  deleteLibraryItem,
 } from '../../lib/boardLibrary';
 import { ShapeConfigModal } from './ShapeConfigModal';
+import { SaveShapeModal } from './SaveShapeModal';
+import { EditShapeModal } from './EditShapeModal';
 import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { MathText } from '../math/MathText';
 import { hasMath } from '../../lib/math/parseMath';
@@ -90,6 +98,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     groupId?: string;
     elementId?: string;
   } | null>(null);
+  // Kütüphaneme kaydet / düzenle pencereleri ve kayıtlı şekiller
+  const [saveModal, setSaveModal] = useState<{ elements: BoardEl[] } | null>(null);
+  const [editModal, setEditModal] = useState<{ item: LibraryItem; initialField: 'name' | 'category' } | null>(null);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [userLibraryItems, setUserLibraryItems] = useState<LibraryItem[]>([]);
+  const [schoolLibraryItems, setSchoolLibraryItems] = useState<LibraryItem[]>([]);
+  const [isLoadingUserItems, setIsLoadingUserItems] = useState(false);
+  const [userItemsError, setUserItemsError] = useState<string | null>(null);
   // Önizlemede sayfa sırası sürükle-bırakla değişir
   const [dragPage, setDragPage] = useState<number | null>(null);
   const [dropPage, setDropPage] = useState<number | null>(null);
@@ -103,8 +119,38 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   // Sun kipi ve ortak adım durumu: widget kimliği → açık adım sayısı
   const [stepOpen, setStepOpen] = useState<Record<string, number>>({});
 
+  const loadUserLibrary = async () => {
+    setIsLoadingUserItems(true);
+    setUserItemsError(null);
+    try {
+      const res = await listMyLibraryItems();
+      if (!res.ok) {
+        setUserItemsError(res.error);
+      } else {
+        setUserLibraryItems(res.data);
+      }
+    } catch (e) {
+      setUserItemsError((e as Error).message || 'Kütüphane yüklenemedi.');
+    } finally {
+      setIsLoadingUserItems(false);
+    }
+  };
+
+  const loadSchoolLibrary = async () => {
+    try {
+      const res = await listSchoolLibraryItems();
+      if (res.ok) {
+        setSchoolLibraryItems(res.data);
+      }
+    } catch {
+      // Okul kayıtları yüklenemezse sessiz geç
+    }
+  };
+
   useEffect(() => {
     preloadBoardFonts().catch(() => {});
+    loadUserLibrary();
+    loadSchoolLibrary();
   }, []);
 
   useEffect(() => {
@@ -563,7 +609,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   };
   const insertShape = (shapeId: string, cx = BOARD_W / 2, cy = BOARD_H / 2, params?: Record<string, number>) => {
     if (!page) return;
-    const item = LIBRARY_ITEMS.find((it) => it.id === shapeId);
+    const allItems = [...userLibraryItems, ...schoolLibraryItems, ...LIBRARY_ITEMS];
+    const item = allItems.find((it) => it.id === shapeId);
     if (!item) return;
     const newElements = instantiateItem(item, { x: cx, y: cy }, params);
     if (!newElements.length) return;
@@ -583,7 +630,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   };
 
   const handleRequestInsertShape = (shapeId: string) => {
-    const item = LIBRARY_ITEMS.find((it) => it.id === shapeId);
+    const allItems = [...userLibraryItems, ...schoolLibraryItems, ...LIBRARY_ITEMS];
+    const item = allItems.find((it) => it.id === shapeId);
     if (!item) return;
     if (item.params && item.params.length > 0) {
       const last = getLastUsedParams(item.id);
@@ -596,6 +644,61 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     } else {
       insertShape(shapeId);
     }
+  };
+
+  const handleOpenSaveModal = (elementsToSave: BoardEl[]) => {
+    if (!elementsToSave.length) return;
+    const hasInvalid = elementsToSave.some((el) => {
+      if (el.type === 'image') return true;
+      if (el.type === 'widget' && (el.kind === 'minitest' || el.kind === 'reveal')) return true;
+      return false;
+    });
+    if (hasInvalid) {
+      setNotice('Resimler ve Mini Test/Cevabı Göster parçaları kütüphaneye kaydedilemez.');
+      return;
+    }
+    setSaveModal({ elements: elementsToSave });
+  };
+
+  const handleSaveShape = async (name: string, category: LibraryCategory, visibility: 'private' | 'school') => {
+    if (!saveModal) return;
+    setSaveBusy(true);
+    const res = await saveLibraryItem({
+      name,
+      category,
+      elements: saveModal.elements,
+      visibility,
+    });
+    setSaveBusy(false);
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+    setSaveModal(null);
+    setNotice('Kütüphanenize kaydedildi.');
+    loadUserLibrary();
+  };
+
+  const handleUpdateShape = async (id: string, patch: { name: string; category: LibraryCategory; visibility?: 'private' | 'school' }) => {
+    setSaveBusy(true);
+    const res = await updateLibraryItem(id, patch);
+    setSaveBusy(false);
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+    setEditModal(null);
+    setNotice('Şekil güncellendi.');
+    loadUserLibrary();
+  };
+
+  const handleDeleteShape = async (item: LibraryItem) => {
+    const rowId = item.rowId || item.id.replace(/^user:/, '');
+    const res = await deleteLibraryItem(rowId);
+    if (!res.ok) {
+      setNotice(`Şekil silinemedi: ${res.error}`);
+      return;
+    }
+    setNotice('Şekil kütüphanenizden silindi.');
+    loadUserLibrary();
   };
 
   const canConfigureSelected = useMemo(() => {
@@ -1567,6 +1670,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onDropMedia={(payload, x, y) => { try { insertMedia(JSON.parse(payload), x, y); } catch { /* geçersiz */ } }}
           onDropShape={(id, x, y) => insertShape(id, x, y, getLastUsedParams(id))}
           onConfigureShape={canConfigureSelected ? handleOpenConfigureSelected : undefined}
+          onSaveToLibrary={(ids) => handleOpenSaveModal(page.elements.filter((el) => ids.includes(el.id)))}
           svgRef={(node) => { svgRef.current = node; }}
           ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa`}
         />
@@ -1601,6 +1705,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onDelete={() => deleteSelected([selected.id])}
             onOrder={(dir) => reorderElements(dir, [selected.id])}
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
+            onSaveToLibrary={() => handleOpenSaveModal([selected])}
           />
         ) : selectedIds.length > 1 ? (
           <MultiSelectionPanel
@@ -1611,6 +1716,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onGroup={() => groupSelected()}
             onUngroup={() => ungroupSelected()}
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
+            onSaveToLibrary={() => handleOpenSaveModal(page.elements.filter((el) => selectedIds.includes(el.id)))}
           />
         ) : (
           <MediaDrawer
@@ -1621,6 +1727,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               fileInput.current?.click();
             }}
             busy={busy}
+            userItems={userLibraryItems}
+            schoolItems={schoolLibraryItems}
+            isLoadingUserItems={isLoadingUserItems}
+            userItemsError={userItemsError}
+            onReloadUserItems={loadUserLibrary}
+            onEditItem={(it, f) => setEditModal({ item: it, initialField: f })}
+            onDeleteItem={handleDeleteShape}
+            schoolSharingEnabled={false}
           />
         )}
         <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
@@ -1643,6 +1757,25 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onClose={() => setConfigModal(null)}
         />
       )}
+      {saveModal && (
+        <SaveShapeModal
+          elements={saveModal.elements}
+          onSave={handleSaveShape}
+          onClose={() => setSaveModal(null)}
+          busy={saveBusy}
+          schoolSharingEnabled={false}
+        />
+      )}
+      {editModal && (
+        <EditShapeModal
+          item={editModal.item}
+          initialField={editModal.initialField}
+          onSave={handleUpdateShape}
+          onClose={() => setEditModal(null)}
+          busy={saveBusy}
+          schoolSharingEnabled={false}
+        />
+      )}
     </div>
   );
 }
@@ -1650,7 +1783,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 // --------------------------------------------------------
 // Seçili öğenin ayarları
 // --------------------------------------------------------
-function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onConfigure }: {
+function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onConfigure, onSaveToLibrary }: {
   el: BoardEl;
   questions: QuestionRow[];
   minitests: WidgetEl[];
@@ -1658,6 +1791,7 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, 
   onDelete: () => void;
   onOrder: (dir: 'front' | 'back') => void;
   onConfigure?: () => void;
+  onSaveToLibrary?: () => void;
 }) {
   const [mathStepIdx, setMathStepIdx] = useState<number | null>(null);
   const stepTextareaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
@@ -2056,6 +2190,11 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, 
             <Sliders size={18} aria-hidden="true" /> Ayarlar
           </button>
         )}
+        {onSaveToLibrary && (
+          <button type="button" className={styles.tool} onClick={onSaveToLibrary} title="Kütüphaneye kaydet">
+            <Bookmark size={18} aria-hidden="true" /> Kütüphaneye kaydet
+          </button>
+        )}
         <button type="button" className={styles.tool} onClick={() => onOrder('front')}>Öne getir</button>
         <button type="button" className={styles.tool} onClick={() => onOrder('back')}>Arkaya gönder</button>
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }}><Trash2 size={18} aria-hidden="true" /> Sil</button>
@@ -2073,6 +2212,7 @@ function MultiSelectionPanel({
   onGroup,
   onUngroup,
   onConfigure,
+  onSaveToLibrary,
 }: {
   elements: BoardEl[];
   onDuplicate: () => void;
@@ -2081,6 +2221,7 @@ function MultiSelectionPanel({
   onGroup: () => void;
   onUngroup: () => void;
   onConfigure?: () => void;
+  onSaveToLibrary?: () => void;
 }) {
   const hasGroup = elements.some((el) => !!el.groupId);
   const firstGid = elements[0]?.groupId;
@@ -2118,6 +2259,11 @@ function MultiSelectionPanel({
         <button type="button" className={styles.tool} onClick={onDuplicate} title="Çoğalt (Ctrl+D)">
           <Copy size={16} aria-hidden="true" /> Çoğalt
         </button>
+        {onSaveToLibrary && (
+          <button type="button" className={styles.tool} onClick={onSaveToLibrary} title="Kütüphaneye kaydet">
+            <Bookmark size={16} aria-hidden="true" /> Kütüphaneye kaydet
+          </button>
+        )}
         <button type="button" className={styles.tool} onClick={() => onOrder('front')} title="En öne getir">
           Öne getir
         </button>
@@ -2140,11 +2286,31 @@ function MediaDrawer({
   onInsertShape,
   onUpload,
   busy,
+  userItems,
+  schoolItems,
+  isLoadingUserItems,
+  userItemsError,
+  onReloadUserItems,
+  onEditItem,
+  onDeleteItem,
+  onToggleSchoolShare,
+  onCopySchoolItem,
+  schoolSharingEnabled,
 }: {
   onInsert: (m: MediaItem) => void;
   onInsertShape?: (shapeId: string) => void;
   onUpload?: () => void;
   busy: boolean;
+  userItems?: LibraryItem[];
+  schoolItems?: LibraryItem[];
+  isLoadingUserItems?: boolean;
+  userItemsError?: string | null;
+  onReloadUserItems?: () => void;
+  onEditItem?: (item: LibraryItem, field: 'name' | 'category') => void;
+  onDeleteItem?: (item: LibraryItem) => void;
+  onToggleSchoolShare?: (item: LibraryItem) => void;
+  onCopySchoolItem?: (item: LibraryItem) => void;
+  schoolSharingEnabled?: boolean;
 }) {
   const [source, setSource] = useState<'mine' | 'library' | 'shapes'>('mine');
   const [items, setItems] = useState<Record<string, MediaItem[] | null>>({ mine: null, library: null });
@@ -2185,7 +2351,19 @@ function MediaDrawer({
         )}
       </div>
       {source === 'shapes' ? (
-        <ShapeLibraryPanel onInsert={(shapeId) => onInsertShape?.(shapeId)} />
+        <ShapeLibraryPanel
+          onInsert={(shapeId) => onInsertShape?.(shapeId)}
+          userItems={userItems}
+          schoolItems={schoolItems}
+          isLoadingUserItems={isLoadingUserItems}
+          userItemsError={userItemsError}
+          onReloadUserItems={onReloadUserItems}
+          onEditItem={onEditItem}
+          onDeleteItem={onDeleteItem}
+          onToggleSchoolShare={onToggleSchoolShare}
+          onCopySchoolItem={onCopySchoolItem}
+          schoolSharingEnabled={schoolSharingEnabled}
+        />
       ) : !list ? <Spinner label="Yükleniyor…" /> : list.length === 0 ? <p className={styles.saveState}>Burada resim yok.</p> : (
         <div className={styles.mediaGrid}>
           {list.map((m) => (

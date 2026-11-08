@@ -5,6 +5,7 @@ import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from '../
 import {
   Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
+import { LIBRARY_ITEMS } from '../../lib/boardLibrary';
 import styles from './Board.module.css';
 
 export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'note' | 'text';
@@ -481,6 +482,7 @@ export interface BoardCanvasProps {
   onDeleteSelected?: (ids: string[]) => void;
   onGroup?: (ids: string[]) => void;
   onUngroup?: (ids: string[]) => void;
+  onConfigureShape?: () => void;
   onToolChange?: (tool: Tool) => void;
   editingNoteId?: string | null;
   onEditNote?: (id: string | null) => void;
@@ -724,6 +726,7 @@ function MultiSelectBar({
   onDelete,
   onGroup,
   onUngroup,
+  onConfigure,
 }: {
   elements: BoardEl[];
   onDuplicate?: () => void;
@@ -731,6 +734,7 @@ function MultiSelectBar({
   onDelete?: () => void;
   onGroup?: () => void;
   onUngroup?: () => void;
+  onConfigure?: () => void;
 }) {
   const cb = combinedBbox(elements.map(bbox));
   const topPct = cb.y < 70
@@ -744,6 +748,11 @@ function MultiSelectBar({
   const allSameGroup = hasGroup && elements.every((el) => el.groupId && el.groupId === firstGid);
   const canGroup = elements.length >= 2 && !allSameGroup;
   const canUngroup = hasGroup;
+
+  const firstLibId = elements[0]?.lib?.id;
+  const allSameLib = allSameGroup && !!firstLibId && elements.every((el) => el.lib?.id === firstLibId);
+  const libItem = allSameLib ? LIBRARY_ITEMS.find((it) => it.id === firstLibId) : undefined;
+  const canConfigure = !!(allSameLib && libItem && libItem.params && libItem.params.length > 0 && onConfigure);
 
   return (
     <div
@@ -760,6 +769,17 @@ function MultiSelectBar({
       <span className={styles.multiSelectBadge}>
         {allSameGroup ? 'Grup' : `${elements.length} öğe`}
       </span>
+      {canConfigure && (
+        <button
+          type="button"
+          className={styles.formatBtn}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onConfigure}
+          title="Şekil ayarları"
+        >
+          Ayarlar
+        </button>
+      )}
       {canGroup && (
         <button
           type="button"
@@ -842,6 +862,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onDeleteSelected,
     onGroup,
     onUngroup,
+    onConfigureShape,
     onToolChange,
     editingNoteId,
     onEditNote,
@@ -1325,6 +1346,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
           onDelete={() => onDeleteSelected?.(selectedIds)}
           onGroup={() => onGroup?.(selectedIds)}
           onUngroup={() => onUngroup?.(selectedIds)}
+          onConfigure={onConfigureShape}
         />
       )}
 

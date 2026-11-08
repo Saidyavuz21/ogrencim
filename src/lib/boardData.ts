@@ -24,8 +24,13 @@ export const BOARD_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'imag
 export type Background = 'blank' | 'grid' | 'lines' | 'dots' | 'coord';
 export const BACKGROUND_LABEL: Record<Background, string> = { blank: 'Düz', grid: 'Kareli', lines: 'Çizgili', dots: 'Noktalı', coord: 'Koordinat' };
 
-export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string }
-export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string }
+export interface ElementLib {
+  id: string;
+  params?: Record<string, number>;
+}
+
+export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string; lib?: ElementLib }
+export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string; lib?: ElementLib }
 export interface NoteEl {
   id: string;
   type: 'note';
@@ -44,8 +49,9 @@ export interface NoteEl {
   underline?: boolean;
   align?: 'left' | 'center' | 'right';         // varsayılan 'left'
   groupId?: string;
+  lib?: ElementLib;
 }
-export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string }
+export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib }
 export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer';
 export interface WidgetData {
   /** Mini Test (öğretmenin tahtasında): bankadaki soru */
@@ -61,7 +67,7 @@ export interface WidgetData {
   /** Kronometre: 0 = ileri sayım, >0 = geri sayım (sn) */
   seconds?: number;
 }
-export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string }
+export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib }
 export interface PolyEl {
   id: string;
   type: 'poly';
@@ -70,6 +76,7 @@ export interface PolyEl {
   width: number;             // kenar kalınlığı (0 = kenarsız)
   fill?: string | null;      // dolgu (yoksa içi boş)
   groupId?: string;
+  lib?: ElementLib;
 }
 export type BoardEl = StrokeEl | ShapeEl | NoteEl | ImageEl | WidgetEl | PolyEl;
 export interface BoardPage { id: string; background: Background; elements: BoardEl[] }
@@ -101,17 +108,18 @@ export function cloneElements(els: BoardEl[], dx = 0, dy = 0): BoardEl[] {
       nextGid = groupMap.get(el.groupId);
     }
     const id = newId();
+    const lib = el.lib ? { id: el.lib.id, params: el.lib.params ? { ...el.lib.params } : undefined } : undefined;
     if (el.type === 'stroke') {
       const points = (dx === 0 && dy === 0)
         ? [...el.points]
         : el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx)));
-      return { ...el, id, points, groupId: nextGid };
+      return { ...el, id, points, groupId: nextGid, lib };
     }
     if (el.type === 'poly') {
       const points = (dx === 0 && dy === 0)
         ? [...el.points]
         : el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx)));
-      return { ...el, id, points, groupId: nextGid };
+      return { ...el, id, points, groupId: nextGid, lib };
     }
     if (isShape(el)) {
       return {
@@ -122,6 +130,7 @@ export function cloneElements(els: BoardEl[], dx = 0, dy = 0): BoardEl[] {
         x2: Math.round(el.x2 + dx),
         y2: Math.round(el.y2 + dy),
         groupId: nextGid,
+        lib,
       };
     }
     return {
@@ -130,6 +139,7 @@ export function cloneElements(els: BoardEl[], dx = 0, dy = 0): BoardEl[] {
       x: Math.round(el.x + dx),
       y: Math.round(el.y + dy),
       groupId: nextGid,
+      lib,
     };
   });
 }

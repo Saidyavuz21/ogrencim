@@ -19,7 +19,16 @@ import { fileSlug } from '../../lib/reportData';
 import { BoardCanvas, getFontSizeOptions, preloadBoardFonts, Tool, wrapTextLines } from './BoardCanvas';
 import { WidgetContext, WidgetView } from './Widgets';
 import { ShapeLibraryPanel } from './ShapeLibraryPanel';
-import { instantiateItem, LIBRARY_ITEMS } from '../../lib/boardLibrary';
+import {
+  getLastUsedParams,
+  getElementsBbox,
+  instantiateItem,
+  LIBRARY_ITEMS,
+  LibraryItem,
+  resolveParams,
+  setLastUsedParams,
+} from '../../lib/boardLibrary';
+import { ShapeConfigModal } from './ShapeConfigModal';
 import styles from './Board.module.css';
 
 let boardClipboard: BoardEl[] | null = null;
@@ -70,6 +79,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [toolsHidden, setToolsHidden] = useState(false);
   // Sayfa silme onayı tahtanın içinde açılır (tarayıcı tam ekrandayken dışarıdaki pencereler görünmez)
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Ayarlı kütüphane şekilleri için modal (ekleme veya düzenleme)
+  const [configModal, setConfigModal] = useState<{
+    mode: 'insert' | 'edit';
+    item: LibraryItem;
+    initialParams?: Record<string, number>;
+    groupId?: string;
+    elementId?: string;
+  } | null>(null);
   // Önizlemede sayfa sırası sürükle-bırakla değişir
   const [dragPage, setDragPage] = useState<number | null>(null);
   const [dropPage, setDropPage] = useState<number | null>(null);
@@ -262,6 +279,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         if (idSet.has(el.id) || (el.groupId && targetGroupIds.has(el.groupId))) {
           const next = { ...el };
           delete next.groupId;
+          delete next.lib;
           return next;
         }
         return el;
@@ -540,11 +558,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!res.ok) { setNotice(`Görsel eklenemedi: ${res.error}`); return; }
     placeImage(res.data, x, y);
   };
-  const insertShape = (shapeId: string, cx = BOARD_W / 2, cy = BOARD_H / 2) => {
+  const insertShape = (shapeId: string, cx = BOARD_W / 2, cy = BOARD_H / 2, params?: Record<string, number>) => {
     if (!page) return;
     const item = LIBRARY_ITEMS.find((it) => it.id === shapeId);
     if (!item) return;
-    const newElements = instantiateItem(item, { x: cx, y: cy });
+    const newElements = instantiateItem(item, { x: cx, y: cy }, params);
     if (!newElements.length) return;
 
     const nextElements = [...page.elements, ...newElements];
@@ -559,6 +577,116 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     commitElements(nextElements);
     setSelectedIds(newElements.map((el) => el.id));
     setTool('select');
+  };
+
+  const handleRequestInsertShape = (shapeId: string) => {
+    const item = LIBRARY_ITEMS.find((it) => it.id === shapeId);
+    if (!item) return;
+    if (item.params && item.params.length > 0) {
+      const last = getLastUsedParams(item.id);
+      const initial = last ? resolveParams(item, last) : resolveParams(item);
+      setConfigModal({
+        mode: 'insert',
+        item,
+        initialParams: initial,
+      });
+    } else {
+      insertShape(shapeId);
+    }
+  };
+
+  const canConfigureSelected = useMemo(() => {
+    if (!page || !selectedIds.length) return false;
+    const selectedElements = page.elements.filter((el) => selectedIds.includes(el.id));
+    if (!selectedElements.length) return false;
+    const firstLib = selectedElements[0].lib;
+    if (!firstLib) return false;
+    const item = LIBRARY_ITEMS.find((it) => it.id === firstLib.id);
+    if (!item || !item.params || !item.params.length) return false;
+    const gid = selectedElements[0].groupId;
+    const allSameGroup = gid ? selectedElements.every((el) => el.groupId === gid) : selectedElements.length === 1;
+    return allSameGroup && selectedElements.every((el) => el.lib?.id === item.id);
+  }, [page, selectedIds]);
+
+  const handleOpenConfigureSelected = () => {
+    if (!page || !selectedIds.length) return;
+    const selectedElements = page.elements.filter((el) => selectedIds.includes(el.id));
+    if (!selectedElements.length) return;
+    const firstLib = selectedElements[0].lib;
+    if (!firstLib) return;
+    const item = LIBRARY_ITEMS.find((it) => it.id === firstLib.id);
+    if (!item || !item.params || !item.params.length) return;
+    const allSameLib = selectedElements.every((el) => el.lib?.id === item.id);
+    if (!allSameLib) return;
+
+    const gid = selectedElements[0].groupId;
+    setConfigModal({
+      mode: 'edit',
+      item,
+      initialParams: firstLib.params || resolveParams(item),
+      groupId: gid,
+      elementId: gid ? undefined : selectedElements[0].id,
+    });
+  };
+
+  const applyShapeConfig = (
+    item: LibraryItem,
+    newParams: Record<string, number>,
+    targetGroupId?: string,
+    targetElementId?: string
+  ) => {
+    if (!page) return;
+    const targetElements = page.elements.filter((el) =>
+      targetGroupId ? el.groupId === targetGroupId : el.id === targetElementId
+    );
+    if (!targetElements.length) return;
+
+    const oldBbox = getElementsBbox(targetElements);
+    const resolved = resolveParams(item, newParams);
+    if (item.params && item.params.length > 0) {
+      setLastUsedParams(item.id, resolved);
+    }
+
+    const raw = item.build(resolved);
+    if (!raw.length) return;
+    const rawBbox = getElementsBbox(raw);
+
+    let destX = oldBbox.x;
+    let destY = oldBbox.y;
+    if (destX + rawBbox.w > BOARD_W) {
+      destX = Math.max(0, BOARD_W - rawBbox.w);
+    }
+    if (destY + rawBbox.h > BOARD_H) {
+      destY = Math.max(0, BOARD_H - rawBbox.h);
+    }
+    const dx = Math.round(destX - rawBbox.x);
+    const dy = Math.round(destY - rawBbox.y);
+
+    const regenerated = cloneElements(raw, dx, dy);
+    const gid = targetGroupId || (regenerated.length >= 2 ? newId() : undefined);
+    for (const el of regenerated) {
+      if (gid) el.groupId = gid;
+      el.lib = { id: item.id, params: resolved };
+    }
+
+    const oldIdSet = new Set(targetElements.map((el) => el.id));
+    const firstIdx = page.elements.findIndex((el) => oldIdSet.has(el.id));
+    if (firstIdx === -1) return;
+
+    const before = page.elements.slice(0, firstIdx).filter((el) => !oldIdSet.has(el.id));
+    const after = page.elements.slice(firstIdx).filter((el) => !oldIdSet.has(el.id));
+    const finalElements = [...before, ...regenerated, ...after];
+
+    if (content) {
+      const nextPages = content.pages.map((p) => (p.id === page.id ? { ...p, elements: finalElements } : p));
+      if (byteSize({ ...content, pages: nextPages }) > MAX_BOARD_BYTES) {
+        setNotice('Tahta boyutu sınırına ulaşıldı, ayarlar uygulanamadı.');
+        return;
+      }
+    }
+
+    commitElements(finalElements);
+    setSelectedIds(regenerated.map((el) => el.id));
   };
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
@@ -1422,7 +1550,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
           widgetsControlsOnly={tool === 'select'}
           onDropMedia={(payload, x, y) => { try { insertMedia(JSON.parse(payload), x, y); } catch { /* geçersiz */ } }}
-          onDropShape={(id, x, y) => insertShape(id, x, y)}
+          onDropShape={(id, x, y) => insertShape(id, x, y, getLastUsedParams(id))}
+          onConfigureShape={canConfigureSelected ? handleOpenConfigureSelected : undefined}
           svgRef={(node) => { svgRef.current = node; }}
           ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa`}
         />
@@ -1456,6 +1585,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onPatch={(patch) => patchElement(selected.id, patch)}
             onDelete={() => deleteSelected([selected.id])}
             onOrder={(dir) => reorderElements(dir, [selected.id])}
+            onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
           />
         ) : selectedIds.length > 1 ? (
           <MultiSelectionPanel
@@ -1465,11 +1595,12 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onDelete={() => deleteSelected()}
             onGroup={() => groupSelected()}
             onUngroup={() => ungroupSelected()}
+            onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
           />
         ) : (
           <MediaDrawer
             onInsert={(m) => insertMedia(m)}
-            onInsertShape={(shapeId) => insertShape(shapeId)}
+            onInsertShape={handleRequestInsertShape}
             onUpload={() => {
               isUploadingRef.current = true;
               fileInput.current?.click();
@@ -1481,6 +1612,22 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       </aside>
       {deleteConfirm}
       {printArea}
+      {configModal && (
+        <ShapeConfigModal
+          mode={configModal.mode}
+          item={configModal.item}
+          initialParams={configModal.initialParams}
+          onConfirm={(params) => {
+            if (configModal.mode === 'insert') {
+              insertShape(configModal.item.id, BOARD_W / 2, BOARD_H / 2, params);
+            } else {
+              applyShapeConfig(configModal.item, params, configModal.groupId, configModal.elementId);
+            }
+            setConfigModal(null);
+          }}
+          onClose={() => setConfigModal(null)}
+        />
+      )}
     </div>
   );
 }
@@ -1488,13 +1635,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 // --------------------------------------------------------
 // Seçili öğenin ayarları
 // --------------------------------------------------------
-function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }: {
+function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onConfigure }: {
   el: BoardEl;
   questions: QuestionRow[];
   minitests: WidgetEl[];
   onPatch: (patch: Partial<BoardEl>) => void;
   onDelete: () => void;
   onOrder: (dir: 'front' | 'back') => void;
+  onConfigure?: () => void;
 }) {
   const title = el.type === 'widget' ? WIDGET_LABEL[el.kind] : (el.type === 'note' && el.variant === 'text') ? 'Metin' : { stroke: 'Çizim', line: 'Çizgi', arrow: 'Ok', rect: 'Dikdörtgen', ellipse: 'Daire', note: 'Not', image: 'Görsel', poly: 'Çokgen' }[el.type];
   return (
@@ -1852,6 +2000,11 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
         </fieldset>
       )}
       <div className={styles.pageTools}>
+        {onConfigure && (
+          <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
+            <Sliders size={18} aria-hidden="true" /> Ayarlar
+          </button>
+        )}
         <button type="button" className={styles.tool} onClick={() => onOrder('front')}>Öne getir</button>
         <button type="button" className={styles.tool} onClick={() => onOrder('back')}>Arkaya gönder</button>
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }}><Trash2 size={18} aria-hidden="true" /> Sil</button>
@@ -1868,6 +2021,7 @@ function MultiSelectionPanel({
   onDelete,
   onGroup,
   onUngroup,
+  onConfigure,
 }: {
   elements: BoardEl[];
   onDuplicate: () => void;
@@ -1875,12 +2029,18 @@ function MultiSelectionPanel({
   onDelete: () => void;
   onGroup: () => void;
   onUngroup: () => void;
+  onConfigure?: () => void;
 }) {
   const hasGroup = elements.some((el) => !!el.groupId);
   const firstGid = elements[0]?.groupId;
   const allSameGroup = hasGroup && elements.every((el) => el.groupId && el.groupId === firstGid);
   const canGroup = elements.length >= 2 && !allSameGroup;
   const canUngroup = hasGroup;
+
+  const firstLibId = elements[0]?.lib?.id;
+  const allSameLib = allSameGroup && !!firstLibId && elements.every((el) => el.lib?.id === firstLibId);
+  const libItem = allSameLib ? LIBRARY_ITEMS.find((it) => it.id === firstLibId) : undefined;
+  const canConfigure = !!(allSameLib && libItem && libItem.params && libItem.params.length > 0 && onConfigure);
 
   return (
     <section className={styles.panel}>
@@ -1889,6 +2049,11 @@ function MultiSelectionPanel({
         {elements.length} öğe seçili
       </p>
       <div className={styles.pageTools} style={{ flexWrap: 'wrap', gap: '8px' }}>
+        {canConfigure && (
+          <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
+            <Sliders size={16} aria-hidden="true" /> Ayarlar
+          </button>
+        )}
         {canGroup && (
           <button type="button" className={styles.tool} onClick={onGroup} title="Grupla (Ctrl+G)">
             <Component size={16} aria-hidden="true" /> Grupla

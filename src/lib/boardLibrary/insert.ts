@@ -1,5 +1,5 @@
 import { BoardEl, BOARD_H, BOARD_W, cloneElements, isShape, newId } from '../boardData';
-import { LibraryItem } from './types';
+import { LibraryItem, resolveParams, setLastUsedParams } from './types';
 
 export interface Box {
   x: number;
@@ -45,7 +45,11 @@ export function instantiateItem(
   at: { x: number; y: number },
   params?: Record<string, number>
 ): BoardEl[] {
-  const raw = item.build(params);
+  const resolved = resolveParams(item, params);
+  if (item.params && item.params.length > 0) {
+    setLastUsedParams(item.id, resolved);
+  }
+  const raw = item.build(resolved);
   if (!raw.length) return [];
 
   const b = getElementsBbox(raw);
@@ -73,11 +77,12 @@ export function instantiateItem(
   const dy = Math.round(destY - b.y);
 
   const cloned = cloneElements(raw, dx, dy);
-  if (cloned.length >= 2) {
-    const gid = newId();
-    for (const el of cloned) {
+  const gid = cloned.length >= 2 ? newId() : undefined;
+  for (const el of cloned) {
+    if (gid) {
       el.groupId = gid;
     }
+    el.lib = { id: item.id, params: resolved };
   }
   return cloned;
 }

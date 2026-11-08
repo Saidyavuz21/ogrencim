@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ElementView } from './BoardCanvas';
+import { Sliders } from '../icons';
+import { LibraryPreview } from './LibraryPreview';
 import {
   getElementsBbox,
   LIBRARY_CATEGORY_LABEL,
@@ -116,9 +117,7 @@ export function ShapeLibraryPanel({
         <div className={styles.mediaGrid}>
           {filteredItems.map((item) => {
             const preview = itemPreviews.get(item.id);
-            const b = preview?.bbox || { x: 0, y: 0, w: 100, h: 100 };
-            const pad = 16;
-            const viewBox = `${b.x - pad} ${b.y - pad} ${b.w + pad * 2} ${b.h + pad * 2}`;
+            const isConfigurable = Boolean(item.params && item.params.length > 0);
 
             return (
               <button
@@ -126,6 +125,7 @@ export function ShapeLibraryPanel({
                 type="button"
                 className={styles.mediaItem}
                 style={{
+                  position: 'relative',
                   minHeight: '96px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -143,19 +143,28 @@ export function ShapeLibraryPanel({
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
                 onClick={() => onInsert(item.id)}
-                aria-label={`${item.name} şeklini ekle`}
-                title={`${item.name} · Tıkla veya sürükleyerek ekle`}
+                aria-label={`${item.name} şeklini ekle${isConfigurable ? ', ayarlanabilir' : ''}`}
+                title={`${item.name} · Tıkla veya sürükleyerek ekle${isConfigurable ? ' (ayarlanabilir)' : ''}`}
               >
-                <div style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg
-                    viewBox={viewBox}
-                    style={{ width: '100%', height: '100%', overflow: 'visible' }}
+                {isConfigurable && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      color: '#6b7280',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                     aria-hidden="true"
+                    title="Ayarlanabilir"
                   >
-                    {preview?.elements.map((el) => (
-                      <ElementView key={el.id} el={el} imageUrls={{}} />
-                    ))}
-                  </svg>
+                    <Sliders size={13} />
+                  </span>
+                )}
+                <div style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {preview?.elements && <LibraryPreview elements={preview.elements} />}
                 </div>
                 <span
                   className={styles.mediaName}

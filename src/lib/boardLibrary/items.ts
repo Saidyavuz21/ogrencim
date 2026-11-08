@@ -44,23 +44,23 @@ export const numberLineItem: LibraryItem = {
   keywords: ['sayı', 'sayi', 'doğru', 'dogru', 'sayı doğrusu', 'tam sayı', 'pozitif', 'negatif', 'matematik'],
   params: [
     { key: 'baslangic', label: 'Başlangıç', type: 'number', min: -20, max: 20, default: 0 },
-    { key: 'bitis', label: 'Bitiş', type: 'number', min: -20, max: 20, default: 10 },
+    { key: 'bitis', label: 'Bitiş', type: 'number', min: -20, max: 20, default: 10, minFrom: 'baslangic' },
     { key: 'adim', label: 'Adım', type: 'number', min: 1, max: 10, default: 1 },
   ],
   build: (params) => {
-    const start = params?.baslangic ?? 0;
-    let end = params?.bitis ?? 10;
-    let step = Math.max(1, params?.adim ?? 1);
+    const start = Math.max(-20, Math.min(20, Math.round(params?.baslangic ?? 0)));
+    let end = Math.max(start, Math.min(20, Math.round(params?.bitis ?? 10)));
+    let step = Math.max(1, Math.min(10, Math.round(params?.adim ?? 1)));
 
     if (start >= end) {
-      end = start + 10;
+      end = start + step;
     }
     // Çentik sayısı en fazla 41
     if ((end - start) / step > 40) {
       step = Math.ceil((end - start) / 40);
     }
 
-    const count = Math.floor((end - start) / step);
+    const count = Math.max(1, Math.floor((end - start) / step));
     const els: BoardEl[] = [];
     const yLine = 30;
     const totalW = Math.max(400, Math.min(1200, count * 80 + 100));
@@ -122,14 +122,15 @@ export const coordinatePlaneItem: LibraryItem = {
   category: 'matematik',
   keywords: ['koordinat', 'düzlem', 'duzlem', 'eksen', 'kartezyen', 'orijin', 'x', 'y', 'matematik'],
   params: [
-    { key: 'aralik', label: 'Aralık (±)', type: 'number', min: 3, max: 10, default: 5 },
+    { key: 'aralik', label: 'Aralık', type: 'number', min: 3, max: 10, default: 5 },
   ],
   build: (params) => {
     const range = Math.max(3, Math.min(10, Math.round(params?.aralik ?? 5)));
     const els: BoardEl[] = [];
-    const step = 60;
+    const step = Math.min(60, Math.floor(460 / range));
     const size = range * 2 * step;
     const mid = size / 2;
+    const fontSize = Math.max(20, Math.round(step * 0.45));
 
     // Izgara çizgileri
     for (let i = 0; i <= range * 2; i++) {
@@ -201,14 +202,14 @@ export const coordinatePlaneItem: LibraryItem = {
     });
 
     // Eksen harfleri
-    els.push(createText(size + 34, mid - 20, 30, 40, 'x', 28, 'left', true));
-    els.push(createText(mid + 10, -44, 30, 40, 'y', 28, 'left', true));
+    els.push(createText(size + 24, mid - fontSize / 2 - 4, 30, fontSize + 12, 'x', fontSize, 'left', true));
+    els.push(createText(mid + 8, -fontSize - 12, 30, fontSize + 12, 'y', fontSize, 'left', true));
 
     // ± uç etiketleri
-    els.push(createText(-30, mid + 8, 50, 36, `-${range}`, 24, 'center'));
-    els.push(createText(size - 20, mid + 8, 50, 36, `${range}`, 24, 'center'));
-    els.push(createText(mid - 50, -18, 44, 36, `${range}`, 24, 'right'));
-    els.push(createText(mid - 50, size - 18, 44, 36, `-${range}`, 24, 'right'));
+    els.push(createText(-30, mid + 6, 50, fontSize + 12, `-${range}`, fontSize, 'center'));
+    els.push(createText(size - 20, mid + 6, 50, fontSize + 12, `${range}`, fontSize, 'center'));
+    els.push(createText(mid - 50, -fontSize / 2 - 6, 44, fontSize + 12, `${range}`, fontSize, 'right'));
+    els.push(createText(mid - 50, size - fontSize / 2 - 6, 44, fontSize + 12, `-${range}`, fontSize, 'right'));
 
     return els;
   },
@@ -224,7 +225,7 @@ export const fractionPieItem: LibraryItem = {
   keywords: ['kesir', 'pay', 'payda', 'pasta', 'dilim', 'bütün', 'butun', 'oran', 'daire', 'matematik'],
   params: [
     { key: 'dilim', label: 'Dilim sayısı', type: 'number', min: 2, max: 12, default: 4 },
-    { key: 'boyali', label: 'Boyalı dilim', type: 'number', min: 0, max: 12, default: 1 },
+    { key: 'boyali', label: 'Boyalı dilim', type: 'number', min: 0, max: 12, default: 1, maxFrom: 'dilim' },
   ],
   build: (params) => {
     const dilim = Math.max(2, Math.min(12, Math.round(params?.dilim ?? 4)));
@@ -273,7 +274,7 @@ export const fractionBarItem: LibraryItem = {
   keywords: ['kesir', 'çubuk', 'cubuk', 'kesir çubuğu', 'pay', 'payda', 'oran', 'parça', 'parca', 'matematik'],
   params: [
     { key: 'parca', label: 'Parça sayısı', type: 'number', min: 2, max: 12, default: 4 },
-    { key: 'boyali', label: 'Boyalı parça', type: 'number', min: 0, max: 12, default: 1 },
+    { key: 'boyali', label: 'Boyalı parça', type: 'number', min: 0, max: 12, default: 1, maxFrom: 'parca' },
   ],
   build: (params) => {
     const parca = Math.max(2, Math.min(12, Math.round(params?.parca ?? 4)));
@@ -399,22 +400,22 @@ export const rulerItem: LibraryItem = {
       // cm sayısı
       els.push(createText(cx - 20, 44, 40, 40, String(c), 26, 'center'));
 
-      // Milimetre çentikleri
+      // Milimetre çentikleri (santimetre başına tek bir StrokeEl polyline)
       if (c < cm) {
+        const mmPoints: number[] = [];
         for (let m = 1; m < 10; m++) {
           const mx = Math.round(cx + (m * pxPerCm) / 10);
           const isMid = m === 5;
-          els.push({
-            id: newId(),
-            type: 'line',
-            x1: mx,
-            y1: 0,
-            x2: mx,
-            y2: isMid ? 24 : 14,
-            color: COLOR_MAIN,
-            width: isMid ? 2 : 1,
-          });
+          const hM = isMid ? 24 : 14;
+          mmPoints.push(mx, 0, mx, hM, mx, 0);
         }
+        els.push({
+          id: newId(),
+          type: 'stroke',
+          points: mmPoints,
+          color: COLOR_MAIN,
+          width: 1,
+        });
       }
     }
 
@@ -537,7 +538,7 @@ export const angleItem: LibraryItem = {
   category: 'matematik',
   keywords: ['açı', 'aci', 'derece', 'ışın', 'isin', 'dar açı', 'geniş açı', 'dik açı', 'geometri', 'matematik'],
   params: [
-    { key: 'derece', label: 'Derece', type: 'number', min: 10, max: 170, default: 60 },
+    { key: 'derece', label: 'Açı (derece)', type: 'number', min: 10, max: 170, default: 60 },
   ],
   build: (params) => {
     const derece = Math.max(10, Math.min(170, Math.round(params?.derece ?? 60)));

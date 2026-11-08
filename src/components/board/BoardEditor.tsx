@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Download, Eraser, Eye, EyeOff, Highlighter, Image as ImageIcon, Layers, Maximize, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Shuffle, Sliders, Square, StickyNote, Trash2, Users,
+  Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Shuffle, Sliders, Square, StickyNote, Trash2, Upload, Users,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -70,9 +70,25 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const svgRef = useRef<SVGSVGElement | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const isUploadingRef = useRef(false);
   const dockRef = useRef<HTMLDivElement>(null);
   // Canva stili açılır menü (çizim/kalem, şekiller, parçalar)
   const [activePopover, setActivePopover] = useState<'draw' | 'shapes' | 'widget' | null>(null);
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (isUploadingRef.current) {
+        window.setTimeout(() => {
+          isUploadingRef.current = false;
+          if (full && !document.fullscreenElement) {
+            rootRef.current?.requestFullscreen?.().catch(() => {});
+          }
+        }, 500);
+      }
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [full]);
 
   useEffect(() => {
     if (!activePopover) return;
@@ -237,7 +253,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   });
 
   useEffect(() => {
-    const onFs = () => { if (!document.fullscreenElement) { setFull(false); setPresenting(false); } };
+    const onFs = () => {
+      if (isUploadingRef.current) return;
+      if (!document.fullscreenElement) { setFull(false); setPresenting(false); }
+    };
     document.addEventListener('fullscreenchange', onFs);
     return () => document.removeEventListener('fullscreenchange', onFs);
   }, []);
@@ -908,18 +927,32 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 <StickyNote size={19} aria-hidden="true" />
               </button>
 
-              {/* Görsel */}
-              <input ref={fileInput} type="file" accept={BOARD_IMAGE_TYPES.join(',')} hidden onChange={(e) => upload(e.target.files?.[0])} />
+              {/* Görsel (Kütüphane ve Medya Çekmecesi) */}
+              <input
+                ref={fileInput}
+                type="file"
+                accept={BOARD_IMAGE_TYPES.join(',')}
+                hidden
+                onChange={(e) => {
+                  upload(e.target.files?.[0]);
+                  window.setTimeout(() => {
+                    isUploadingRef.current = false;
+                    if (full && !document.fullscreenElement) {
+                      rootRef.current?.requestFullscreen?.().catch(() => {});
+                    }
+                  }, 400);
+                }}
+              />
               <button
                 type="button"
-                className={styles.toolIconBtn}
+                className={`${styles.toolIconBtn} ${panelOpen && !selectedId ? styles.toolActive : ''}`}
                 onClick={() => {
                   setActivePopover(null);
-                  fileInput.current?.click();
+                  setSelectedId(null);
+                  setPanelOpen((v) => !(v && !selectedId));
                 }}
-                disabled={busy}
-                title="Görsel ekle"
-                aria-label="Görsel ekle"
+                title="Görseller & Kütüphane paneli"
+                aria-label="Görseller ve Kütüphane"
               >
                 <ImageIcon size={19} aria-hidden="true" />
               </button>
@@ -1151,7 +1184,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             }}
           />
         ) : (
-          <MediaDrawer onInsert={(m) => insertMedia(m)} busy={busy} />
+          <MediaDrawer
+            onInsert={(m) => insertMedia(m)}
+            onUpload={() => {
+              isUploadingRef.current = true;
+              fileInput.current?.click();
+            }}
+            busy={busy}
+          />
         )}
         <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
       </aside>
@@ -1261,7 +1301,7 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
 // --------------------------------------------------------
 // Medya çekmecesi: Dosyalarım ve ortak kütüphanedeki resimler
 // --------------------------------------------------------
-function MediaDrawer({ onInsert, busy }: { onInsert: (m: MediaItem) => void; busy: boolean }) {
+function MediaDrawer({ onInsert, onUpload, busy }: { onInsert: (m: MediaItem) => void; onUpload?: () => void; busy: boolean }) {
   const [source, setSource] = useState<'mine' | 'library'>('mine');
   const [items, setItems] = useState<Record<string, MediaItem[] | null>>({ mine: null, library: null });
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -1289,10 +1329,15 @@ function MediaDrawer({ onInsert, busy }: { onInsert: (m: MediaItem) => void; bus
 
   return (
     <section className={styles.panel} aria-label="Medya çekmecesi">
-      <h3>Medya çekmecesi</h3>
+      <h3>Medya ve Kütüphane</h3>
       <div className={styles.pageTools}>
         <button type="button" className={styles.tool} aria-pressed={source === 'mine'} onClick={() => setSource('mine')}>Dosyalarım</button>
         <button type="button" className={styles.tool} aria-pressed={source === 'library'} onClick={() => setSource('library')}>Kütüphane</button>
+        {onUpload && (
+          <button type="button" className={styles.tool} onClick={onUpload} disabled={busy} title="Bilgisayardan yeni görsel yükle">
+            <Upload size={16} aria-hidden="true" /> Yükle
+          </button>
+        )}
       </div>
       {!list ? <Spinner label="Yükleniyor…" /> : list.length === 0 ? <p className={styles.saveState}>Burada resim yok.</p> : (
         <div className={styles.mediaGrid}>

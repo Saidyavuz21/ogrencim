@@ -43,9 +43,54 @@
 /* Tuval ekranın tamamını kaplar (16:9 sığdırılır, kalan alan beyaz) */
 .editorFull .stage { position: absolute; inset: 0; display: grid; place-items: center; gap: 0; max-width: none; margin: 0; }
 .editorFull .stage > .canvas { width: min(100vw, calc(100dvh * 16 / 9)); border: 0; border-radius: 0; box-shadow: none; }
-/* Araç çubuğu tahtanın altında yüzer */
-.editorFull .toolbar { position: absolute; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 50%; z-index: 10; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 16px); box-shadow: 0 8px 28px rgb(0 0 0 / 18%); }
-.toolsReveal { position: absolute; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); right: 12px; z-index: 10; min-height: 44px; padding: 0 16px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; background: rgb(255 255 255 / 92%); color: #25634b; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgb(0 0 0 / 15%); }
+/* Araç çubuğu ve açılır menü sarmalayıcısı (tahtanın altında yüzer) */
+.editorFull .dockWrapper {
+  position: absolute;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 25;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: calc(100vw - 20px);
+}
+.editorFull .toolbar {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  width: max-content;
+  max-width: calc(100vw - 20px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.toolsReveal {
+  position: absolute;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  right: 14px;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #25634b;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.16);
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+.toolsReveal:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
 .toolsReveal:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
 .floatNotice { position: absolute; top: 12px; left: 50%; z-index: 10; transform: translateX(-50%); padding: 8px 14px; border-radius: 10px; background: #fff; box-shadow: 0 6px 20px rgb(0 0 0 / 15%); cursor: pointer; }
 
@@ -75,9 +120,381 @@
 .previewBody { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 16px; align-items: start; }
 .previewBody .pageTools { flex-wrap: nowrap; justify-content: space-between; }
 .stage { display: grid; gap: 8px; min-width: 0; }
-.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
-.toolbar .sep { width: 1px; height: 28px; margin: 0 4px; background: var(--teacher-border, #dedad0); }
+.toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 8px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.toolbar .sep {
+  width: 1px;
+  height: 24px;
+  margin: 0 3px;
+  background: var(--teacher-border, #dedad0);
+  flex-shrink: 0;
+}
 .toolbar .spacer { flex: 1; }
+
+/* İkon bazlı modern araç butonları */
+.toolIconBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #35443d;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 140ms ease, color 140ms ease, transform 100ms ease;
+}
+.toolIconBtn:hover:not(:disabled) {
+  background: #f0f4ee;
+  color: #1f2a24;
+}
+.toolIconBtn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.toolIconBtn[aria-pressed='true'],
+.toolIconBtn.toolActive {
+  background: var(--teacher-selected, #e6f1e9);
+  border-color: #25634b;
+  color: #25634b;
+}
+.toolIconBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.toolIconBtn:focus-visible {
+  outline: 3px solid #2a78d6;
+  outline-offset: 2px;
+}
+
+/* Kalem ucunda aktif renk rozeti */
+.toolColorBadge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+/* Hızlı Renk & Kalınlık Seçici Buton */
+.colorPickerTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+.colorPickerTrigger:hover {
+  transform: scale(1.1);
+}
+.colorPickerTrigger:focus-visible {
+  outline: 3px solid #2a78d6;
+  outline-offset: 2px;
+}
+.colorPickerCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+.colorPickerDot {
+  border-radius: 50%;
+}
+
+/* Kayıt durumu simgesi */
+.saveStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.dirtyDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #eb6834;
+}
+.savingSpinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #dedad0;
+  border-top-color: #25634b;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Canva Stili Açılır Menü (Popover Card) ===== */
+.popoverCard {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 310px;
+  max-width: min(330px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+  animation: popoverFadeIn 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.popoverSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.popoverHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.popoverLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2b3932;
+}
+.widthValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: #58665f;
+}
+
+/* Kalem Çeşitleri (Canva Style) */
+.brushRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.brushCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border: 1.5px solid #dedad0;
+  border-radius: 12px;
+  background: #faf9f6;
+  color: #3c4b44;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.brushCard:hover {
+  background: #f0f4ee;
+  border-color: #c5c0b4;
+}
+.brushActive {
+  border-color: #25634b;
+  background: #eaf3ec;
+  color: #25634b;
+  box-shadow: 0 0 0 1px #25634b;
+}
+.brushPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid #dedad0;
+  background: #ffffff;
+  transition: border-color 140ms ease;
+}
+
+/* Renk Paleti (Canva mor aktif halkalı) */
+.colorPalette {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  padding: 2px;
+}
+.colorSwatch {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #d5d1c5;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.colorSwatch:hover {
+  transform: scale(1.15);
+}
+.colorSwatchActive {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4.5px #7a3fd0, 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Kalınlık Seçimi */
+.widthPresets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.widthPresetBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 48px;
+  padding: 4px;
+  border: 1px solid #dedad0;
+  border-radius: 10px;
+  background: #faf9f6;
+  color: #4b5852;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.widthPresetBtn:hover {
+  background: #f0f4ee;
+  border-color: #25634b;
+}
+.widthPresetActive {
+  background: #eaf3ec;
+  border-color: #25634b;
+  color: #25634b;
+  font-weight: 700;
+}
+.widthDotPreview {
+  display: inline-block;
+  border-radius: 50%;
+}
+.widthSlider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2ded5;
+  accent-color: #25634b;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+/* Şekiller Menüsü Izgarası */
+.shapesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.shapeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border: 1px solid #dedad0;
+  border-radius: 10px;
+  background: #faf9f6;
+  color: #3c4b44;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.shapeBtn:hover {
+  background: #f0f4ee;
+}
+.shapeBtnActive {
+  border-color: #25634b;
+  background: #eaf3ec;
+  color: #25634b;
+}
+
+/* Parçalar Listesi */
+.widgetsList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.widgetItemBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #2b3932;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.widgetItemBtn:hover {
+  background: #eaf3ec;
+  color: #25634b;
+}
+.widgetItemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #f0f4ee;
+  color: #25634b;
+}
+.widgetItemTitle {
+  flex: 1;
+}
 .tool { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; min-width: 44px; height: 44px; padding: 0 8px; border: 1px solid transparent; border-radius: 10px; background: none; color: #3c4b44; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .tool:hover:not(:disabled) { background: #f0f4ee; }
 .tool[aria-pressed='true'] { border-color: #25634b; background: var(--teacher-selected, #e6f1e9); color: #25634b; }

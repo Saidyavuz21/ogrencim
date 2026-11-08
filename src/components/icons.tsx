@@ -867,3 +867,83 @@ export const GripVertical = createIcon('GripVertical', (
     <circle cx="15" cy="19" r="1" fill="currentColor" />
   </>
 ));
+
+export const MousePointer = createIcon('MousePointer', (
+  <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
+));
+
+export const Pen = createIcon('Pen', (
+  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+));
+
+export const Highlighter = createIcon('Highlighter', (
+  <>
+    <path d="m9 11-6 6v3h3l6-6" />
+    <path d="m22 12-4.6 4.6a2.78 2.78 0 0 1-3.9 0L8.4 11.5a2.78 2.78 0 0 1 0-3.9L13 3a2 2 0 0 1 2.8 0l6.2 6.2a2 2 0 0 1 0 2.8Z" />
+  </>
+));
+
+export const Eraser = createIcon('Eraser', (
+  <>
+    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
+    <path d="M22 21H7" />
+    <path d="m5 11 9 9" />
+  </>
+));
+
+export const Shapes = createIcon('Shapes', (
+  <>
+    <path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3.16a.7.7 0 0 1 1.196 0l3.731 5.76A.7.7 0 0 1 15.7 10z" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <circle cx="17.5" cy="17.5" r="3.5" />
+  </>
+));
+
+export const Square = createIcon('Square', (
+  <rect width="18" height="18" x="3" y="3" rx="2" />
+));
+
+export const Circle = createIcon('Circle', (
+  <circle cx="12" cy="12" r="10" />
+));
+
+export const RotateCw = createIcon('RotateCw', (
+  <>
+    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24L21 8" />
+    <path d="M21 3v5h-5" />
+  </>
+));
+
+export const Palette = createIcon('Palette', (
+  <>
+    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+  </>
+));
+
+export const Sliders = createIcon('Sliders', (
+  <>
+    <line x1="4" x2="4" y1="21" y2="14" />
+    <line x1="4" x2="4" y1="10" y2="3" />
+    <line x1="12" x2="12" y1="21" y2="12" />
+    <line x1="12" x2="12" y1="8" y2="3" />
+    <line x1="20" x2="20" y1="21" y2="16" />
+    <line x1="20" x2="20" y1="12" y2="3" />
+    <line x1="2" x2="6" y1="14" y2="14" />
+    <line x1="10" x2="14" y1="8" y2="8" />
+    <line x1="18" x2="22" y1="16" y2="16" />
+  </>
+));
+
+export const Component = createIcon('Component', (
+  <>
+    <path d="M5.5 8.5 9 12l-3.5 3.5L2 12l3.5-3.5Z" />
+    <path d="m12 2 3.5 3.5L12 9 8.5 5.5 12 2Z" />
+    <path d="M18.5 8.5 22 12l-3.5 3.5L15 12l3.5-3.5Z" />
+    <path d="m12 15 3.5 3.5L12 22l-3.5-3.5L12 15Z" />
+  </>
+));
+

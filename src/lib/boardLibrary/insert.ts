@@ -16,7 +16,7 @@ export function getElementsBbox(elements: BoardEl[]): Box {
   let maxY = -Infinity;
 
   for (const el of elements) {
-    if (el.type === 'stroke') {
+    if (el.type === 'stroke' || el.type === 'poly') {
       const p = el.points;
       for (let i = 0; i < p.length; i += 2) {
         minX = Math.min(minX, p[i]);

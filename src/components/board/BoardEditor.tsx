@@ -1496,7 +1496,7 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
   onDelete: () => void;
   onOrder: (dir: 'front' | 'back') => void;
 }) {
-  const title = el.type === 'widget' ? WIDGET_LABEL[el.kind] : (el.type === 'note' && el.variant === 'text') ? 'Metin' : { stroke: 'Çizim', line: 'Çizgi', arrow: 'Ok', rect: 'Dikdörtgen', ellipse: 'Daire', note: 'Not', image: 'Görsel' }[el.type];
+  const title = el.type === 'widget' ? WIDGET_LABEL[el.kind] : (el.type === 'note' && el.variant === 'text') ? 'Metin' : { stroke: 'Çizim', line: 'Çizgi', arrow: 'Ok', rect: 'Dikdörtgen', ellipse: 'Daire', note: 'Not', image: 'Görsel', poly: 'Çokgen' }[el.type];
   return (
     <section className={styles.panel}>
       <h3>{title}</h3>
@@ -1655,7 +1655,7 @@ function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder }
           )}
         </>
       )}
-      {(el.type === 'rect' || el.type === 'ellipse') && (
+      {(el.type === 'rect' || el.type === 'ellipse' || el.type === 'poly') && (
         <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input type="checkbox" checked={!!el.fill} onChange={(e) => onPatch({ fill: e.target.checked ? `${el.color}33` : null })} /> İçi dolu
         </label>

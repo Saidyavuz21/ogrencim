@@ -62,7 +62,16 @@ export interface WidgetData {
   seconds?: number;
 }
 export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string }
-export type BoardEl = StrokeEl | ShapeEl | NoteEl | ImageEl | WidgetEl;
+export interface PolyEl {
+  id: string;
+  type: 'poly';
+  points: number[];          // [x1,y1,x2,y2,...], en az 3 nokta
+  color: string;             // kenar rengi
+  width: number;             // kenar kalınlığı (0 = kenarsız)
+  fill?: string | null;      // dolgu (yoksa içi boş)
+  groupId?: string;
+}
+export type BoardEl = StrokeEl | ShapeEl | NoteEl | ImageEl | WidgetEl | PolyEl;
 export interface BoardPage { id: string; background: Background; elements: BoardEl[] }
 export interface BoardContent { version: 1; pages: BoardPage[] }
 /** Öğrencinin çizim katmanı: sayfa kimliği → çizgiler */
@@ -93,6 +102,12 @@ export function cloneElements(els: BoardEl[], dx = 0, dy = 0): BoardEl[] {
     }
     const id = newId();
     if (el.type === 'stroke') {
+      const points = (dx === 0 && dy === 0)
+        ? [...el.points]
+        : el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx)));
+      return { ...el, id, points, groupId: nextGid };
+    }
+    if (el.type === 'poly') {
       const points = (dx === 0 && dy === 0)
         ? [...el.points]
         : el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx)));

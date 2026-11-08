@@ -17,14 +17,24 @@ const BOARD_FONT = 'var(--font-geist-sans), system-ui, sans-serif';
 // --------------------------------------------------------
 // Geometri
 // --------------------------------------------------------
+export function pointsToSvg(points: number[]): string {
+  let s = '';
+  for (let i = 0; i < points.length; i += 2) {
+    if (i > 0) s += ' ';
+    s += `${points[i]},${points[i + 1]}`;
+  }
+  return s;
+}
+
 export const isShape = (el: BoardEl): el is ShapeEl => el.type === 'line' || el.type === 'arrow' || el.type === 'rect' || el.type === 'ellipse';
 export function bbox(el: BoardEl): Box {
-  if (el.type === 'stroke') {
+  if (el.type === 'stroke' || el.type === 'poly') {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (let i = 0; i < el.points.length; i += 2) {
       minX = Math.min(minX, el.points[i]); maxX = Math.max(maxX, el.points[i]);
       minY = Math.min(minY, el.points[i + 1]); maxY = Math.max(maxY, el.points[i + 1]);
     }
+    if (!isFinite(minX)) return { x: 0, y: 0, w: 0, h: 0 };
     const pad = el.width / 2;
     return { x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 };
   }
@@ -90,12 +100,31 @@ export function hitTest(el: BoardEl, x: number, y: number, slack = 10): boolean 
     const d = Math.hypot((x - (b.x + rx)) / rx, (y - (b.y + ry)) / ry);
     return Math.abs(d - 1) * Math.min(rx, ry) <= slack + el.width;
   }
+  if (el.type === 'poly') {
+    const p = el.points;
+    if (p.length < 6) return false;
+    if (el.fill) {
+      let inside = false;
+      for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) {
+        const xi = p[i], yi = p[i + 1];
+        const xj = p[j], yj = p[j + 1];
+        const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      if (inside) return true;
+    }
+    const tol = el.width / 2 + slack;
+    for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) {
+      if (distToSegment(x, y, p[j], p[j + 1], p[i], p[i + 1]) <= tol) return true;
+    }
+    return false;
+  }
   const b = bbox(el);
   return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 }
 
 export function translate(el: BoardEl, dx: number, dy: number): BoardEl {
-  if (el.type === 'stroke') return { ...el, points: el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx))) };
+  if (el.type === 'stroke' || el.type === 'poly') return { ...el, points: el.points.map((v, i) => Math.round(v + (i % 2 ? dy : dx))) };
   if (isShape(el)) {
     return { ...el, x1: el.x1 + dx, y1: el.y1 + dy, x2: el.x2 + dx, y2: el.y2 + dy };
   }
@@ -146,6 +175,20 @@ function getMeasureContext(): CanvasRenderingContext2D | null {
 
 function resize(el: BoardEl, dx: number, dy: number): BoardEl {
   if (isShape(el)) return { ...el, x2: el.x2 + dx, y2: el.y2 + dy };
+  if (el.type === 'poly') {
+    const b = bbox(el);
+    const origW = Math.max(1, b.w);
+    const origH = Math.max(1, b.h);
+    const newW = Math.max(20, origW + dx);
+    const newH = Math.max(20, origH + dy);
+    const scaleX = newW / origW;
+    const scaleY = newH / origH;
+    const points = el.points.map((v, i) => {
+      const origOrigin = i % 2 === 0 ? b.x : b.y;
+      return Math.round(origOrigin + (v - origOrigin) * (i % 2 === 0 ? scaleX : scaleY));
+    });
+    return { ...el, points };
+  }
   if (el.type === 'image') {
     const w = Math.max(60, el.w + dx);
     return { ...el, w: Math.round(w), h: Math.round((w * el.h) / el.w) };
@@ -335,6 +378,16 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
       const b = bbox(el);
       return <ellipse cx={b.x + b.w / 2} cy={b.y + b.h / 2} rx={b.w / 2} ry={b.h / 2} fill={el.fill || 'none'} stroke={el.color} strokeWidth={el.width} />;
     }
+    case 'poly':
+      return (
+        <polygon
+          points={pointsToSvg(el.points)}
+          fill={el.fill || 'none'}
+          stroke={el.color}
+          strokeWidth={el.width}
+          strokeLinejoin="round"
+        />
+      );
     case 'note': {
       const isText = el.variant === 'text';
       const pad = isText ? 8 : 20;
@@ -849,7 +902,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const layerStrokes = layer || [];
 
   const eraseAt = (x: number, y: number, d: Extract<Draft, { kind: 'erase' }>) => {
-    const pool: BoardEl[] = drawingOnLayer ? layerStrokes : elements.filter((e) => e.type === 'stroke' || e.type === 'line' || e.type === 'arrow' || e.type === 'rect' || e.type === 'ellipse');
+    const pool: BoardEl[] = drawingOnLayer ? layerStrokes : elements.filter((e) => e.type === 'stroke' || e.type === 'line' || e.type === 'arrow' || e.type === 'rect' || e.type === 'ellipse' || e.type === 'poly');
     let changed = false;
     for (const el of pool) {
       if (!d.removed.has(el.id) && hitTest(el, x, y, 14)) { d.removed.add(el.id); changed = true; }

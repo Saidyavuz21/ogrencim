@@ -26,10 +26,14 @@ import {
   triangleRightItem,
   triangleScaleneItem,
 } from './items';
+import { FEN_ITEMS } from './itemsFen';
+import { GENEL_ITEMS } from './itemsGenel';
 
 export * from './types';
 export * from './insert';
 export * from './items';
+export * from './itemsFen';
+export * from './itemsGenel';
 
 export const LIBRARY_CATEGORY_LABEL: Record<LibraryCategory, string> = {
   matematik: 'Matematik',
@@ -64,6 +68,11 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
   hundredChartItem,
   clockItem,
 
+  // Fen
+  ...FEN_ITEMS,
+
   // Genel
   speechBubbleItem,
+  ...GENEL_ITEMS,
 ];
+

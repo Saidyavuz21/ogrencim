@@ -79,7 +79,12 @@ declare
 begin
   -- Öğrenci silinince alt kayıtlar zincirleme (cascade) silinir; bunlar tek tek yazılmaz
   -- (öğrencinin silinmesi kaydedilir, verinin kopyası "silinenler" kutusunda durur).
-  if TG_OP = 'DELETE' and pg_trigger_depth() > 1 then
+  -- (Zincirleme silmede pg_trigger_depth artmıyor; bu yüzden öğrencisi artık olmayan alt kayıt da atlanır.)
+  if TG_OP = 'DELETE' and (
+    pg_trigger_depth() > 1
+    or (TG_TABLE_NAME <> 'students' and to_jsonb(OLD) ? 'student_id'
+        and not exists (select 1 from public.students s where s.id = public.try_uuid(to_jsonb(OLD) ->> 'student_id')))
+  ) then
     return null;
   end if;
 

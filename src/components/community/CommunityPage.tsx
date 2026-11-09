@@ -16,12 +16,17 @@ import {
 import { CommunityPreview } from './CommunityPreview';
 import f from '../files/Files.module.css';
 import styles from './Community.module.css';
+import socialStyles from './CommunitySocial.module.css';
 
 const SORTS: CommunitySort[] = ['trend', 'rating', 'used', 'new'];
 
-export function CommunityPage({ admin }: {
+export function CommunityPage({
+  admin,
+  onOpenTeacher,
+}: {
   /** Yönetim paneli: editörün seçimi / gizleme */
   admin?: boolean;
+  onOpenTeacher?: (teacherId: string) => void;
 }) {
   const [items, setItems] = useState<CommunitySummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +147,23 @@ export function CommunityPage({ admin }: {
                 <article key={x.id} className={styles.card}>
                   <div className={styles.cardHead}>
                     <span className={styles.cardIcon}>{x.kind === 'board' ? <Layers size={22} aria-hidden="true" /> : <HelpCircle size={22} aria-hidden="true" />}</span>
-                    <h3>{x.title}<small>{x.author_name}{x.is_mine ? ' (siz)' : ''}</small></h3>
+                    <h3>
+                      {x.title}
+                      <small>
+                        {onOpenTeacher && x.author_id ? (
+                          <button
+                            type="button"
+                            className={socialStyles.cardAuthorBtn}
+                            onClick={() => onOpenTeacher(x.author_id)}
+                          >
+                            {x.author_name}
+                          </button>
+                        ) : (
+                          x.author_name
+                        )}
+                        {x.is_mine ? ' (siz)' : ''}
+                      </small>
+                    </h3>
                   </div>
                   <div className={styles.badges}>
                     <span className={`${styles.badge} ${styles.badgeKind}`}>{KIND_LABEL[x.kind]} · {x.kind === 'board' ? `${x.page_count} sayfa` : `${x.question_count} soru`}</span>

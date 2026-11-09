@@ -6,6 +6,7 @@ import { UserAccount, TEACHER_BRANCH_OPTIONS } from '../../data/portalData';
 import { changeMyPassword, updateMyProfile, changeMyEmail } from '../../lib/supabaseClient';
 import { CustomSelect } from '../CustomSelect';
 import { CollapsiblePanel } from './TeacherUi';
+import { CommunityProfileSettings } from '../community/CommunityProfileSettings';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherProfilePageProps {
@@ -381,6 +382,11 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
           )}
         </aside>
       </div>
+
+      <section className={styles.panel} aria-labelledby="profile-community-title">
+        <h2 id="profile-community-title" className={styles.panelTitle}>Topluluk profilim</h2>
+        <CommunityProfileSettings />
+      </section>
     </div>
   );
 }

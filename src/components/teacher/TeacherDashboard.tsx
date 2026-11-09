@@ -31,7 +31,7 @@ import { QuestionBankPage } from '../quiz/QuestionBankPage';
 import { ClassReportPage } from '../reports/ClassReportPage';
 import { SchoolAdminPage } from '../school/SchoolAdminPage';
 import { TeacherBoardsPage } from '../board/TeacherBoardsPage';
-import { CommunityPage } from '../community/CommunityPage';
+import { CommunityHub } from '../community/CommunityHub';
 import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
@@ -130,7 +130,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     const url = new URL(window.location.href);
     if (info) url.searchParams.set('sayfa', info.slug);
     else url.searchParams.delete('sayfa');
-    if (url.href !== window.location.href) window.history.pushState(null, '', url);
+    url.searchParams.delete('ogretmen');
+    if (url.href !== window.location.href) {
+      window.history.pushState(null, '', url);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
     window.scrollTo({ top: 0 });
     onSectionChange?.(next === 'announcements' ? 'announcements' : 'dashboard');
     if (next === 'home') reloadData();
@@ -245,7 +249,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {page === 'files' && <TeacherFilesPage classNames={classNames} userId={currentUser?.id} isSchoolAdmin={currentUser?.isSchoolAdmin} branch={currentUser?.branch} />}
       {page === 'questions' && <QuestionBankPage />}
       {page === 'boards' && <TeacherBoardsPage defaultSubject={defaultSubject} />}
-      {page === 'community' && <CommunityPage />}
+      {page === 'community' && <CommunityHub onOpenProfile={() => openPage('profile')} />}
       {page === 'school_admin' && (currentUser?.isSchoolAdmin && currentUser.schoolId
         ? <SchoolAdminPage schoolId={currentUser.schoolId} schoolName={currentUser.schoolName} />
         : <p className={styles.mutedText}>Bu sayfa yalnızca okul yöneticilerine açıktır.</p>)}

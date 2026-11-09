@@ -88,7 +88,7 @@ export default function AydinlatmaPage() {
           <li>Verdiğiniz açık rızayı her zaman geri almak.</li>
         </ul>
         <p>
-          Başvurunuzu yazılı olarak okul müdürlüğüne veya <a href="mailto:iletisim@tofu.com"><strong>iletisim@tofu.com</strong></a> adresine iletebilirsiniz.
+          Başvurunuzu yazılı olarak okul müdürlüğüne veya <a href="mailto:iletisim@tofutr.com"><strong>iletisim@tofutr.com</strong></a> adresine iletebilirsiniz.
           Başvurular en geç <strong>30 gün</strong> içinde ücretsiz olarak sonuçlandırılır.
         </p>
 

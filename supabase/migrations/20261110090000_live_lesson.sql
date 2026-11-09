@@ -541,7 +541,7 @@ begin
     if v_student is null or not public.student_in_class(s.class_name, s.school_id) then
       raise exception 'Canlı ders bulunamadı ya da bitti.';
     end if;
-    if p_kind = 'shared' and not (s.pen_all or (s.pen_student = v_student and s.pen_until > now() - interval '3 seconds')) then
+    if p_kind = 'shared' and not coalesce(s.pen_all or (s.pen_student = v_student and s.pen_until > now() - interval '3 seconds'), false) then
       raise exception 'Kalem izni yok ya da süresi doldu.';
     end if;
   end if;

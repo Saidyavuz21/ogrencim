@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Minus, X, Save, BookOpen, Plus, Eye, EyeOff } from '../icons';
 import {
   CheckStatus, HomeworkCheckRow, homeworkIsOpen, HomeworkRow, listHomeworkChecks, listHomeworkSubmissions, listMyHomeworks,
-  returnSubmission, saveHomeworkChecks, setHomeworkClosed, setHomeworkResultsReleased, SUBMISSION_BUCKET, SubmissionRow,
+  returnSubmission, saveHomeworkChecks, setHomeworkClosed, setHomeworkResultsReleased, SUBMISSION_BUCKET, SubmissionRow, FILE_RETENTION_DAYS, filesExpireAt,
 } from '../../lib/teacherData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
 import { useDialog } from '../ConfirmDialog';
@@ -407,6 +407,10 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
                 {submissionCounts.missing.length > 0 && students.length > 0 && (
                   <p className={styles.mutedText}>Teslim etmeyenler: {submissionCounts.missing.join(', ')}</p>
                 )}
+                <p className={styles.mutedText}>
+                  Teslim dosyaları {filesExpireAt(activeHw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde
+                  ({FILE_RETENTION_DAYS} gün kuralı) otomatik silinir. Gerekli olanları bu tarihten önce indirin; teslim bilgisi ve sonuçlar kalır.
+                </p>
                 <div className={styles.inlineRow}>
                   <button type="button" className={styles.secondary} disabled={closing} onClick={toggleClosed}>
                     {closing ? 'Değiştiriliyor…' : activeHw.closed_at ? 'Ödevi yeniden aç' : 'Ödevi kapat'}

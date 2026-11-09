@@ -4,8 +4,9 @@ import { supabase } from './supabaseClient';
 import { listMyQuizzes, type MyQuizSummary } from './quizData';
 import type { CheckStatus, ExamId, HomeworkAttachment, Result, SubmissionRow } from './teacherData';
 import {
-  MAX_FILE_BYTES, SUBMISSION_BUCKET, SUBMISSION_COLUMNS, safeFileName, validateHomeworkFiles, verifyFileContents,
+  SUBMISSION_BUCKET, SUBMISSION_COLUMNS, safeFileName, validateHomeworkFiles, verifyFileContents,
 } from './teacherData';
+import { compressImages } from './imageCompress';
 
 const fail = (error: { message: string } | null | undefined): { ok: false; error: string } => ({
   ok: false,
@@ -115,7 +116,9 @@ export async function listMyHomeworks(studentId: string): Promise<Result<MyHomew
 // --------------------------------------------------------
 // Ödev teslimi (taslak → teslim). Kilit kuralları sunucuda: süre dolunca ya da teslimden sonra değişiklik reddedilir.
 // --------------------------------------------------------
-export const MAX_SUBMISSION_FILES = 5;
+export const MAX_SUBMISSION_FILES = 3;
+/** Teslim dosyası başına sınır (resimler önce küçültülür) */
+export const MAX_SUBMISSION_FILE_BYTES = 5 * 1024 * 1024;
 
 /** Taslağı getirir; yoksa oluşturur */
 async function ensureDraft(homeworkId: string, studentId: string): Promise<Result<SubmissionRow>> {
@@ -137,23 +140,26 @@ async function ensureDraft(homeworkId: string, studentId: string): Promise<Resul
 }
 
 /** Dosyaları yükleyip taslağa ekler */
-export async function addSubmissionFiles(homeworkId: string, studentId: string, files: File[]): Promise<Result<SubmissionRow>> {
-  if (!files.length) return { ok: false, error: 'Dosya seçilmedi.' };
+export async function addSubmissionFiles(homeworkId: string, studentId: string, picked: File[]): Promise<Result<SubmissionRow>> {
+  if (!picked.length) return { ok: false, error: 'Dosya seçilmedi.' };
   const draft = await ensureDraft(homeworkId, studentId);
   if (!draft.ok) return draft;
   if (draft.data.status === 'teslim') return { ok: false, error: 'Ödev teslim edildi; dosya eklenemez.' };
   const existing = draft.data.files || [];
-  if (existing.length + files.length > MAX_SUBMISSION_FILES) {
+  if (existing.length + picked.length > MAX_SUBMISSION_FILES) {
     return { ok: false, error: `En fazla ${MAX_SUBMISSION_FILES} dosya eklenebilir (şu an ${existing.length}).` };
   }
-  const sizeError = validateHomeworkFiles(files);
+  // Telefon fotoğrafları yüklenmeden önce küçültülür (konum vb. EXIF bilgisi de silinir)
+  const rawError = validateHomeworkFiles(picked, { maxBytes: MAX_SUBMISSION_FILE_BYTES, maxCount: MAX_SUBMISSION_FILES, raw: true });
+  if (rawError) return { ok: false, error: rawError };
+  const files = await compressImages(picked);
+  const sizeError = validateHomeworkFiles(files, { maxBytes: MAX_SUBMISSION_FILE_BYTES, maxCount: MAX_SUBMISSION_FILES });
   if (sizeError) return { ok: false, error: sizeError };
   const checked = await verifyFileContents(files);
   if (!checked.ok) return checked;
 
   const uploaded: HomeworkAttachment[] = [];
   for (const [i, file] of files.entries()) {
-    if (file.size > MAX_FILE_BYTES) return { ok: false, error: `"${file.name}" 10 MB'tan büyük.` };
     const path = `${homeworkId}/${studentId}/${safeFileName(file.name)}`;
     const { error } = await supabase.storage.from(SUBMISSION_BUCKET).upload(path, file, { contentType: checked.data[i], upsert: false });
     if (error) {

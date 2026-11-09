@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Araç klasörleri (.claude, .gemini, .agents …) ve üretilen çıktılar proje kodu değil
     ".*/**",
     "graphify-out/**",
+    // Supabase Edge Functions (Deno) Next.js projesinin parçası değil
+    "supabase/functions/**",
     "tsconfig.tsbuildinfo",
   ]),
 ]);

@@ -80,7 +80,7 @@ Okuma hızı: öğrencinin 1 dakikada okuduğu kelime sayısı. Metin uygulamada
 - [x] Etiketler: kademe, branş, konu, serbest etiket; bunlarla arama ve filtreleme — *K-5* · 7 Kasım 2026 · `07bec54`
 - [x] Ödeve "Dosyalarımdan ekle" (yeniden yüklemeden) — *K-9* · 7 Kasım 2026 · `07bec54` (dosya sunucuda ödeve kopyalanır; Dosyalarım'dan silinse de ödevde kalır)
 - [x] Sınıfla paylaşım; öğrenci panelinde "Ders materyalleri" — *K-5* · 7 Kasım 2026 · `07bec54` (yalnızca kendi sınıflarına; isteğe bağlı not)
-- [x] Öğretmen başına depolama kotası ve kullanım göstergesi — *K-9* · 7 Kasım 2026 · `07bec54` (500 MB; hem kayıt tetikleyicisi hem depolama yükleme kuralı denetler)
+- [x] Öğretmen başına depolama kotası ve kullanım göstergesi — *K-9* · 7 Kasım 2026 · `07bec54` (500 MB; hem kayıt tetikleyicisi hem depolama yükleme kuralı denetler) → 10 Kasım 2026: 100 MB, tahta ve soru görselleri de kotaya sayılır; dosya başına 10 MB; resimler yüklenmeden küçültülür; ödev ekleri ve teslim dosyaları 30 gün sonra gece işiyle silinir (`20261112090000_storage_limits_file_expiry.sql`, `purge-expired-files`)
 - [x] Setler: birden çok içeriği tek paket yapma (ör. "8. Sınıf LGS Matematik Seti") — *K-5* · 7 Kasım 2026 · `07bec54` (sıralı; sınıfla paylaşılır)
 - [x] Ortak eğitim medya kütüphanesi (bütün öğretmenlerin kullanabildiği hazır görseller, kotadan muaf) — *K-9* · 7 Kasım 2026 · `07bec54` (yönetici panelinde "Ortak kütüphane" sayfasından yüklenir; içerik henüz boş)
 

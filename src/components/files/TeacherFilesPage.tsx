@@ -354,6 +354,7 @@ function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, clas
           >
             <span style={{ width: `${Math.max(usedRatio * 100, usedBytes ? 1 : 0)}%` }} />
           </div>
+          <p>Tahta ve soru görselleri de bu alana sayılır. Dosya başına en fazla 10 MB; resimler yüklenirken küçültülür.</p>
         </div>
         <div className={styles.topActions}>
           <button type="button" className={styles.secondaryButton} onClick={addFolder}><FolderPlus size={18} aria-hidden="true" />Klasör</button>

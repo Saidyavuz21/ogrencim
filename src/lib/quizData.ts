@@ -1,6 +1,7 @@
 // Quiz motoru: soru bankası (öğretmen), quiz yayınlama, öğrencinin çözmesi ve sonuçlar.
 // Doğru cevap öğrenciye asla gönderilmez: öğrenci soruları ve sonuçları yalnızca sunucu fonksiyonlarından alır.
 import { supabase } from './supabaseClient';
+import { compressImage, QUOTA_FULL_MESSAGE } from './imageCompress';
 import { safeFileName, type Result } from './teacherData';
 
 const fail = (error: { message: string } | null | undefined): { ok: false; error: string } => ({
@@ -108,7 +109,9 @@ async function removeImageIfUnused(path: string) {
 }
 
 /** Görsel yükler (yalnızca JPG, PNG, WEBP, GIF; 5 MB) ve yolunu döndürür */
-export async function uploadQuizImage(file: File): Promise<Result<string>> {
+export async function uploadQuizImage(original: File): Promise<Result<string>> {
+  // Yüklemeden önce küçültülür (uzun kenar 1600 px); GIF olduğu gibi kalır
+  const file = await compressImage(original);
   if (file.size > MAX_QUIZ_IMAGE_BYTES) return { ok: false, error: 'Görsel 5 MB’tan büyük olamaz.' };
   const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   const ascii = (from: number, to: number) => String.fromCharCode(...Array.from(b.slice(from, to)));
@@ -121,7 +124,7 @@ export async function uploadQuizImage(file: File): Promise<Result<string>> {
   if (!auth.user) return { ok: false, error: 'Oturum bulunamadı.' };
   const path = `${auth.user.id}/${safeFileName(file.name)}`;
   const { error } = await supabase.storage.from(QUIZ_IMAGE_BUCKET).upload(path, file, { contentType: type, upsert: false });
-  if (error) return fail(error);
+  if (error) return fail(/row-level security/i.test(error.message) ? { message: QUOTA_FULL_MESSAGE } : error);
   return { ok: true, data: path };
 }
 

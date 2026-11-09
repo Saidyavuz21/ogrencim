@@ -1,6 +1,7 @@
 // Öğretmen paneli veri katmanı (Supabase). Tablo ve yetkiler:
 // supabase/migrations/20261104120000_teacher_real_data.sql
 import { supabase } from './supabaseClient';
+import { compressImages, isCompressibleImage, RAW_IMAGE_MAX_BYTES } from './imageCompress';
 
 export type Result<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -186,6 +187,15 @@ export async function listMyHomeworks(className?: string): Promise<Result<Homewo
 // --------------------------------------------------------
 export const HOMEWORK_BUCKET = 'homework-files';
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+/** Bir ödeve eklenebilecek en fazla dosya (yüklenen + Dosyalarımdan seçilen) */
+export const MAX_HOMEWORK_FILES = 3;
+/** Ödev dosyaları ve öğrenci teslim dosyaları, son teslim tarihinden (tarih yoksa ödevin verildiği günden) bu kadar gün sonra silinir */
+export const FILE_RETENTION_DAYS = 30;
+
+/** Ödevin dosyalarının silineceği an (son teslim anı ya da verildiği an + 30 gün) */
+export function filesExpireAt(hw: { due_at: string | null; created_at: string }): Date {
+  return new Date(new Date(hw.due_at || hw.created_at).getTime() + FILE_RETENTION_DAYS * 86_400_000);
+}
 export const ALLOWED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
 export interface HomeworkAttachment {
@@ -228,13 +238,27 @@ export async function verifyFileContents(files: File[]): Promise<Result<string[]
   return { ok: true, data: types };
 }
 
-/** Seçilen dosyaları denetler; hata varsa açıklamasını döndürür */
-export function validateHomeworkFiles(files: File[]): string | null {
+/**
+ * Seçilen dosyaları denetler; hata varsa açıklamasını döndürür.
+ * raw: dosyalar henüz küçültülmedi; resimler küçültüleceği için daha büyük kabul edilir.
+ */
+export function validateHomeworkFiles(
+  files: File[],
+  opts: { maxBytes?: number; maxCount?: number; raw?: boolean } = {},
+): string | null {
+  const maxBytes = opts.maxBytes ?? MAX_FILE_BYTES;
+  const maxCount = opts.maxCount ?? MAX_HOMEWORK_FILES;
+  const mb = Math.round(maxBytes / 1024 / 1024);
   for (const f of files) {
     if (!ALLOWED_FILE_TYPES.includes(f.type)) return `"${f.name}" desteklenmiyor. Yalnızca PDF ve resim (JPG, PNG, WEBP, HEIC) yüklenebilir.`;
-    if (f.size > MAX_FILE_BYTES) return `"${f.name}" 10 MB'tan büyük (${formatBytes(f.size)}).`;
+    const limit = opts.raw && isCompressibleImage(f) ? RAW_IMAGE_MAX_BYTES : maxBytes;
+    if (f.size > limit) {
+      return isCompressibleImage(f) && !opts.raw
+        ? `"${f.name}" küçültüldükten sonra bile ${mb} MB'tan büyük (${formatBytes(f.size)}).`
+        : `"${f.name}" ${Math.round(limit / 1024 / 1024)} MB'tan büyük (${formatBytes(f.size)}).`;
+    }
   }
-  if (files.length > 5) return 'Bir ödeve en fazla 5 dosya eklenebilir.';
+  if (files.length > maxCount) return `En fazla ${maxCount} dosya eklenebilir.`;
   return null;
 }
 
@@ -328,11 +352,12 @@ export async function createHomework(input: {
   const title = input.title.trim();
   if (!title) return { ok: false, error: 'Ödev başlığı zorunludur.' };
   if (!input.className) return { ok: false, error: 'Sınıf seçin.' };
-  const files = input.files || [];
+  // Resimler yüklenmeden önce küçültülür
+  const files = await compressImages(input.files || []);
   const picks = input.picks || [];
+  if (files.length + picks.length > MAX_HOMEWORK_FILES) return { ok: false, error: `Bir ödeve en fazla ${MAX_HOMEWORK_FILES} dosya eklenebilir.` };
   const fileError = validateHomeworkFiles(files);
   if (fileError) return { ok: false, error: fileError };
-  if (files.length + picks.length > 5) return { ok: false, error: 'Bir ödeve en fazla 5 dosya eklenebilir.' };
   if (input.quiz) {
     if (!input.quiz.questionIds.length) return { ok: false, error: 'Quiz için en az bir soru seçin.' };
     if (input.quiz.mode === 'exam' && !input.dueDate) return { ok: false, error: 'Sınav modunda teslim tarihi zorunludur.' };

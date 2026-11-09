@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Send, Trash2, CheckSquare, Calendar, MoreVertical, Search, Paperclip, X, Folder } from '../icons';
-import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, formatBytes, HomeworkFilePick, homeworkIsOpen, HomeworkRow, listMyHomeworks, validateHomeworkFiles } from '../../lib/teacherData';
+import { ALLOWED_FILE_TYPES, countSubmitted, createHomework, deleteHomework, FILE_RETENTION_DAYS, filesExpireAt, formatBytes, HomeworkFilePick, homeworkIsOpen, HomeworkRow, listMyHomeworks, MAX_HOMEWORK_FILES, validateHomeworkFiles } from '../../lib/teacherData';
 import { HomeworkFilePicker } from '../files/HomeworkFilePicker';
 import { QuizComposer, QuizDraft } from '../quiz/QuizComposer';
 import { QUIZ_MODE_LABEL } from '../../lib/quizData';
@@ -22,9 +22,20 @@ const autoTitle = (subject: string, kind: 'homework' | 'quiz' | 'board' = 'homew
 };
 
 const OTHER = '__diger__';
-const MAX_FILES = 5;
+const MAX_FILES = MAX_HOMEWORK_FILES;
 
 type CSSVars = React.CSSProperties & Record<`--${string}`, string | number>;
+
+/** Ödev ve teslim dosyalarının ne zaman silineceği (sunucudaki gece işiyle aynı kural) */
+function FileExpiryNote({ hw }: { hw: HomeworkRow }) {
+  const at = filesExpireAt(hw);
+  const what = hw.attachments?.length ? (hw.accepts_submissions ? 'Ödev ve teslim dosyaları' : 'Ödev dosyaları') : 'Teslim dosyaları';
+  return (
+    <p className={styles.mutedText}>
+      {what} {at.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })} tarihinde otomatik silinir ({FILE_RETENTION_DAYS} gün kuralı).
+    </p>
+  );
+}
 
 /** Ders rengiyle küçük etiket (liste kartlarında) */
 function SubjectTag({ subject }: { subject: string }) {
@@ -131,7 +142,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     for (const f of picked) {
       if (!merged.some((m) => m.name === f.name && m.size === f.size)) merged.push(f);
     }
-    const problem = merged.length + picks.length > MAX_FILES ? `Bir ödeve en fazla ${MAX_FILES} dosya eklenebilir.` : validateHomeworkFiles(merged);
+    const problem = merged.length + picks.length > MAX_FILES ? `Bir ödeve en fazla ${MAX_FILES} dosya eklenebilir.` : validateHomeworkFiles(merged, { raw: true });
     if (problem) {
       setNotice({ kind: 'error', text: problem });
       return;
@@ -342,6 +353,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                   </div>
                   {hw.description && <p className={styles.assignmentDescription}>{hw.description}</p>}
                   <AttachmentList attachments={hw.attachments} />
+                  {(hw.attachments?.length || hw.accepts_submissions) ? <FileExpiryNote hw={hw} /> : null}
                   {hw.file_url && <a href={hw.file_url} target="_blank" rel="noopener noreferrer" className={styles.inlineLink}>Bağlantıyı aç</a>}
                 </div>
                 <div className={styles.assignmentActions}>
@@ -509,7 +521,8 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                       <input type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." />
                     </label>
                     <div className={`${styles.field} ${styles.fullRow}`}>
-                      <span id="hw-files-label">Dosyalar <span className={styles.optionalHint}>(yüklenen: PDF veya resim, her biri 10 MB · Dosyalarımdan: Word, PowerPoint, Excel de olur · toplam en fazla {MAX_FILES})</span></span>
+                      <span id="hw-files-label">Dosyalar <span className={styles.optionalHint}>(yüklenen: PDF veya resim, her biri 10 MB, resimler otomatik küçültülür · Dosyalarımdan: Word, PowerPoint, Excel de olur · toplam en fazla {MAX_FILES})</span></span>
+                      <p className={styles.mutedText}>Ödeve eklenen dosyalar son teslim tarihinden {FILE_RETENTION_DAYS} gün sonra (tarih yoksa ödevi verdiğiniz günden {FILE_RETENTION_DAYS} gün sonra) otomatik silinir. Ödevin kendisi kalır.</p>
                       <div
                         className={`${styles.fileDrop} ${dragging ? styles.fileDropActive : ''}`}
                         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -586,6 +599,7 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                       {acceptsSubmissions && (
                         <p className={styles.mutedText}>
                           {dueDate ? 'Teslim tarihi gelince ödev kendiliğinden kapanır; teslim eden öğrenci sonradan değişiklik yapamaz.' : 'Teslim tarihi seçmezseniz ödev siz "Ödevi kapat" diyene kadar açık kalır.'}
+                          {` Öğrencilerin yüklediği dosyalar son teslim tarihinden ${FILE_RETENTION_DAYS} gün sonra otomatik silinir; teslim bilgisi ve verdiğiniz sonuç kalır.`}
                         </p>
                       )}
                     </fieldset>

@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { CheckCircle2, ImageIcon, Paperclip, Send } from '../icons';
 import { addSubmissionFiles, MAX_SUBMISSION_FILES, MyHomework, removeSubmissionFile, saveSubmission } from '../../lib/studentData';
-import { ALLOWED_FILE_TYPES, homeworkIsOpen, SubmissionRow, SUBMISSION_BUCKET } from '../../lib/teacherData';
+import { ALLOWED_FILE_TYPES, FILE_RETENTION_DAYS, homeworkIsOpen, SubmissionRow, SUBMISSION_BUCKET } from '../../lib/teacherData';
 import { AttachmentList } from '../teacher/TeacherUi';
 import { useDialog } from '../ConfirmDialog';
 import styles from '../teacher/TeacherDashboard.module.css';
@@ -86,6 +86,7 @@ export function StudentSubmission({ homework, studentId, onChange }: {
       <div className={s.submitBox}>
         <p className={s.submittedTag}><CheckCircle2 size={18} aria-hidden="true" />Teslim edildi{sub.submitted_at ? ` · ${dateTime(sub.submitted_at)}` : ''}</p>
         <AttachmentList attachments={files} bucket={SUBMISSION_BUCKET} label="Teslim ettiğin dosyalar" />
+        {files.length > 0 && <p className={styles.optionalHint}>Yüklediğin dosyalar {FILE_RETENTION_DAYS} gün sonra otomatik silinir; teslim bilgin kalır.</p>}
         {sub.note && <p className={styles.assignmentDescription}>{sub.note}</p>}
       </div>
     );
@@ -139,7 +140,7 @@ export function StudentSubmission({ homework, studentId, onChange }: {
         <button type="button" className={styles.fileDropButton} disabled={!!busy || files.length >= MAX_SUBMISSION_FILES} onClick={() => fileInput.current?.click()}>
           <Paperclip size={18} aria-hidden="true" />Dosya ekle
         </button>
-        <span className={styles.optionalHint}>PDF veya resim · en fazla {MAX_SUBMISSION_FILES} · her biri 10 MB</span>
+        <span className={styles.optionalHint}>PDF veya resim · en fazla {MAX_SUBMISSION_FILES} · her biri 5 MB · fotoğraflar otomatik küçültülür</span>
       </div>
       <label className={styles.field}>Açıklama <span className={styles.optionalHint}>(isteğe bağlı)</span>
         <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} rows={2} maxLength={500} placeholder="Öğretmenine not yazabilirsin." disabled={!!busy} />

@@ -1,8 +1,9 @@
 // Öğretmen dosyaları, klasörler, etiketler, sınıfla paylaşım, setler ve ortak kütüphane.
-// Kurallar sunucuda: sahiplik, kota (500 MB), paylaşımın yalnızca kendi sınıflarına yapılması,
+// Kurallar sunucuda: sahiplik, kota (100 MB; tahta ve soru görselleri dahil), paylaşımın yalnızca kendi sınıflarına yapılması,
 // öğrencinin yalnızca kendi sınıfıyla paylaşılanı görmesi.
 import { supabase } from './supabaseClient';
 import { formatBytes, safeFileName, type Result } from './teacherData';
+import { compressImage, isCompressibleImage, RAW_IMAGE_MAX_BYTES } from './imageCompress';
 
 const fail = (error: { message: string } | null | undefined): { ok: false; error: string } => ({
   ok: false,
@@ -14,15 +15,20 @@ function friendly(message: string) {
   if (/row-level security|violates row-level/i.test(message)) return 'Bu işlem için yetkiniz yok.';
   if (/duplicate key.*teacher_folders/i.test(message)) return 'Bu adla bir klasörünüz zaten var.';
   if (/duplicate key.*teacher_shares/i.test(message)) return 'Bu sınıfla zaten paylaşılmış.';
-  if (/Payload too large|maximum allowed size|exceeded the maximum/i.test(message)) return 'Dosya 25 MB sınırını aşıyor.';
+  if (/Payload too large|maximum allowed size|exceeded the maximum/i.test(message)) return 'Dosya boyut sınırını aşıyor.';
   if (/mime type .* is not supported|invalid_mime_type/i.test(message)) return 'Bu dosya türü desteklenmiyor.';
   return message;
 }
 
 export const FILES_BUCKET = 'teacher-files';
 export const LIBRARY_BUCKET = 'library';
-export const FILE_QUOTA_BYTES = 500 * 1024 * 1024;
-export const MAX_TEACHER_FILE_BYTES = 25 * 1024 * 1024;
+/** Öğretmen başına toplam alan: Dosyalarım + tahta görselleri + soru görselleri (sunucuda da aynı) */
+export const FILE_QUOTA_BYTES = 100 * 1024 * 1024;
+export const MAX_TEACHER_FILE_BYTES = 10 * 1024 * 1024;
+/** Ortak kütüphane (yalnızca yönetici yükler) */
+export const LIBRARY_MAX_BYTES = 25 * 1024 * 1024;
+/** Kota ön kontrolünde küçültülecek bir resmin tahmini boyutu */
+const COMPRESSED_IMAGE_ESTIMATE = 500 * 1024;
 export const MAX_UPLOAD_AT_ONCE = 20;
 
 // --------------------------------------------------------
@@ -161,10 +167,15 @@ export interface FileMeta { grade?: string | null; subject?: string | null; topi
 export function checkUploadBatch(files: File[], usedBytes: number): string | null {
   if (files.length > MAX_UPLOAD_AT_ONCE) return `Tek seferde en fazla ${MAX_UPLOAD_AT_ONCE} dosya yükleyebilirsiniz.`;
   for (const f of files) {
-    if (f.size > MAX_TEACHER_FILE_BYTES) return `"${f.name}" 25 MB'tan büyük (${formatBytes(f.size)}).`;
     if (f.size === 0) return `"${f.name}" boş bir dosya.`;
+    // Resimler yüklenmeden önce küçültülür; ham boyutları daha büyük olabilir
+    if (isCompressibleImage(f)) {
+      if (f.size > RAW_IMAGE_MAX_BYTES) return `"${f.name}" çok büyük (${formatBytes(f.size)}).`;
+    } else if (f.size > MAX_TEACHER_FILE_BYTES) {
+      return `"${f.name}" 10 MB'tan büyük (${formatBytes(f.size)}).`;
+    }
   }
-  const total = files.reduce((a, f) => a + f.size, 0);
+  const total = files.reduce((a, f) => a + (isCompressibleImage(f) ? Math.min(f.size, COMPRESSED_IMAGE_ESTIMATE) : f.size), 0);
   if (usedBytes + total > FILE_QUOTA_BYTES) {
     return `Depolama alanınız yetmiyor: ${formatBytes(FILE_QUOTA_BYTES - usedBytes)} boş, seçilenler ${formatBytes(total)}.`;
   }
@@ -186,8 +197,13 @@ export async function uploadTeacherFiles(
   const errors: string[] = [];
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return { uploaded, errors: ['Oturum bulunamadı.'] };
-  for (const [i, file] of files.entries()) {
+  for (const [i, original] of files.entries()) {
     onProgress?.(i, files.length);
+    const file = await compressImage(original);
+    if (file.size > MAX_TEACHER_FILE_BYTES) {
+      errors.push(`"${original.name}": 10 MB'tan büyük (${formatBytes(file.size)}).`);
+      continue;
+    }
     const type = await detectTeacherFileType(file).catch(() => null);
     if (!type) {
       errors.push(`"${file.name}": desteklenmeyen ya da bozuk dosya (PDF, resim, Word, PowerPoint, Excel yüklenebilir).`);
@@ -415,7 +431,7 @@ export async function uploadLibraryItems(files: File[], meta: { category: string
   const uploaded: LibraryItemRow[] = [];
   const errors: string[] = [];
   for (const file of files) {
-    if (file.size > MAX_TEACHER_FILE_BYTES) { errors.push(`"${file.name}" 25 MB'tan büyük.`); continue; }
+    if (file.size > LIBRARY_MAX_BYTES) { errors.push(`"${file.name}" 25 MB'tan büyük.`); continue; }
     const type = await detectTeacherFileType(file).catch(() => null);
     if (!type) { errors.push(`"${file.name}": desteklenmeyen ya da bozuk dosya.`); continue; }
     const path = safeFileName(file.name);

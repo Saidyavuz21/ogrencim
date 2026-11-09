@@ -1,6 +1,7 @@
 // Etkileşimli tahta: içerik modeli, tahtalar, görseller, ödeve gönderme, öğrenci çizimi.
 // Sanal çözünürlük sabittir (1920×1080); her ekranda orantılı ölçeklenir.
 import { supabase } from './supabaseClient';
+import { compressImage, QUOTA_FULL_MESSAGE } from './imageCompress';
 import { getMySchoolId, HOMEWORK_BUCKET, safeFileName, type Result } from './teacherData';
 import { downloadBlob } from './reportData';
 
@@ -429,7 +430,9 @@ async function sniffImage(file: File): Promise<string | null> {
   return null;
 }
 
-export async function uploadBoardImage(file: File): Promise<Result<{ path: string; w: number; h: number }>> {
+export async function uploadBoardImage(original: File): Promise<Result<{ path: string; w: number; h: number }>> {
+  // Yüklemeden önce küçültülür (uzun kenar 1600 px); GIF olduğu gibi kalır
+  const file = await compressImage(original);
   if (file.size > 10 * 1024 * 1024) return { ok: false, error: 'Görsel 10 MB’tan büyük olamaz.' };
   const type = await sniffImage(file);
   if (!type) return { ok: false, error: 'Yalnızca JPG, PNG, WEBP ya da GIF eklenebilir.' };
@@ -438,7 +441,7 @@ export async function uploadBoardImage(file: File): Promise<Result<{ path: strin
   const size = await imageSize(URL.createObjectURL(file), true);
   const path = `${auth.user.id}/${safeFileName(file.name)}`;
   const { error } = await supabase.storage.from(BOARD_IMAGE_BUCKET).upload(path, file, { contentType: type, upsert: false });
-  if (error) return fail(error);
+  if (error) return fail(/row-level security/i.test(error.message) ? { message: QUOTA_FULL_MESSAGE } : error);
   return { ok: true, data: { path, ...size } };
 }
 

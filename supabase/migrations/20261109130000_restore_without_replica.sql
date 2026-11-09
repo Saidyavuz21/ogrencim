@@ -45,7 +45,9 @@ begin
     raise exception 'Öğrencinin okulu artık kayıtlı değil; geri alınamaz.';
   end if;
 
-  v := d.data;
+  -- Boş tablolar kopyada null olarak durur (jsonb_agg satır yoksa null döner); boş listeye çevir
+  select coalesce(jsonb_object_agg(e.key, case when jsonb_typeof(e.value) = 'array' then e.value else '[]'::jsonb end), '{}'::jsonb)
+    into v from jsonb_each(d.data) e;
   -- Tablo kilidi beklenirse 5 saniyede vazgeç (o sırada yoğun bir işlem varsa)
   perform set_config('lock_timeout', '5s', true);
   foreach t in array c_tables loop

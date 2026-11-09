@@ -33,3 +33,21 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
+
+  # Veritabanı yetki testleri: depo ayarlarında TEST_DATABASE_URL gizli değişkeni varsa çalışır.
+  # Testler tek işlemde çalışıp geri alındığı için veritabanında iz bırakmaz.
+  rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Yetki testleri
+        if: env.TEST_DATABASE_URL != ''
+        run: |
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          bash scripts/test-rls.sh
+      - name: Atlandı
+        if: env.TEST_DATABASE_URL == ''
+        run: echo "TEST_DATABASE_URL tanımlı değil; yetki testleri atlandı."

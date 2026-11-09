@@ -23,12 +23,12 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
-| 8 | Güvenlik ve KVKK | 8 / 13 |
-| 9 | Kalite: test, CI, izleme | 0 / 7 |
+| 8 | Güvenlik ve KVKK | 9 / 13 |
+| 9 | Kalite: test, CI, izleme | 5 / 7 |
 | 10 | Canlı ders | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **88 / 121** |
+| | **Toplam** | **94 / 121** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -165,11 +165,11 @@ Ortak kararlar:
 - [ ] Supabase: sızdırılmış şifre korumasını aç — *K-1*
 - [~] Anonim öğrenci girişine CAPTCHA — *K-1, K-14* · kod hazır (`88e712e`, öğretmen/admin girişi ve kayıt da dahil); Turnstile anahtarı ve Supabase ayarı bekleniyor (docs/GUVENLIK.md)
 - [x] **İşlem kaydı:** kim, ne zaman, neyi değiştirdi/sildi (eski ve yeni değerle) — *K-14* · 9 Kasım 2026 · `88e712e`, `51e0a24`
-- [~] Erişim kaydı: kim hangi öğrencinin verisini görüntüledi — *K-15* · PIN görüntüleme ve dışa aktarma yazılıyor (`88e712e`); öğretmen panelinde profil/rapor açılışı henüz bağlanmadı (`logStudentAccess`)
+- [x] Erişim kaydı: kim hangi öğrencinin verisini görüntüledi — *K-15* · 9 Kasım 2026 · `88e712e`, `d2b8dd2` (PIN görüntüleme, dışa aktarma, öğrenci raporu)
 - [x] Gizli anahtar sızıntı taraması (gitleaks) — *K-14* · 9 Kasım 2026 · `5e47c79`
 - [x] PIN şifreleme anahtarını yenileme yöntemi — *K-14* · 9 Kasım 2026 · `23cd529`
 - [x] Genel istek hız sınırları (giriş dışı uçlar) — *K-14* · 9 Kasım 2026 · `88e712e`
-- [x] Yumuşak silme (yanlışlıkla silineni geri alma süresi) — *K-15* · 9 Kasım 2026 · `88e712e`, `cf9ae62`, `df54fe2` (yönetim panelinde; öğretmen panelinde Silinenler sayfası henüz yok)
+- [x] Yumuşak silme (yanlışlıkla silineni geri alma süresi) — *K-15* · 9 Kasım 2026 · `88e712e`, `cf9ae62`, `df54fe2` (yönetim paneli + öğretmen panelinde "Silinen öğrenciler", `d2b8dd2`)
 - [x] Öğrenci verilerini dışa aktarma (KVKK talebi) — *K-15* · 9 Kasım 2026 · `88e712e`
 - [x] Silme talebi akışı ve kaydı (unutulma hakkı) — *K-15* · 9 Kasım 2026 · `88e712e`
 - [~] Aydınlatma metni ve veli açık rızası — *K-15* · `/aydinlatma` taslağı ve rıza kaydı hazır (`88e712e`); okul bilgileri ve hukuki onay bekleniyor
@@ -177,13 +177,13 @@ Ortak kararlar:
 
 ## 9. Kalite: test, CI, izleme
 
-- [ ] Uçtan uca testler: öğretmen kaydı → onay → giriş → puan → ödev → mesaj → çıkış — *K-17*
-- [ ] Veritabanı kuralları (RLS) için otomatik yetki testleri — *K-17*
-- [ ] CI: her commit'te tip kontrolü, lint ve build (GitHub Actions) — *K-17*
-- [ ] Hata izleme (ör. Sentry) — *K-16*
-- [ ] Günlüklerde kişisel verinin gizlenmesi — *K-16*
-- [ ] Yedekleme ve geri yükleme planı — *K-16*
-- [ ] Büyük bileşenlerin bölünmesi ve Supabase tiplerinin otomatik üretilmesi — *K-17*
+- [~] Uçtan uca testler: öğretmen kaydı → onay → giriş → puan → ödev → mesaj → çıkış — *K-17* · Playwright kuruldu, CI'da (`9640876`): sayfalar, giriş uyarıları, telefon taşması; öğretmen/öğrenci giriş-çıkış testi test hesabı (E2E_* gizli değişkenleri) bekliyor; kayıt→onay→puan zinciri test veritabanı bekliyor
+- [x] Veritabanı kuralları (RLS) için otomatik yetki testleri — *K-17* · 9 Kasım 2026 · `4b382fc` (25 senaryo, hepsi geçti; CI'da TEST_DATABASE_URL ile)
+- [x] CI: her commit'te tip kontrolü, lint ve build (GitHub Actions) — *K-17* · 9 Kasım 2026 · `6b2f029`
+- [~] Hata izleme (ör. Sentry) — *K-16* · kendi hata kaydımız (dış servis yok, `ff9800e`); `20261109160000_client_errors.sql` çalıştırılınca devreye girer
+- [x] Günlüklerde kişisel verinin gizlenmesi — *K-16* · 9 Kasım 2026 · `ff9800e` (hata kaydında e-posta/kimlik/sayı maskeleme; işlem kayıtlarında PIN ***)
+- [x] Yedekleme ve geri yükleme planı — *K-16* · 9 Kasım 2026 · `989a384` (docs/YEDEKLEME.md; cron VPS'e geçişte kurulacak)
+- [x] Büyük bileşenlerin bölünmesi ve Supabase tiplerinin otomatik üretilmesi — *K-17* · 9 Kasım 2026 · `3750d7c`, `e588234`, `ceef6cd` (tahta dosyaları bölündü; tipler üretildi, client'a bağlanması ayrı iş)
 
 ## 10. Canlı ders
 
@@ -238,3 +238,4 @@ Ortak kararlar:
 | 7 Kasım 2026 | Etkileşimli tahta: çizim, şekil, zemin, not/görsel, parçalar, sunum, ödev olarak çözme, PDF/PNG — Paket 7 tamam | `73358e2` |
 | 8 Kasım 2026 | Soru bankası ve quiz: formül ve zengin metin (ortak RichTextField, tahtayla aynı altyapı) | `a8d7ea5` |
 | 9 Kasım 2026 | Güvenlik ve KVKK: Supabase uyarıları, gitleaks, PIN anahtarı yenileme, işlem kaydı, hız sınırları, silinenler kutusu (30 gün), dışa aktarma, veli talepleri ve kalıcı silme (Paket 8, 8/13) | `5e47c79`, `23cd529`, `88e712e`, `cf9ae62`, `df54fe2`, `51e0a24` |
+| 9 Kasım 2026 | Kalite: CI, yetki testleri, uçtan uca testler, yedekleme planı, hata kaydı, tahta dosyalarının bölünmesi, Supabase tipleri; öğretmen panelinde Silinenler ve erişim kaydı (Paket 9, 5/7; Paket 8, 9/13) | `6b2f029`, `989a384`, `4b382fc`, `9640876`, `ff9800e`, `3750d7c`, `e588234`, `ceef6cd`, `d2b8dd2` |

@@ -27,7 +27,7 @@ Amaç: Gerçek öğrenci verisi girilebilecek kadar güvenli bir giriş ve yetki
 | Profilde gerçek şifre değiştirme | ✅ |
 | Supabase: anonim giriş (öğrenci girişi için) | ✅ |
 | Supabase: sızdırılmış şifre korumasını açmak | ⏳ panelden |
-| Admin şifresini değiştirmek (eski şifre git geçmişinde açık) | ⏳ kullanıcı |
+| Admin şifresini değiştirmek (eski şifre git geçmişinde açık) | ⏳ kullanıcı — VPS'e geçişte |
 
 ## Aşama 2 – Gerçek veri modeli ✅
 
@@ -54,10 +54,10 @@ Amaç: Gerçek öğrenci verisi girilebilecek kadar güvenli bir giriş ve yetki
 | İş | Durum |
 |---|---|
 | `tsc` ve `eslint` temiz | ✅ (her değişiklikte elle) |
-| `npm run build` temiz | ⏳ |
-| Her rol için uçtan uca akış testi: kayıt → onay → giriş → puan → mesaj → ödev → çıkış | ⏳ |
+| `npm run build` temiz | ✅ 9 Kasım 2026 (tip kontrolü build'de açık; CI her push'ta) |
+| Her rol için uçtan uca akış testi: kayıt → onay → giriş → puan → mesaj → ödev → çıkış | 🔄 Playwright kuruldu; tam zincir test veritabanı bekliyor |
 | Hata/boş durum mesajlarının gözden geçirilmesi | ⏳ |
-| Supabase güvenlik ve performans uyarılarının (advisors) sıfırlanması | ⏳ |
+| Supabase güvenlik ve performans uyarılarının (advisors) sıfırlanması | ✅ 9 Kasım 2026 (bilerek bırakılanlar docs/GUVENLIK.md) |
 
 ## Aşama 4 – Kod düzeni 🔄
 
@@ -68,7 +68,7 @@ Amaç: Gerçek öğrenci verisi girilebilecek kadar güvenli bir giriş ve yetki
 | Öğrenci paneli: sol menü + gruplu sayfalar (eski tek dosya bölündü) | ✅ |
 | Admin ve öğrenci için ortak kabuk (`src/components/shell/PortalShell.tsx`) | ✅ |
 | Öğretmen panelini de ortak kabuğa geçirmek | ⏳ |
-| Supabase tiplerinin otomatik üretilmesi (`generate_typescript_types`) | ⏳ |
+| Supabase tiplerinin otomatik üretilmesi (`generate_typescript_types`) | ✅ 9 Kasım 2026 (`src/lib/database.types.ts`, `npm run gen:types`) |
 
 ## Aşama 5 – Yayına hazırlık ⏳
 

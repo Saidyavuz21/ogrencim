@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './AdminManagement.module.css';
 import { CustomSelect } from '../CustomSelect';
 import {
-  AccessRow, AuditRow, AUDIT_PAGE_SIZE, listAccessLog, listAuditLog, profileNames,
+  AccessRow, AuditRow, AUDIT_PAGE_SIZE, ClientErrorRow, listAccessLog, listAuditLog, listClientErrors, profileNames,
 } from '../../lib/privacyData';
 import { AdminData, EmptyState, FilterBar } from './adminShared';
 
@@ -12,7 +12,7 @@ interface Props {
   data: AdminData;
 }
 
-type Tab = 'audit' | 'access';
+type Tab = 'audit' | 'access' | 'errors';
 
 const TABLE_LABEL: Record<string, string> = {
   students: 'Öğrenci',
@@ -46,7 +46,16 @@ const ACTOR_LABEL: Record<string, string> = {
   student: 'Öğrenci',
   system: 'Sistem',
   user: 'Kullanıcı',
+  visitor: 'Ziyaretçi',
 };
+
+const ERROR_KIND_LABEL: Record<ClientErrorRow['kind'], string> = {
+  error: 'Hata',
+  promise: 'İşlem hatası',
+  render: 'Sayfa çöktü',
+};
+
+const TAB_TITLE: Record<Tab, string> = { audit: 'İşlem kaydı', access: 'Erişim kaydı', errors: 'Hata kaydı' };
 
 const ACCESS_LABEL: Record<string, string> = {
   pins: "giriş PIN'ini görüntüledi",
@@ -94,6 +103,7 @@ export function AdminLogsPage({ data }: Props) {
   const [action, setAction] = useState('');
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [access, setAccess] = useState<AccessRow[]>([]);
+  const [errors, setErrors] = useState<ClientErrorRow[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +130,13 @@ export function AdminLogsPage({ data }: Props) {
       setAudit((prev) => (append ? [...prev, ...res.data] : res.data));
       setHasMore(res.data.length === AUDIT_PAGE_SIZE);
       addNames(res.data.map((r) => r.actor_id));
+    } else if (tab === 'errors') {
+      const res = await listClientErrors(before);
+      setLoading(false);
+      if (!res.ok) return setError(res.error);
+      setError(null);
+      setErrors((prev) => (append ? [...prev, ...res.data] : res.data));
+      setHasMore(res.data.length === AUDIT_PAGE_SIZE);
     } else {
       const res = await listAccessLog({ before });
       setLoading(false);
@@ -142,23 +159,26 @@ export function AdminLogsPage({ data }: Props) {
     return studentNames[id] || (typeof d.name === 'string' && row.table_name === 'students' ? d.name : null);
   };
 
-  const last = tab === 'audit' ? audit[audit.length - 1]?.id : access[access.length - 1]?.id;
-  const rows = tab === 'audit' ? audit : access;
+  const rows: { id: number }[] = tab === 'audit' ? audit : tab === 'access' ? access : errors;
+  const last = rows[rows.length - 1]?.id;
 
   return (
     <div className={styles.stack}>
       <section className={styles.section} aria-labelledby="logs-title">
         <div className={styles.between}>
-          <h2 id="logs-title" className={styles.sectionTitle}>{tab === 'audit' ? 'İşlem kaydı' : 'Erişim kaydı'}</h2>
+          <h2 id="logs-title" className={styles.sectionTitle}>{TAB_TITLE[tab]}</h2>
           <div className={styles.segmented} role="group" aria-label="Kayıt türü">
             <button type="button" aria-pressed={tab === 'audit'} onClick={() => setTab('audit')}>İşlemler</button>
             <button type="button" aria-pressed={tab === 'access'} onClick={() => setTab('access')}>Erişimler</button>
+            <button type="button" aria-pressed={tab === 'errors'} onClick={() => setTab('errors')}>Hatalar</button>
           </div>
         </div>
         <p className={styles.muted}>
           {tab === 'audit'
             ? 'Kim, ne zaman, hangi kaydı ekledi, değiştirdi veya sildi. Değişikliklerde eski ve yeni değer görünür; PIN gibi gizli alanlar *** yazılır.'
-            : "Kim, hangi öğrencinin verisini ne zaman görüntüledi (PIN, rapor, dışa aktarma). Aynı kişi aynı öğrenciyi 10 dakika içinde tekrar açarsa bir kez yazılır."}
+            : tab === 'access'
+              ? "Kim, hangi öğrencinin verisini ne zaman görüntüledi (PIN, rapor, dışa aktarma). Aynı kişi aynı öğrenciyi 10 dakika içinde tekrar açarsa bir kez yazılır."
+              : 'Kullanıcıların tarayıcısında oluşan beklenmedik hatalar. E-posta, kimlik ve uzun sayılar kayda geçmeden silinir; kayıtlar 30 gün tutulur. Yalnızca süper admin görür.'}
         </p>
 
         {tab === 'audit' && (
@@ -216,6 +236,31 @@ export function AdminLogsPage({ data }: Props) {
                     {actorName(r.actor_id, r.actor_kind)}, {studentNames[r.student_id] || 'silinmiş öğrenci'} adlı öğrencinin {ACCESS_LABEL[r.action] || r.action}
                   </span>
                   <span className={styles.muted}>{formatTime(r.at)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {tab === 'errors' && errors.length > 0 && (
+          <ul className={styles.list}>
+            {errors.map((r) => (
+              <li key={r.id} className={styles.row}>
+                <div className={styles.details}>
+                  <div className={styles.identity}>
+                    <span className={r.kind === 'render' ? styles.errorBadge : styles.warningBadge}>{ERROR_KIND_LABEL[r.kind]}</span>
+                    <span className={styles.name}>{r.message}</span>
+                  </div>
+                  <span className={styles.muted}>
+                    {formatTime(r.at)} · {ACTOR_LABEL[r.actor_kind || ''] || r.actor_kind || 'Bilinmiyor'} · {r.path || '/'}
+                  </span>
+                  {r.stack && (
+                    <details>
+                      <summary className={styles.muted}>Ayrıntı</summary>
+                      <pre style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap', fontSize: 12, color: '#58665f' }}>{r.stack}</pre>
+                      {r.user_agent && <span className={styles.muted}>{r.user_agent}</span>}
+                    </details>
+                  )}
                 </div>
               </li>
             ))}

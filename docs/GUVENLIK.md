@@ -49,6 +49,15 @@ Kim, hangi öğrencinin verisini ne zaman görüntüledi. Aynı kişi aynı öğ
 - Kalıcı silme (`admin_erase_student`): öğrenci, Silinenler kopyası, birebir mesajlar ve ödev dosyaları silinir; işlem kayıtlarındaki kişisel veriler boşaltılır. Yalnızca admin ve okul yöneticisi.
 - Veli rızası: `students.guardian_consent_at / _by / _version`. İmzalı form teslim alınınca işaretlenir. Metin: `/aydinlatma` (sürüm değişirse `CONSENT_VERSION` da değişmeli).
 
+## Hata kaydı (`client_errors`)
+
+Tarayıcıda oluşan beklenmedik hatalar (`src/lib/errorReporting.ts`, `src/instrumentation-client.ts`, `src/app/error.tsx`, `src/app/global-error.tsx`) veritabanına yazılır; dış servise (Sentry vb.) veri gitmez.
+
+- Kayda geçmeden **hem tarayıcıda hem sunucuda** temizlenir: JWT ve anahtarlar, e-posta, kimlikler (uuid); hata mesajındaki 4+ haneli sayılar (PIN, telefon, okul no). Adres çubuğunun sorgu kısmı (`?…`) gönderilmez.
+- Sayfa başına en çok 10 hata, kullanıcı başına dakikada 20, genel olarak saatte 300 kayıt. 30 gün sonra silinir.
+- Yönetim → İşlem ve erişim kaydı → **Hatalar** (yalnızca süper admin).
+- `report_client_error` giriş yapmamış ziyaretçiye de açıktır (giriş sayfası hataları için); Supabase bunu `anon_security_definer_function_executable` uyarısı olarak gösterir, bilerek bırakıldı.
+
 ## İstek hız sınırları
 
 Kullanıcı başına (`private.check_rate`), aşılınca "Çok sık işlem yapıldı" hatası:
@@ -90,6 +99,7 @@ Tek işlemde çalışır; hata olursa hiçbir şey değişmez. Öğrenci girişl
 |---|---|
 | `auth_allow_anonymous_sign_ins` | Öğrenci girişi anonim oturum + PIN ile çalışır. CAPTCHA ve PIN deneme sınırı bunu korur. |
 | `rls_enabled_no_policy` (student_credentials, student_sessions, pin_attempts, conversation_reads, deleted_students) | Politika yokluğu = tamamen kapalı; yalnızca SECURITY DEFINER fonksiyonlar erişir. |
+| `anon_security_definer_function_executable` (`report_client_error`) | Giriş sayfasındaki hataların da kaydedilmesi için; yalnızca temizlenmiş metin yazar, sınırlıdır. |
 | `authenticated_security_definer_function_executable` | Uygulamanın RPC'leri ve RLS yardımcıları; her biri kendi içinde yetki kontrolü yapar. |
 | `unused_index` | Veri az olduğu için henüz kullanılmadı; veri büyüyünce kullanılacak. |
 | `multiple_permissive_policies` | Okuma + yazma politikalarının üst üste gelmesi; bu ölçekte performans etkisi yok. |

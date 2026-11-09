@@ -247,3 +247,23 @@ export async function setGuardianConsent(studentId: string, given: boolean): Pro
   if (error) return fail(error);
   return { ok: true, data: undefined };
 }
+
+// ---------------- Tarayıcı hata kayıtları (yalnızca süper admin) ----------------
+export interface ClientErrorRow {
+  id: number;
+  at: string;
+  actor_kind: string | null;
+  kind: 'error' | 'promise' | 'render';
+  message: string;
+  stack: string | null;
+  path: string | null;
+  user_agent: string | null;
+}
+
+export async function listClientErrors(before?: number): Promise<Result<ClientErrorRow[]>> {
+  let q = supabase.from('client_errors').select('*').order('id', { ascending: false }).limit(AUDIT_PAGE_SIZE);
+  if (before) q = q.lt('id', before);
+  const { data, error } = await q;
+  if (error) return fail(error);
+  return { ok: true, data: (data as ClientErrorRow[]) || [] };
+}

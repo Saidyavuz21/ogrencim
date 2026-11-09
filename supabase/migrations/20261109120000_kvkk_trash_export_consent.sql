@@ -135,9 +135,11 @@ revoke all on function public.staff_deleted_students() from public, anon;
 grant execute on function public.staff_deleted_students() to authenticated;
 
 -- Geri alma: kopyadaki bütün kayıtlar geri yazılır.
--- Trigger'lar kapatılır (session_replication_role = replica): puan tekrar verilmesin, sahiplik/okul alanları
--- geri yükleyenin bilgisiyle ezilmesin. Bu yüzden yabancı anahtarlar elle kontrol edilir: bu sürede silinmiş
--- ödev/yarışma/quiz sorusuna ait satırlar geri yazılmaz; silinmiş öğretmene işaret eden alanlar boşaltılır.
+-- Geri yazılan tablolarda kullanıcı trigger'ları işlem boyunca kapatılır (ALTER TABLE … DISABLE TRIGGER USER):
+-- puan ikinci kez verilmesin, mesaj göndereni / sahiplik alanları geri alanın bilgisiyle ezilmesin, hız sınırına
+-- takılmasın. Yabancı anahtar kontrolleri açık kalır; bu sürede silinmiş ödev/yarışma/quiz sorusuna ait satırlar
+-- atlanır, silinmiş öğretmene işaret eden alanlar boşaltılır. Hepsi tek işlemdir: hata olursa hiçbir şey değişmez.
+-- (Supabase, fonksiyon içinden trigger'ları toptan kapatan ayara izin vermediği için bu yol kullanılıyor.)
 create or replace function public.staff_restore_student(p_student_id uuid)
 returns void
 language plpgsql
@@ -147,6 +149,11 @@ as $$
 declare
   d public.deleted_students;
   v jsonb;
+  t text;
+  c_tables constant text[] := array[
+    'students', 'student_credentials', 'points_history', 'grades', 'homework_checks', 'homework_submissions',
+    'quiz_attempts', 'quiz_answers', 'reading_results', 'class_members', 'conversation_reads', 'board_drawings', 'messages'
+  ];
 begin
   select * into d from public.deleted_students where student_id = p_student_id and purge_after > now();
   if d.student_id is null then
@@ -169,7 +176,11 @@ begin
   end if;
 
   v := d.data;
-  perform set_config('session_replication_role', 'replica', true);
+  -- Tablo kilidi beklenirse 5 saniyede vazgeç (o sırada yoğun bir işlem varsa)
+  perform set_config('lock_timeout', '5s', true);
+  foreach t in array c_tables loop
+    execute format('alter table public.%I disable trigger user', t);
+  end loop;
 
   insert into public.students
     select * from jsonb_populate_recordset(null::public.students, v -> 'students');
@@ -221,7 +232,9 @@ begin
    where m.student_id = p_student_id and m.added_by is not null
      and not exists (select 1 from auth.users u where u.id = m.added_by);
 
-  perform set_config('session_replication_role', 'origin', true);
+  foreach t in array c_tables loop
+    execute format('alter table public.%I enable trigger user', t);
+  end loop;
 
   delete from public.deleted_students where student_id = p_student_id;
 

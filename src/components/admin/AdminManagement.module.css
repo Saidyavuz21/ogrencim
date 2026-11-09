@@ -233,3 +233,195 @@
     justify-content: center;
   }
 }
+
+/* ===== Katı Hiyerarşi (Okul ➔ Sınıf ➔ Öğrenci) ===== */
+.hierarchyNav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f7f6f2;
+  border: 1px solid #e7e5dd;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.hierarchyCrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #25634b;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.hierarchyCrumb:hover {
+  background: #e6f1e9;
+}
+.hierarchyCurrent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #20352d;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+.hierarchyDivider {
+  color: #8a968f;
+  font-size: 13px;
+  user-select: none;
+}
+
+.levelHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.levelBackLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #58665f;
+  background: #fff;
+  border: 1px solid #d6d2c6;
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: all 120ms;
+}
+.levelBackLink:hover {
+  color: #20352d;
+  border-color: #25634b;
+  background: #f0f5f1;
+}
+
+.classesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+.classCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #dedad0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  text-align: left;
+  outline: none;
+}
+.classCard:hover {
+  border-color: #25634b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(37, 99, 75, 0.12);
+}
+.classCard:focus-visible {
+  outline: 3px solid #25634b;
+  outline-offset: 2px;
+}
+.classCardLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.classBadgeBig {
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  height: 48px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: #e6f1e9;
+  color: #25634b;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.classMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.classTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #20352d;
+}
+.classCount {
+  font-size: 13px;
+  color: #58665f;
+}
+.classArrow {
+  color: #25634b;
+  opacity: 0.7;
+  transition: transform 120ms, opacity 120ms;
+}
+.classCard:hover .classArrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.schoolRowClickable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid #dedad0;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 140ms ease;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 10px;
+}
+.schoolRowClickable:hover {
+  border-color: #25634b;
+  background: #fbfdfb;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(32, 53, 45, 0.06);
+}
+.schoolRowClickable:focus-visible {
+  outline: 3px solid #25634b;
+  outline-offset: 2px;
+}
+.schoolActiveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e6f1e9;
+  color: #25634b;
+  white-space: nowrap;
+}
+.schoolEmptyBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f7f6f2;
+  color: #8a968f;
+  white-space: nowrap;
+}
+

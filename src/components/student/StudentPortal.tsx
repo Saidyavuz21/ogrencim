@@ -25,6 +25,7 @@ import { useMyLiveSessions } from '../../lib/liveData';
 import styles from '../teacher/TeacherDashboard.module.css';
 import s from './StudentPortal.module.css';
 import { StudentNavigation } from './StudentNavigation';
+import { InstallAppBanner } from '../InstallAppBanner';
 
 interface StudentPortalProps {
   user: UserAccount;
@@ -140,6 +141,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
       />
       <main id="student-content" className={`${styles.dashboard} ${s.content}`}>
         <LiveJoinStrip sessions={liveSessions} onJoin={setLiveId} />
+        <InstallAppBanner variant={page === 'hesap' ? 'profile' : 'suggestion'} visible={page === 'home' || page === 'hesap'} />
         {page === 'home' || !info ? (
           <StudentHome
             me={me}

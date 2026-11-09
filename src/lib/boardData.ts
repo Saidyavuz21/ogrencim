@@ -669,11 +669,23 @@ async function fetchFontDataUrl(url: string): Promise<string | null> {
   }
 }
 
-export async function exportBoardPng(
+export interface RenderBoardSvgOptions {
+  width?: number;
+  type?: 'image/png' | 'image/webp' | 'image/jpeg';
+  quality?: number;
+  onFallbackMath?: () => void;
+}
+
+export async function renderBoardSvgToBlob(
   svg: SVGSVGElement,
-  filename: string,
-  onNotice?: (msg: string) => void
-): Promise<void> {
+  options: RenderBoardSvgOptions = {}
+): Promise<Blob> {
+  const targetW = options.width ? Math.max(64, Math.round(options.width)) : BOARD_W;
+  const targetH = options.width
+    ? Math.max(36, Math.round((targetW * BOARD_H) / BOARD_W))
+    : BOARD_H;
+  const mimeType = options.type || 'image/png';
+  const quality = options.quality;
   const hasForeignObject = !!svg.querySelector('foreignObject');
 
   const renderToBlob = async (targetSvg: SVGSVGElement): Promise<Blob> => {
@@ -772,20 +784,20 @@ export async function exportBoardPng(
         img.src = url;
       });
       const canvas = document.createElement('canvas');
-      canvas.width = BOARD_W;
-      canvas.height = BOARD_H;
+      canvas.width = targetW;
+      canvas.height = targetH;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Tarayıcı desteklemiyor');
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, BOARD_W, BOARD_H);
-      ctx.drawImage(img, 0, 0, BOARD_W, BOARD_H);
+      ctx.fillRect(0, 0, targetW, targetH);
+      ctx.drawImage(img, 0, 0, targetW, targetH);
 
       const blob = await new Promise<Blob | null>((resolve, reject) => {
         try {
           canvas.toBlob((b) => {
             if (b) resolve(b);
             else reject(new Error('Canvas toBlob başarısız'));
-          }, 'image/png');
+          }, mimeType, quality);
         } catch (err) {
           reject(err);
         }
@@ -798,8 +810,7 @@ export async function exportBoardPng(
   };
 
   try {
-    const blob = await renderToBlob(svg);
-    downloadBlob(blob, filename);
+    return await renderToBlob(svg);
   } catch (err) {
     if (hasForeignObject) {
       try {
@@ -819,13 +830,24 @@ export async function exportBoardPng(
           fo.parentNode?.replaceChild(textEl, fo);
         }
         const blob = await renderToBlob(fallbackSvg);
-        downloadBlob(blob, filename);
-        onNotice?.('Formüller resimde düz yazı olarak çıktı.');
-        return;
+        options.onFallbackMath?.();
+        return blob;
       } catch {
         // Fallback da başarısız olursa orijinal hatayı fırlat
       }
     }
     throw err;
   }
+}
+
+export async function exportBoardPng(
+  svg: SVGSVGElement,
+  filename: string,
+  onNotice?: (msg: string) => void
+): Promise<void> {
+  const blob = await renderBoardSvgToBlob(svg, {
+    type: 'image/png',
+    onFallbackMath: () => onNotice?.('Formüller resimde düz yazı olarak çıktı.'),
+  });
+  downloadBlob(blob, filename);
 }

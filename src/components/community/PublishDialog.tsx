@@ -1,15 +1,34 @@
 'use client';
 
 // Toplulukta paylaş: bilgiler, kazanım kodları, kişisel veri taraması ve onay.
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { Modal } from '../files/FilesUi';
 import { SUBJECT_OPTIONS } from '../files/FileDialogs';
 import { GRADE_OPTIONS } from '../../lib/filesData';
-import { CommunityMeta, OUTCOME_PATTERN, parseOutcomes, PublishInput, publishToCommunity, scanForPublish } from '../../lib/communityData';
+import {
+  BoardPage,
+  WidgetEl,
+  boardImageUrls,
+  getBoard,
+  mediaRefs,
+  renderBoardSvgToBlob,
+} from '../../lib/boardData';
+import { BoardCanvas } from '../board/BoardCanvas';
+import { WidgetContext, WidgetView } from '../board/Widgets';
+import {
+  CommunityMeta,
+  OUTCOME_PATTERN,
+  parseOutcomes,
+  PublishInput,
+  publishToCommunity,
+  scanForPublish,
+} from '../../lib/communityData';
+import { uploadItemThumb } from '../../lib/communitySocialData';
 import f from '../files/Files.module.css';
 import styles from './Community.module.css';
+import socialStyles from './CommunitySocial.module.css';
 
 export function PublishDialog({ source, initial, onClose, onPublished }: {
   source: PublishInput;
@@ -28,6 +47,45 @@ export function PublishDialog({ source, initial, onClose, onPublished }: {
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Tahta önizleme resmi için ilk sayfa hazırlığı
+  const [firstPage, setFirstPage] = useState<BoardPage | null>(null);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  useEffect(() => {
+    if (source.kind !== 'board') return;
+    let alive = true;
+    getBoard(source.boardId).then(async (res) => {
+      if (!alive || !res.ok) return;
+      const p0 = res.data.content.pages[0] || null;
+      setFirstPage(p0);
+      if (p0) {
+        const refs = mediaRefs([p0]);
+        if (refs.length > 0) {
+          const u = await boardImageUrls(refs);
+          if (alive) setThumbUrls(u);
+        }
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [source]);
+
+  const thumbCtx = useMemo<WidgetContext>(() => {
+    const widgets = new Map(
+      (firstPage?.elements || [])
+        .filter((e): e is WidgetEl => e.type === 'widget')
+        .map((w) => [w.id, w])
+    );
+    return {
+      mode: 'teacher',
+      questions: new Map(),
+      allWidgets: widgets,
+      mediaUrls: thumbUrls,
+    };
+  }, [firstPage, thumbUrls]);
 
   const meta = (): CommunityMeta => ({
     title: title.trim(),
@@ -53,6 +111,27 @@ export function PublishDialog({ source, initial, onClose, onPublished }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- yalnızca metin alanları değişince yeniden taranır
   }, [title, description]);
 
+  const generateAndUploadThumb = async (itemId: string) => {
+    if (source.kind !== 'board' || !svgRef.current) return;
+    const attempts: { width: number; type: 'image/webp' | 'image/jpeg'; quality: number }[] = [
+      { width: 640, type: 'image/webp', quality: 0.75 },
+      { width: 640, type: 'image/webp', quality: 0.55 },
+      { width: 540, type: 'image/webp', quality: 0.45 },
+      { width: 480, type: 'image/jpeg', quality: 0.4 },
+    ];
+    for (const opt of attempts) {
+      try {
+        const blob = await renderBoardSvgToBlob(svgRef.current, opt);
+        if (blob.size <= 200 * 1024) {
+          await uploadItemThumb(itemId, blob);
+          return;
+        }
+      } catch {
+        // Hata olursa sessizce geç
+      }
+    }
+  };
+
   const publish = async () => {
     const m = meta();
     if (m.title.length < 3) { setError('Başlık en az 3 karakter olmalı.'); return; }
@@ -60,14 +139,33 @@ export function PublishDialog({ source, initial, onClose, onPublished }: {
     setBusy(true);
     setError(null);
     const res = await publishToCommunity(source, m, confirm);
+    if (!res.ok) {
+      setBusy(false);
+      setError(res.error);
+      return;
+    }
+    await generateAndUploadThumb(res.data);
     setBusy(false);
-    if (!res.ok) { setError(res.error); return; }
     onPublished(res.data);
   };
 
   const blocked = !!scan?.findings.length;
   return (
     <Modal title="Toplulukta paylaş" kicker={source.kind === 'board' ? 'Tahta' : 'Soru seti'} onClose={onClose} busy={busy} wide>
+      {source.kind === 'board' && firstPage && (
+        <div className={socialStyles.hiddenThumbStage} aria-hidden="true">
+          <BoardCanvas
+            page={firstPage}
+            imageUrls={thumbUrls}
+            renderWidget={(w) => <WidgetView el={w} ctx={thumbCtx} />}
+            widgetsPassive
+            thumbnail
+            svgRef={(node) => {
+              svgRef.current = node;
+            }}
+          />
+        </div>
+      )}
       <div className={styles.form}>
         <p className={f.muted}>
           Paylaştığınız içerik platformdaki bütün öğretmenlere görünür (öğrenciler görmez). O anki hâlinin kopyası paylaşılır; sonradan tahtanızda
@@ -126,4 +224,3 @@ export function PublishDialog({ source, initial, onClose, onPublished }: {
     </Modal>
   );
 }
-

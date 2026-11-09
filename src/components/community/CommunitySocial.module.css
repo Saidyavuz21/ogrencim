@@ -642,7 +642,7 @@
 /* Galeri (Paylaşımlar) */
 .galleryGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
   gap: 16px;
 }
 
@@ -873,6 +873,7 @@
 }
 
 @media (max-width: 767px) {
+
   .profilePanel,
   .emptyBox,
   .modalCard,
@@ -908,3 +909,528 @@
   }
 }
 
+
+/* ===== Aşama 2: Akış, Paylaşım Kutusu, Gönderi Kartı, Yan Sütun ===== */
+
+.hiddenThumbStage {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 640px;
+  height: 360px;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  z-index: -1;
+}
+
+.feedLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 20px;
+}
+
+.feedMain {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.feedAside {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.mobileSideCollapse {
+  display: none;
+}
+
+.asideCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.asideTitle {
+  margin: 0;
+  color: var(--teacher-text, #20352d);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.suggestionList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.suggestionRow:first-child {
+  padding-top: 0;
+}
+
+.suggestionRow:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.topicChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topicChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 999px;
+  background: #f7f6f2;
+  color: var(--teacher-text, #20352d);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.topicRemoveBtn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--teacher-muted, #58665f);
+  cursor: pointer;
+}
+
+.topicRemoveBtn:hover {
+  background: #eeece5;
+  color: #8f2232;
+}
+
+.topicAddForm {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--teacher-divider, #eeece5);
+}
+
+/* Üst çubuk: sekmeler + görünüm anahtarı */
+.feedTopBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.viewSwitch {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.viewSwitchBtn {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--teacher-muted, #58665f);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.viewSwitchBtn[aria-pressed='true'] {
+  background: var(--teacher-selected, #e6f1e9);
+  color: var(--teacher-primary, #25634b);
+}
+
+.viewSwitchBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary, #25634b);
+  outline-offset: 1px;
+}
+
+/* Arama ve Süz çubuğu */
+.searchBarWrap {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.searchBarRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchInputLabel {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 12px;
+  background: #f7f6f2;
+  color: var(--teacher-muted, #58665f);
+}
+
+.searchInputLabel:focus-within {
+  border-color: var(--teacher-primary, #25634b);
+  background: #fff;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.filterDrawer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--teacher-divider, #eeece5);
+}
+
+/* Paylaşım kutusu (PostComposer) */
+.composerCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.composerMetaRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.composerLinkFields {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 12px;
+  background: #f7f6f2;
+}
+
+.composerFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.composerTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Gönderi kartı (PostCard) */
+.postCard {
+  display: grid;
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.postHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.postText {
+  margin: 0;
+  color: var(--teacher-text, #20352d);
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.readMoreBtn {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--teacher-primary, #25634b);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.readMoreBtn:hover {
+  text-decoration: underline;
+}
+
+.linkBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  background: #f7f6f2;
+  color: var(--teacher-text, #20352d);
+  text-decoration: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.linkBox:hover {
+  border-color: var(--teacher-primary, #25634b);
+  background: var(--teacher-selected, #e6f1e9);
+}
+
+.linkBoxText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.linkBoxTitle {
+  color: var(--teacher-primary, #25634b);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.linkBoxDomain {
+  color: var(--teacher-muted, #58665f);
+  font-size: 12px;
+}
+
+/* Gönderi içindeki materyal kutusu (kind = 'item') */
+.itemBox {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  background: #faf9f5;
+}
+
+.itemBoxBody {
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.itemBoxTitle {
+  margin: 0;
+  color: var(--teacher-text, #20352d);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.itemBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.itemBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #eeece5;
+  color: #4b5852;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.itemBadgePrimary {
+  background: var(--teacher-selected, #e6f1e9);
+  color: var(--teacher-primary, #25634b);
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Gönderi alt tepki çubuğu */
+.reactionBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.reactBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reactBtn:hover:not(:disabled) {
+  background: #f4f2ec;
+}
+
+.reactBtn[aria-pressed='true'] {
+  border-color: var(--teacher-primary, #25634b);
+  background: var(--teacher-selected, #e6f1e9);
+  color: var(--teacher-primary, #25634b);
+}
+
+.reactBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reactBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary, #25634b);
+  outline-offset: 2px;
+}
+
+.suggestionsEmptyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.suggestionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  background: #faf9f5;
+}
+
+@media (max-width: 1023px) {
+  .feedLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .feedAside {
+    display: none;
+  }
+
+  .mobileSideCollapse {
+    display: grid;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--teacher-border, #dedad0);
+    border-radius: 16px;
+    background: #fff;
+  }
+
+  .mobileSideToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--teacher-text, #20352d);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 767px) {
+
+  .asideCard,
+  .searchBarWrap,
+  .composerCard,
+  .postCard {
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .filterDrawer,
+  .composerMetaRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .itemBox {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .searchInput {
+    font-size: 16px;
+  }
+}

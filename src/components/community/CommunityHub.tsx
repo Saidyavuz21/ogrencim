@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { CommunityPage } from './CommunityPage';
+import { CommunityFeed } from './CommunityFeed';
 import { TeacherProfileView } from './TeacherProfileView';
 
 export type CommunityHubView = 'feed' | 'teacher';
@@ -19,9 +19,15 @@ function readTeacherIdFromUrl(): string | null {
 
 export interface CommunityHubProps {
   onOpenProfile?: () => void;
+  onOpenBoards?: () => void;
+  onOpenQuestions?: () => void;
 }
 
-export function CommunityHub({ onOpenProfile }: CommunityHubProps) {
+export function CommunityHub({
+  onOpenProfile,
+  onOpenBoards,
+  onOpenQuestions,
+}: CommunityHubProps) {
   const [teacherId, setTeacherId] = useState<string | null>(readTeacherIdFromUrl);
   const view: CommunityHubView = teacherId ? 'teacher' : 'feed';
 
@@ -68,6 +74,11 @@ export function CommunityHub({ onOpenProfile }: CommunityHubProps) {
     );
   }
 
-  return <CommunityPage onOpenTeacher={openTeacher} />;
+  return (
+    <CommunityFeed
+      onOpenTeacher={openTeacher}
+      onOpenBoards={onOpenBoards}
+      onOpenQuestions={onOpenQuestions}
+    />
+  );
 }
-

@@ -174,7 +174,7 @@ export function QuestionBankPage() {
             return { title: topic.length === 1 ? `${topic[0]} soruları` : '', grade: one('grade'), subject: one('subject') };
           })()}
           onClose={() => setSharing(false)}
-          onPublished={() => { setSharing(false); setPicking(false); setPicked([]); setNotice({ kind: 'ok', text: 'Soru seti toplulukta paylaşıldı. Keşfet > Paylaştıklarım’da görebilirsiniz.' }); }}
+          onPublished={() => { setSharing(false); setPicking(false); setPicked([]); setNotice({ kind: 'ok', text: 'Soru seti toplulukta paylaşıldı. Topluluk > Paylaştıklarım’da görebilirsiniz.' }); }}
         />
       )}
       {editing && (

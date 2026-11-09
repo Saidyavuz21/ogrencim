@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, MessageSquare } from 'lucide-react';
+import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, Globe, MessageSquare } from 'lucide-react';
 import { restoreSession, signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
 import styles from './HomePage.module.css';
 import { BrandLogo } from '../BrandLogo';
@@ -84,6 +84,8 @@ export default function HomePage() {
           <nav className={styles.nav} aria-label="Ana menü">
             {['Ana Sayfa', 'Sistem Hakkında', 'İletişim'].map(item => <button key={item} type="button" aria-current={section === item ? 'page' : undefined} onClick={() => setSection(item)}>{item}</button>)}
           </nav>
+          {/* Herkese açık topluluk sayfası gelene kadar giriş sonrası Topluluk sayfasına götürür */}
+          <Link className={styles.communityLink} href="/giris?sayfa=topluluk"><Globe size={17} aria-hidden="true" />Topluluk</Link>
         </div>
       </header>
 

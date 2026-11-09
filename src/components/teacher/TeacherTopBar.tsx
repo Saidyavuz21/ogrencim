@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, User, MessageSquare, Menu } from '../icons';
+import { Bell, User, MessageSquare, Menu, Globe } from '../icons';
 import { BrandLogo } from '../BrandLogo';
 import { CustomSelect } from '../CustomSelect';
 import type { UserAccount } from '../../data/portalData';
@@ -21,9 +21,11 @@ interface TeacherTopBarProps {
   onMessages: () => void;
   unreadMessages: number;
   isMessages: boolean;
+  onCommunity: () => void;
+  isCommunity: boolean;
 }
 
-export function TeacherTopBar({ user, unreadCount, isProfile, menuOpen, onMenu, onHome, onNotifications, onProfile, classNames, selectedClass, onSelectClass, onMessages, unreadMessages, isMessages }: TeacherTopBarProps) {
+export function TeacherTopBar({ user, unreadCount, isProfile, menuOpen, onMenu, onHome, onNotifications, onProfile, classNames, selectedClass, onSelectClass, onMessages, unreadMessages, isMessages, onCommunity, isCommunity }: TeacherTopBarProps) {
   const initials = (user?.name || '').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('tr-TR')).join('') || 'Ö';
   return (
     <header className={styles.topBar}>
@@ -48,6 +50,10 @@ export function TeacherTopBar({ user, unreadCount, isProfile, menuOpen, onMenu, 
         />
       </div>
       <div className={styles.topBarActions}>
+        <button type="button" className={styles.topBarMessages} onClick={onCommunity} aria-current={isCommunity ? 'page' : undefined}>
+          <Globe size={21} aria-hidden="true" />
+          <span>Topluluk</span>
+        </button>
         <button type="button" className={styles.topBarMessages} onClick={onMessages} aria-current={isMessages ? 'page' : undefined} aria-label={unreadMessages > 0 ? `Mesajlar, ${unreadMessages} okunmamış` : 'Mesajlar'}>
           <MessageSquare size={21} aria-hidden="true" />
           <span>Mesajlar</span>

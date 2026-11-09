@@ -51,7 +51,7 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'reading', slug: 'okuma-yarismasi', title: 'Okuma yarışması', description: '1 dakikada okunan kelime, sıralama, gelişim', icon: BookOpen, group: 'Ders ve değerlendirme' },
   { id: 'grade_entry', slug: 'not-girisi', title: 'Not girişi', description: 'Yazılı ve sözlü notlar', icon: TrendingUp, group: 'Ders ve değerlendirme' },
   { id: 'boards', slug: 'tahtalarim', title: 'Tahtalarım', description: 'Etkileşimli tahta: çiz, sun, ödev olarak gönder', icon: Layers, group: 'Ders ve değerlendirme' },
-  { id: 'community', slug: 'kesfet', title: 'Keşfet', description: 'Öğretmenlerin paylaştığı tahta ve soru setleri', icon: Globe, group: 'Ders ve değerlendirme' },
+  { id: 'community', slug: 'topluluk', title: 'Topluluk', description: 'Öğretmenlerin paylaştığı tahta ve soru setleri', icon: Globe, group: 'Ders ve değerlendirme' },
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
   { id: 'consent', slug: 'veli-onayi', title: 'Veli onayları', description: 'İmzalı KVKK onay formunu işaretle', icon: ShieldCheck, group: 'Öğrenciler ve sınıflar' },
   { id: 'class_report', slug: 'sinif-karnesi', title: 'Sınıf karnesi', description: 'Not ortalamaları, dağılım, öğrenci gelişimi', icon: BarChart3, group: 'Öğrenciler ve sınıflar' },
@@ -69,8 +69,13 @@ export const visibleTeacherPages = (isSchoolAdmin?: boolean) => TEACHER_PAGES.fi
 
 export const getTeacherPage = (id: TeacherPageId) => TEACHER_PAGES.find((p) => p.id === id);
 
-export const pageIdFromSlug = (slug: string | null): TeacherPageId =>
-  TEACHER_PAGES.find((p) => p.slug === slug)?.id ?? 'home';
+/** Eski adresler (yer imleri bozulmasın) */
+const SLUG_ALIASES: Record<string, string> = { kesfet: 'topluluk' };
+
+export const pageIdFromSlug = (slug: string | null): TeacherPageId => {
+  const s = slug ? SLUG_ALIASES[slug] ?? slug : slug;
+  return TEACHER_PAGES.find((p) => p.slug === s)?.id ?? 'home';
+};
 
 /** Sayfanın adresi: menü ve kartlar gerçek link olur (sağ tık / orta tık ile yeni sekmede açılabilir) */
 export const teacherPageHref = (id: TeacherPageId) => {

@@ -198,7 +198,7 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
           source={{ kind: 'board', boardId: sharing.id }}
           initial={{ title: sharing.title, grade: sharing.grade || '', subject: sharing.subject || '' }}
           onClose={() => setSharing(null)}
-          onPublished={() => { setNotice({ kind: 'ok', text: `"${sharing.title}" toplulukta paylaşıldı. Keşfet > Paylaştıklarım’da görebilirsiniz.` }); setSharing(null); }}
+          onPublished={() => { setNotice({ kind: 'ok', text: `"${sharing.title}" toplulukta paylaşıldı. Topluluk > Paylaştıklarım’da görebilirsiniz.` }); setSharing(null); }}
         />
       )}
       {dialog && (

@@ -83,7 +83,7 @@ export function CommunityPage({ admin }: {
   const open = items?.find((x) => x.id === openId) || null;
 
   return (
-    <section className={`${f.page} ${styles.workspace}`} aria-label="Keşfet">
+    <section className={`${f.page} ${styles.workspace}`} aria-label="Topluluk">
       <div className={styles.intro}>
         <p>
           Diğer öğretmenlerin paylaştığı tahtalar ve soru setleri. Beğendiğinizi önizleyin, kopyalayıp kendinize göre uyarlayın; kopyada orijinal yazar kaynak olarak yazılır.

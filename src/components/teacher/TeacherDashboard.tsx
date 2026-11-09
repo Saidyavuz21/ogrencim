@@ -172,6 +172,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         onMessages={() => openPage('messages')}
         unreadMessages={unreadMessages}
         isMessages={page === 'messages'}
+        onCommunity={() => openPage('community')}
+        isCommunity={page === 'community'}
       />
       <TeacherSidebar
         collapsed={sidebarCollapsed}

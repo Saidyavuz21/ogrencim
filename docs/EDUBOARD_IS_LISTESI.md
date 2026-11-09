@@ -23,12 +23,12 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
-| 8 | Güvenlik ve KVKK | 0 / 13 |
+| 8 | Güvenlik ve KVKK | 8 / 13 |
 | 9 | Kalite: test, CI, izleme | 0 / 7 |
 | 10 | Canlı ders | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **80 / 121** |
+| | **Toplam** | **88 / 121** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -163,17 +163,17 @@ Ortak kararlar:
 
 - [ ] Admin şifresini değiştir (eski şifre git geçmişinde açık) — *K-14*
 - [ ] Supabase: sızdırılmış şifre korumasını aç — *K-1*
-- [ ] Anonim öğrenci girişine CAPTCHA — *K-1, K-14*
-- [ ] **İşlem kaydı:** kim, ne zaman, neyi değiştirdi/sildi (eski ve yeni değerle) — *K-14*
-- [ ] Erişim kaydı: kim hangi öğrencinin verisini görüntüledi — *K-15*
-- [ ] Gizli anahtar sızıntı taraması (gitleaks) — *K-14*
-- [ ] PIN şifreleme anahtarını yenileme yöntemi — *K-14*
-- [ ] Genel istek hız sınırları (giriş dışı uçlar) — *K-14*
-- [ ] Yumuşak silme (yanlışlıkla silineni geri alma süresi) — *K-15*
-- [ ] Öğrenci verilerini dışa aktarma (KVKK talebi) — *K-15*
-- [ ] Silme talebi akışı ve kaydı (unutulma hakkı) — *K-15*
-- [ ] Aydınlatma metni ve veli açık rızası — *K-15*
-- [ ] Supabase güvenlik ve performans uyarılarını (advisors) sıfırlama — *K-14*
+- [~] Anonim öğrenci girişine CAPTCHA — *K-1, K-14* · kod hazır (`88e712e`, öğretmen/admin girişi ve kayıt da dahil); Turnstile anahtarı ve Supabase ayarı bekleniyor (docs/GUVENLIK.md)
+- [x] **İşlem kaydı:** kim, ne zaman, neyi değiştirdi/sildi (eski ve yeni değerle) — *K-14* · 9 Kasım 2026 · `88e712e`, `51e0a24`
+- [~] Erişim kaydı: kim hangi öğrencinin verisini görüntüledi — *K-15* · PIN görüntüleme ve dışa aktarma yazılıyor (`88e712e`); öğretmen panelinde profil/rapor açılışı henüz bağlanmadı (`logStudentAccess`)
+- [x] Gizli anahtar sızıntı taraması (gitleaks) — *K-14* · 9 Kasım 2026 · `5e47c79`
+- [x] PIN şifreleme anahtarını yenileme yöntemi — *K-14* · 9 Kasım 2026 · `23cd529`
+- [x] Genel istek hız sınırları (giriş dışı uçlar) — *K-14* · 9 Kasım 2026 · `88e712e`
+- [x] Yumuşak silme (yanlışlıkla silineni geri alma süresi) — *K-15* · 9 Kasım 2026 · `88e712e`, `cf9ae62`, `df54fe2` (yönetim panelinde; öğretmen panelinde Silinenler sayfası henüz yok)
+- [x] Öğrenci verilerini dışa aktarma (KVKK talebi) — *K-15* · 9 Kasım 2026 · `88e712e`
+- [x] Silme talebi akışı ve kaydı (unutulma hakkı) — *K-15* · 9 Kasım 2026 · `88e712e`
+- [~] Aydınlatma metni ve veli açık rızası — *K-15* · `/aydinlatma` taslağı ve rıza kaydı hazır (`88e712e`); okul bilgileri ve hukuki onay bekleniyor
+- [x] Supabase güvenlik ve performans uyarılarını (advisors) sıfırlama — *K-14* · 9 Kasım 2026 · `5e47c79` (bilerek bırakılanlar docs/GUVENLIK.md'de)
 
 ## 9. Kalite: test, CI, izleme
 
@@ -237,3 +237,4 @@ Ortak kararlar:
 | 7 Kasım 2026 | Ek gruplar ve sınıf kodu, okul yöneticisi, kampüs, okul alanı/zümre, grup mesajında okundu — Paket 6 tamam | `6eb93a1` |
 | 7 Kasım 2026 | Etkileşimli tahta: çizim, şekil, zemin, not/görsel, parçalar, sunum, ödev olarak çözme, PDF/PNG — Paket 7 tamam | `73358e2` |
 | 8 Kasım 2026 | Soru bankası ve quiz: formül ve zengin metin (ortak RichTextField, tahtayla aynı altyapı) | `a8d7ea5` |
+| 9 Kasım 2026 | Güvenlik ve KVKK: Supabase uyarıları, gitleaks, PIN anahtarı yenileme, işlem kaydı, hız sınırları, silinenler kutusu (30 gün), dışa aktarma, veli talepleri ve kalıcı silme (Paket 8, 8/13) | `5e47c79`, `23cd529`, `88e712e`, `cf9ae62`, `df54fe2`, `51e0a24` |

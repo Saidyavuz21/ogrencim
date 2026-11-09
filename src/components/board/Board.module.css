@@ -827,8 +827,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
   max-width: 96%;
-  overflow-x: auto;
+  /* Açılır menüler (renk, vurgu, kutu…) çubuğun dışına taşabilmeli;
+     overflow-x: auto dikey taşmayı da kırpıp çubuğu kaydırılabilir yapıyordu. */
+  overflow: visible;
   padding: 4px 6px;
   background: #ffffff;
   border: 1px solid #d4d0c5;

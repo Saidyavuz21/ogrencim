@@ -195,6 +195,11 @@ Ortak kararlar:
 - [x] Tahtada eşzamanlı ortak çalışma — *K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (canlı derste “Ortak çalışma”: bağlı bütün öğrenciler aynı anda tahtaya yazar)
 - [x] Tahta değişiklik geçmişi ve geri dönme — *K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (10 dakikada bir kopya, son 20 sürüm, 90 gün)
 
+**İleride (canlı ders, 10 Kasım 2026 kararı — şimdilik yapılmayacak):**
+- Ders sonu özeti: soru başına doğru/yanlış, öğrenci bazında; rapora ya da öğrenci gelişimine bağlanabilir (cevaplar zaten 30 gün tutuluyor)
+- Derste yazılanları tahtaya kaydetme seçeneği (şimdi ders bitince çizimler siliniyor, tahta değişmiyor)
+- Canlı sorudan doğru yapana otomatik puan
+
 ## 11. Topluluk / Keşfet
 
 - [ ] İçeriği (tahta/quiz/set) herkese açık paylaşma — *K-10*

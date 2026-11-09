@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { UserCheck, Building, Users, GraduationCap, School, Bell, User, FileCheck2, Library, RotateCcw, ShieldCheck, FileText, Globe } from '../icons';
+import { UserCheck, Building, Users, GraduationCap, School, Bell, User, FileCheck2, Library, RotateCcw, ShieldCheck, FileText, Globe, Flag } from '../icons';
 
 export type AdminPageId =
   | 'home'
@@ -13,6 +13,7 @@ export type AdminPageId =
   | 'announcements'
   | 'library'
   | 'community'
+  | 'community_reports'
   | 'trash'
   | 'logs'
   | 'privacy'
@@ -39,6 +40,7 @@ export const ADMIN_PAGES: AdminPageInfo[] = [
   { id: 'classes', slug: 'siniflar', title: 'Sınıflar', description: 'Okullara göre sınıflar ve rehber öğretmenler', icon: School, group: 'Okul' },
   { id: 'library', slug: 'kutuphane', title: 'Ortak kütüphane', description: 'Bütün öğretmenlerin kullanacağı görsel ve belgeler', icon: Library, group: 'İçerik' },
   { id: 'community', slug: 'topluluk', title: 'Topluluk', description: 'Paylaşılan içerikler: editörün seçimi, gizleme', icon: Globe, group: 'İçerik' },
+  { id: 'community_reports', slug: 'topluluk-sikayetleri', title: 'Topluluk şikâyetleri', description: 'Şikâyet edilen gönderi, yorum ve profiller', icon: Flag, group: 'İçerik' },
   { id: 'announcements', slug: 'duyurular', title: 'Duyurular', description: 'Duyuru yayınla ve kaldır', icon: Bell, group: 'İletişim' },
   { id: 'privacy', slug: 'kvkk', title: 'KVKK ve veli rızası', description: 'Veli talepleri, veri indirme, kalıcı silme, rıza kaydı', icon: ShieldCheck, group: 'Güvenlik' },
   { id: 'trash', slug: 'silinenler', title: 'Silinenler', description: 'Silinen öğrencileri 30 gün içinde geri al', icon: RotateCcw, group: 'Güvenlik' },

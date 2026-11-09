@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   KIND_LABEL,
   copyFromCommunity,
@@ -10,17 +10,23 @@ import {
   type CommunitySummary,
 } from '../../lib/communityData';
 import {
+  addComment,
   blockTeacher,
+  deleteComment,
   deletePost,
+  listComments,
   react as reactToPost,
   reportContent,
   thumbUrl,
   updatePost,
+  type FeedComment,
   type FeedPost,
+  type ReportKind,
 } from '../../lib/communitySocialData';
 import { GRADE_OPTIONS } from '../../lib/filesData';
 import { CustomSelect } from '../CustomSelect';
 import { useDialog } from '../ConfirmDialog';
+import { Spinner } from '../Spinner';
 import { SUBJECT_OPTIONS } from '../files/FileDialogs';
 import {
   ArrowUpRight,
@@ -36,13 +42,14 @@ import {
   MessageSquare,
   MoreHorizontal,
   Save,
+  Send,
   Star,
   Trash2,
   VolumeX,
   X,
 } from '../icons';
 import { Notice, formatDate, type NoticeState } from '../teacher/TeacherUi';
-import { TeacherByline } from './TeacherAvatar';
+import { TeacherAvatar, TeacherByline } from './TeacherAvatar';
 import s from './CommunitySocial.module.css';
 
 const KIND_ICON: Record<CommunityKind, React.ComponentType<{ size?: number }>> = {
@@ -118,12 +125,12 @@ export function feedPostToSummary(post: FeedPost): CommunitySummary | null {
 
 export interface PostCardProps {
   post: FeedPost;
+  defaultCommentsOpen?: boolean;
   onOpenTeacher: (teacherId: string) => void;
   onOpenPreview: (summary: CommunitySummary) => void;
   onUpdated: (postId: string, patch: Partial<FeedPost>) => void;
   onDeleted: (postId: string) => void;
   onMutedAuthor?: (authorId: string) => void;
-  onOpenComments?: (postId: string) => void;
 }
 
 const EDIT_SUBJECT_OPTIONS = [{ value: '', label: 'Branş seçilmedi' }, ...SUBJECT_OPTIONS];
@@ -131,17 +138,18 @@ const EDIT_GRADE_OPTIONS = [{ value: '', label: 'Kademe seçilmedi' }, ...GRADE_
 
 export function PostCard({
   post,
+  defaultCommentsOpen = false,
   onOpenTeacher,
   onOpenPreview,
   onUpdated,
   onDeleted,
   onMutedAuthor,
-  onOpenComments,
 }: PostCardProps) {
   const { confirm } = useDialog();
   const menuRef = useRef<HTMLDivElement>(null);
   const reportTitleId = useId();
   const reportReasonId = useId();
+  const commentInputId = useId();
 
   const [nowMs] = useState(() => Date.now());
   const [expandedText, setExpandedText] = useState(false);
@@ -162,10 +170,47 @@ export function PostCard({
   const [editGrade, setEditGrade] = useState(post.grade || '');
   const [editBusy, setEditBusy] = useState(false);
 
-  // Şikâyet modalı
-  const [reportOpen, setReportOpen] = useState(false);
+  // Yorumlar durumu
+  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
+  const [comments, setComments] = useState<FeedComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsMore, setCommentsMore] = useState(false);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState('');
+  const [commentBusy, setCommentBusy] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  // Şikâyet modalı (gönderi veya yorum)
+  const [reportTarget, setReportTarget] = useState<{ kind: ReportKind; id: string } | null>(null);
   const [reportReason, setReportReason] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
+
+  const fetchComments = useCallback(
+    async (offset = 0) => {
+      setCommentsLoading(true);
+      setCommentsError(null);
+      const res = await listComments(post.id, 50, offset);
+      setCommentsLoading(false);
+      if (!res.ok) {
+        setCommentsError(res.error);
+        return;
+      }
+      setComments((prev) => {
+        if (offset === 0) return res.data;
+        const existing = new Set(prev.map((c) => c.id));
+        return [...res.data.filter((c) => !existing.has(c.id)), ...prev];
+      });
+      setCommentsMore(res.data.length >= 50);
+    },
+    [post.id]
+  );
+
+  useEffect(() => {
+    if (commentsOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void fetchComments(0);
+    }
+  }, [commentsOpen, fetchComments]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -357,22 +402,65 @@ export function PostCard({
     onMutedAuthor?.(post.author.id);
   };
 
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = commentText.trim();
+    if (!clean || commentBusy) return;
+    if (clean.length > 1000) {
+      setNotice({ kind: 'error', text: 'Yorum en fazla 1000 karakter olabilir.' });
+      return;
+    }
+    setNotice(null);
+    setCommentBusy(true);
+    const res = await addComment(post.id, clean);
+    setCommentBusy(false);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: res.error });
+      return;
+    }
+    setCommentText('');
+    setComments((prev) => [...prev, res.data]);
+    onUpdated(post.id, { comment_count: post.comment_count + 1 });
+  };
+
+  const handleDeleteComment = async (c: FeedComment) => {
+    if (deletingCommentId) return;
+    const ok = await confirm({
+      title: 'Yorumu sil',
+      message: 'Bu yorumu silmek istediğinize emin misiniz?',
+      confirmText: 'Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    setNotice(null);
+    setDeletingCommentId(c.id);
+    const res = await deleteComment(c.id);
+    setDeletingCommentId(null);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: res.error });
+      return;
+    }
+    setComments((prev) => prev.filter((x) => x.id !== c.id));
+    onUpdated(post.id, { comment_count: Math.max(0, post.comment_count - 1) });
+  };
+
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (reportBusy) return;
+    if (!reportTarget || reportBusy) return;
     const clean = reportReason.trim();
     if (clean.length < 3 || clean.length > 500) {
       setNotice({ kind: 'error', text: 'Şikâyet nedeni 3 ile 500 karakter arasında olmalıdır.' });
       return;
     }
     setReportBusy(true);
-    const res = await reportContent('post', post.id, clean);
+    const res = await reportContent(reportTarget.kind, reportTarget.id, clean);
     setReportBusy(false);
     if (!res.ok) {
       setNotice({ kind: 'error', text: res.error });
       return;
     }
-    setReportOpen(false);
+    setReportTarget(null);
     setReportReason('');
     setNotice({ kind: 'ok', text: 'Bildiriminiz yöneticiye iletildi. Teşekkürler.' });
   };
@@ -471,7 +559,7 @@ export function PostCard({
                     onClick={() => {
                       setMenuOpen(false);
                       setReportReason('');
-                      setReportOpen(true);
+                      setReportTarget({ kind: 'post', id: post.id });
                     }}
                   >
                     <Flag size={16} aria-hidden="true" />
@@ -695,15 +783,131 @@ export function PostCard({
         <button
           type="button"
           className={s.reactBtn}
-          onClick={() => onOpenComments?.(post.id)}
+          aria-expanded={commentsOpen}
+          aria-pressed={commentsOpen}
+          onClick={() => setCommentsOpen((v) => !v)}
         >
           <MessageSquare size={16} aria-hidden="true" />
           <span>Yorumlar ({post.comment_count})</span>
         </button>
       </div>
 
-      {/* Şikâyet modalı */}
-      {reportOpen && (
+      {/* Yorumlar bölümü */}
+      {commentsOpen && (
+        <div className={s.commentsSection}>
+          {commentsError && <Notice notice={{ kind: 'error', text: commentsError }} />}
+
+          {commentsMore && (
+            <div>
+              <button
+                type="button"
+                className={s.btnSecondary}
+                disabled={commentsLoading}
+                onClick={() => fetchComments(comments.length)}
+              >
+                {commentsLoading ? 'Yükleniyor…' : 'Önceki yorumlar'}
+              </button>
+            </div>
+          )}
+
+          {commentsLoading && comments.length === 0 ? (
+            <Spinner size="sm" label="Yorumlar yükleniyor…" />
+          ) : comments.length === 0 ? (
+            <p className={s.privacyNote}>Henüz yorum yapılmamış. İlk yorumu siz yazın.</p>
+          ) : (
+            <ul className={s.commentList} aria-label="Yorumlar">
+              {comments.map((c) => {
+                const canOpenAuthor = Boolean(c.author.profile_visible && c.author.id);
+                const cRelDate = formatRelativeTime(c.created_at, nowMs);
+                return (
+                  <li key={c.id} className={s.commentRow}>
+                    <div className={s.commentTop}>
+                      <div className={s.commentAuthorLine}>
+                        <TeacherAvatar
+                          card={c.author}
+                          size={32}
+                          onClick={
+                            canOpenAuthor ? () => onOpenTeacher(c.author.id) : undefined
+                          }
+                          ariaLabel={
+                            canOpenAuthor ? `${c.author.name} profilini aç` : undefined
+                          }
+                        />
+                        {canOpenAuthor ? (
+                          <button
+                            type="button"
+                            className={s.bylineNameBtn}
+                            onClick={() => onOpenTeacher(c.author.id)}
+                          >
+                            {c.author.name}
+                          </button>
+                        ) : (
+                          <span className={s.bylineName}>{c.author.name}</span>
+                        )}
+                        <span className={s.bylineDate}>· {cRelDate}</span>
+                      </div>
+
+                      <div className={s.commentActions}>
+                        {c.can_delete && (
+                          <button
+                            type="button"
+                            className={`${s.commentActionBtn} ${s.commentActionDanger}`}
+                            disabled={deletingCommentId === c.id}
+                            onClick={() => handleDeleteComment(c)}
+                          >
+                            Sil
+                          </button>
+                        )}
+                        {!c.is_mine && (
+                          <button
+                            type="button"
+                            className={s.commentActionBtn}
+                            onClick={() => {
+                              setReportReason('');
+                              setReportTarget({ kind: 'comment', id: c.id });
+                            }}
+                          >
+                            Şikâyet et
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className={s.commentBody}>{c.body}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <form className={s.commentForm} onSubmit={handleAddComment}>
+            <div className={s.commentInputRow}>
+              <label htmlFor={commentInputId} className={s.hiddenFileInput}>
+                Yorumunuz
+              </label>
+              <textarea
+                id={commentInputId}
+                className={s.commentTextarea}
+                maxLength={1000}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value.slice(0, 1000))}
+                placeholder="Yorum yazın…"
+              />
+              <button
+                type="submit"
+                className={s.btnPrimary}
+                disabled={commentBusy || !commentText.trim()}
+              >
+                <Send size={15} aria-hidden="true" />
+                <span>{commentBusy ? 'Gönderiliyor…' : 'Gönder'}</span>
+              </button>
+            </div>
+            <span className={s.charCount}>{commentText.length} / 1000</span>
+          </form>
+        </div>
+      )}
+
+      {/* Şikâyet modalı (gönderi veya yorum) */}
+      {reportTarget && (
         <div
           className={s.modalBackdrop}
           role="dialog"
@@ -712,19 +916,23 @@ export function PostCard({
           onKeyDown={(e) => {
             if (e.key === 'Escape' && !reportBusy) {
               e.preventDefault();
-              setReportOpen(false);
+              setReportTarget(null);
             }
           }}
         >
           <form className={s.modalCard} onSubmit={handleReportSubmit}>
             <div className={s.modalHead}>
-              <h3 id={reportTitleId}>Gönderiyi şikâyet et</h3>
+              <h3 id={reportTitleId}>
+                {reportTarget.kind === 'comment'
+                  ? 'Yorumu şikâyet et'
+                  : 'Gönderiyi şikâyet et'}
+              </h3>
               <button
                 type="button"
                 className={s.btnIcon}
                 aria-label="Kapat"
                 disabled={reportBusy}
-                onClick={() => setReportOpen(false)}
+                onClick={() => setReportTarget(null)}
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -753,7 +961,7 @@ export function PostCard({
                 type="button"
                 className={s.btnSecondary}
                 disabled={reportBusy}
-                onClick={() => setReportOpen(false)}
+                onClick={() => setReportTarget(null)}
               >
                 Vazgeç
               </button>
@@ -771,4 +979,3 @@ export function PostCard({
     </article>
   );
 }
-

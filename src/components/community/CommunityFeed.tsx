@@ -15,6 +15,7 @@ import {
   followTeacher,
   followTopic,
   getFeed,
+  getPost,
   getSuggestions,
   listMyTopics,
   thumbUrl,
@@ -28,7 +29,9 @@ import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { SUBJECT_OPTIONS } from '../files/FileDialogs';
 import {
+  ArrowLeft,
   Award,
+  Bell,
   Bookmark,
   ChevronDown,
   Filter,
@@ -42,6 +45,7 @@ import {
   X,
 } from '../icons';
 import { Notice, type NoticeState } from '../teacher/TeacherUi';
+import { CommunityNotifications } from './CommunityNotifications';
 import { CommunityPreview } from './CommunityPreview';
 import { PostCard, feedPostToSummary } from './PostCard';
 import { PostComposer } from './PostComposer';
@@ -96,12 +100,16 @@ export interface CommunityFeedProps {
   onOpenTeacher: (teacherId: string) => void;
   onOpenBoards?: () => void;
   onOpenQuestions?: () => void;
+  unreadNotifications?: number;
+  onNotificationsRead?: () => void;
 }
 
 export function CommunityFeed({
   onOpenTeacher,
   onOpenBoards,
   onOpenQuestions,
+  unreadNotifications = 0,
+  onNotificationsRead,
 }: CommunityFeedProps) {
   const kindSelectId = useId();
   const subjectSelectId = useId();
@@ -112,6 +120,12 @@ export function CommunityFeed({
   const [tab, setTab] = useState<FeedTab>('all');
   const [specialScope, setSpecialScope] = useState<SpecialScope>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(readStoredView);
+
+  // Bildirimler paneli & tek gönderi görünümü
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [singlePost, setSinglePost] = useState<FeedPost | null>(null);
+  const [singlePostLoading, setSinglePostLoading] = useState(false);
+  const [singlePostError, setSinglePostError] = useState<string | null>(null);
 
   // Arama & Süzgeçler
   const [query, setQuery] = useState('');
@@ -451,9 +465,34 @@ export function CommunityFeed({
     </>
   );
 
+  const openSinglePost = async (postId: string) => {
+    setNotifOpen(false);
+    setSinglePostLoading(true);
+    setSinglePostError(null);
+    setSinglePost(null);
+    window.scrollTo({ top: 0 });
+    const res = await getPost(postId);
+    setSinglePostLoading(false);
+    if (!res.ok) {
+      setSinglePostError(res.error);
+      return;
+    }
+    if (!res.data) {
+      setSinglePostError('Gönderi bulunamadı veya kaldırılmış.');
+      return;
+    }
+    setSinglePost(res.data);
+  };
+
+  const closeSinglePost = () => {
+    setSinglePost(null);
+    setSinglePostLoading(false);
+    setSinglePostError(null);
+  };
+
   return (
     <div className={s.hubWrap}>
-      {/* Üst sekmeler ve Akış / Galeri anahtarı */}
+      {/* Üst sekmeler, Bildirimler ve Akış / Galeri anahtarı */}
       <div className={s.feedTopBar}>
         <div className={s.tabsBar} role="tablist" aria-label="Topluluk akışı sekmeleri">
           {(Object.keys(FEED_TAB_LABEL) as FeedTab[]).map((t) => (
@@ -461,8 +500,10 @@ export function CommunityFeed({
               key={t}
               type="button"
               className={s.tabBtn}
-              aria-pressed={specialScope === null && tab === t}
+              aria-pressed={!notifOpen && !singlePost && specialScope === null && tab === t}
               onClick={() => {
+                setNotifOpen(false);
+                closeSinglePost();
                 setSpecialScope(null);
                 setTab(t);
               }}
@@ -474,8 +515,12 @@ export function CommunityFeed({
           <button
             type="button"
             className={s.tabBtn}
-            aria-pressed={specialScope === 'featured'}
-            onClick={() => setSpecialScope('featured')}
+            aria-pressed={!notifOpen && !singlePost && specialScope === 'featured'}
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope('featured');
+            }}
           >
             <Award size={15} aria-hidden="true" />{' '}
             <span>{SCOPE_LABEL.featured}</span>
@@ -484,8 +529,12 @@ export function CommunityFeed({
           <button
             type="button"
             className={s.tabBtn}
-            aria-pressed={specialScope === 'favorites'}
-            onClick={() => setSpecialScope('favorites')}
+            aria-pressed={!notifOpen && !singlePost && specialScope === 'favorites'}
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope('favorites');
+            }}
           >
             <Bookmark size={15} aria-hidden="true" />{' '}
             <span>{SCOPE_LABEL.favorites}</span>
@@ -494,37 +543,131 @@ export function CommunityFeed({
           <button
             type="button"
             className={s.tabBtn}
-            aria-pressed={specialScope === 'mine'}
-            onClick={() => setSpecialScope('mine')}
+            aria-pressed={!notifOpen && !singlePost && specialScope === 'mine'}
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope('mine');
+            }}
           >
             {SCOPE_LABEL.mine}
           </button>
         </div>
 
-        {specialScope === null && (
-          <div className={s.viewSwitch} role="group" aria-label="Görünüm biçimi">
-            <button
-              type="button"
-              className={s.viewSwitchBtn}
-              aria-pressed={viewMode === 'feed'}
-              onClick={() => handleChangeView('feed')}
-            >
-              Akış
-            </button>
-            <button
-              type="button"
-              className={s.viewSwitchBtn}
-              aria-pressed={viewMode === 'gallery'}
-              onClick={() => handleChangeView('gallery')}
-            >
-              Galeri
-            </button>
-          </div>
-        )}
+        <div className={s.itemActions}>
+          <button
+            type="button"
+            className={s.tabBtn}
+            aria-expanded={notifOpen}
+            aria-pressed={notifOpen}
+            aria-label={
+              unreadNotifications > 0
+                ? `Bildirimler, ${unreadNotifications} okunmamış`
+                : 'Bildirimler'
+            }
+            onClick={() => {
+              setNotifOpen((v) => !v);
+              closeSinglePost();
+            }}
+          >
+            <Bell size={16} aria-hidden="true" />{' '}
+            <span>Bildirimler</span>
+            {unreadNotifications > 0 && (
+              <>
+                {' '}
+                <span className={s.unreadBadgePill} aria-hidden="true">
+                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                </span>
+              </>
+            )}
+          </button>
+
+          {specialScope === null && !notifOpen && !singlePost && !singlePostLoading && (
+            <div className={s.viewSwitch} role="group" aria-label="Görünüm biçimi">
+              <button
+                type="button"
+                className={s.viewSwitchBtn}
+                aria-pressed={viewMode === 'feed'}
+                onClick={() => handleChangeView('feed')}
+              >
+                Akış
+              </button>
+              <button
+                type="button"
+                className={s.viewSwitchBtn}
+                aria-pressed={viewMode === 'gallery'}
+                onClick={() => handleChangeView('gallery')}
+              >
+                Galeri
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Arama ve Süz çubuğu */}
-      <div className={s.searchBarWrap}>
+      {/* Bildirimler paneli */}
+      {notifOpen && (
+        <CommunityNotifications
+          onOpenPost={(postId) => void openSinglePost(postId)}
+          onOpenTeacher={(tId) => {
+            setNotifOpen(false);
+            onOpenTeacher(tId);
+          }}
+          onClose={() => setNotifOpen(false)}
+          onMarkedRead={onNotificationsRead}
+        />
+      )}
+
+      {/* Tek gönderi görünümü (bildirimden tıklanınca) */}
+      {(singlePostLoading || singlePostError || singlePost) && (
+        <div className={s.feedMain}>
+          <div>
+            <button
+              type="button"
+              className={s.backBtn}
+              onClick={closeSinglePost}
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+              <span>Akışa dön</span>
+            </button>
+          </div>
+          {singlePostLoading ? (
+            <Spinner center label="Gönderi yükleniyor…" />
+          ) : singlePostError ? (
+            <div className={s.emptyBox}>
+              <Notice notice={{ kind: 'error', text: singlePostError }} />
+              <button
+                type="button"
+                className={s.btnSecondary}
+                onClick={closeSinglePost}
+              >
+                Akışa dön
+              </button>
+            </div>
+          ) : singlePost ? (
+            <PostCard
+              post={singlePost}
+              defaultCommentsOpen
+              onOpenTeacher={onOpenTeacher}
+              onOpenPreview={(sum) => setPreviewItem(sum)}
+              onUpdated={(_, patch) => {
+                setSinglePost((prev) => (prev ? { ...prev, ...patch } : null));
+              }}
+              onDeleted={() => {
+                closeSinglePost();
+              }}
+              onMutedAuthor={() => {
+                closeSinglePost();
+              }}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {!notifOpen && !singlePost && !singlePostLoading && !singlePostError && (
+        <>
+          {/* Arama ve Süz çubuğu */}
+          <div className={s.searchBarWrap}>
         <div className={s.searchBarRow}>
           <label className={s.searchInputLabel}>
             <Search size={18} aria-hidden="true" />
@@ -895,6 +1038,8 @@ export function CommunityFeed({
         {/* Masaüstü sağ kenar çubuğu */}
         <aside className={s.feedAside}>{renderSideWidgets('desktop')}</aside>
       </div>
+        </>
+      )}
 
       {/* Materyal Önizleme Modalı */}
       {previewItem && (
@@ -903,6 +1048,23 @@ export function CommunityFeed({
           onClose={() => setPreviewItem(null)}
           onChanged={(patch) => {
             setPreviewItem((cur) => (cur ? { ...cur, ...patch } : null));
+            setSinglePost((cur) =>
+              cur && cur.item && cur.item.id === previewItem.id
+                ? {
+                    ...cur,
+                    item: {
+                      ...cur.item,
+                      copy_count: patch.copy_count ?? cur.item.copy_count,
+                      rating_avg:
+                        patch.rating_avg !== undefined
+                          ? patch.rating_avg
+                          : cur.item.rating_avg,
+                      rating_count: patch.rating_count ?? cur.item.rating_count,
+                      is_favorite: patch.is_favorite ?? cur.item.is_favorite,
+                    },
+                  }
+                : cur
+            );
             setPosts((prev) =>
               prev.map((p) =>
                 p.item && p.item.id === previewItem.id
@@ -929,6 +1091,9 @@ export function CommunityFeed({
           onRemoved={() => {
             const removedId = previewItem.id;
             setPreviewItem(null);
+            if (singlePost?.item?.id === removedId) {
+              closeSinglePost();
+            }
             setPosts((prev) => prev.filter((p) => p.item?.id !== removedId));
             setScopeItems((prev) => prev.filter((x) => x.id !== removedId));
             setNotice({

@@ -21,12 +21,16 @@ export interface CommunityHubProps {
   onOpenProfile?: () => void;
   onOpenBoards?: () => void;
   onOpenQuestions?: () => void;
+  unreadNotifications?: number;
+  onNotificationsRead?: () => void;
 }
 
 export function CommunityHub({
   onOpenProfile,
   onOpenBoards,
   onOpenQuestions,
+  unreadNotifications = 0,
+  onNotificationsRead,
 }: CommunityHubProps) {
   const [teacherId, setTeacherId] = useState<string | null>(readTeacherIdFromUrl);
   const view: CommunityHubView = teacherId ? 'teacher' : 'feed';
@@ -79,6 +83,8 @@ export function CommunityHub({
       onOpenTeacher={openTeacher}
       onOpenBoards={onOpenBoards}
       onOpenQuestions={onOpenQuestions}
+      unreadNotifications={unreadNotifications}
+      onNotificationsRead={onNotificationsRead}
     />
   );
 }

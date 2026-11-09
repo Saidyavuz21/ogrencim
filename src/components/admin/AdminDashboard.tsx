@@ -15,6 +15,7 @@ import { AdminClassesPage } from './AdminClassesPage';
 import { LibraryPanel } from '../files/LibraryPanel';
 import { AdminTrashPage } from './AdminTrashPage';
 import { CommunityPage } from '../community/CommunityPage';
+import { AdminCommunityReportsPage } from './AdminCommunityReportsPage';
 import { AdminLogsPage } from './AdminLogsPage';
 import { AdminPrivacyPage } from './AdminPrivacyPage';
 import { AdminNotice, useAdminData, useNotify } from './adminShared';
@@ -113,6 +114,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         {page === 'privacy' && <AdminPrivacyPage data={data} notify={notify} />}
         {page === 'trash' && <AdminTrashPage data={data} notify={notify} />}
         {page === 'community' && <CommunityPage admin />}
+        {page === 'community_reports' && <AdminCommunityReportsPage notify={notify} />}
         {page === 'logs' && <AdminLogsPage data={data} />}
         {page === 'account' && <TeacherProfilePage user={currentUser} onLogout={handleLogout} />}
       </main>

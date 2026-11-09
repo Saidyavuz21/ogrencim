@@ -1435,3 +1435,535 @@
     font-size: 16px;
   }
 }
+
+/* ===== Aşama 3: Yorumlar ve Bildirimler ===== */
+
+.commentsSection {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.commentList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  background: #faf9f5;
+  overflow: hidden;
+}
+
+.commentRow {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.commentRow:last-child {
+  border-bottom: 0;
+}
+
+.commentTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.commentAuthorLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.commentBody {
+  margin: 0;
+  padding-left: 40px;
+  color: var(--teacher-text, #20352d);
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.commentActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.commentActionBtn {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--teacher-muted, #58665f);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.commentActionBtn:hover {
+  background: #eeece5;
+  color: var(--teacher-text, #20352d);
+}
+
+.commentActionDanger {
+  color: #8f2232;
+}
+
+.commentActionDanger:hover {
+  background: #fbe9ea;
+  color: #8f2232;
+}
+
+.commentForm {
+  display: grid;
+  gap: 8px;
+}
+
+.commentInputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.commentTextarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.commentTextarea:focus-visible {
+  outline: 3px solid var(--teacher-primary, #25634b);
+  outline-offset: 1px;
+}
+
+/* Bildirimler */
+.notifPanel {
+  display: grid;
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.notifHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notifTitle {
+  margin: 0;
+  color: var(--teacher-text, #20352d);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.notifList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.notifItem {
+  border-bottom: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.notifItem:last-child {
+  border-bottom: 0;
+}
+
+.notifRowBtn,
+.notifRowStatic {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 16px;
+  border: 0;
+  background: #fff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.notifRowBtn {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.notifRowBtn:hover {
+  background: #f4f2ec;
+}
+
+.notifRowUnread {
+  background: #eff7f1;
+}
+
+.notifRowBtn.notifRowUnread:hover {
+  background: #e3f0e7;
+}
+
+.notifIconBox {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #fbe9ea;
+  color: #8f2232;
+}
+
+.notifBody {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.notifText {
+  color: var(--teacher-text, #20352d);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.notifRowUnread .notifText {
+  font-weight: 600;
+}
+
+.notifTime {
+  color: var(--teacher-muted, #58665f);
+  font-size: 12px;
+}
+
+.unreadBadgePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--teacher-primary, #25634b);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .notifPanel {
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .commentBody {
+    padding-left: 0;
+  }
+
+  .commentInputRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .commentTextarea {
+    font-size: 16px;
+  }
+}
+
+/* ===== Aşama 3: Yorumlar ve Bildirimler ===== */
+
+.commentsSection {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.commentList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  background: #faf9f5;
+  overflow: hidden;
+}
+
+.commentRow {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.commentRow:last-child {
+  border-bottom: 0;
+}
+
+.commentTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.commentAuthorLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.commentBody {
+  margin: 0;
+  padding-left: 40px;
+  color: var(--teacher-text, #20352d);
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.commentActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.commentActionBtn {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--teacher-muted, #58665f);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.commentActionBtn:hover {
+  background: #eeece5;
+  color: var(--teacher-text, #20352d);
+}
+
+.commentActionDanger {
+  color: #8f2232;
+}
+
+.commentActionDanger:hover {
+  background: #fbe9ea;
+  color: #8f2232;
+}
+
+.commentForm {
+  display: grid;
+  gap: 8px;
+}
+
+.commentInputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.commentTextarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.commentTextarea:focus-visible {
+  outline: 3px solid var(--teacher-primary, #25634b);
+  outline-offset: 1px;
+}
+
+/* Bildirimler */
+.notifPanel {
+  display: grid;
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.notifHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notifTitle {
+  margin: 0;
+  color: var(--teacher-text, #20352d);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.notifList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.notifItem {
+  border-bottom: 1px solid var(--teacher-divider, #eeece5);
+}
+
+.notifItem:last-child {
+  border-bottom: 0;
+}
+
+.notifRowBtn,
+.notifRowStatic {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 16px;
+  border: 0;
+  background: #fff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.notifRowBtn {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.notifRowBtn:hover {
+  background: #f4f2ec;
+}
+
+.notifRowUnread {
+  background: #eff7f1;
+}
+
+.notifRowBtn.notifRowUnread:hover {
+  background: #e3f0e7;
+}
+
+.notifIconBox {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #fbe9ea;
+  color: #8f2232;
+}
+
+.notifBody {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.notifText {
+  color: var(--teacher-text, #20352d);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.notifRowUnread .notifText {
+  font-weight: 600;
+}
+
+.notifTime {
+  color: var(--teacher-muted, #58665f);
+  font-size: 12px;
+}
+
+.unreadBadgePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--teacher-primary, #25634b);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .notifPanel {
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .commentBody {
+    padding-left: 0;
+  }
+
+  .commentInputRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .commentTextarea {
+    font-size: 16px;
+  }
+}

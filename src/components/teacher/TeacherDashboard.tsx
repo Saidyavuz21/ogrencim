@@ -32,6 +32,7 @@ import { ClassReportPage } from '../reports/ClassReportPage';
 import { SchoolAdminPage } from '../school/SchoolAdminPage';
 import { TeacherBoardsPage } from '../board/TeacherBoardsPage';
 import { CommunityHub } from '../community/CommunityHub';
+import { countUnreadNotifications } from '../../lib/communitySocialData';
 import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
@@ -76,8 +77,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadCommunity, setUnreadCommunity] = useState(0);
   const [dataVersion, setDataVersion] = useState(0);
   const [selectedClass, setSelectedClass] = useState(homeroomClass);
+
+  const refreshUnreadCommunity = useCallback(async () => {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    const count = await countUnreadNotifications();
+    setUnreadCommunity(count);
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refreshUnreadCommunity();
+    const timer = window.setInterval(() => {
+      void refreshUnreadCommunity();
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, [refreshUnreadCommunity]);
 
   useEffect(() => {
     let alive = true;
@@ -178,13 +195,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         isMessages={page === 'messages'}
         onCommunity={() => openPage('community')}
         isCommunity={page === 'community'}
+        unreadCommunity={unreadCommunity}
       />
       <TeacherSidebar
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
         open={menuOpen}
         currentPage={page}
-        badges={{ messages: unreadMessages }}
+        badges={{ messages: unreadMessages, community: unreadCommunity }}
         isSchoolAdmin={currentUser?.isSchoolAdmin}
         onClose={closeMenu}
         onOpenPage={openPage}
@@ -200,7 +218,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           onOpenPage={openPage}
           onNewClass={() => openPage('classes')}
           onOpenClassTool={(tool) => { setHomeClassTool(tool); openPage('class_tools'); }}
-          badges={{ messages: unreadMessages }}
+          badges={{ messages: unreadMessages, community: unreadCommunity }}
         />
       ) : (
         <TeacherPageHeader
@@ -254,6 +272,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           onOpenProfile={() => openPage('profile')}
           onOpenBoards={() => openPage('boards')}
           onOpenQuestions={() => openPage('questions')}
+          unreadNotifications={unreadCommunity}
+          onNotificationsRead={() => setUnreadCommunity(0)}
         />
       )}
       {page === 'school_admin' && (currentUser?.isSchoolAdmin && currentUser.schoolId

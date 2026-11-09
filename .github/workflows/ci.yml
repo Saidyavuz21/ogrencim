@@ -33,6 +33,23 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
+      - name: Uçtan uca testler (Playwright)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          E2E_TEACHER_EMAIL: ${{ secrets.E2E_TEACHER_EMAIL }}
+          E2E_TEACHER_PASSWORD: ${{ secrets.E2E_TEACHER_PASSWORD }}
+          E2E_STUDENT_SCHOOL: ${{ secrets.E2E_STUDENT_SCHOOL }}
+          E2E_STUDENT_NUMBER: ${{ secrets.E2E_STUDENT_NUMBER }}
+          E2E_STUDENT_PIN: ${{ secrets.E2E_STUDENT_PIN }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-sonuclari
+          path: test-results/
+          retention-days: 7
 
   # Veritabanı yetki testleri: depo ayarlarında TEST_DATABASE_URL gizli değişkeni varsa çalışır.
   # Testler tek işlemde çalışıp geri alındığı için veritabanında iz bırakmaz.

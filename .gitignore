@@ -61,3 +61,8 @@ next-env.d.ts
 
 # Bu projeye ait olmayan yerel notlar
 /eduboard_roadmap.md
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/

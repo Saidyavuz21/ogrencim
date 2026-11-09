@@ -212,6 +212,12 @@ Ortak kararlar:
 - [x] Paylaşım öncesi öğrenci adı/not taraması (KVKK) — *K-15* · 11 Kasım 2026 · `e2420e5` (okuldaki öğrenci adları, e-posta, telefon, 11 haneli no; görseller için onay)
 - [x] Kopyalamada kota ayırma ve hata olursa geri alma — *K-9* · 11 Kasım 2026 · `e2420e5` (500 MB; 15 dk rezervasyon)
 
+**İleride (altyapı, 11 Kasım 2026 konuşması — şimdilik yapılmayacak):**
+- Supabase'i okullar kullanmaya başlamadan Pro'ya geçirmek (ücretsiz plan 1 hafta kullanılmazsa duraklar, ~200 eş zamanlı bağlantı)
+- Canlı ders çizimlerini Realtime Broadcast'e taşımak (ortak çizimde veritabanı yükünü düşürür)
+- Gece yedeğini Hostinger Business paketine (200 GB) göndermek
+- Dosyaları kendi sunucumuza (VPS) taşımak: yetki Supabase'de kalır, dosya kapısı VPS'te; Supabase trafik kotasını rahatlatır (2–4 gün)
+
 ## 12. Yapay zekâ
 
 - [ ] Soru hazırlama asistanı: kazanım + seviye → soru taslağı, öğretmen onayı zorunlu — *K-13*

@@ -1,0 +1,35 @@
+# Her push ve PR'da: tip kontrolü, lint ve üretim derlemesi.
+# Biri kırılırsa iş kırmızı olur; bozuk kod yayına gitmeden görülür.
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Tip kontrolü
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Derleme
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1

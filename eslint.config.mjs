@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Araç klasörleri (.claude, .gemini, .agents …) ve üretilen çıktılar proje kodu değil
+    ".*/**",
+    "graphify-out/**",
+    "tsconfig.tsbuildinfo",
   ]),
 ]);
 

@@ -8,16 +8,19 @@
 -- ========================================================
 begin;
 
-create temp table t_results (n serial, test text, detail text);
-grant insert, select on t_results to authenticated, anon;
-grant usage on sequence t_results_n_seq to authenticated, anon;
-create temp table t_ids (k text primary key, v uuid);
-grant insert, select, update on t_ids to authenticated, anon;
+-- Sonuçlar ayrı bir şemada (işlemle birlikte geri alınır); tam adla yazıldığı için arama yolundan etkilenmez
+create schema live_test;
+grant usage on schema live_test to authenticated, anon;
+create table live_test.results (n serial, test text, detail text);
+grant insert, select on live_test.results to authenticated, anon;
+grant usage on sequence live_test.results_n_seq to authenticated, anon;
+create table live_test.ids (k text primary key, v uuid);
+grant insert, select, update on live_test.ids to authenticated, anon;
 
 create function pg_temp.ok(cond boolean, msg text) returns void language plpgsql as $$
 begin
   if cond is not true then raise exception 'BAŞARISIZ: %', msg; end if;
-  insert into t_results (test) values (msg);
+  insert into live_test.results (test) values (msg);
 end $$;
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
@@ -31,13 +34,13 @@ begin
   begin
     execute sql;
   exception when others then
-    insert into t_results (test, detail) values (msg, sqlstate || ' ' || sqlerrm);
+    insert into live_test.results (test, detail) values (msg, sqlstate || ' ' || sqlerrm);
     return;
   end;
   raise exception 'BAŞARISIZ: % (reddedilmesi gerekiyordu, işlem yapıldı)', msg;
 end $$;
 
-create function pg_temp.id(key text) returns uuid language sql as $$ select v from t_ids where k = key $$;
+create function pg_temp.id(key text) returns uuid language sql as $$ select v from live_test.ids where k = key $$;
 
 -- --------------------------------------------------------
 -- Sahte veri: okul A, öğretmen a1 (T-9A), öğrenciler s1, s2 (T-9A) ve s3 (T-9B)
@@ -74,7 +77,7 @@ with b as (
   values ('Test tahtası', '{"version":1,"pages":[{"id":"p1","background":"blank","elements":[{"id":"e1","type":"note","x":0,"y":0,"w":10,"h":10,"text":"ilk","color":"#fff","fontSize":24}]}]}')
   returning id
 )
-insert into t_ids select 'board', id from b;
+insert into live_test.ids select 'board', id from b;
 
 update public.boards set content = jsonb_set(content, '{pages,0,elements,0,text}', '"ikinci"') where id = pg_temp.id('board');
 select pg_temp.ok((select count(*) from public.board_versions where board_id = pg_temp.id('board')) = 1,
@@ -96,9 +99,9 @@ with q as (
   values ('2 + 2 kaçtır?', array['3', '4', '5'], 1, 'Dört.')
   returning id
 )
-insert into t_ids select 'question', id from q;
+insert into live_test.ids select 'question', id from q;
 
-insert into t_ids values ('session', public.live_start('T-9A', pg_temp.id('board'), 'Canlı test',
+insert into live_test.ids values ('session', public.live_start('T-9A', pg_temp.id('board'), 'Canlı test',
   '{"version":1,"pages":[{"id":"p1","background":"blank","elements":[]},{"id":"p2","background":"grid","elements":[]}]}', '{}'));
 select pg_temp.ok(pg_temp.id('session') is not null, 'Öğretmen kendi sınıfında canlı ders başlatır');
 select pg_temp.denied($q$ select public.live_start('T-9B', null, 'Başka sınıf', '{"pages":[{"id":"x","elements":[]}]}', '{}') $q$,
@@ -106,7 +109,7 @@ select pg_temp.denied($q$ select public.live_start('T-9B', null, 'Başka sınıf
 
 select pg_temp.ok((public.live_open_question(pg_temp.id('session'), pg_temp.id('question'))) ->> 'correct_index' is null,
   'Açılan soruda doğru cevap yok');
-insert into t_ids values ('qkey', ((select question ->> 'key' from public.live_sessions where id = pg_temp.id('session')))::uuid);
+insert into live_test.ids values ('qkey', ((select question ->> 'key' from public.live_sessions where id = pg_temp.id('session')))::uuid);
 select pg_temp.ok(public.live_save_layer(pg_temp.id('session'), 'p1', 'shared', '[{"id":"t1","type":"stroke","points":[0,0,5,5],"color":"#000","width":3}]') is not null,
   'Öğretmen ortak katmana yazar');
 select pg_temp.denied($q$ select public.live_save_layer(pg_temp.id('session'), 'yok', 'shared', '[]') $q$,
@@ -205,5 +208,5 @@ select pg_temp.denied($q$ select count(*) from public.live_sessions $q$, 'Ziyare
 select pg_temp.denied($q$ select public.live_heartbeat(pg_temp.id('session')) $q$, 'Ziyaretçi canlı ders fonksiyonu çağıramaz');
 reset role;
 
-select n, test, detail from t_results order by n;
+select n, test, detail from live_test.results order by n;
 rollback;

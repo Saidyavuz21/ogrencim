@@ -30,6 +30,7 @@ import { QuestionBankPage } from '../quiz/QuestionBankPage';
 import { ClassReportPage } from '../reports/ClassReportPage';
 import { SchoolAdminPage } from '../school/SchoolAdminPage';
 import { TeacherBoardsPage } from '../board/TeacherBoardsPage';
+import { CommunityPage } from '../community/CommunityPage';
 import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
@@ -241,6 +242,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {page === 'files' && <TeacherFilesPage classNames={classNames} userId={currentUser?.id} isSchoolAdmin={currentUser?.isSchoolAdmin} branch={currentUser?.branch} />}
       {page === 'questions' && <QuestionBankPage />}
       {page === 'boards' && <TeacherBoardsPage defaultSubject={defaultSubject} />}
+      {page === 'community' && <CommunityPage />}
       {page === 'school_admin' && (currentUser?.isSchoolAdmin && currentUser.schoolId
         ? <SchoolAdminPage schoolId={currentUser.schoolId} schoolName={currentUser.schoolName} />
         : <p className={styles.mutedText}>Bu sayfa yalnızca okul yöneticilerine açıktır.</p>)}

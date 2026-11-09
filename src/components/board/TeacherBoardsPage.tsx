@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useMemo, useState } from 'react';
-import { Copy, Edit, Layers, Plus, Search, Trash2, X } from '../icons';
+import { Copy, Edit, Layers, Plus, Search, Share2, Trash2, X } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { useDialog } from '../ConfirmDialog';
@@ -11,6 +11,8 @@ import { GRADE_OPTIONS } from '../../lib/filesData';
 import { SUBJECT_OPTIONS } from '../files/FileDialogs';
 import { Modal, normalize } from '../files/FilesUi';
 import { BoardEditor } from './BoardEditor';
+import { PublishDialog } from '../community/PublishDialog';
+import { listBoardSources } from '../../lib/communityData';
 import styles from './Board.module.css';
 import f from '../files/Files.module.css';
 import bStyles from './TeacherBoards.module.css';
@@ -34,6 +36,8 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
   const [subjectFilter, setSubjectFilter] = useState('');
   const [gradeFilter, setGradeFilter] = useState('');
   const [dialog, setDialog] = useState<{ board: BoardSummary | null } | null>(null);
+  const [sharing, setSharing] = useState<BoardSummary | null>(null);
+  const [sources, setSources] = useState<Record<string, { author_name: string; title: string }>>({});
 
   useEffect(() => {
     let alive = true;
@@ -42,6 +46,8 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
       if (res.ok) setBoards(res.data);
       else setError(res.error);
     });
+    // Topluluktan kopyalananların kaynağı (tablo yoksa sessizce boş kalır)
+    listBoardSources().then((m) => { if (alive) setSources(m); });
     return () => { alive = false; };
   }, [version]);
 
@@ -115,10 +121,12 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
       <div className={bStyles.cardHeading}><span className={bStyles.cardIcon}><Layers size={22} aria-hidden="true" /></span><h3>{b.title}</h3></div>
       <p>{[`${b.pageCount} sayfa`, b.subject, b.grade].filter(Boolean).join(' · ')}</p>
       <p>{dateLabel(b.updated_at)}</p>
+      {sources[b.id] && <p>Topluluktan · kaynak: {sources[b.id].author_name}{sources[b.id].title && sources[b.id].title !== b.title ? ` — ${sources[b.id].title}` : ''}</p>}
       <div className={`${f.cardActions} ${bStyles.cardActions}`}>
         <button type="button" className={f.primaryButton} onClick={() => setOpenId(b.id)}>Aç</button>
         <button type="button" className={f.iconButton} onClick={() => setDialog({ board: b })} aria-label={`${b.title} bilgilerini düzenle`} title="Ad, kategori, ders, kademe"><Edit size={18} aria-hidden="true" /></button>
         <button type="button" className={f.iconButton} onClick={() => duplicate(b)} aria-label={`${b.title} çoğalt`} title="Çoğalt"><Copy size={18} aria-hidden="true" /></button>
+        <button type="button" className={f.iconButton} onClick={() => setSharing(b)} aria-label={`${b.title}: toplulukta paylaş`} title="Toplulukta paylaş (diğer öğretmenlerle)"><Share2 size={18} aria-hidden="true" /></button>
         <button type="button" className={f.iconButton} onClick={() => remove(b)} aria-label={`${b.title} sil`} title="Sil"><Trash2 size={18} aria-hidden="true" /></button>
       </div>
     </article>
@@ -185,6 +193,14 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
         </>
       )}
 
+      {sharing && (
+        <PublishDialog
+          source={{ kind: 'board', boardId: sharing.id }}
+          initial={{ title: sharing.title, grade: sharing.grade || '', subject: sharing.subject || '' }}
+          onClose={() => setSharing(null)}
+          onPublished={() => { setNotice({ kind: 'ok', text: `"${sharing.title}" toplulukta paylaşıldı. Keşfet > Paylaştıklarım’da görebilirsiniz.` }); setSharing(null); }}
+        />
+      )}
       {dialog && (
         <BoardInfoDialog
           board={dialog.board}

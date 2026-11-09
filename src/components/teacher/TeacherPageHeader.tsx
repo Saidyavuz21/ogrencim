@@ -22,7 +22,7 @@ export function TeacherPageHeader({ page, onBack, classes, selectedClass, onSele
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className={`${styles.pageHeader} ${['check_sheet', 'plus_minus', 'leaderboard', 'questions', 'files', 'students', 'classes', 'class_report', 'grade_entry', 'messages', 'reading', 'class_tools', 'profile', 'announcements', 'boards', 'aquarium', 'school_admin'].includes(page.id) ? styles.checkPageHeader : ''} ${page.id === 'assignments' ? styles.assignmentPageHeader : ''}`}>
+    <header className={`${styles.pageHeader} ${['check_sheet', 'plus_minus', 'leaderboard', 'questions', 'files', 'students', 'classes', 'class_report', 'grade_entry', 'messages', 'reading', 'class_tools', 'profile', 'announcements', 'boards', 'community', 'aquarium', 'school_admin'].includes(page.id) ? styles.checkPageHeader : ''} ${page.id === 'assignments' ? styles.assignmentPageHeader : ''}`}>
       <div className={styles.pageHeaderRow}>
         <button type="button" className={styles.backButton} onClick={onBack}>
           <ArrowLeft size={20} aria-hidden="true" />

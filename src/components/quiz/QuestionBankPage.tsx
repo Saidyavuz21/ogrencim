@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Check, Copy, Edit, Folder, HelpCircle, Plus, Search, Trash2, Upload, X } from '../icons';
+import { Check, Copy, Edit, Folder, HelpCircle, Plus, Search, Share2, Trash2, Upload, X } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { useDialog } from '../ConfirmDialog';
@@ -19,6 +19,7 @@ import { useQuizImages } from './useQuizImages';
 import { RichText } from '../math/RichText';
 import { RichTextField } from '../math/RichTextField';
 import styles from './Quiz.module.css';
+import { PublishDialog } from '../community/PublishDialog';
 
 const ANY = '';
 const EMPTY: QuestionInput = { body: '', image_path: null, choices: ['', '', '', ''], correct_index: -1, explanation: null, grade: null, subject: null, topic: null, tags: [] };
@@ -34,6 +35,10 @@ export function QuestionBankPage() {
   const [subject, setSubject] = useState(ANY);
   const [grade, setGrade] = useState(ANY);
   const [tag, setTag] = useState(ANY);
+  // Toplulukta paylaşmak için soru seçimi
+  const [picking, setPicking] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -101,14 +106,32 @@ export function QuestionBankPage() {
             <div className={styles.bankFilterField}><label htmlFor="bank-grade">Kademe</label><CustomSelect id="bank-grade" value={grade} onChange={setGrade} options={[{ value: ANY, label: 'Bütün kademeler' }, ...GRADE_OPTIONS]} /></div>
             <div className={styles.bankFilterField}><label htmlFor="bank-tag">Etiket</label><CustomSelect id="bank-tag" value={tag} onChange={setTag} options={[{ value: ANY, label: tags.length ? 'Bütün etiketler' : 'Etiket yok' }, ...tags]} disabled={!tags.length} /></div>
           </div>
-          <div className={styles.bankResultBar}><p className={f.muted}>{visible.length} / {all.length} soru</p>
+          <div className={styles.bankResultBar}><p className={f.muted}>{visible.length} / {all.length} soru{picking ? ` · ${picked.length} seçili` : ''}</p>
             {(q || subject || grade || tag) && <button type="button" onClick={() => { setQ(''); setSubject(ANY); setGrade(ANY); setTag(ANY); }}>Filtreleri temizle</button>}
+            {picking ? (
+              <span className={f.rowActions}>
+                <button type="button" onClick={() => setPicked(Array.from(new Set([...picked, ...visible.map((x) => x.id)])).slice(0, 100))}>Görünenleri seç</button>
+                <button type="button" onClick={() => { setPicking(false); setPicked([]); }}>Vazgeç</button>
+                <button type="button" onClick={() => setSharing(true)} disabled={!picked.length}><Share2 size={16} aria-hidden="true" /> Seçilenleri paylaş ({picked.length})</button>
+              </span>
+            ) : (
+              <button type="button" onClick={() => setPicking(true)} title="Soruları seçip set olarak diğer öğretmenlerle paylaşın"><Share2 size={16} aria-hidden="true" /> Toplulukta paylaş</button>
+            )}
           </div>
           {visible.length === 0 ? <p className={f.muted}>Aramaya uyan soru yok.</p> : (
             <div className={styles.bankList}>
               {visible.map((x) => (
                 <article key={x.id} className={styles.qCard}>
                   <div className={styles.qHead}>
+                    {picking && (
+                      <input
+                        type="checkbox"
+                        className={f.check}
+                        checked={picked.includes(x.id)}
+                        onChange={(e) => setPicked((p) => (e.target.checked ? [...p, x.id].slice(0, 100) : p.filter((id) => id !== x.id)))}
+                        aria-label="Paylaşmak için seç"
+                      />
+                    )}
                     {x.image_path && urls[x.image_path] && (
                       // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
                       <img className={styles.qThumb} src={urls[x.image_path]} alt="" />
@@ -141,6 +164,19 @@ export function QuestionBankPage() {
         </>
       )}
 
+      {sharing && (
+        <PublishDialog
+          source={{ kind: 'questions', questionIds: picked }}
+          initial={(() => {
+            const rows = all.filter((x) => picked.includes(x.id));
+            const one = (k: 'grade' | 'subject') => { const v = Array.from(new Set(rows.map((r) => r[k]).filter(Boolean))); return v.length === 1 ? (v[0] as string) : ''; };
+            const topic = Array.from(new Set(rows.map((r) => r.topic).filter(Boolean)));
+            return { title: topic.length === 1 ? `${topic[0]} soruları` : '', grade: one('grade'), subject: one('subject') };
+          })()}
+          onClose={() => setSharing(false)}
+          onPublished={() => { setSharing(false); setPicking(false); setPicked([]); setNotice({ kind: 'ok', text: 'Soru seti toplulukta paylaşıldı. Keşfet > Paylaştıklarım’da görebilirsiniz.' }); }}
+        />
+      )}
       {editing && (
         <QuestionEditor
           id={editing.id}

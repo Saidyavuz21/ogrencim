@@ -1,0 +1,82 @@
+/* Topluluk / Keşfet (öğretmen sayfası) — Tahtalarım listesinin diliyle */
+
+.workspace { gap: 22px; }
+.intro { display: grid; gap: 6px; padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: #fff; }
+.intro p { margin: 0; max-width: 760px; color: var(--teacher-muted, #58665f); font-size: 13px; line-height: 1.7; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { min-height: 44px; padding: 0 16px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 999px; background: #fff; color: var(--teacher-text, #20352d); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.tab[aria-pressed='true'] { border-color: var(--teacher-primary, #25634b); background: var(--teacher-selected, #e6f1e9); color: var(--teacher-primary, #25634b); }
+.tab:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
+
+.filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: end; gap: 16px 12px; padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: #fff; }
+.filters > .searchRow { grid-column: 1 / -1; }
+.filters input[type='search'] { min-height: 48px; font-size: 16px; }
+.field { display: grid; gap: 8px; min-width: 0; }
+.field > label { color: var(--teacher-muted, #58665f); font-size: 12px; font-weight: 500; }
+.field input[type='text'] { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 10px; font: inherit; font-size: 15px; box-sizing: border-box; }
+.field input[type='text']:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 1px; }
+.filters > button { min-height: 44px; border-radius: 10px; font-size: 13px; }
+
+.sortRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-inline: 4px; }
+.sortRow p { margin: 0; color: var(--teacher-muted, #58665f); font-size: 13px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 18px; }
+.card { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 20px 22px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: #fff; }
+.cardHead { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.cardIcon { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: #edf2e8; color: var(--teacher-primary, #25634b); }
+.cardHead h3 { margin: 0; min-width: 0; font-size: 16px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.cardHead small { display: block; margin-top: 2px; color: var(--teacher-muted, #58665f); font-size: 12px; font-weight: 400; }
+.card p { margin: 0; color: var(--teacher-muted, #58665f); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: #f0eee7; color: #4b5852; font-size: 12px; font-weight: 600; }
+.badgeKind { background: #edf2e8; color: var(--teacher-primary, #25634b); }
+.badgeFeatured { background: #fff1cc; color: #7a5300; }
+.badgeHidden { background: #fbe9ea; color: #8f2232; }
+.outcome { font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+.stats { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: var(--teacher-muted, #58665f); font-size: 13px; }
+.stats span { display: inline-flex; align-items: center; gap: 4px; }
+.starOn { color: #d99a00; }
+.cardActions { display: flex; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid #eeece5; }
+.cardActions > button:first-child { flex: 1; }
+
+.more { justify-self: center; }
+
+/* Önizleme */
+.previewMeta { display: grid; gap: 8px; }
+.origin { margin: 0; padding: 8px 12px; border-radius: 10px; background: #f4f2ec; font-size: 13px; }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+.qList { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.qItem { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; }
+.qItem ol { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.qItem li.correct { color: #155c38; font-weight: 600; }
+.qImg { max-width: 100%; max-height: 180px; border-radius: 8px; object-fit: contain; }
+.rateRow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.starBtn { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 10px; background: none; color: #c9c5b8; cursor: pointer; }
+.starBtn[aria-pressed='true'] { color: #d99a00; }
+.starBtn:hover { background: #f4f2ec; }
+.starBtn:focus-visible { outline: 3px solid #2a78d6; outline-offset: 1px; }
+.adminRow { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border: 1px dashed var(--teacher-border, #dedad0); border-radius: 12px; }
+
+/* Paylaşma penceresi */
+.form { display: grid; gap: 16px; }
+.formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.findings { display: grid; gap: 6px; margin: 0; padding: 12px 14px; border: 1px solid #f2c9c9; border-radius: 12px; background: #fff6f5; color: #8f2232; font-size: 14px; }
+.findings ul { margin: 0; padding-left: 18px; }
+.scanOk { margin: 0; padding: 10px 14px; border-radius: 12px; background: #e3f3ea; color: #155c38; font-size: 14px; font-weight: 600; }
+.confirm { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; }
+.confirm input { flex-shrink: 0; width: 20px; height: 20px; margin-top: 2px; accent-color: var(--teacher-primary, #25634b); }
+
+@media (max-width: 1023px) {
+  .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters > button { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .workspace { gap: 18px; }
+  .intro, .filters { padding: 18px 16px; border-radius: 16px; }
+  .filters { gap: 14px 10px; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .card { padding: 18px 16px; border-radius: 16px; }
+  .formGrid { grid-template-columns: minmax(0, 1fr); }
+  .field input[type='text'] { font-size: 16px; }
+}

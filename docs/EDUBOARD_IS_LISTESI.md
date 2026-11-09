@@ -26,9 +26,9 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 8 | Güvenlik ve KVKK | 9 / 13 |
 | 9 | Kalite: test, CI, izleme | 6 / 7 |
 | 10 | Canlı ders | 7 / 7 ✅ |
-| 11 | Topluluk / Keşfet | 0 / 9 |
+| 11 | Topluluk / Keşfet | 9 / 9 ✅ |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **102 / 121** |
+| | **Toplam** | **111 / 121** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -202,15 +202,15 @@ Ortak kararlar:
 
 ## 11. Topluluk / Keşfet
 
-- [ ] İçeriği (tahta/quiz/set) herkese açık paylaşma — *K-10*
-- [ ] Başka öğretmenin içeriğini kopyalayıp uyarlama, orijinal yazara atıf — *K-10*
-- [ ] Kopyalamadan önce hızlı önizleme — *K-10*
-- [ ] 1–5 yıldız ve favoriler — *K-10*
-- [ ] Kademe, branş, **MEB kazanım kodu** ve biçime göre arama — *K-10*
-- [ ] Trendler, en yüksek puanlılar, en çok kullanılanlar, en yeniler — *K-10*
-- [ ] Editörün seçimi rozeti — *K-10*
-- [ ] Paylaşım öncesi öğrenci adı/not taraması (KVKK) — *K-15*
-- [ ] Kopyalamada kota ayırma ve hata olursa geri alma — *K-9*
+- [x] İçeriği (tahta/quiz/set) herkese açık paylaşma — *K-10* · 11 Kasım 2026 · `e2420e5` (bütün öğretmenlere; öğrenciler görmez; tahta ve soru seti)
+- [x] Başka öğretmenin içeriğini kopyalayıp uyarlama, orijinal yazara atıf — *K-10* · 11 Kasım 2026 · `e2420e5` (kopyada kaynak; kopyadan paylaşılan orijinaline bağlanır)
+- [x] Kopyalamadan önce hızlı önizleme — *K-10* · 11 Kasım 2026 · `e2420e5`
+- [x] 1–5 yıldız ve favoriler — *K-10* · 11 Kasım 2026 · `e2420e5` (kendi içeriğine yıldız verilemez)
+- [x] Kademe, branş, **MEB kazanım kodu** ve biçime göre arama — *K-10* · 11 Kasım 2026 · `e2420e5` (kazanım kodu ön ekle: MAT.5.1)
+- [x] Trendler, en yüksek puanlılar, en çok kullanılanlar, en yeniler — *K-10* · 11 Kasım 2026 · `e2420e5` (trend: son 14 gün; puan ağırlıklı)
+- [x] Editörün seçimi rozeti — *K-10* · 11 Kasım 2026 · `e2420e5` (yalnızca süper admin; gizleme de)
+- [x] Paylaşım öncesi öğrenci adı/not taraması (KVKK) — *K-15* · 11 Kasım 2026 · `e2420e5` (okuldaki öğrenci adları, e-posta, telefon, 11 haneli no; görseller için onay)
+- [x] Kopyalamada kota ayırma ve hata olursa geri alma — *K-9* · 11 Kasım 2026 · `e2420e5` (500 MB; 15 dk rezervasyon)
 
 ## 12. Yapay zekâ
 
@@ -245,3 +245,4 @@ Ortak kararlar:
 | 9 Kasım 2026 | Güvenlik ve KVKK: Supabase uyarıları, gitleaks, PIN anahtarı yenileme, işlem kaydı, hız sınırları, silinenler kutusu (30 gün), dışa aktarma, veli talepleri ve kalıcı silme (Paket 8, 8/13) | `5e47c79`, `23cd529`, `88e712e`, `cf9ae62`, `df54fe2`, `51e0a24` |
 | 9 Kasım 2026 | Kalite: CI, yetki testleri, uçtan uca testler, yedekleme planı, hata kaydı, tahta dosyalarının bölünmesi, Supabase tipleri; öğretmen panelinde Silinenler ve erişim kaydı (Paket 9, 5/7; Paket 8, 9/13) | `6b2f029`, `989a384`, `4b382fc`, `9640876`, `ff9800e`, `3750d7c`, `e588234`, `ceef6cd`, `d2b8dd2` |
 | 10 Kasım 2026 | Canlı ders: anlık quiz, çözüm yansıtma, 30 sn kalem izni, ortak çalışma; tahtaya eşleştirme ve sesli not; tahta sürüm geçmişi. Veritabanı testi 41/41 (`supabase/tests/live_test.sql`); test kalem izni denetiminde bir açık yakaladı, düzeltildi (Paket 10, 7/7) | `6ca6d4f`, `f6ab4d9`, `b5276a3` |
+| 11 Kasım 2026 | Topluluk / Keşfet: tahta ve soru seti paylaşma, kişisel veri taraması, önizleme, kota ayırmalı kopyalama, atıf, yıldız, favori, kazanım koduyla arama, sıralamalar, editörün seçimi. Veritabanı testi 30/30 (`supabase/tests/community_test.sql`) (Paket 11, 9/9) | `e2420e5` |

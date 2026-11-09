@@ -72,6 +72,17 @@ Tarayıcıda oluşan beklenmedik hatalar (`src/lib/errorReporting.ts`, `src/inst
 
 Tahta kaydedildikçe en çok 10 dakikada bir önceki hâli saklanır; son 20 sürüm, 90 gün. Yalnızca tahtanın sahibi görür; geri dönmeden önceki hâl de saklanır (`board_restore_version`).
 
+## Topluluk / Keşfet (`community_*`)
+
+Öğretmenler tahta ve soru setlerini platformdaki bütün öğretmenlerle paylaşır; öğrenciler ve ziyaretçiler göremez.
+
+- Paylaşılan, o anın dondurulmuş kopyasıdır; görsel/sesler `community` deposuna (`<öğretmen>/<içerik>/…`) kopyalanır. Yazarın adı görünür.
+- **Kişisel veri taraması** (`private.community_pii`): başlık, açıklama, tahta notları, parça metinleri ve sorularda okuldaki öğrencilerin ad soyadı, e-posta, telefon, 11 haneli sayı aranır; bulunursa paylaşım sunucuda reddedilir. Görsel, el yazısı ve ses taranamaz; öğretmen onay kutusunu işaretlemeden paylaşamaz.
+- **Kopyalama**: `community_copy_begin` kotadan (500 MB: dosyalar + tahta görselleri + soru görselleri + açık rezervasyonlar) yer ayırır; dosyalar kopyalanır; `community_copy_finish` içeriği sunucuda kurar. Hata olursa rezervasyon iptal edilir, kopyalanan dosyalar silinir. Rezervasyon 15 dakikada düşer.
+- Yıldızı ve favoriyi yalnızca veren görür; kopya kaydı (`community_copies`, trend için) kimseye açık değildir.
+- Editörün seçimi ve gizleme yalnızca süper admin (`community_moderate`); gizlenen içerik yazar dışında kimseye görünmez, dosyaları da açılmaz.
+- Test: `supabase/tests/community_test.sql` (11 Kasım 2026: 30/30).
+
 ## İstek hız sınırları
 
 Kullanıcı başına (`private.check_rate`), aşılınca "Çok sık işlem yapıldı" hatası:
@@ -89,6 +100,9 @@ Kullanıcı başına (`private.check_rate`), aşılınca "Çok sık işlem yapı
 | Canlı ders çizimi | 240 / dakika |
 | Canlı ders cevabı | 60 / dakika |
 | Canlı ders başlatma | 30 / saat |
+| Toplulukta paylaşma | 20 / saat |
+| Topluluktan kopyalama | 30 / saat |
+| Yıldız | 120 / saat |
 | Öğrenci ekleme | 300 / 5 dakika |
 | Sınıf koduyla katılma | 10 / 10 dakika (yanlış kodlar da sayılır) |
 | Veri dışa aktarma | 30 / saat |

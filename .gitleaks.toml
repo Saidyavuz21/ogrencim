@@ -3,10 +3,11 @@
 useDefault = true
 
 [[rules]]
-id = "supabase-service-role"
-description = "Supabase service_role / secret anahtarı"
-regex = '''(?i)(service_role|sb_secret_[A-Za-z0-9_-]{20,})'''
-keywords = ["service_role", "sb_secret_"]
+id = "supabase-secret-key"
+description = "Supabase gizli anahtarı (sb_secret_…) ya da koda yazılmış service_role JWT'si"
+# Yalnızca gerçek anahtar biçimini yakalar; belgelerde geçen "service_role" kelimesi alarm vermez.
+regex = '''(?i)(sb_secret_[A-Za-z0-9_-]{20,}|SUPABASE_SERVICE(_ROLE)?_KEY\s*[:=]\s*['"]?eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})'''
+keywords = ["sb_secret_", "supabase_service"]
 
 [[rules]]
 id = "hardcoded-password"
@@ -26,4 +27,5 @@ commits = [
 paths = [
   '''node_modules/''',
   '''\.env\.example$''',
+  '''\.gitleaks\.toml$''',
 ]

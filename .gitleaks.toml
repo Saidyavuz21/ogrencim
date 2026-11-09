@@ -1,0 +1,29 @@
+# gitleaks yapılandırması — varsayılan kurallar + proje kuralları.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-service-role"
+description = "Supabase service_role / secret anahtarı"
+regex = '''(?i)(service_role|sb_secret_[A-Za-z0-9_-]{20,})'''
+keywords = ["service_role", "sb_secret_"]
+
+[[rules]]
+id = "hardcoded-password"
+description = "Kaynak koda gömülü şifre"
+regex = '''(?i)password\s*[:=]\s*['"][^'"\s]{6,}['"]'''
+keywords = ["password"]
+
+[allowlist]
+description = "Geçmişte kalan, artık geçersiz (değiştirilmiş) demo şifreleri"
+commits = [
+  "981d577c5c91e0d5f97bfff5df31c968db7c9cbe",
+  "fcb6531aef0a39b79e1816d3cc779cca67d41163",
+  "a7b0ea4c7a7713ad89173461dc05e5819c17e81b",
+  "b5b8eda4e832648cb6d74f47978f816d6396af08",
+  "0b65580fc8cbf58d1838b417bc58972033b5800a",
+]
+paths = [
+  '''node_modules/''',
+  '''\.env\.example$''',
+]

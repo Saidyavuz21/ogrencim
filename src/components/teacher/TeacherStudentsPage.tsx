@@ -11,6 +11,7 @@ import { Spinner } from '../Spinner';
 import { createStudent, deleteStudent, listStudentPins, listStudents, resetStudentPin, updateStudentInfo, StudentListItem } from '../../lib/supabaseClient';
 import styles from './TeacherDashboard.module.css';
 import pinStyles from './StudentPin.module.css';
+import { TeacherDeletedStudents } from './TeacherDeletedStudents';
 
 interface TeacherStudentsPageProps {
   /** Varsayılan filtre ve yeni öğrencinin varsayılan sınıfı */
@@ -87,11 +88,15 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
   const [busy, setBusy] = useState(false);
   const [sort] = useStudentSort();
 
-  // Giriş PIN'leri: varsayılan gizli, "PIN'leri göster" ile kartlarda görünür
+  // Giriş PIN'leri: varsayılan gizli. Yalnızca "PIN'leri göster" ya da düzenleme açıkken istenir;
+  // her istek erişim kaydına yazılır (kim, hangi öğrencinin PIN'ini gördü).
   const [pins, setPins] = useState<Record<string, string | null>>({});
   const [pinsError, setPinsError] = useState<string | null>(null);
   const [showPins, setShowPins] = useState(false);
+  const [deletedKey, setDeletedKey] = useState(0);
+  const needPins = showPins || editingId !== null;
   useEffect(() => {
+    if (!needPins) return;
     let alive = true;
     listStudentPins(students.map((st) => st.id)).then((res) => {
       if (!alive) return;
@@ -99,7 +104,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
       else setPinsError(res.error);
     });
     return () => { alive = false; };
-  }, [students]);
+  }, [students, needPins]);
   const pinText = (id: string) => (pins[id] ? pins[id] : 'bilinmiyor');
 
   const applyList = (res: Awaited<ReturnType<typeof listStudents>>) => {
@@ -228,7 +233,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
   const handleDelete = async (s: StudentListItem) => {
     const typed = await prompt({
       title: 'Öğrenciyi Sil',
-      message: `${s.name} (No ${s.student_number}) ve bütün kayıtları kalıcı olarak silinecektir.\nBu işlem geri alınamaz.`,
+      message: `${s.name} (No ${s.student_number}) silinecek.\nÖğrenci 30 gün "Silinen öğrenciler" bölümünde kalır; bu sürede puanları ve kayıtlarıyla geri alabilirsiniz.`,
       inputLabel: 'Onaylamak için öğrencinin okul numarasını yazın:',
       placeholder: s.student_number,
       inputMatch: s.student_number,
@@ -244,7 +249,8 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
       setNotice({ kind: 'error', text: `Öğrenci silinemedi: ${res.error}` });
       return;
     }
-    setNotice({ kind: 'ok', text: `${s.name} silindi.` });
+    setNotice({ kind: 'ok', text: `${s.name} silindi. 30 gün içinde "Silinen öğrenciler" bölümünden geri alabilirsiniz.` });
+    setDeletedKey((k) => k + 1);
     setEditingId(null);
     load();
   };
@@ -406,6 +412,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
         )}
         <p className={styles.hintText}>Öğrenciler yalnızca sizin sınıflarınıza ({classNames.join(', ')}) eklenebilir. Başka bir sınıf için &quot;Sınıflarım&quot; sayfasından o sınıfı ekleyin.</p>
       </CollapsiblePanel>
+      <TeacherDeletedStudents refreshKey={deletedKey} onRestored={load} />
       </aside>
       </div>
     </div>

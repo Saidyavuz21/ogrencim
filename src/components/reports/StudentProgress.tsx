@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { logStudentAccess } from '../../lib/privacyData';
 import { Download, Printer } from '../icons';
 import { Spinner } from '../Spinner';
 import {
@@ -26,6 +27,9 @@ export function StudentProgress({ studentId, studentName, currentPoints, self }:
   const [grades, setGrades] = useState<GradeCell[] | null>(null);
   const [events, setEvents] = useState<PointEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Öğretmen raporu açınca erişim kaydına yazılır (öğrencinin kendi sayfası hariç)
+  useEffect(() => { if (!self) void logStudentAccess(studentId, 'report'); }, [studentId, self]);
 
   useEffect(() => {
     let alive = true;

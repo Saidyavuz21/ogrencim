@@ -9,6 +9,7 @@ import styles from './HomePage.module.css';
 import { BrandLogo } from '../BrandLogo';
 import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
 import { InstallAppBanner } from '../InstallAppBanner';
+import { useCaptcha, CAPTCHA_MISSING_MESSAGE } from '../auth/Captcha';
 
 export default function HomePage() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function HomePage() {
   const [pin, setPin] = useState(['', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
+  const captcha = useCaptcha();
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,13 +52,14 @@ export default function HomePage() {
       setNotice('Lütfen 4 haneli PIN kodunuzu eksiksiz girin.');
       return;
     }
+    if (captcha.missing) { setNotice(CAPTCHA_MISSING_MESSAGE); return; }
     submitting.current = true;
     setIsSubmitting(true);
     setNotice('');
     try {
       const result = role === 'Öğretmen'
-        ? await signInStaff(identifier, password, 'ogretmen')
-        : await signInStudent(school?.id || '', identifier, pin.join(''));
+        ? await signInStaff(identifier, password, 'ogretmen', captcha.token)
+        : await signInStudent(school?.id || '', identifier, pin.join(''), captcha.token);
       if (!result.ok) { setNotice(result.error); return; }
       if (role === 'Öğrenci') rememberSchool(school);
       router.push('/giris');
@@ -65,6 +68,7 @@ export default function HomePage() {
     } finally {
       submitting.current = false;
       setIsSubmitting(false);
+      captcha.reset();
     }
   }
 
@@ -124,6 +128,7 @@ export default function HomePage() {
                     document.getElementById(`home-pin-${Math.min(index + digits.length, 3)}`)?.focus();
                   }} />)}</div>
                 </fieldset>}
+                {captcha.widget}
                 <p className={styles.help}>{role === 'Öğretmen' ? 'Öğretmen hesabınızla giriş yapabilirsiniz.' : 'Okul numaranızı ve PIN kodunuzu öğretmeninizden alabilirsiniz.'}</p>
                 <button className={styles.submit} type="submit">{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'} <ArrowRight size={19} /></button>
               </fieldset>
@@ -138,7 +143,7 @@ export default function HomePage() {
         </section>}
       </main>
 
-      <footer className={styles.footer}><div><span>tofutr.com · Birlikte öğrenir, birlikte gelişiriz.</span></div></footer>
+      <footer className={styles.footer}><div><span>tofutr.com · Birlikte öğrenir, birlikte gelişiriz.</span><Link href="/aydinlatma">KVKK aydınlatma metni</Link></div></footer>
     </div>
   );
 }

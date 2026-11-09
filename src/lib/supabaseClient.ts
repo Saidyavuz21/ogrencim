@@ -156,12 +156,13 @@ export async function restoreSession(): Promise<UserAccount | null> {
 }
 
 /** Öğretmen / Admin girişi (e-posta + şifre) */
-export async function signInStaff(email: string, password: string, expectedRole: 'admin' | 'ogretmen'): Promise<AuthResult> {
+export async function signInStaff(email: string, password: string, expectedRole: 'admin' | 'ogretmen', captchaToken?: string): Promise<AuthResult> {
   // Önceki (ör. anonim öğrenci) oturumu kapat
   await supabase.auth.signOut();
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: { captchaToken } });
   if (error || !data.user) {
+    if (error?.message?.toLowerCase().includes('captcha')) return { ok: false, error: CAPTCHA_ERROR };
     if (error?.message?.toLowerCase().includes('email not confirmed')) {
       return { ok: false, error: 'E-posta adresiniz henüz doğrulanmadı. Gelen kutunuzdaki onay bağlantısına tıklayınız.' };
     }
@@ -199,6 +200,8 @@ export async function signUpTeacher(input: {
   className: string;
   /** Öğretmenliği gösteren belge (PDF / JPG / PNG) */
   document: File;
+  /** CAPTCHA jetonu (Supabase'de CAPTCHA açıksa zorunlu) */
+  captchaToken?: string;
 }): Promise<{ ok: boolean; error?: string; docWarning?: string }> {
   const docError = teacherDocumentError(input.document);
   if (docError) return { ok: false, error: docError };
@@ -207,6 +210,7 @@ export async function signUpTeacher(input: {
     email: input.email.trim(),
     password: input.password,
     options: {
+      captchaToken: input.captchaToken,
       data: {
         name: input.name.trim(),
         branch: input.branch,
@@ -220,6 +224,7 @@ export async function signUpTeacher(input: {
   });
   if (error) {
     await supabase.auth.signOut();
+    if (error.message.toLowerCase().includes('captcha')) return { ok: false, error: CAPTCHA_ERROR };
     if (error.message.toLowerCase().includes('already registered')) {
       return { ok: false, error: 'Bu e-posta adresiyle zaten bir hesap var.' };
     }
@@ -267,6 +272,8 @@ export async function getTeacherDocumentUrl(path: string): Promise<string | null
   return data.signedUrl;
 }
 
+const CAPTCHA_ERROR = 'Güvenlik doğrulaması tamamlanamadı. Lütfen doğrulama kutusunu yeniden işaretleyip tekrar deneyiniz.';
+
 const studentLoginErrors: Record<string, string> = {
   invalid: 'Okul numarası veya PIN hatalı.',
   locked: 'Çok fazla hatalı deneme yapıldı. Bu öğrenci hesabı 15 dakika boyunca kilitlendi.',
@@ -276,12 +283,13 @@ const studentLoginErrors: Record<string, string> = {
 };
 
 /** Öğrenci girişi (okul + okul no + 4 haneli PIN). PIN sunucuda doğrulanır. */
-export async function signInStudent(schoolId: string, studentNumber: string, pin: string): Promise<AuthResult> {
+export async function signInStudent(schoolId: string, studentNumber: string, pin: string, captchaToken?: string): Promise<AuthResult> {
   if (!schoolId) return { ok: false, error: studentLoginErrors.no_school };
   const { data: existing } = await supabase.auth.getSession();
   if (!existing.session || !existing.session.user.is_anonymous) {
     await supabase.auth.signOut();
-    const { error } = await supabase.auth.signInAnonymously();
+    const { error } = await supabase.auth.signInAnonymously({ options: { captchaToken } });
+    if (error?.message?.toLowerCase().includes('captcha')) return { ok: false, error: CAPTCHA_ERROR };
     if (error) {
       return { ok: false, error: 'Öğrenci girişi şu anda kullanılamıyor (anonim oturum kapalı). Lütfen okul yönetimine bildiriniz.' };
     }

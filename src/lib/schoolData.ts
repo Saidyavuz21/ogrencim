@@ -98,7 +98,10 @@ export async function listMyGroups(studentId: string): Promise<Result<MyGroupRow
 export async function joinClassWithCode(code: string): Promise<Result<{ class_name: string; status: 'pending' | 'approved' }>> {
   const { data, error } = await supabase.rpc('join_class_with_code', { p_code: code });
   if (error || !data) return fail(error);
-  return { ok: true, data: data as { class_name: string; status: 'pending' | 'approved' } };
+  // Geçersiz kod hata olarak değil, { error } olarak döner: deneme sayısı (hız sınırı) geri alınmasın diye
+  const res = data as { class_name?: string; status?: 'pending' | 'approved'; error?: string };
+  if (res.error || !res.class_name) return fail({ message: res.error || 'Bu kod geçersiz.' });
+  return { ok: true, data: { class_name: res.class_name, status: res.status ?? 'pending' } };
 }
 
 export async function leaveGroup(studentId: string, className: string): Promise<Result> {

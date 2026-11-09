@@ -45,19 +45,19 @@ export function AdminStudentsPage({ data, notify }: Props) {
   const [pinFor, setPinFor] = useState<AdminStudentRecord | null>(null);
   const [pinValue, setPinValue] = useState('');
 
-  // Giriş PIN'leri: varsayılan gizli
+  // Giriş PIN'leri: varsayılan gizli. Yalnızca "PIN'leri göster" ile istenir; her istek erişim kaydına yazılır.
   const [pins, setPins] = useState<Record<string, string | null>>({});
-  const [pinsReady, setPinsReady] = useState(false);
   const [showPins, setShowPins] = useState(false);
   useEffect(() => {
+    if (!showPins) return;
     let alive = true;
     listStudentPins(data.students.map((st) => st.id)).then((res) => {
       if (!alive) return;
-      setPinsReady(res.ok);
       if (res.ok) setPins(res.pins);
+      else { setShowPins(false); notify('error', res.error); }
     });
     return () => { alive = false; };
-  }, [data.students]);
+  }, [data.students, showPins, notify]);
 
   const schoolOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -113,7 +113,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
   const handleDelete = async (s: AdminStudentRecord) => {
     const ok = await confirm({
       title: 'Öğrenciyi Sil',
-      message: `"${s.name}" (${s.student_number}) öğrencisini ve tüm puan geçmişini silmek istediğinize emin misiniz?\nBu işlem geri alınamaz.`,
+      message: `"${s.name}" (${s.student_number}) öğrencisini silmek istediğinize emin misiniz?\nÖğrenci 30 gün Silinenler sayfasında kalır; bu sürede puanları ve kayıtlarıyla geri alınabilir.`,
       confirmText: 'Evet, Sil',
       cancelText: 'Vazgeç',
       variant: 'danger',
@@ -123,7 +123,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
     const res = await deleteStudent(s.id);
     setBusyId(null);
     if (!res.ok) return notify('error', res.error || 'Silinemedi.');
-    notify('ok', `${s.name} silindi.`);
+    notify('ok', `${s.name} silindi. 30 gün içinde Silinenler sayfasından geri alabilirsiniz.`);
     data.refresh();
   };
 
@@ -201,7 +201,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
               />
             </div>
           )}
-          {pinsReady && (
+          {data.students.length > 0 && (
             <button type="button" className={styles.button} aria-pressed={showPins} onClick={() => setShowPins((v) => !v)}>
               {showPins ? <EyeOff className={styles.icon} /> : <Eye className={styles.icon} />}
               {showPins ? "PIN'leri gizle" : "PIN'leri göster"}

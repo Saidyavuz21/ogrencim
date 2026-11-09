@@ -10,6 +10,7 @@ import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker, NEW_SCHOOL } from '../SchoolPicker';
 import { CustomSelect } from '../CustomSelect';
 import { signInStaff, signUpTeacher, teacherDocumentError } from '../../lib/supabaseClient';
+import { useCaptcha, CAPTCHA_MISSING_MESSAGE } from './Captcha';
 
 type TeacherMode = 'login' | 'register';
 
@@ -32,6 +33,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const captcha = useCaptcha();
   useEffect(() => {
     if (errorMsg || successMsg) feedbackRef.current?.focus();
   }, [errorMsg, successMsg]);
@@ -86,10 +88,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
 
     if (!identifier.trim()) return setErrorMsg('Lütfen e-posta adresinizi giriniz.');
     if (!password) return setErrorMsg('Lütfen şifrenizi giriniz.');
+    if (captcha.missing) return setErrorMsg(CAPTCHA_MISSING_MESSAGE);
 
     setIsSubmitting(true);
-    const res = await signInStaff(identifier, password, isAdminPage ? 'admin' : 'ogretmen');
+    const res = await signInStaff(identifier, password, isAdminPage ? 'admin' : 'ogretmen', captcha.token);
     setIsSubmitting(false);
+    captcha.reset();
 
     if (!res.ok) return setErrorMsg(res.error);
 
@@ -137,6 +141,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     }
     const docErr = teacherDocumentError(regDocument);
     if (docErr || !regDocument) return setErrorMsg(docErr || 'Lütfen belgenizi yükleyiniz.');
+    if (captcha.missing) return setErrorMsg(CAPTCHA_MISSING_MESSAGE);
 
     setIsSubmitting(true);
     const res = await signUpTeacher({
@@ -150,8 +155,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
       newSchoolName: regSchoolId === NEW_SCHOOL ? regNewSchool : undefined,
       className: composeClassName(regClassLevel, regClassSection),
       document: regDocument,
+      captchaToken: captcha.token,
     });
     setIsSubmitting(false);
+    captcha.reset();
 
     if (!res.ok) return setErrorMsg(res.error || 'Kayıt yapılamadı.');
 
@@ -206,6 +213,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
           </div>
         </AuthField>
       </fieldset>
+      {captcha.widget}
       <button className={styles.submit} type="submit" disabled={isSubmitting}>
         <span>{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}</span>
         {!isSubmitting && <ArrowRight size={20} aria-hidden="true" />}
@@ -422,6 +430,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                       <ArrowRight size={20} aria-hidden="true" />
                     </button>
                   ) : (
+                    <>
+                    {captcha.widget}
                     <div className={styles.stepActions}>
                       <button className={styles.secondary} type="button" disabled={isSubmitting} onClick={() => goToRegStep('hesap')}>
                         Geri
@@ -431,6 +441,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                         {!isSubmitting && <ArrowRight size={20} aria-hidden="true" />}
                       </button>
                     </div>
+                    </>
                   )}
                 </form>
               )}

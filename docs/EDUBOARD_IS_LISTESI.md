@@ -25,10 +25,10 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
 | 8 | Güvenlik ve KVKK | 9 / 13 |
 | 9 | Kalite: test, CI, izleme | 6 / 7 |
-| 10 | Canlı ders | 1 / 7 |
+| 10 | Canlı ders | 7 / 7 ✅ |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **96 / 121** |
+| | **Toplam** | **102 / 121** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -187,13 +187,13 @@ Ortak kararlar:
 
 ## 10. Canlı ders
 
-- [~] Anlık quiz: öğretmen ders sırasında soruyu bütün sınıfa açar, cevaplar canlı gelir — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (doğru cevap öğretmen gösterene kadar öğrenciye gitmez)
-- [~] Öğrenci çözümünü sınıfa yansıtma — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (öğrenci kendi defterine çizer, öğretmen seçtiğini yansıtır)
-- [~] Öğrenciye süreli (30 sn) tahta kalemi izni — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (süre sunucuda denetlenir)
+- [x] Anlık quiz: öğretmen ders sırasında soruyu bütün sınıfa açar, cevaplar canlı gelir — *K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (doğru cevap öğretmen gösterene kadar öğrenciye gitmez)
+- [x] Öğrenci çözümünü sınıfa yansıtma — *K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (öğrenci kendi defterine çizer, öğretmen seçtiğini yansıtır)
+- [x] Öğrenciye süreli (30 sn) tahta kalemi izni — *K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (süre sunucuda denetlenir)
 - [x] Sürükle-bırak eşleştirme etkinliği — *K-4, K-11* · 10 Kasım 2026 · tahta parçası “Eşleştirme” (sürükle ya da dokun-bırak, kontrol et; puansız)
-- [~] Sesli not — *K-4, K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (mikrofondan en çok 3 dk ya da dosya; ödeve gönderilince ses de kopyalanır)
-- [~] Tahtada eşzamanlı ortak çalışma — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (canlı derste “Ortak çalışma”: bağlı bütün öğrenciler aynı anda tahtaya yazar)
-- [~] Tahta değişiklik geçmişi ve geri dönme — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (10 dakikada bir kopya, son 20 sürüm, 90 gün)
+- [x] Sesli not — *K-4, K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (mikrofondan en çok 3 dk ya da dosya; ödeve gönderilince ses de kopyalanır)
+- [x] Tahtada eşzamanlı ortak çalışma — *K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (canlı derste “Ortak çalışma”: bağlı bütün öğrenciler aynı anda tahtaya yazar)
+- [x] Tahta değişiklik geçmişi ve geri dönme — *K-11* · 10 Kasım 2026 · `6ca6d4f`, `f6ab4d9` (10 dakikada bir kopya, son 20 sürüm, 90 gün)
 
 ## 11. Topluluk / Keşfet
 
@@ -239,3 +239,4 @@ Ortak kararlar:
 | 8 Kasım 2026 | Soru bankası ve quiz: formül ve zengin metin (ortak RichTextField, tahtayla aynı altyapı) | `a8d7ea5` |
 | 9 Kasım 2026 | Güvenlik ve KVKK: Supabase uyarıları, gitleaks, PIN anahtarı yenileme, işlem kaydı, hız sınırları, silinenler kutusu (30 gün), dışa aktarma, veli talepleri ve kalıcı silme (Paket 8, 8/13) | `5e47c79`, `23cd529`, `88e712e`, `cf9ae62`, `df54fe2`, `51e0a24` |
 | 9 Kasım 2026 | Kalite: CI, yetki testleri, uçtan uca testler, yedekleme planı, hata kaydı, tahta dosyalarının bölünmesi, Supabase tipleri; öğretmen panelinde Silinenler ve erişim kaydı (Paket 9, 5/7; Paket 8, 9/13) | `6b2f029`, `989a384`, `4b382fc`, `9640876`, `ff9800e`, `3750d7c`, `e588234`, `ceef6cd`, `d2b8dd2` |
+| 10 Kasım 2026 | Canlı ders: anlık quiz, çözüm yansıtma, 30 sn kalem izni, ortak çalışma; tahtaya eşleştirme ve sesli not; tahta sürüm geçmişi. Veritabanı testi 41/41 (`supabase/tests/live_test.sql`); test kalem izni denetiminde bir açık yakaladı, düzeltildi (Paket 10, 7/7) | `6ca6d4f`, `f6ab4d9`, `b5276a3` |

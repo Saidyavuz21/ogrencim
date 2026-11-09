@@ -66,7 +66,7 @@ Tarayıcıda oluşan beklenmedik hatalar (`src/lib/errorReporting.ts`, `src/inst
 - Öğrenci yalnızca kendi sınıfının, 8 saatten yeni dersini görür. Doğru cevap `private.live_question_keys`'te durur; öğretmen “Cevabı göster” deyince açılır.
 - Öğrencinin defteri (özel katman) yalnızca kendisine ve öğretmene görünür; öğretmen yansıtınca sınıf görür. Tahtaya (ortak katman) yalnızca kalem izni varken (süre sunucuda denetlenir) ya da ortak çalışma açıkken yazılır.
 - Ders bitince çizimler ve katılım bilgisi silinir; cevaplar ve oturum 30 gün sonra silinir (bir sonraki ders başlatılırken). Görsel/ses adresleri 8 saat geçerli süreli adreslerdir.
-- Test: `supabase/tests/live_test.sql` (tek işlemde çalışır, geri alınır).
+- Test: `supabase/tests/live_test.sql` — tek bir DO bloğu; sonunda bilerek hata verir, böylece her şey geri alınır (10 Kasım 2026: 41/41).
 
 ## Tahta sürüm geçmişi (`board_versions`)
 

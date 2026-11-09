@@ -217,6 +217,7 @@ Ortak kararlar:
 - Canlı ders çizimlerini Realtime Broadcast'e taşımak (ortak çizimde veritabanı yükünü düşürür)
 - Gece yedeğini Hostinger Business paketine (200 GB) göndermek
 - Dosyaları kendi sunucumuza (VPS) taşımak: yetki Supabase'de kalır, dosya kapısı VPS'te; Supabase trafik kotasını rahatlatır (2–4 gün)
+- **Tercih edilen yol:** Supabase'i (veritabanı, giriş, canlı, dosyalar) ve uygulamayı Hostinger **KVM 4** VPS'te kendimiz çalıştırmak (Docker); Business paketinin 200 GB'ı gece yedeği. MySQL'e geçilmeyecek (137 RLS kuralı, 188 fonksiyon, giriş/canlı/dosya yeniden yazılırdı). Önce: VPS'teki diğer site ve portları, işletim sistemi, SSH erişimi (1–2 gün)
 
 ## 12. Yapay zekâ
 

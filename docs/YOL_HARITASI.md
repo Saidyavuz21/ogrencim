@@ -26,8 +26,8 @@ Amaç: Gerçek öğrenci verisi girilebilecek kadar güvenli bir giriş ve yetki
 | Duyurular okula göre ayrıldı; yazar adı sunucuda atanır | ✅ |
 | Profilde gerçek şifre değiştirme | ✅ |
 | Supabase: anonim giriş (öğrenci girişi için) | ✅ |
-| Supabase: sızdırılmış şifre korumasını açmak | ⏳ panelden |
-| Admin şifresini değiştirmek (eski şifre git geçmişinde açık) | ⏳ kullanıcı — VPS'e geçişte |
+| Supabase: sızdırılmış şifre koruması | — (kullanıcı kararıyla yok, 10 Kasım 2026) |
+| Admin şifresini değiştirmek | — (kullanıcı kararıyla değiştirilmeyecek, 10 Kasım 2026) |
 
 ## Aşama 2 – Gerçek veri modeli ✅
 
@@ -77,11 +77,13 @@ Amaç: Gerçek öğrenci verisi girilebilecek kadar güvenli bir giriş ve yetki
 - Anonim girişe CAPTCHA (kötüye kullanım koruması)
 - Yedekleme ve geri yükleme planı
 
-## Aşama 6 – KVKK ⏳
+## Aşama 6 – KVKK ✅
 
 Çocuklara ait kişisel veri işlendiği için:
-- Aydınlatma metni ve veli açık rızası
-- Veri saklama süresi, silme talebi akışı
-- Erişim kayıtları (kim hangi öğrencinin verisini gördü/değiştirdi)
+- Aydınlatma metni (`/aydinlatma`, işletmeci tofutr.com, başvuru iletisim@tofutr.com) ve veli açık rızası ✅
+- Veli onayı işaretleme: yönetici KVKK sayfası ve öğretmen paneli "Veli onayları" ✅ 10 Kasım 2026
+- Veri saklama süresi (30 gün silinenler kutusu), silme / kopya talebi akışı ✅
+- Erişim kayıtları (kim hangi öğrencinin verisini gördü/değiştirdi) ✅
+- Rızası olmayan öğrencinin girişi engellenmez; takip okulda (şu an sistemde engel yok)
 
 Ayrıntılı iş kalemleri: [EduBoard listesi, Paket 8](EDUBOARD_IS_LISTESI.md#8-güvenlik-ve-kvkk).

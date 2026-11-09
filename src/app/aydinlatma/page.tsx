@@ -12,18 +12,12 @@ const VERSION = 'v1-2026-11';
 
 /**
  * KVKK aydınlatma metni (md. 10) ve veli açık rıza beyanı.
- * TASLAKTIR: yayına almadan önce okul yönetimi / hukuk danışmanı tarafından gözden geçirilmeli.
  */
 export default function AydinlatmaPage() {
   return (
     <main className={styles.page}>
       <div className={styles.inner}>
         <Link href="/" className={styles.back}>← Ana sayfaya dön</Link>
-
-        <p className={styles.draft} role="note">
-          <strong>Taslak metin.</strong> Bu metin okul yönetimi ve hukuk danışmanı tarafından onaylanmadan
-          veliye imzalatılmamalıdır.
-        </p>
 
         <h1>Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metni</h1>
         <p className={styles.lead}>

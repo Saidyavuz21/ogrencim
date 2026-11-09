@@ -12,8 +12,7 @@ const VERSION = 'v1-2026-11';
 
 /**
  * KVKK aydınlatma metni (md. 10) ve veli açık rıza beyanı.
- * TASLAKTIR: yayına almadan önce okul yönetimi / hukuk danışmanı tarafından gözden geçirilmeli;
- * [köşeli parantez] içindeki bilgiler doldurulmalıdır.
+ * TASLAKTIR: yayına almadan önce okul yönetimi / hukuk danışmanı tarafından gözden geçirilmeli.
  */
 export default function AydinlatmaPage() {
   return (
@@ -23,7 +22,7 @@ export default function AydinlatmaPage() {
 
         <p className={styles.draft} role="note">
           <strong>Taslak metin.</strong> Bu metin okul yönetimi ve hukuk danışmanı tarafından onaylanmadan
-          veliye imzalatılmamalıdır. Köşeli parantez içindeki bilgiler doldurulmalıdır.
+          veliye imzalatılmamalıdır.
         </p>
 
         <h1>Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metni</h1>
@@ -34,9 +33,8 @@ export default function AydinlatmaPage() {
 
         <h2>1. Veri sorumlusu</h2>
         <p>
-          Veri sorumlusu, öğrencinin kayıtlı olduğu okuldur: <strong>[Okul adı, adresi]</strong>.
-          Platformun teknik altyapısı <strong>[platform işletmecisi adı / unvanı]</strong> tarafından veri işleyen
-          sıfatıyla sağlanır.
+          Veri sorumlusu, öğrencinin kayıtlı olduğu okuldur (okulun adı aşağıdaki onay formunda yazılıdır).
+          Platformun teknik altyapısı <strong>tofutr.com</strong> tarafından veri işleyen sıfatıyla sağlanır.
         </p>
 
         <h2>2. İşlenen kişisel veriler</h2>
@@ -68,10 +66,9 @@ export default function AydinlatmaPage() {
         <h2>5. Aktarım</h2>
         <p>
           Veriler yalnızca öğrencinin okulundaki yetkili öğretmenler ve okul yönetimi tarafından görülür;
-          üçüncü kişilerle paylaşılmaz, reklam veya pazarlama amacıyla kullanılmaz. Platformun veritabanı ve dosya
-          depolama hizmeti <strong>Supabase</strong> tarafından sağlanır ve sunucular <strong>[sunucu bölgesi, örn. AB / Frankfurt]</strong>
-          bölgesindedir. Bu nedenle veriler, KVKK md. 9 kapsamında yurt dışına aktarılmaktadır; aktarım açık rızanıza
-          dayanır.
+          üçüncü kişilerle paylaşılmaz, reklam veya pazarlama amacıyla kullanılmaz. Platformun verileri
+          <strong> yurt dışında bulunan sunucularda</strong> saklanır. Bu nedenle veriler, KVKK md. 9 kapsamında yurt dışına
+          aktarılmaktadır; aktarım açık rızanıza dayanır.
         </p>
 
         <h2>6. Saklama süresi</h2>
@@ -91,7 +88,7 @@ export default function AydinlatmaPage() {
           <li>Verdiğiniz açık rızayı her zaman geri almak.</li>
         </ul>
         <p>
-          Başvurunuzu yazılı olarak okul müdürlüğüne veya <strong>[e-posta adresi]</strong> adresine iletebilirsiniz.
+          Başvurunuzu yazılı olarak okul müdürlüğüne veya <a href="mailto:iletisim@tofu.com"><strong>iletisim@tofu.com</strong></a> adresine iletebilirsiniz.
           Başvurular en geç <strong>30 gün</strong> içinde ücretsiz olarak sonuçlandırılır.
         </p>
 
@@ -103,6 +100,8 @@ export default function AydinlatmaPage() {
             bulunan sunucularda saklanmasına açık rıza veriyorum. Bu rızayı dilediğim zaman geri alabileceğimi biliyorum.
           </p>
           <p>
+            Okulun adı: ...........................................................................................
+            <br />
             Öğrencinin adı soyadı: ...................................................... &nbsp; Sınıfı: ............
             <br />
             Velinin adı soyadı: ...................................................... &nbsp; Tarih: ....../....../..........

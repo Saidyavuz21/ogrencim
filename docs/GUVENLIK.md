@@ -58,6 +58,20 @@ Tarayıcıda oluşan beklenmedik hatalar (`src/lib/errorReporting.ts`, `src/inst
 - Yönetim → İşlem ve erişim kaydı → **Hatalar** (yalnızca süper admin).
 - `report_client_error` giriş yapmamış ziyaretçiye de açıktır (giriş sayfası hataları için); Supabase bunu `anon_security_definer_function_executable` uyarısı olarak gösterir, bilerek bırakıldı.
 
+## Canlı ders (`live_*` tabloları)
+
+Öğretmen bir sınıfla canlı ders açınca öğrencilerin ekranına tahta, soru ve çizimler anlık gider (Supabase Realtime; RLS'e göre yalnızca görebilene).
+
+- Yazma işlemlerinin hepsi sunucu fonksiyonuyla (`live_start`, `live_control`, `live_open_question`, `live_close_question`, `live_answer`, `live_save_layer`, `live_clear_shared`, `live_heartbeat`, `live_end`); tablolara doğrudan yazılamaz.
+- Öğrenci yalnızca kendi sınıfının, 8 saatten yeni dersini görür. Doğru cevap `private.live_question_keys`'te durur; öğretmen “Cevabı göster” deyince açılır.
+- Öğrencinin defteri (özel katman) yalnızca kendisine ve öğretmene görünür; öğretmen yansıtınca sınıf görür. Tahtaya (ortak katman) yalnızca kalem izni varken (süre sunucuda denetlenir) ya da ortak çalışma açıkken yazılır.
+- Ders bitince çizimler ve katılım bilgisi silinir; cevaplar ve oturum 30 gün sonra silinir (bir sonraki ders başlatılırken). Görsel/ses adresleri 8 saat geçerli süreli adreslerdir.
+- Test: `supabase/tests/live_test.sql` (tek işlemde çalışır, geri alınır).
+
+## Tahta sürüm geçmişi (`board_versions`)
+
+Tahta kaydedildikçe en çok 10 dakikada bir önceki hâli saklanır; son 20 sürüm, 90 gün. Yalnızca tahtanın sahibi görür; geri dönmeden önceki hâl de saklanır (`board_restore_version`).
+
 ## İstek hız sınırları
 
 Kullanıcı başına (`private.check_rate`), aşılınca "Çok sık işlem yapıldı" hatası:
@@ -72,6 +86,9 @@ Kullanıcı başına (`private.check_rate`), aşılınca "Çok sık işlem yapı
 | Soru bankası | 200 / 5 dakika |
 | Sınıf üyeliği | 200 / 5 dakika |
 | Tahta | 60 / 5 dakika |
+| Canlı ders çizimi | 240 / dakika |
+| Canlı ders cevabı | 60 / dakika |
+| Canlı ders başlatma | 30 / saat |
 | Öğrenci ekleme | 300 / 5 dakika |
 | Sınıf koduyla katılma | 10 / 10 dakika (yanlış kodlar da sayılır) |
 | Veri dışa aktarma | 30 / saat |

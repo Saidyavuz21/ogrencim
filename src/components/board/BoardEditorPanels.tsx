@@ -6,11 +6,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   AlignCenter, AlignLeft, AlignRight, Bold, Bookmark, ChevronDown, ChevronUp, Component, Copy, Italic, Layers, Sliders,
-  Trash2, Underline, Upload,
+  Mic, Square, Trash2, Underline, Upload,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
-import { BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, WIDGET_LABEL, WidgetEl } from '../../lib/boardData';
+import { AUDIO_MAX_SECONDS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, MATCH_MAX_PAIRS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, QuestionRow } from '../../lib/quizData';
 import { getFontSizeOptions } from './BoardCanvas';
@@ -547,6 +547,12 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
           <p className={styles.hintText}>Dakika ve saniye 0 ise kronometre olur (ileri sayar). En fazla 60 dakika.</p>
         </fieldset>
       )}
+      {el.type === 'widget' && el.kind === 'match' && (
+        <MatchEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'audio' && (
+        <AudioEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
       <div className={styles.pageTools}>
         {onConfigure && (
           <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
@@ -750,5 +756,132 @@ export function MediaDrawer({
         </div>
       )}
     </section>
+  );
+}
+
+// --------------------------------------------------------
+// Eşleştirme çiftleri
+// --------------------------------------------------------
+function MatchEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const pairs = data.pairs?.length ? data.pairs : [{ a: '', b: '' }, { a: '', b: '' }];
+  const set = (i: number, side: 'a' | 'b', v: string) => onChange({ ...data, pairs: pairs.map((p, j) => (j === i ? { ...p, [side]: v.slice(0, 120) } : p)) });
+  const ready = pairs.filter((p) => p.a.trim() && p.b.trim()).length;
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Eşleştirme" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <div className={styles.stepEditorSection}>
+        <div className={styles.stepEditorHeaderRow}>
+          <span className={styles.stepEditorTitle}>Çiftler</span>
+          <span className={styles.stepStatsText}>{ready} hazır · en çok {MATCH_MAX_PAIRS}</span>
+        </div>
+        <div className={styles.stepEditorList}>
+          {pairs.map((p, i) => (
+            <div key={i} className={styles.stepEditorRow}>
+              <div className={styles.stepRowHeader}>
+                <span className={styles.stepRowBadge}><b>{i + 1}.</b></span>
+                <div className={styles.stepRowActions}>
+                  <button type="button" className={`${styles.stepActionBtn} ${styles.stepDeleteBtn}`} onClick={() => onChange({ ...data, pairs: pairs.filter((_, j) => j !== i) })} disabled={pairs.length <= 2} title="Sil" aria-label={`${i + 1}. çifti sil`}>
+                    <Trash2 size={13} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+              <input type="text" value={p.a} placeholder="Sol (ör. 3 × 4)" onChange={(e) => set(i, 'a', e.target.value)} aria-label={`${i + 1}. çift, sol`} />
+              <input type="text" value={p.b} placeholder="Eşi (ör. 12)" onChange={(e) => set(i, 'b', e.target.value)} aria-label={`${i + 1}. çift, eşi`} />
+            </div>
+          ))}
+        </div>
+        <button type="button" className={styles.addStepBtn} onClick={() => onChange({ ...data, pairs: [...pairs, { a: '', b: '' }] })} disabled={pairs.length >= MATCH_MAX_PAIRS}>+ Çift ekle</button>
+        <p className={styles.hintText}>Öğrenciye sağdaki kartlar karışık gelir; sürükleyip (ya da dokunup) eşinin yanına bırakır. Formül için $…$ kullanılabilir.</p>
+      </div>
+    </>
+  );
+}
+
+// --------------------------------------------------------
+// Sesli not: mikrofondan kayıt (en çok 3 dk) ya da ses dosyası
+// --------------------------------------------------------
+function pickRecorderType(): string | undefined {
+  if (typeof MediaRecorder === 'undefined') return undefined;
+  return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find((t) => MediaRecorder.isTypeSupported(t));
+}
+
+function AudioEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const [recording, setRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const rec = useRef<MediaRecorder | null>(null);
+  const startedAt = useRef(0);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  // Panel kapanırsa kayıt ve mikrofon kapanır
+  useEffect(() => () => { const r = rec.current; if (r && r.state !== 'inactive') { r.onstop = null; r.stop(); r.stream.getTracks().forEach((t) => t.stop()); } }, []);
+  useEffect(() => {
+    if (!recording) return;
+    const t = window.setInterval(() => {
+      const sec = (Date.now() - startedAt.current) / 1000;
+      setElapsed(sec);
+      if (sec >= AUDIO_MAX_SECONDS) rec.current?.stop();
+    }, 250);
+    return () => window.clearInterval(t);
+  }, [recording]);
+
+  const upload = async (blob: Blob, name: string, seconds?: number) => {
+    setBusy(true);
+    setError(null);
+    const res = await uploadBoardAudio(blob, name, seconds);
+    setBusy(false);
+    if (!res.ok) { setError(res.error); return; }
+    onChange({ ...data, audio: res.data });
+  };
+
+  const start = async () => {
+    setError(null);
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') { setError('Bu tarayıcı ses kaydını desteklemiyor. Ses dosyası yükleyebilirsiniz.'); return; }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setError('Mikrofona izin verilmedi. Tarayıcının adres çubuğundaki mikrofon simgesinden izin verebilirsiniz.');
+      return;
+    }
+    const type = pickRecorderType();
+    const r = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 64000 } : undefined);
+    const chunks: Blob[] = [];
+    r.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    r.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      setRecording(false);
+      const seconds = (Date.now() - startedAt.current) / 1000;
+      const blob = new Blob(chunks, { type: (r.mimeType || type || 'audio/webm').split(';')[0] });
+      if (blob.size) void upload(blob, 'kayit', seconds);
+    };
+    rec.current = r;
+    startedAt.current = Date.now();
+    setElapsed(0);
+    r.start(1000);
+    setRecording(true);
+  };
+  const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Sesli not" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <div className={styles.pageTools}>
+        {recording ? (
+          <button type="button" className={styles.tool} onClick={() => rec.current?.stop()}><Square size={16} aria-hidden="true" /> Durdur · {fmt(elapsed)}</button>
+        ) : (
+          <button type="button" className={styles.tool} onClick={start} disabled={busy}><Mic size={16} aria-hidden="true" /> {data.audio ? 'Yeniden kaydet' : 'Kaydet'}</button>
+        )}
+        <button type="button" className={styles.tool} onClick={() => fileRef.current?.click()} disabled={busy || recording}><Upload size={16} aria-hidden="true" /> Dosya</button>
+        <input ref={fileRef} type="file" accept="audio/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void upload(f, f.name); }} />
+      </div>
+      {busy && <p className={styles.hintText} role="status">Yükleniyor…</p>}
+      {error && <p className={styles.limitWarnText} role="alert">{error}</p>}
+      <p className={styles.hintText}>{recording ? `Kayıt sürüyor; ${fmt(AUDIO_MAX_SECONDS)} olunca kendiliğinden durur.` : data.audio ? 'Ses eklendi. Tahtada oynat düğmesiyle dinlenir.' : 'En çok 3 dakika ya da 5 MB. Ödeve gönderilince ses de öğrenciye gider.'}</p>
+    </>
   );
 }

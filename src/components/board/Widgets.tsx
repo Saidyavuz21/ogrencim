@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from '../icons';
 import { useDialog } from '../ConfirmDialog';
 import { playAlarm } from '../teacher/classtools/Countdown';
-import { revealAnswer, WidgetEl } from '../../lib/boardData';
+import { imageKey, revealAnswer, WidgetEl } from '../../lib/boardData';
 import { answerQuiz, CHOICE_LETTERS, PRACTICE_TRIES, PracticeAnswerResult, QuestionRow, QuizStateItem } from '../../lib/quizData';
 import { RichText } from '../math/RichText';
 import styles from './Board.module.css';
@@ -16,7 +16,10 @@ import styles from './Board.module.css';
  * - review: öğretmen öğrencinin tahtasına bakıyor — doğru cevap quiz sorusundan
  */
 export interface WidgetContext {
-  mode: 'teacher' | 'student' | 'review';
+  /** live: canlı derste öğrenci (sorular bankadan gelmez; Mini Test'i öğretmen canlı açar) */
+  mode: 'teacher' | 'student' | 'review' | 'live';
+  /** Sesli not adresleri: "bucket/yol" → süreli adres */
+  mediaUrls?: Record<string, string>;
   questions?: Map<string, QuestionRow>;
   items?: Map<string, QuizStateItem>;
   /** review: quiz sorularının doğru cevabı */
@@ -34,9 +37,14 @@ export interface WidgetContext {
 }
 
 export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
+  if (ctx.mode === 'live' && (el.kind === 'minitest' || el.kind === 'reveal')) {
+    return <div className={styles.widget}><p className={styles.widgetTitle}>{el.kind === 'minitest' ? 'Mini Test' : 'Cevabı Göster'}</p><p className={styles.widgetNote}>Öğretmen soruyu açınca ekranında görünecek.</p></div>;
+  }
   if (el.kind === 'minitest') return <MiniTest el={el} ctx={ctx} />;
   if (el.kind === 'reveal') return <Reveal el={el} ctx={ctx} />;
   if (el.kind === 'steps') return <Steps el={el} ctx={ctx} />;
+  if (el.kind === 'match') return <Match el={el} />;
+  if (el.kind === 'audio') return <AudioNote el={el} ctx={ctx} />;
   return <Timer el={el} />;
 }
 
@@ -396,6 +404,199 @@ function Timer({ el }: { el: WidgetEl }) {
         </button>
         <button type="button" className={`${styles.widgetButton} ${styles.secondary}`} onClick={reset} aria-label="Sıfırla"><RotateCcw size={18} aria-hidden="true" /></button>
       </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------
+// Eşleştirme: sağdaki kartlar sürüklenip (ya da dokunup) soldaki eşinin yanına bırakılır.
+// Sonuç yalnızca ekranda gösterilir; puan verilmez (cevaplar tahta içeriğinde durur).
+// --------------------------------------------------------
+/** Kimliğe bağlı sabit karıştırma: her açılışta aynı sıra; kartlar asıl sırasında kalmaz */
+function seededOrder(n: number, seed: string): number[] {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+  const rnd = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; };
+  const order = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  if (n > 1 && order.every((v, i) => v === i)) order.push(order.shift()!);
+  return order;
+}
+
+function Match({ el }: { el: WidgetEl }) {
+  const pairs = useMemo(() => (el.data.pairs || []).filter((p) => p.a.trim() && p.b.trim()), [el.data.pairs]);
+  const order = useMemo(() => seededOrder(pairs.length, el.id), [pairs.length, el.id]);
+  // Sol satır → bırakılan kartın (sağ öğenin) asıl sırası
+  const [placed, setPlaced] = useState<Record<number, number>>({});
+  const [picked, setPicked] = useState<number | null>(null);
+  const [checked, setChecked] = useState(false);
+  const [drag, setDrag] = useState<{ card: number; dx: number; dy: number } | null>(null);
+  const start = useRef<{ x: number; y: number; scale: number; moved: boolean } | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  if (pairs.length < 2) {
+    return <div className={styles.widget}><p className={styles.widgetTitle}>{el.data.title?.trim() || 'Eşleştirme'}</p><p className={styles.widgetNote}>En az iki çift gerekli. Parçayı seçip sağdaki panelden çiftleri yazın.</p></div>;
+  }
+
+  const usedCards = new Set(Object.values(placed));
+  const place = (slot: number, card: number) => {
+    setChecked(false);
+    setPlaced((prev) => {
+      const next: Record<number, number> = {};
+      Object.entries(prev).forEach(([k, v]) => { if (v !== card && Number(k) !== slot) next[Number(k)] = v; });
+      next[slot] = card;
+      return next;
+    });
+    setPicked(null);
+  };
+  const unplace = (slot: number) => {
+    setChecked(false);
+    setPlaced((prev) => { const next = { ...prev }; delete next[slot]; return next; });
+  };
+
+  const onCardDown = (card: number) => (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const t = e.currentTarget;
+    const r = t.getBoundingClientRect();
+    start.current = { x: e.clientX, y: e.clientY, scale: t.offsetWidth ? r.width / t.offsetWidth : 1, moved: false };
+    t.setPointerCapture(e.pointerId);
+    setDrag({ card, dx: 0, dy: 0 });
+  };
+  const onCardMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const s0 = start.current;
+    if (!s0 || !drag) return;
+    const dx = e.clientX - s0.x, dy = e.clientY - s0.y;
+    if (!s0.moved && Math.hypot(dx, dy) < 6) return;
+    s0.moved = true;
+    setDrag({ ...drag, dx: dx / s0.scale, dy: dy / s0.scale });
+  };
+  const onCardUp = (card: number) => (e: React.PointerEvent<HTMLButtonElement>) => {
+    const s0 = start.current;
+    start.current = null;
+    setDrag(null);
+    if (!s0) return;
+    if (!s0.moved) { setPicked((p) => (p === card ? null : card)); return; }
+    const target = document.elementsFromPoint(e.clientX, e.clientY)
+      .map((n) => (n as HTMLElement).closest?.('[data-match-slot]') as HTMLElement | null)
+      .find((n) => n && rootRef.current?.contains(n));
+    if (target) place(Number(target.dataset.matchSlot), card);
+  };
+
+  const correctCount = pairs.reduce((a, _, i) => a + (placed[i] === i ? 1 : 0), 0);
+  const placedCount = Object.keys(placed).length;
+
+  return (
+    <div className={styles.widget} ref={rootRef}>
+      <div className={styles.stepsHeader}>
+        <p className={styles.widgetTitle}>{el.data.title?.trim() || 'Eşleştirme'}</p>
+        <span className={styles.stepsCounter}>{placedCount} / {pairs.length}</span>
+      </div>
+      <div className={styles.matchGrid}>
+        <ol className={styles.matchSlots}>
+          {pairs.map((p, i) => {
+            const card = placed[i];
+            const state = checked && card != null ? (card === i ? styles.choiceOk : styles.choiceBad) : '';
+            return (
+              <li key={i} className={styles.matchRow}>
+                <span className={styles.matchLeft}><RichText text={p.a} inline /></span>
+                <button
+                  type="button"
+                  data-match-slot={i}
+                  className={`${styles.matchSlot} ${card != null ? styles.matchSlotFilled : ''} ${state} ${picked != null && card == null ? styles.matchSlotReady : ''}`}
+                  onClick={() => { if (picked != null) place(i, picked); else if (card != null) unplace(i); }}
+                  aria-label={card != null ? `${i + 1}. satır: ${pairs[card].b}. Kaldırmak için dokun.` : `${i + 1}. satır boş${picked != null ? '. Seçili kartı buraya bırak.' : ''}`}
+                >
+                  {card != null ? <RichText text={pairs[card].b} inline /> : <span className={styles.matchEmpty}>Buraya bırak</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        <div className={styles.matchCards} role="group" aria-label="Eşleştirilecek kartlar">
+          {order.map((card) => usedCards.has(card) ? null : (
+            <button
+              key={card}
+              type="button"
+              className={`${styles.matchCard} ${picked === card ? styles.matchCardPicked : ''} ${drag?.card === card ? styles.matchCardDragging : ''}`}
+              style={drag?.card === card ? { transform: `translate(${drag.dx}px, ${drag.dy}px)` } : undefined}
+              onPointerDown={onCardDown(card)}
+              onPointerMove={onCardMove}
+              onPointerUp={onCardUp(card)}
+              onPointerCancel={() => { start.current = null; setDrag(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPicked((p) => (p === card ? null : card)); } }}
+              aria-pressed={picked === card}
+            >
+              <RichText text={pairs[card].b} inline />
+            </button>
+          ))}
+          {usedCards.size === pairs.length && <p className={styles.widgetNote}>Bütün kartlar yerleştirildi.</p>}
+        </div>
+      </div>
+      <div className={styles.widgetRow}>
+        <button type="button" className={styles.widgetButton} onClick={() => setChecked(true)} disabled={placedCount < pairs.length}>Kontrol et</button>
+        <button type="button" className={`${styles.widgetButton} ${styles.secondary}`} onClick={() => { setPlaced({}); setChecked(false); setPicked(null); }} disabled={!placedCount}>Sıfırla</button>
+        {checked && (
+          <p className={`${styles.widgetFeedback} ${correctCount === pairs.length ? styles.fbOk : styles.fbBad}`} role="status">
+            {correctCount === pairs.length ? 'Hepsi doğru!' : `${correctCount} / ${pairs.length} doğru. Kırmızıları değiştirip yeniden dene.`}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------
+// Sesli not: büyük oynat düğmesi ve ilerleme çubuğu (akıllı tahtada da rahat basılır)
+// --------------------------------------------------------
+function AudioNote({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
+  const ref = el.data.audio;
+  const url = ref ? ctx.mediaUrls?.[imageKey(ref)] : undefined;
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(ref?.seconds || 0);
+  const title = el.data.title?.trim() || 'Sesli not';
+  const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+
+  if (!ref) {
+    return <div className={styles.widget}><p className={styles.widgetTitle}>{title}</p><p className={styles.widgetNote}>Ses eklenmedi. Parçayı seçip sağdaki panelden kaydedin ya da dosya yükleyin.</p></div>;
+  }
+  const toggle = () => {
+    const a = audio.current;
+    if (!a) return;
+    if (a.paused) a.play().catch(() => setPlaying(false)); else a.pause();
+  };
+  return (
+    <div className={styles.widget} style={{ justifyContent: 'center' }}>
+      <p className={styles.widgetTitle}>{title}</p>
+      {url ? (
+        <div className={styles.audioRow}>
+          <button type="button" className={styles.audioPlay} onClick={toggle} aria-label={playing ? 'Duraklat' : 'Oynat'}>
+            {playing ? <Pause size={22} aria-hidden="true" /> : <Play size={22} aria-hidden="true" />}
+          </button>
+          <input
+            type="range"
+            className={styles.audioSeek}
+            min={0}
+            max={Math.max(1, duration)}
+            step={0.1}
+            value={Math.min(time, Math.max(1, duration))}
+            onChange={(e) => { const v = Number(e.target.value); if (audio.current) audio.current.currentTime = v; setTime(v); }}
+            aria-label="Konum"
+          />
+          <span className={styles.stepsCounter}>{fmt(time)} / {fmt(duration)}</span>
+          <audio
+            ref={audio}
+            src={url}
+            preload="metadata"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onEnded={() => { setPlaying(false); setTime(0); }}
+            onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+            onLoadedMetadata={(e) => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) setDuration(d); }}
+          />
+        </div>
+      ) : <p className={styles.widgetNote}>Ses yükleniyor…</p>}
     </div>
   );
 }

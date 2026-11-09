@@ -58,7 +58,11 @@ export interface NoteEl {
   lib?: ElementLib;
 }
 export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib }
-export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer';
+export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio';
+/** Eşleştirme etkinliği: soldaki öğe ↔ sağdaki eşi */
+export interface MatchPair { a: string; b: string }
+/** Sesli not dosyası (öğretmenin klasöründe ya da ödev alanında) */
+export interface AudioRef { bucket: string; path: string; seconds?: number }
 export interface WidgetData {
   /** Mini Test (öğretmenin tahtasında): bankadaki soru */
   questionId?: string;
@@ -72,6 +76,10 @@ export interface WidgetData {
   lastIsResult?: boolean;
   /** Kronometre: 0 = ileri sayım, >0 = geri sayım (sn) */
   seconds?: number;
+  /** Eşleştirme: 2–8 çift */
+  pairs?: MatchPair[];
+  /** Sesli not */
+  audio?: AudioRef;
 }
 export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib }
 export interface PolyEl {
@@ -90,10 +98,14 @@ export interface BoardContent { version: 1; pages: BoardPage[] }
 /** Öğrencinin çizim katmanı: sayfa kimliği → çizgiler */
 export type DrawingLayer = Record<string, StrokeEl[]>;
 
-export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre' };
+export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme', audio: 'Sesli Not' };
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
+  match: { w: 860, h: 560 }, audio: { w: 460, h: 200 },
 };
+export const MATCH_MAX_PAIRS = 8;
+export const AUDIO_MAX_SECONDS = 180;
+export const AUDIO_MAX_BYTES = 5 * 1024 * 1024;
 
 export const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
 export const newPage = (background: Background = 'blank'): BoardPage => ({ id: newId(), background, elements: [] });
@@ -360,16 +372,46 @@ export async function duplicateBoard(id: string): Promise<Result<BoardRow>> {
   return createBoard(`${src.data.title} (kopya)`.slice(0, 120), src.data.subject, src.data.grade, src.data.content, src.data.category);
 }
 
+// --------------------------------------------------------
+// Sürüm geçmişi: kaydedilen tahtanın 10 dakikada bir kopyası (en çok 20 sürüm, 90 gün)
+// --------------------------------------------------------
+export interface BoardVersion { id: number; created_at: string; page_count: number; bytes: number; reason: string }
+
+export async function listBoardVersions(boardId: string): Promise<Result<BoardVersion[]>> {
+  const { data, error } = await supabase
+    .from('board_versions')
+    .select('id, created_at, page_count, bytes, reason')
+    .eq('board_id', boardId)
+    .order('created_at', { ascending: false });
+  if (error) return fail(error);
+  return { ok: true, data: (data as BoardVersion[]) || [] };
+}
+
+export async function getBoardVersion(id: number): Promise<Result<BoardContent>> {
+  const { data, error } = await supabase.from('board_versions').select('content').eq('id', id).single();
+  if (error || !data) return fail(error);
+  return { ok: true, data: normalizeContent((data as { content: unknown }).content) };
+}
+
+/** Sürüme döner; o anki hâli de sürüm olarak saklanır (geri dönüş de geri alınabilir) */
+export async function restoreBoardVersion(versionId: number): Promise<Result<BoardContent>> {
+  const { data, error } = await supabase.rpc('board_restore_version', { p_version: versionId });
+  if (error || !data) return fail(error);
+  return { ok: true, data: normalizeContent(data) };
+}
+
 /** Hiçbir tahtada kullanılmayan görselleri depodan siler */
 export async function cleanupBoardImages(): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return;
-  const [objs, boards] = await Promise.all([
+  const [objs, boards, versions] = await Promise.all([
     supabase.storage.from(BOARD_IMAGE_BUCKET).list(auth.user.id, { limit: 1000 }),
     supabase.from('boards').select('content').eq('teacher_id', auth.user.id),
+    // Sürüm geçmişindeki dosyalar da korunur (geri dönülünce görseller/sesler kaybolmasın)
+    supabase.from('board_versions').select('content').eq('teacher_id', auth.user.id),
   ]);
-  if (objs.error || boards.error) return;
-  const used = JSON.stringify(boards.data || []);
+  if (objs.error || boards.error || versions.error) return;
+  const used = JSON.stringify(boards.data || []) + JSON.stringify(versions.data || []);
   const unused = (objs.data || []).map((o) => `${auth.user!.id}/${o.name}`).filter((p) => !used.includes(p));
   if (unused.length) await supabase.storage.from(BOARD_IMAGE_BUCKET).remove(unused);
 }
@@ -435,6 +477,36 @@ export async function boardImageUrls(images: { bucket: string; path: string }[])
 }
 export const imageKey = (el: { bucket: string; path: string }) => `${el.bucket}/${el.path}`;
 
+/** Tahtadaki bütün dosya başvuruları: görseller ve sesli notlar */
+export function mediaRefs(pages: BoardPage[]): { bucket: string; path: string }[] {
+  const out: { bucket: string; path: string }[] = [];
+  for (const p of pages) {
+    for (const el of p.elements) {
+      if (el.type === 'image') out.push({ bucket: el.bucket, path: el.path });
+      else if (el.type === 'widget' && el.kind === 'audio' && el.data.audio?.path) out.push({ bucket: el.data.audio.bucket, path: el.data.audio.path });
+    }
+  }
+  return out;
+}
+
+const AUDIO_TYPES: Record<string, string> = { webm: 'audio/webm', ogg: 'audio/ogg', mp4: 'audio/mp4', m4a: 'audio/mp4', mp3: 'audio/mpeg', mpeg: 'audio/mpeg', wav: 'audio/wav' };
+
+/** Sesli not (kayıt ya da dosya) öğretmenin tahta klasörüne yüklenir */
+export async function uploadBoardAudio(blob: Blob, name: string, seconds?: number): Promise<Result<AudioRef>> {
+  if (blob.size > AUDIO_MAX_BYTES) return { ok: false, error: 'Ses dosyası 5 MB’tan büyük olamaz.' };
+  const base = (blob.type || '').split(';')[0].trim();
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  const type = Object.values(AUDIO_TYPES).includes(base) ? base : AUDIO_TYPES[ext];
+  if (!type) return { ok: false, error: 'Yalnızca ses dosyası (MP3, M4A, OGG, WEBM, WAV) eklenebilir.' };
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return { ok: false, error: 'Oturum bulunamadı.' };
+  const fileExt = Object.entries(AUDIO_TYPES).find(([, t]) => t === type)?.[0] || 'webm';
+  const path = `${auth.user.id}/ses-${Date.now().toString(36)}.${fileExt}`;
+  const { error } = await supabase.storage.from(BOARD_IMAGE_BUCKET).upload(path, blob, { contentType: type, upsert: false });
+  if (error) return fail(error);
+  return { ok: true, data: { bucket: BOARD_IMAGE_BUCKET, path, seconds: seconds ? Math.round(seconds) : undefined } };
+}
+
 // --------------------------------------------------------
 // Ödeve gönderme: görseller ödevin alanına kopyalanır, Mini Test soruları sunucuda dondurulur
 // --------------------------------------------------------
@@ -448,15 +520,24 @@ export async function publishBoardToHomework(homeworkId: string, boardId: string
   for (const p of b.data.content.pages) {
     const elements: BoardEl[] = [];
     for (const el of p.elements) {
-      if (el.type === 'image' && el.bucket === BOARD_IMAGE_BUCKET) {
-        let to = copied.get(el.path);
+      const copyFile = async (path: string, fallbackName: string): Promise<string | { error: string }> => {
+        let to = copied.get(path);
         if (!to) {
-          to = `${schoolId || 'none'}/${homeworkId}/${safeFileName(el.path.split('/').pop() || 'gorsel.png')}`;
-          const { error } = await supabase.storage.from(BOARD_IMAGE_BUCKET).copy(el.path, to, { destinationBucket: HOMEWORK_BUCKET });
-          if (error) return fail(error);
-          copied.set(el.path, to);
+          to = `${schoolId || 'none'}/${homeworkId}/${safeFileName(path.split('/').pop() || fallbackName)}`;
+          const { error } = await supabase.storage.from(BOARD_IMAGE_BUCKET).copy(path, to, { destinationBucket: HOMEWORK_BUCKET });
+          if (error) return { error: error.message };
+          copied.set(path, to);
         }
+        return to;
+      };
+      if (el.type === 'image' && el.bucket === BOARD_IMAGE_BUCKET) {
+        const to = await copyFile(el.path, 'gorsel.png');
+        if (typeof to !== 'string') return { ok: false, error: to.error };
         elements.push({ ...el, bucket: HOMEWORK_BUCKET, path: to });
+      } else if (el.type === 'widget' && el.kind === 'audio' && el.data.audio?.bucket === BOARD_IMAGE_BUCKET) {
+        const to = await copyFile(el.data.audio.path, 'ses.webm');
+        if (typeof to !== 'string') return { ok: false, error: to.error };
+        elements.push({ ...el, data: { ...el.data, audio: { ...el.data.audio, bucket: HOMEWORK_BUCKET, path: to } } });
       } else {
         elements.push(el);
       }

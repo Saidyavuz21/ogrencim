@@ -20,6 +20,8 @@ import { StudentReadingPage } from '../reading/StudentReadingPage';
 import { StudentMaterialsPage } from '../files/StudentMaterialsPage';
 import { StudentProgress } from '../reports/StudentProgress';
 import { StudentGroupsPage } from '../school/StudentGroupsPage';
+import { LiveJoinStrip, LiveStudentSession } from '../live/LiveStudentSession';
+import { useMyLiveSessions } from '../../lib/liveData';
 import styles from '../teacher/TeacherDashboard.module.css';
 
 interface StudentPortalProps {
@@ -53,6 +55,8 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [version, setVersion] = useState(0);
+  const liveSessions = useMyLiveSessions(true);
+  const [liveId, setLiveId] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -133,6 +137,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
         onOpenPage={openPage}
       />
       <div className={styles.dashboard}>
+        <LiveJoinStrip sessions={liveSessions} onJoin={setLiveId} />
         {page === 'home' || !info ? (
           <StudentHome
             me={me}
@@ -192,7 +197,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
           <StudentAccountPage me={me} fallbackName={user.name} fallbackNo={user.studentNo} fallbackClass={user.className} onLogout={handleLogout} />
         )}
       </div>
+      {liveId && <LiveStudentSession sessionId={liveId} studentId={user.id} onClose={() => setLiveId(null)} />}
     </div>
   );
 }
-

@@ -2,15 +2,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Download, Eraser, Eye, EyeOff, Highlighter, Image as ImageIcon, Layers, Maximize, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, RotateCcw, RotateCw, Shapes, Sliders, Square, StickyNote, Trash2, Type,
+  Copy, Download, Eraser, Eye, EyeOff, Highlighter, History, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
+  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Shapes, Shuffle, Sliders, Square, StickyNote, Trash2, Type,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import {
   Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl,
   boardImageUrls, BoardPage, BoardRow, byteSize, cloneElements, copyImageToBoard, exportBoardPng, getBoard,
-  HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, MAX_PAGES, newId, newPage, NoteEl, saveBoard, scaleElements,
+  HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, mediaRefs, MAX_PAGES, newId, newPage, NoteEl, saveBoard, scaleElements,
   StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { listQuestions, QuestionRow } from '../../lib/quizData';
@@ -25,6 +25,8 @@ import {
 import { ShapeConfigModal } from './ShapeConfigModal';
 import { SaveShapeModal } from './SaveShapeModal';
 import { EditShapeModal } from './EditShapeModal';
+import { BoardVersionsModal } from './BoardVersions';
+import { LiveTeacherSession } from '../live/LiveTeacherSession';
 
 import styles from './Board.module.css';
 import { COLORS, MediaDrawer, MultiSelectionPanel, SelectionPanel } from './BoardEditorPanels';
@@ -68,6 +70,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showVersions, setShowVersions] = useState(false);
+  const [live, setLive] = useState(false);
   // Tam ekranda sağdan açılan panel (sayfalar, zemin, seçili öğe, medya)
   const [panelOpen, setPanelOpen] = useState(false);
   // Tam ekranda araç çubuğu tahtanın üstünde yüzer; gizlenebilir
@@ -188,10 +192,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     questions: questionMap,
     allWidgets,
     stepState,
-  }), [questionMap, allWidgets, stepState]);
+    mediaUrls: imageUrls,
+  }), [questionMap, allWidgets, stepState, imageUrls]);
 
   // Görsel adresleri
-  const imageKeys = useMemo(() => Array.from(new Set((content?.pages || []).flatMap((p) => p.elements.filter((e): e is ImageEl => e.type === 'image').map((e) => imageKey(e))))).sort().join('|'), [content]);
+  const imageKeys = useMemo(() => Array.from(new Set(mediaRefs(content?.pages || []).map((e) => imageKey(e)))).sort().join('|'), [content]);
   useEffect(() => {
     const missing = imageKeys ? imageKeys.split('|').filter((k) => !imageUrls[k]) : [];
     if (!missing.length) return;
@@ -813,7 +818,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
     const size = WIDGET_SIZE[kind];
-    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : {} };
+    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : kind === 'match' ? { title: 'Eşleştirme', pairs: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] } : kind === 'audio' ? { title: 'Sesli not' } : {} };
     commitElements([...page.elements, el]);
     setTool('select');
     setSelectedIds([el.id]);
@@ -884,8 +889,19 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           <h2>{board.title}</h2>
           {saveLabel}
           <span className={styles.spacer} />
+          <button type="button" className={styles.tool} onClick={() => setShowVersions(true)} title="Sürüm geçmişi" aria-label="Sürüm geçmişi">
+            <History size={20} aria-hidden="true" />
+          </button>
           <button type="button" className={styles.presentButton} onClick={startPresent} title="Derste göster: düzenleme yok, kalemle yazılanlar kaydedilmez">
             <Play size={20} aria-hidden="true" />Sun
+          </button>
+          <button
+            type="button"
+            className={styles.presentButton}
+            onClick={() => { if (saveState !== 'saved') { setNotice('Canlı dersten önce değişikliklerin kaydedilmesini bekleyin.'); return; } setLive(true); }}
+            title="Sınıfla canlı ders: öğrenciler tahtayı kendi ekranında izler, soruları cevaplar, sırası gelince yazar"
+          >
+            <Radio size={20} aria-hidden="true" />Canlı ders
           </button>
           <button type="button" className={styles.openButton} onClick={toggleFull}>
             <Maximize size={22} aria-hidden="true" />Tam ekranda düzenle
@@ -931,6 +947,35 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         </div>
         {deleteConfirm}
         {printArea}
+        {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="alert" onClick={() => setNotice(null)}>{notice}</p>}
+        {showVersions && (
+          <BoardVersionsModal
+            boardId={boardId}
+            blocked={saveState !== 'saved'}
+            imageUrls={imageUrls}
+            onClose={() => setShowVersions(false)}
+            onRestored={(c) => {
+              setContent(c);
+              setPast([]);
+              setFuture([]);
+              setSelectedIds([]);
+              setPageIndex(0);
+              setSaveState('saved');
+              setShowVersions(false);
+              setNotice('Tahta seçilen sürüme döndü. Önceki hâli de geçmişte duruyor.');
+            }}
+          />
+        )}
+        {live && (
+          <LiveTeacherSession
+            boardId={boardId}
+            title={board.title}
+            content={content}
+            imageUrls={imageUrls}
+            questions={questions}
+            onClose={() => setLive(false)}
+          />
+        )}
       </div>
     );
   }
@@ -1306,6 +1351,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                           {k === 'timer' ? <Clock size={16} /> :
                            k === 'minitest' ? <Component size={16} /> :
                            k === 'reveal' ? <Eye size={16} /> :
+                           k === 'match' ? <Shuffle size={16} /> :
+                           k === 'audio' ? <Mic size={16} /> :
                            <Layers size={16} />}
                         </span>
                         <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>

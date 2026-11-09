@@ -25,10 +25,10 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
 | 8 | Güvenlik ve KVKK | 9 / 13 |
 | 9 | Kalite: test, CI, izleme | 6 / 7 |
-| 10 | Canlı ders | 0 / 7 |
+| 10 | Canlı ders | 1 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **95 / 121** |
+| | **Toplam** | **96 / 121** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -187,13 +187,13 @@ Ortak kararlar:
 
 ## 10. Canlı ders
 
-- [ ] Anlık quiz: öğretmen ders sırasında soruyu bütün sınıfa açar, cevaplar canlı gelir — *K-11*
-- [ ] Öğrenci çözümünü sınıfa yansıtma — *K-11*
-- [ ] Öğrenciye süreli (30 sn) tahta kalemi izni — *K-11*
-- [ ] Sürükle-bırak eşleştirme etkinliği — *K-4, K-11*
-- [ ] Sesli not — *K-4, K-11*
-- [ ] Tahtada eşzamanlı ortak çalışma — *K-11*
-- [ ] Tahta değişiklik geçmişi ve geri dönme — *K-11*
+- [~] Anlık quiz: öğretmen ders sırasında soruyu bütün sınıfa açar, cevaplar canlı gelir — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (doğru cevap öğretmen gösterene kadar öğrenciye gitmez)
+- [~] Öğrenci çözümünü sınıfa yansıtma — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (öğrenci kendi defterine çizer, öğretmen seçtiğini yansıtır)
+- [~] Öğrenciye süreli (30 sn) tahta kalemi izni — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (süre sunucuda denetlenir)
+- [x] Sürükle-bırak eşleştirme etkinliği — *K-4, K-11* · 10 Kasım 2026 · tahta parçası “Eşleştirme” (sürükle ya da dokun-bırak, kontrol et; puansız)
+- [~] Sesli not — *K-4, K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (mikrofondan en çok 3 dk ya da dosya; ödeve gönderilince ses de kopyalanır)
+- [~] Tahtada eşzamanlı ortak çalışma — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (canlı derste “Ortak çalışma”: bağlı bütün öğrenciler aynı anda tahtaya yazar)
+- [~] Tahta değişiklik geçmişi ve geri dönme — *K-11* · kod hazır; `20261110090000_live_lesson.sql` çalıştırılınca devreye girer (10 dakikada bir kopya, son 20 sürüm, 90 gün)
 
 ## 11. Topluluk / Keşfet
 

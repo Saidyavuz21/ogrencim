@@ -972,3 +972,23 @@
   flex-direction: column;
   gap: 8px;
 }
+
+/* Eşleştirme parçası */
+.matchGrid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 1cqw; flex: 1 1 auto; min-height: 0; }
+.matchSlots { display: grid; gap: 0.5cqw; margin: 0; padding: 0; list-style: none; align-content: start; }
+.matchRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.6cqw; align-items: stretch; }
+.matchLeft { display: flex; align-items: center; min-height: 2.8cqw; padding: 0.4cqw 0.8cqw; border-radius: 0.7cqw; background: #f0eee7; font-size: 1.3cqw; font-weight: 600; overflow-wrap: anywhere; }
+.matchSlot { display: flex; align-items: center; min-height: 2.8cqw; padding: 0.4cqw 0.8cqw; border: 0.14cqw dashed #b9b4a6; border-radius: 0.7cqw; background: #fff; color: inherit; font: inherit; font-size: 1.3cqw; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.matchSlotFilled { border-style: solid; border-color: #25634b; }
+.matchSlotReady { border-color: #2a78d6; background: #eef4fc; }
+.matchEmpty { color: #8a948f; font-size: 1.1cqw; }
+.matchCards { display: flex; flex-direction: column; gap: 0.5cqw; }
+.matchCard { min-height: 2.8cqw; padding: 0.4cqw 0.8cqw; border: 0.14cqw solid #d8d4c9; border-radius: 0.7cqw; background: #fffdf5; color: inherit; font: inherit; font-size: 1.3cqw; text-align: left; cursor: grab; touch-action: none; user-select: none; overflow-wrap: anywhere; box-shadow: 0 0.12cqw 0.3cqw rgb(20 35 28 / 10%); }
+.matchCardPicked { border-color: #2a78d6; background: #eef4fc; }
+.matchCardDragging { position: relative; z-index: 5; cursor: grabbing; box-shadow: 0 0.5cqw 1.2cqw rgb(20 35 28 / 22%); }
+
+/* Sesli not parçası */
+.audioRow { display: flex; align-items: center; gap: 1cqw; }
+.audioPlay { display: grid; place-items: center; flex-shrink: 0; width: 4.4cqw; height: 4.4cqw; border: 0; border-radius: 50%; background: #25634b; color: #fff; cursor: pointer; }
+.audioPlay svg { width: 2cqw; height: 2cqw; }
+.audioSeek { flex: 1; min-width: 0; accent-color: #25634b; }

@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from '../icons';
 import { Spinner } from '../Spinner';
 import {
-  BoardContent, boardImageUrls, DrawingLayer, getDrawing, getHomeworkBoard, HISTORY_LIMIT, ImageEl, listDrawings, saveMyDrawing, StrokeEl, WidgetEl,
+  BoardContent, boardImageUrls, DrawingLayer, getDrawing, getHomeworkBoard, HISTORY_LIMIT, listDrawings, mediaRefs, saveMyDrawing, StrokeEl, WidgetEl,
 } from '../../lib/boardData';
 import { getQuizReport, getQuizState, QuizStateItem } from '../../lib/quizData';
 import { Modal } from '../files/FilesUi';
@@ -30,7 +30,7 @@ function useHomeworkBoard(homeworkId: string) {
       if (!alive) return;
       if (!res.ok) { setError(res.error); return; }
       setContent(res.data.content);
-      const imgs = res.data.content.pages.flatMap((p) => p.elements.filter((e): e is ImageEl => e.type === 'image'));
+      const imgs = mediaRefs(res.data.content.pages);
       if (imgs.length) {
         const u = await boardImageUrls(imgs);
         if (alive) setImageUrls(u);
@@ -138,7 +138,7 @@ export function StudentBoardPlayer({ homeworkId, title, studentId, open, onClose
   const redo = () => { if (!future.length) return; setPast((p) => [...p, layer]); setLayer(future[0]); setFuture((f2) => f2.slice(1)); setDirty(true); };
 
   const ctx: WidgetContext = {
-    mode: 'student', homeworkId, allWidgets: widgets, items, locked: !open,
+    mode: 'student', homeworkId, allWidgets: widgets, items, locked: !open, mediaUrls: imageUrls,
     onItem: (itemId, patch) => { changed.current = true; setItems((prev) => { const m = new Map(prev); const cur = m.get(itemId); if (cur) m.set(itemId, { ...cur, ...patch }); return m; }); },
   };
 
@@ -223,7 +223,7 @@ export function BoardDrawingsReview({ homeworkId, title, students, onClose }: {
 
   const page = content?.pages[Math.min(pageIndex, (content?.pages.length || 1) - 1)];
   const withDrawing = students.filter((s) => summaries?.get(s.id));
-  const ctx: WidgetContext = { mode: 'review', allWidgets: widgets, reviewKeys: keys };
+  const ctx: WidgetContext = { mode: 'review', allWidgets: widgets, reviewKeys: keys, mediaUrls: imageUrls };
 
   return (
     <Modal title={title} kicker="Öğrenci çizimleri" onClose={onClose} wide>

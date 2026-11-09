@@ -20,6 +20,12 @@ Güncelleme: 10 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
 - [x] Sayfa adı "Keşfet" → "Topluluk"; eski `?sayfa=kesfet` adresi yönlenir · `3349ba4`
 - [x] Ana sayfa üst kısmında "Topluluk" bağlantısı (şimdilik giriş sonrası Topluluk'a götürür; Aşama 4'te herkese açık sayfaya bağlanacak) · `3349ba4`
 
+## Veritabanı ve veri katmanı ✅
+
+- [x] Aşama 1–4'ün bütün tabloları, güvenlik kuralları ve fonksiyonları · 10 Kasım 2026 · `099e0f0` (`supabase/migrations/20261113090000_community_social.sql`, Supabase'e uygulandı ve doğrulandı)
+- [x] Arayüz için veri katmanı: `src/lib/communitySocialData.ts`
+- Ekranlar Gemini ile yapılacak: istemler `docs/TOPLULUK_GEMINI_ISTEMLERI.md`; her istemden sonra Claude kontrol eder.
+
 ## Aşama 1 – Profil, gizlilik, takip
 
 - [ ] **Profil bilgileri:** görünen ad, branş, il, okul, kısa tanıtım (en fazla 200 karakter)

@@ -68,6 +68,28 @@
 .filterBar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .searchField { flex: 1 1 260px; min-width: 0; }
 .filterSelect { flex: 0 1 220px; min-width: 180px; }
+.clearFilterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d6d2c6;
+  border-radius: 8px;
+  background: #f7f6f2;
+  color: #58665f;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+}
+.clearFilterButton:hover {
+  background: #fbecee;
+  border-color: #e6bbc3;
+  color: #943747;
+}
 .segmented { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid #dedad0; border-radius: 10px; background: #f7f6f2; }
 .segmented button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: #58665f; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .segmented button[aria-pressed='true'] { background: #fff; color: #25634b; box-shadow: 0 1px 2px rgb(20 35 28 / 12%); }
@@ -110,3 +132,104 @@
 /* Öğrenci giriş PIN'i */
 .pinShown { display: block; color: #25634b; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 .pinUnknown { display: block; color: #58665f; font-size: 14px; font-style: italic; }
+
+/* Sayfalama (Pagination) */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 18px;
+  border-top: 1px solid #e7e5dd;
+  margin-top: 16px;
+}
+.paginationInfo {
+  font-size: 13px;
+  color: #58665f;
+  line-height: 1.5;
+}
+.paginationInfo strong {
+  color: #20352d;
+}
+.paginationControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.pageSizeSelector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #58665f;
+  margin-right: 8px;
+}
+.pageSizeSelect {
+  padding: 6px 10px;
+  border: 1px solid #c8d3cc;
+  border-radius: 8px;
+  background: #fff;
+  color: #20352d;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+}
+.pageSizeSelect:focus-visible {
+  outline: 2px solid #25634b;
+  outline-offset: 1px;
+}
+.pageButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #d6d2c6;
+  border-radius: 8px;
+  background: #fff;
+  color: #20352d;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pageButton:hover:not(:disabled) {
+  background: #f0eee7;
+  border-color: #25634b;
+}
+.pageButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.pageButtonActive {
+  background: #25634b !important;
+  border-color: #25634b !important;
+  color: #fff !important;
+}
+.pageDots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 36px;
+  color: #58665f;
+  font-size: 14px;
+}
+@media (max-width: 640px) {
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .paginationControls {
+    justify-content: center;
+  }
+}

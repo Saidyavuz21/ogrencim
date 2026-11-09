@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import styles from './AdminManagement.module.css';
-import { Plus, Trash2, X } from '../icons';
+import { ChevronLeft, ChevronRight, Plus, Trash2, X } from '../icons';
 import { TURKEY_CITIES } from '../../data/portalData';
 import { CustomSelect } from '../CustomSelect';
 import { useDialog } from '../ConfirmDialog';
@@ -83,12 +83,24 @@ const PASTE_PLACEHOLDER = [
   'İzmir; Bornova; Cumhuriyet İlkokulu',
 ].join('\n');
 
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+  if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
 /** Onaylı okullar: arama, il filtresi, okul başına öğretmen/öğrenci sayısı, toplu ekleme, silme */
 export function AdminSchoolsPage({ data, notify, startWithForm = false }: Props) {
   const { confirm } = useDialog();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [cityFilter, setCityFilter] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [activityFilter, setActivityFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [formOpen, setFormOpen] = useState(startWithForm);
   const [mode, setMode] = useState<AddMode>('district');
@@ -97,9 +109,14 @@ export function AdminSchoolsPage({ data, notify, startWithForm = false }: Props)
   const [names, setNames] = useState('');
   const [pasted, setPasted] = useState('');
 
-  const approved = data.schools.filter((s) => s.status === 'approved');
-  const cities = [...new Set(approved.map((s) => s.city))].sort((a, b) => a.localeCompare(b, 'tr'));
-  const filtered = approved.filter((s) => (!cityFilter || s.city === cityFilter) && matchesQuery(query, s.name, s.city, s.district));
+  const approved = useMemo(() => data.schools.filter((s) => s.status === 'approved'), [data.schools]);
+  const cities = useMemo(() => [...new Set(approved.map((s) => s.city))].sort((a, b) => a.localeCompare(b, 'tr')), [approved]);
+
+  const availableDistricts = useMemo(() => {
+    const pool = cityFilter ? approved.filter((s) => s.city === cityFilter) : approved;
+    const set = new Set(pool.map((s) => s.district).filter(Boolean));
+    return [...set].sort((a, b) => a.localeCompare(b, 'tr'));
+  }, [approved, cityFilter]);
 
   const counts = useMemo(() => {
     const map: Record<string, { teachers: number; students: number }> = {};
@@ -111,6 +128,55 @@ export function AdminSchoolsPage({ data, notify, startWithForm = false }: Props)
     data.students.forEach((s) => bump(s.school_id, 'students'));
     return map;
   }, [data.profiles, data.students]);
+
+  const filtered = useMemo(() => {
+    return approved.filter((s) => {
+      if (cityFilter && s.city !== cityFilter) return false;
+      if (districtFilter && s.district !== districtFilter) return false;
+      if (query && !matchesQuery(query, s.name, s.city, s.district)) return false;
+
+      if (typeFilter) {
+        const n = norm(s.name);
+        if (typeFilter === 'ilkokul' && !n.includes('ilkokul')) return false;
+        if (typeFilter === 'ortaokul' && !n.includes('ortaokul')) return false;
+        if (typeFilter === 'lise' && !n.includes('lise')) return false;
+        if (typeFilter === 'anaokulu' && !n.includes('anaokul')) return false;
+        if (typeFilter === 'imam-hatip' && !n.includes('imam hatip')) return false;
+      }
+
+      if (activityFilter) {
+        const c = counts[s.id] || { teachers: 0, students: 0 };
+        if (activityFilter === 'has_teacher' && c.teachers === 0) return false;
+        if (activityFilter === 'no_teacher' && c.teachers > 0) return false;
+        if (activityFilter === 'has_student' && c.students === 0) return false;
+      }
+
+      return true;
+    });
+  }, [approved, cityFilter, districtFilter, query, typeFilter, activityFilter, counts]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filtered.length);
+  const paginatedSchools = filtered.slice(startIndex, endIndex);
+
+  const handleQueryChange = (val: string) => { setQuery(val); setPage(1); };
+  const handleCityChange = (val: string) => { setCityFilter(val); setDistrictFilter(''); setPage(1); };
+  const handleDistrictChange = (val: string) => { setDistrictFilter(val); setPage(1); };
+  const handleTypeChange = (val: string) => { setTypeFilter(val); setPage(1); };
+  const handleActivityChange = (val: string) => { setActivityFilter(val); setPage(1); };
+  const handlePageSizeChange = (val: number) => { setPageSize(val); setPage(1); };
+
+  const hasActiveFilters = Boolean(query || cityFilter || districtFilter || typeFilter || activityFilter);
+  const handleClearFilters = () => {
+    setQuery('');
+    setCityFilter('');
+    setDistrictFilter('');
+    setTypeFilter('');
+    setActivityFilter('');
+    setPage(1);
+  };
 
   const inDistrict = city && district ? approved.filter((s) => s.city === city && s.district === district).length : 0;
 
@@ -277,16 +343,64 @@ export function AdminSchoolsPage({ data, notify, startWithForm = false }: Props)
       <section className={styles.section} aria-labelledby="schools-title">
         <h2 id="schools-title" className={styles.sectionTitle}>Okullar ({approved.length})</h2>
         <FilterBar>
-          <SearchInput id="school-search" value={query} onChange={setQuery} placeholder="Okul, il veya ilçe ara" />
+          <SearchInput id="school-search" value={query} onChange={handleQueryChange} placeholder="Okul, il veya ilçe ara" />
           {cities.length > 1 && (
             <div className={styles.filterSelect}>
               <CustomSelect
                 value={cityFilter}
-                onChange={setCityFilter}
+                onChange={handleCityChange}
                 options={[{ value: '', label: 'Bütün iller' }, ...cities.map((c) => ({ value: c, label: c }))]}
                 placeholder="İl"
               />
             </div>
+          )}
+          {availableDistricts.length > 0 && (
+            <div className={styles.filterSelect}>
+              <CustomSelect
+                value={districtFilter}
+                onChange={handleDistrictChange}
+                options={[{ value: '', label: 'Bütün ilçeler' }, ...availableDistricts.map((d) => ({ value: d, label: d }))]}
+                placeholder="İlçe"
+              />
+            </div>
+          )}
+          <div className={styles.filterSelect}>
+            <CustomSelect
+              value={typeFilter}
+              onChange={handleTypeChange}
+              options={[
+                { value: '', label: 'Bütün kademeler' },
+                { value: 'ilkokul', label: 'İlkokul' },
+                { value: 'ortaokul', label: 'Ortaokul' },
+                { value: 'lise', label: 'Lise' },
+                { value: 'anaokulu', label: 'Anaokulu' },
+                { value: 'imam-hatip', label: 'İmam Hatip' },
+              ]}
+              placeholder="Kademe"
+            />
+          </div>
+          <div className={styles.filterSelect}>
+            <CustomSelect
+              value={activityFilter}
+              onChange={handleActivityChange}
+              options={[
+                { value: '', label: 'Kullanım: Tümü' },
+                { value: 'has_teacher', label: 'Öğretmeni olanlar' },
+                { value: 'no_teacher', label: 'Öğretmeni olmayanlar' },
+                { value: 'has_student', label: 'Öğrencisi olanlar' },
+              ]}
+              placeholder="Durum"
+            />
+          </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className={styles.clearFilterButton}
+              onClick={handleClearFilters}
+              title="Tüm filtreleri sıfırla"
+            >
+              <X size={15} aria-hidden="true" /> Temizle
+            </button>
           )}
         </FilterBar>
 
@@ -295,24 +409,92 @@ export function AdminSchoolsPage({ data, notify, startWithForm = false }: Props)
         {!data.loading && approved.length > 0 && filtered.length === 0 && <EmptyState>Aramanıza uyan okul yok.</EmptyState>}
 
         {filtered.length > 0 && (
-          <ul className={styles.list}>
-            {filtered.map((s) => {
-              const c = counts[s.id] || { teachers: 0, students: 0 };
-              return (
-                <li key={s.id} className={styles.row}>
-                  <div className={styles.details}>
-                    <span className={styles.name}>{s.name}</span>
-                    <span className={styles.muted}>{s.district} / {s.city} • {c.teachers} öğretmen • {c.students} öğrenci</span>
+          <>
+            <ul className={styles.list}>
+              {paginatedSchools.map((s) => {
+                const c = counts[s.id] || { teachers: 0, students: 0 };
+                return (
+                  <li key={s.id} className={styles.row}>
+                    <div className={styles.details}>
+                      <span className={styles.name}>{s.name}</span>
+                      <span className={styles.muted}>{s.district} / {s.city} • {c.teachers} öğretmen • {c.students} öğrenci</span>
+                    </div>
+                    <div className={styles.actions}>
+                      <button type="button" disabled={busyId === s.id} onClick={() => handleDelete(s)} aria-label={`${s.name} okulunu sil`} className={styles.danger}>
+                        <Trash2 className={styles.icon} />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {filtered.length > 10 && (
+              <nav className={styles.pagination} aria-label="Okul listesi sayfalama">
+                <div className={styles.paginationInfo}>
+                  {filtered.length === approved.length ? (
+                    <span>Toplam <strong>{approved.length}</strong> okuldan <strong>{startIndex + 1}–{endIndex}</strong> arası gösteriliyor</span>
+                  ) : (
+                    <span>Filtrelenen <strong>{filtered.length}</strong> okuldan <strong>{startIndex + 1}–{endIndex}</strong> arası gösteriliyor (Toplam {approved.length} okul)</span>
+                  )}
+                </div>
+
+                <div className={styles.paginationControls}>
+                  <div className={styles.pageSizeSelector}>
+                    <label htmlFor="school-page-size">Sayfa başı:</label>
+                    <select
+                      id="school-page-size"
+                      className={styles.pageSizeSelect}
+                      value={pageSize}
+                      onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
                   </div>
-                  <div className={styles.actions}>
-                    <button type="button" disabled={busyId === s.id} onClick={() => handleDelete(s)} aria-label={`${s.name} okulunu sil`} className={styles.danger}>
-                      <Trash2 className={styles.icon} />
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    aria-label="Önceki sayfa"
+                    title="Önceki sayfa"
+                  >
+                    <ChevronLeft size={16} aria-hidden="true" />
+                  </button>
+
+                  {getPageNumbers(currentPage, totalPages).map((p, idx) =>
+                    p === '...' ? (
+                      <span key={`dots-${idx}`} className={styles.pageDots}>…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        type="button"
+                        className={`${styles.pageButton} ${p === currentPage ? styles.pageButtonActive : ''}`}
+                        onClick={() => setPage(p)}
+                        aria-current={p === currentPage ? 'page' : undefined}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    aria-label="Sonraki sayfa"
+                    title="Sonraki sayfa"
+                  >
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              </nav>
+            )}
+          </>
         )}
       </section>
     </div>

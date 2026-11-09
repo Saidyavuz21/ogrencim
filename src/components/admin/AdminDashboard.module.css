@@ -1,36 +1,54 @@
-/* ===== Süper admin kabuğu: öğretmen panelinin sol menü + üst çubuk yapısını kullanır ===== */
-
-/* Genel bakış */
-.homeIntro h1 { margin: 0; color: var(--teacher-text); font-size: clamp(24px, 4vw, 30px); line-height: 1.3; letter-spacing: -.025em; }
-.homeIntro p { margin: 8px 0 0; color: var(--teacher-muted); font-size: 15px; line-height: 1.6; }
-
-.statGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-.statCard { display: grid; gap: 4px; padding: 18px 20px; border: 1px solid var(--teacher-border); border-radius: 14px; background: var(--teacher-surface); color: var(--teacher-text); text-decoration: none; transition: border-color 150ms, background 150ms; }
-.statCard strong { font-size: 30px; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; color: var(--teacher-primary); font-variant-numeric: tabular-nums; }
-.statCard span { font-size: 14px; line-height: 1.4; color: var(--teacher-muted); }
-.statCard:hover { border-color: var(--teacher-primary); background: #fbfcfa; }
-.statAlert { border-color: #e5d4ab; background: #fff9ec; }
-.statAlert strong { color: #775516; }
-.statAlert:hover { border-color: #b98a2b; background: #fff4dc; }
-
-.recentPanel { display: grid; gap: 8px; padding: 20px; border: 1px solid #e5d4ab; border-radius: 16px; background: #fffdf7; }
+/* Yalnızca süper admin ana sayfası. Ortak kabuk ve alt sayfalar bu stilleri kullanmaz. */
+.home { display: grid; gap: 24px; min-width: 0; }
+.home ::selection { background: #e6f1e9; color: #20352d; }
+.homeIntro { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.homeIntro h1 { margin: 0; color: var(--teacher-text); font-size: 22px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.homeIntro p { margin: 6px 0 0; color: var(--teacher-muted); font-size: 14px; line-height: 1.6; }
+.status { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 8px; background: #e8f3eb; color: #216044; font-size: 13px; line-height: 1.5; }
+.statusPending { background: #fff3d6; color: #805217; }
+.statGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--teacher-border); border-radius: 18px; background: var(--teacher-surface); overflow: hidden; }
+.statCard { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 12px; padding: 20px 24px; color: var(--teacher-text); text-decoration: none; min-width: 0; }
+.statCard + .statCard { border-left: 1px solid var(--teacher-border); }
+.statCard span { color: var(--teacher-muted); font-size: 14px; }
+.statCard strong { grid-row: 2; font-size: 28px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.statCard svg { grid-column: 2; grid-row: 1 / 3; color: var(--teacher-primary); }
+.overviewGrid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: 24px; }
+.panel { min-width: 0; padding: 22px 24px; border: 1px solid var(--teacher-border); border-radius: 18px; background: var(--teacher-surface); }
+.home h2 { margin: 0; color: var(--teacher-text); font-size: 18px; font-weight: 600; line-height: 1.4; }
+.panelHead { margin-bottom: 12px; }
+.panelHead p { margin: 6px 0 0; color: var(--teacher-muted); font-size: 13px; line-height: 1.6; }
+.approvalRow, .managementLink, .recentList a { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 14px 0; color: var(--teacher-text); text-decoration: none; }
+.approvalRow + .approvalRow, .managementLink + .managementLink, .recentList li + li { border-top: 1px solid #eeece5; }
+.linkIcon { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; background: #e6f1e9; color: var(--teacher-primary); }
+.linkText { display: grid; gap: 4px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.linkTitle { font-size: 14px; font-weight: 500; line-height: 1.5; }
+.linkDescription { color: var(--teacher-muted); font-size: 13px; line-height: 1.6; }
+.home a > svg { flex-shrink: 0; color: var(--teacher-primary); }
 .recentHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.recentHead h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--teacher-text); }
-.recentAll { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; color: var(--teacher-primary); font-size: 14px; font-weight: 600; text-decoration: none; }
-.recentAll:hover { text-decoration: underline; }
-.recentList { display: grid; margin: 0; padding: 0; list-style: none; }
-.recentList li + li { border-top: 1px solid #efe6d0; }
-.recentList a { display: grid; gap: 2px; padding: 10px 0; color: var(--teacher-text); text-decoration: none; }
-.recentList a:hover .recentName { text-decoration: underline; }
-.recentName { font-size: 15px; font-weight: 600; }
-.recentMeta { font-size: 13px; color: var(--teacher-muted); }
-.recentMeta em { font-style: normal; color: #943747; font-weight: 600; }
-
-.statCard:focus-visible, .recentAll:focus-visible, .recentList a:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
-
-@media (max-width: 640px) {
-  .statGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .statCard { padding: 14px 16px; }
-  .statCard strong { font-size: 26px; }
-  .recentPanel { padding: 16px; }
+.recentAll { display: inline-flex; align-items: center; gap: 3px; min-height: 44px; flex-shrink: 0; color: var(--teacher-primary); font-size: 13px; font-weight: 500; text-decoration: none; }
+.recentList { margin: 0; padding: 0; list-style: none; }
+.missingDoc { color: #a33342; font-size: 12px; }
+.empty { display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 146px; margin: 0; color: var(--teacher-muted); font-size: 14px; text-align: center; line-height: 1.6; }
+.empty svg { color: var(--teacher-primary); }
+.empty p { margin: 0; }
+.management { display: grid; gap: 14px; min-width: 0; }
+.managementGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.panel h3 { margin: 0 0 8px; color: var(--teacher-muted); font-size: 14px; font-weight: 600; line-height: 1.5; }
+.managementLink:last-child { padding-bottom: 0; }
+.home a:hover .linkTitle, .recentAll:hover { text-decoration: underline; text-underline-offset: 3px; }
+.statCard:hover { background: #e6f1e9; }
+.home a:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 3px; border-radius: 8px; }
+.statCard:focus-visible { outline-offset: -4px; }
+@media (max-width: 767px) {
+  .home { gap: 18px; }
+  .homeIntro { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .homeIntro h1 { font-size: 20px; }
+  .overviewGrid, .managementGrid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .panel { padding: 16px; border-radius: 16px; }
+  .statGrid { border-radius: 16px; }
+  .statCard { padding: 16px 12px; gap: 8px; }
+  .statCard strong { font-size: 24px; }
+  .statCard span { font-size: 13px; }
+  .statCard svg { display: none; }
+  .recentHead h2 { font-size: 17px; }
 }

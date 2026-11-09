@@ -12,7 +12,7 @@ web
 
 ## Operating Context
 
-Kullanıcının belirttiği ana kullanım ortamı telefon ekranıdır. Tasarım önce mobilde çözülür; masaüstü bu yapının genişlemesidir. Ekranlar ferah, kolay okunur ve rahat dokunulur olmalı; içerik tek ekrana sığdırılmak için sıkıştırılmamalıdır.
+Telefon ve masaüstü web birlikte desteklenir. 8–9 Kasım 2026 çalışmasında kullanıcı aynı görsel dilin farklı yerleşimlerle kullanılmasını seçti; tek görünüm istendiğinde diğeri korunur. Ekranlar ferah, okunaklı ve rahat dokunulur olmalı; içerik tek ekrana sığdırılmak için sıkıştırılmamalıdır. Ayrı bir native mobil uygulama bu çalışmanın teslimi değildir.
 
 ## Product Purpose
 
@@ -27,7 +27,7 @@ Kullanıcının belirttiği ana kullanım ortamı telefon ekranıdır. Tasarım 
 
 ## Brand Commitments
 
-Kullanıcının seçimi: daha sıcak ve öğrenci odaklı kimlik. İlk örnek: öğretmen paneli. Kullanıcının sonraki isteğiyle ilk uygulama giriş ve öğretmen kaydı ekranına taşındı. Bu ekranın uygulanan palet ve bileşen kuralları DESIGN.md içinde kayıtlıdır; genel öneri docs/TASARIM_DILI.md içinde korunur. Görsel doğrulama henüz tamamlanmadı.
+Kullanıcının seçimi sıcak ve öğrenci odaklı kimliktir. Güncel öğretmen panelinde yeşil ve sıcak nötr palet korunur; baskın mavi yönü reddedildi. Ortak header, daraltılabilir sidebar, mobil alt menü ve kompakt içerik desenleri DESIGN.md ve docs/UI_KURALLARI.md içindedir. Giriş/kayıt ekranının kendi ölçüleri korunur. docs/TASARIM_DILI.md tarihsel öneri olarak saklanır. Bütün sayfa/boyutlarda görsel doğrulama henüz tamamlanmadı.
 
 ## Evidence on Hand
 

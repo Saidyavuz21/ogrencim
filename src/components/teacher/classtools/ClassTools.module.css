@@ -390,3 +390,54 @@
   .groupTitle { font-size: 15px; }
   .groupMembers { font-size: 14px; }
 }
+
+/* Shared teacher shell refinements, with full-screen presentation preserved. */
+.workspace { gap: 22px; }
+.workspace .tabsNav { gap: 0; }
+.workspace .tabsNav > .scrollBtn { display: none; }
+.workspace .tabsTrack { border: 0; border-radius: 12px; padding: 5px; background: #ecefe8; overflow: visible; }
+.workspace .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; overflow: visible; }
+.workspace .tabs button { justify-content: center; min-width: 0; min-height: 48px; padding: 10px; white-space: normal; font-size: 14px; font-weight: 500; line-height: 1.5; }
+.workspace .tabs button svg { flex-shrink: 0; }
+.workspace .tabs button[aria-selected='true'] { box-shadow: 0 1px 3px rgb(20 35 28 / 6%); }
+.workspace .layout { gap: 24px; }
+.workspace .stage:not(.full) { min-height: 440px; padding: 24px; border-radius: 18px; gap: 20px; }
+.workspace .stage:not(.full):not(.stageWarn):not(.stageDone) { background: #25634b; }
+.workspace .stage:not(.full) .ghost { min-height: 44px; border-radius: 10px; font-size: 13px; font-weight: 500; }
+.workspace .stage:not(.full) .primary { min-height: 52px; border-radius: 12px; font-size: 17px; font-weight: 600; box-shadow: 0 3px 10px rgb(20 35 28 / 12%); }
+.workspace .stage:not(.full) .secondary { min-height: 52px; border-radius: 12px; font-size: 16px; font-weight: 500; }
+.workspace .stage:not(.full) .name { font-weight: 600; line-height: 1.2; }
+.workspace .stage:not(.full) .clockMain { font-weight: 600; }
+.workspace .panel { padding: 22px; border-radius: 18px; gap: 16px; }
+.workspace .panelHead h2, .workspace .panelTitle { font-size: 17px; font-weight: 600; line-height: 1.5; }
+.workspace .muted { font-size: 13px; line-height: 1.7; }
+.workspace .option { min-height: 44px; font-size: 13px; line-height: 1.6; }
+.workspace .chip { min-height: 44px; border-radius: 10px; padding: 8px 12px; font-weight: 500; }
+.workspace .link { min-height: 44px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+.workspace .preset { min-height: 44px; border-radius: 10px; }
+.workspace .custom { gap: 10px; }
+.workspace .custom input { min-height: 48px; font-size: 16px; border-radius: 10px; }
+.workspace .setButton { min-height: 48px; border-radius: 10px; }
+.workspace .segment { border-radius: 12px; }
+.workspace .segment button { min-height: 44px; font-weight: 500; }
+.workspace .stepper button { min-width: 44px; min-height: 44px; }
+.workspace .stage:not(.full) .group { border-radius: 12px; }
+.workspace .stage:not(.full) .groupTitle { font-size: 15px; font-weight: 600; }
+.workspace .stage:not(.full) .groupMembers { font-size: 14px; font-weight: 500; line-height: 1.6; }
+@media (min-width: 1024px) {
+  .workspace .layout { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+@media (max-width: 767px) {
+  .workspace { gap: 18px; }
+  .workspace .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace .tabs button { justify-content: flex-start; gap: 8px; padding: 10px 12px; font-size: 13px; }
+  .workspace .layout { gap: 18px; }
+  .workspace .stage:not(.full) { min-height: 360px; padding: 18px 16px; border-radius: 16px; }
+  .workspace .panel { padding: 18px 16px; border-radius: 16px; }
+  .workspace .stage:not(.full) .controls { gap: 8px; }
+  .workspace .stage:not(.full) .controls > button { width: 100%; min-width: 0; min-height: 48px; font-size: 16px; }
+  .workspace .custom { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace .custom > button { grid-column: 1 / -1; }
+  .workspace .presets { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .workspace .stage:not(.full) .groups { grid-template-columns: minmax(0, 1fr); }
+}

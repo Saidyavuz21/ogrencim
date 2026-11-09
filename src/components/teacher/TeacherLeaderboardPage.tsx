@@ -132,12 +132,12 @@ export function TeacherLeaderboardPage({ selectedClass }: { selectedClass: strin
   }, [ranked]);
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.leaderboardWorkspace}`}>
       <div className={styles.pointsLayout}>
         <section className={styles.studentList} aria-label={`${selectedClass} puan sıralaması`}>
           <div className={styles.listHeading}>
-            <h3>{selectedClass} sınıfı</h3>
-            <span>{ranked.length} öğrenci · puanlar canlı veritabanından</span>
+            <div><h2>{selectedClass} sınıfı</h2><p>Puanı eşit olan öğrenciler aynı sırayı paylaşır.</p></div>
+            {!loading && !error && <span>{ranked.length} öğrenci</span>}
           </div>
           {loading && <Spinner center label="Yükleniyor…" />}
           {error && <p className={`${styles.noticeError} ${styles.listPad}`}>{error}</p>}

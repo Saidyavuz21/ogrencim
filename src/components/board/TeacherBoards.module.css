@@ -1,0 +1,35 @@
+.workspace { gap: 22px; }
+.intro { padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; }
+.intro > p { flex: 1 1 360px; max-width: 700px; font-size: 13px; line-height: 1.7; }
+.intro > button { min-height: 46px; border-radius: 10px; font-size: 14px; }
+.filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: 16px 12px; padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; }
+.filters > label { grid-column: 1 / -1; }
+.filters input[type='search'] { min-height: 48px; font-size: 16px; }
+.filterField { display: grid; gap: 8px; min-width: 0; }
+.filterField > label { color: var(--teacher-muted, #58665f); font-size: 12px; font-weight: 500; }
+.filters > button { min-height: 44px; border-radius: 10px; font-size: 13px; }
+.resultCount { padding-inline: 4px; font-size: 13px; }
+.categoryGroup { display: grid; gap: 14px; min-width: 0; }
+.categoryGroup > h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.cardGrid { gap: 18px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.cardGrid .card { padding: 22px; gap: 14px; border-radius: 18px; align-content: start; }
+.cardHeading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cardHeading h3 { min-width: 0; font-size: 16px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.cardIcon { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: #edf2e8; color: var(--teacher-primary, #25634b); }
+.cardGrid .card > p { font-size: 12px; line-height: 1.6; }
+.card .cardActions { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid #eeece5; }
+.cardActions > button { border-radius: 10px; min-height: 44px; }
+.cardActions > button:first-child { flex: 1; min-width: 44px; padding: 8px 12px; font-size: 14px; }
+.infoForm { gap: 20px; }
+.infoForm input { min-height: 48px; font-size: 16px; border-radius: 10px; }
+@media (max-width: 767px) {
+  .workspace { gap: 18px; }
+  .intro { padding: 18px 16px; gap: 14px; border-radius: 16px; }
+  .intro > button { width: 100%; min-height: 48px; }
+  .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 18px 16px; gap: 14px 10px; border-radius: 16px; }
+  .filters > .filterField:first-of-type { grid-column: 1 / -1; }
+  .filters > button { grid-column: 1 / -1; min-height: 44px; }
+  .cardGrid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .cardGrid .card { padding: 18px 16px; border-radius: 16px; }
+  .card .cardActions { gap: 6px; }
+}

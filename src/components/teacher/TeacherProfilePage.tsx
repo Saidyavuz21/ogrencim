@@ -136,10 +136,10 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
   };
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.profileWorkspace}`}>
       <div className={styles.pointsLayout}>
         <section className={styles.panel} aria-labelledby="profile-info-title">
-          <div className="flex items-center justify-between gap-4">
+          <div className={styles.profileIdentityBar}>
             <div className={styles.profileHead}>
               <span className={styles.accountAvatar} aria-hidden="true">{user?.avatar || 'Ö'}</span>
               <div>
@@ -187,7 +187,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
 
           {isEditing ? (
             /* DÜZENLEME FORMU: Sadece Ad Soyad ve Branş değiştirilebilir */
-            <form onSubmit={handleSaveProfile} className="space-y-4 pt-2">
+            <form onSubmit={handleSaveProfile} className={styles.profileEditFields}>
               <div className="p-3 bg-emerald-50/60 border border-emerald-200/60 rounded-xl text-xs text-emerald-900 leading-relaxed">
                 Ad soyad ve branş bilginizi buradan güncelleyebilirsiniz. Okul, il/ilçe ve sınıf bilgileriniz okul yetkinizle ilişkili olduğu için yalnızca okul yönetimi tarafından değiştirilebilir.
               </div>
@@ -205,8 +205,9 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
               </div>
 
               <div className={styles.field}>
-                <span>Branş</span>
+                <label htmlFor="teacher-profile-branch">Branş</label>
                 <CustomSelect
+                  id="teacher-profile-branch"
                   value={branch}
                   onChange={(val) => setBranch(val)}
                   options={TEACHER_BRANCH_OPTIONS.map((b) => ({ value: b, label: b }))}
@@ -214,7 +215,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className={styles.profileFormActions}>
                 <button
                   type="button"
                   className={styles.secondary}
@@ -264,12 +265,13 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
 
               {/* E-posta Değiştirme Formu (Açılır kutu) */}
               {isEditingEmail && (
-                <form onSubmit={handleSaveEmail} className="mt-3 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <form onSubmit={handleSaveEmail} className={styles.profileEmailForm}>
                   <div className="flex items-center justify-between">
                     <strong className="text-sm text-slate-800">E-posta Adresini Güncelle</strong>
                     <button
                       type="button"
                       onClick={() => setIsEditingEmail(false)}
+                      aria-label="E-posta düzenlemeyi kapat"
                       className="text-slate-400 hover:text-slate-600 p-1 rounded"
                     >
                       <X size={16} />
@@ -280,6 +282,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
                   </p>
                   <div className={styles.field}>
                     <input
+                      aria-label="Yeni e-posta adresi"
                       type="email"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
@@ -288,7 +291,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
                       required
                     />
                   </div>
-                  <div className="flex justify-end gap-2">
+                  <div className={styles.profileFormActions}>
                     <button
                       type="button"
                       className={styles.secondary}
@@ -347,6 +350,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
                     className={styles.secondary}
                     onClick={() => setShowPassword((v) => !v)}
                     aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                   </button>

@@ -1,2 +1,38 @@
 /* Duyurunun kime gittiği (admin: her duyuruda; öğretmen: bütün okullara olanlarda) */
 .audience { display: inline-flex; align-items: center; width: fit-content; min-height: 26px; padding: 2px 10px; border-radius: 999px; background: var(--teacher-selected); color: var(--teacher-primary); font-size: 13px; font-weight: 600; }
+
+.workspace .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .85fr); align-items: start; gap: 24px; }
+.workspace .composer { padding: 24px; border-radius: 18px; }
+.workspace .form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.workspace .form h2 { margin: 0; padding-bottom: 18px; border-bottom: 1px solid var(--teacher-border); font-size: 20px; font-weight: 600; line-height: 1.4; }
+.workspace .form label { font-size: 14px; line-height: 1.6; }
+.workspace .form textarea { min-height: 180px; padding: 14px; border-radius: 10px; font-size: 16px; line-height: 1.7; }
+.workspace .form input:not([type='checkbox']) { min-height: 48px; border-radius: 10px; font-size: 16px; }
+.workspace .form label:has(input[type='checkbox']) { min-height: 44px; }
+.workspace .form > div:last-child { display: flex; flex-wrap: wrap; gap: 14px; padding-top: 18px; border-top: 1px solid var(--teacher-border); }
+.workspace .form > div:last-child > span { font-size: 12px; line-height: 1.7; }
+.workspace .form button[type='submit'] { width: 100%; min-height: 48px; justify-content: center; border-radius: 10px; }
+.workspace .feed { display: grid; gap: 16px; min-width: 0; }
+.workspace .feedHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 4px; }
+.workspace .feedHead h2 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.5; }
+.workspace .feedHead > span { color: var(--teacher-muted); font-size: 12px; }
+.workspace .entry { padding: 22px; border-radius: 18px; gap: 16px; }
+.workspace .entryTitle { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0; font-size: 17px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.workspace .audience { min-height: 26px; border-radius: 8px; font-size: 11px; font-weight: 500; }
+.workspace .body { margin: 0; color: var(--teacher-text); font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.workspace .entryFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid #eeece5; }
+.workspace .entryFooter > p { flex: 1; min-width: 0; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.workspace .entryFooter > button { min-height: 44px; padding: 8px 12px; border-radius: 10px; font-size: 12px; }
+@media (max-width: 1199px) {
+  .workspace .layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .workspace .layout { gap: 22px; }
+  .workspace .composer { padding: 18px 16px; border-radius: 16px; }
+  .workspace .form { gap: 18px; }
+  .workspace .form h2 { font-size: 18px; padding-bottom: 16px; }
+  .workspace .form textarea { min-height: 144px; padding: 12px; }
+  .workspace .entry { padding: 18px 16px; border-radius: 16px; gap: 14px; }
+  .workspace .entryTitle { font-size: 16px; }
+  .workspace .feedHead h2 { font-size: 17px; }
+}

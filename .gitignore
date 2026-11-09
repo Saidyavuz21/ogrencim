@@ -51,6 +51,7 @@ next-env.d.ts
 /.agents/
 /.claude/
 /.codex/
+/.cursor/
 /.devin/
 /.dsh/
 /.gemini/

@@ -86,7 +86,7 @@ export function TeacherFilesPage({ classNames, userId, isSchoolAdmin, branch }: 
   if (loadError) return <p className={styles.error} role="alert">Dosyalar alınamadı: {loadError}</p>;
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.teacherFilesPage}`}>
       <div className={styles.tabs} role="group" aria-label="Bölüm">
         <button type="button" aria-pressed={tab === 'files'} onClick={() => setTab('files')}><Folder size={18} aria-hidden="true" />Dosyalarım</button>
         <button type="button" aria-pressed={tab === 'sets'} onClick={() => setTab('sets')}><Layers size={18} aria-hidden="true" />Setler{sets.length ? ` (${sets.length})` : ''}</button>
@@ -339,7 +339,7 @@ function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, clas
   });
 
   return (
-    <section className={styles.page} aria-label="Dosyalarım">
+    <section className={`${styles.page} ${styles.personalWorkspace}`} aria-label="Dosyalarım">
       <div className={styles.topBar}>
         <div className={styles.usage}>
           <p><strong>{formatBytes(usedBytes)}</strong> / {formatBytes(FILE_QUOTA_BYTES)} kullanıldı · {files.length} dosya</p>
@@ -406,14 +406,17 @@ function MyFilesPanel({ files, setFiles, folders, setFolders, sharesByFile, clas
             <Search size={18} aria-hidden="true" />
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, konu ya da etiketle ara" />
           </label>
-          <CustomSelect value={grade} onChange={setGrade} options={[{ value: ANY, label: 'Bütün kademeler' }, ...GRADE_OPTIONS]} />
-          <CustomSelect value={subject} onChange={setSubject} options={[{ value: ANY, label: 'Bütün branşlar' }, ...SUBJECT_OPTIONS]} />
-          <CustomSelect value={tag} onChange={setTag} options={[{ value: ANY, label: allTags.length ? 'Bütün etiketler' : 'Etiket yok' }, ...allTags]} disabled={!allTags.length} />
+          <div className={styles.fileFilterField}><label htmlFor="files-grade">Kademe</label><CustomSelect id="files-grade" value={grade} onChange={setGrade} options={[{ value: ANY, label: 'Bütün kademeler' }, ...GRADE_OPTIONS]} /></div>
+          <div className={styles.fileFilterField}><label htmlFor="files-subject">Branş</label><CustomSelect id="files-subject" value={subject} onChange={setSubject} options={[{ value: ANY, label: 'Bütün branşlar' }, ...SUBJECT_OPTIONS]} /></div>
+          <div className={styles.fileFilterField}><label htmlFor="files-tag">Etiket</label><CustomSelect id="files-tag" value={tag} onChange={setTag} options={[{ value: ANY, label: allTags.length ? 'Bütün etiketler' : 'Etiket yok' }, ...allTags]} disabled={!allTags.length} /></div>
+          <div className={styles.fileFilterField}><label htmlFor="files-kind">Dosya türü</label>
           <CustomSelect
+            id="files-kind"
             value={kind}
             onChange={setKind}
             options={[{ value: ANY, label: 'Bütün türler' }, ...(['pdf', 'image', 'word', 'slides', 'sheet'] as FileKind[]).map((k) => ({ value: k, label: KIND_LABEL[k] }))]}
           />
+          </div>
         </div>
       )}
 

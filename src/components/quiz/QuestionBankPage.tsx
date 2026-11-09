@@ -73,8 +73,8 @@ export function QuestionBankPage() {
   });
 
   return (
-    <section className={f.page} aria-label="Soru bankası">
-      <div className={f.topBar}>
+    <section className={`${f.page} ${styles.bankWorkspace}`} aria-label="Soru bankası">
+      <div className={`${f.topBar} ${styles.bankIntro}`}>
         <p className={f.muted}>Soruları bir kez yazın, istediğiniz quizde tekrar kullanın. Quiz göndermek için Ödev gönder sayfasında türü “Quiz” seçin.</p>
         <button type="button" className={f.primaryButton} onClick={() => setEditing({ id: null, value: { ...EMPTY, choices: [...EMPTY.choices] } })}>
           <Plus size={18} aria-hidden="true" />Yeni soru
@@ -91,19 +91,21 @@ export function QuestionBankPage() {
         </div>
       ) : (
         <>
-          <div className={f.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) repeat(3, minmax(140px, 1fr))' }}>
+          <div className={styles.bankFilters}>
             <label className={f.search}>
               <span className={f.srOnly}>Sorularda ara</span>
               <Search size={18} aria-hidden="true" />
               <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Soru, şık, konu ya da etiket ara" />
             </label>
-            <CustomSelect value={subject} onChange={setSubject} options={[{ value: ANY, label: 'Bütün dersler' }, ...subjects]} />
-            <CustomSelect value={grade} onChange={setGrade} options={[{ value: ANY, label: 'Bütün kademeler' }, ...GRADE_OPTIONS]} />
-            <CustomSelect value={tag} onChange={setTag} options={[{ value: ANY, label: tags.length ? 'Bütün etiketler' : 'Etiket yok' }, ...tags]} disabled={!tags.length} />
+            <div className={styles.bankFilterField}><label htmlFor="bank-subject">Ders</label><CustomSelect id="bank-subject" value={subject} onChange={setSubject} options={[{ value: ANY, label: 'Bütün dersler' }, ...subjects]} /></div>
+            <div className={styles.bankFilterField}><label htmlFor="bank-grade">Kademe</label><CustomSelect id="bank-grade" value={grade} onChange={setGrade} options={[{ value: ANY, label: 'Bütün kademeler' }, ...GRADE_OPTIONS]} /></div>
+            <div className={styles.bankFilterField}><label htmlFor="bank-tag">Etiket</label><CustomSelect id="bank-tag" value={tag} onChange={setTag} options={[{ value: ANY, label: tags.length ? 'Bütün etiketler' : 'Etiket yok' }, ...tags]} disabled={!tags.length} /></div>
           </div>
-          <p className={f.muted}>{visible.length} / {all.length} soru</p>
+          <div className={styles.bankResultBar}><p className={f.muted}>{visible.length} / {all.length} soru</p>
+            {(q || subject || grade || tag) && <button type="button" onClick={() => { setQ(''); setSubject(ANY); setGrade(ANY); setTag(ANY); }}>Filtreleri temizle</button>}
+          </div>
           {visible.length === 0 ? <p className={f.muted}>Aramaya uyan soru yok.</p> : (
-            <div className={f.list}>
+            <div className={styles.bankList}>
               {visible.map((x) => (
                 <article key={x.id} className={styles.qCard}>
                   <div className={styles.qHead}>
@@ -112,7 +114,7 @@ export function QuestionBankPage() {
                       <img className={styles.qThumb} src={urls[x.image_path]} alt="" />
                     )}
                     <div className={styles.qBody}><RichText text={x.body} /></div>
-                    <div className={f.rowActions}>
+                    <div className={`${f.rowActions} ${styles.bankActions}`}>
                       <button type="button" className={f.iconButton} onClick={() => setEditing({ id: x.id, value: asInput(x) })} aria-label="Soruyu düzenle" title="Düzenle"><Edit size={18} aria-hidden="true" /></button>
                       <button type="button" className={f.iconButton} onClick={() => setEditing({ id: null, value: asInput(x) })} aria-label="Sorunun kopyasını oluştur" title="Kopyasını oluştur"><Copy size={18} aria-hidden="true" /></button>
                       <button type="button" className={f.iconButton} onClick={() => remove(x)} aria-label="Soruyu sil" title="Sil"><Trash2 size={18} aria-hidden="true" /></button>
@@ -221,7 +223,7 @@ export function QuestionEditor({ id, initial, tagSuggestions, onClose, onSaved }
 
   return (
     <Modal title={id ? 'Soruyu düzenle' : 'Yeni soru'} onClose={close} busy={busy} wide>
-      <form className={f.form} onSubmit={submit}>
+      <form className={`${f.form} ${styles.bankEditor}`} onSubmit={submit}>
         <div className={f.field}>
           <label htmlFor={ids.body}>Soru</label>
           <RichTextField

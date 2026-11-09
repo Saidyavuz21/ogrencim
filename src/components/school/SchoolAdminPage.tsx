@@ -17,6 +17,7 @@ import { ClassReportPage } from '../reports/ClassReportPage';
 import { ClassMembersDialog } from './ClassMembersDialog';
 import f from '../files/Files.module.css';
 import r from '../reports/Reports.module.css';
+import ui from './SchoolAdmin.module.css';
 
 type Tab = 'teachers' | 'classes';
 const ALL = '__all__';
@@ -26,9 +27,9 @@ const NONE = '__none__';
 export function SchoolAdminPage({ schoolId, schoolName }: { schoolId: string; schoolName?: string }) {
   const [tab, setTab] = useState<Tab>('teachers');
   return (
-    <div className={f.page}>
-      <p className={f.muted}>{schoolName ? `${schoolName} · ` : ''}Okul yöneticisi olarak okulunuzdaki öğretmen başvurularını onaylayabilir, öğretmenleri pasife alabilir, bütün sınıfların öğrencilerini ve karnelerini yönetebilirsiniz.</p>
-      <div className={f.tabs} role="group" aria-label="Bölüm">
+    <div className={`${f.page} ${ui.workspace}`}>
+      <p className={`${f.muted} ${ui.intro}`}>{schoolName ? `${schoolName} · ` : ''}Okul yöneticisi olarak okulunuzdaki öğretmen başvurularını onaylayabilir, öğretmenleri pasife alabilir, bütün sınıfların öğrencilerini ve karnelerini yönetebilirsiniz.</p>
+      <div className={`${f.tabs} ${ui.tabs}`} role="group" aria-label="Bölüm">
         <button type="button" aria-pressed={tab === 'teachers'} onClick={() => setTab('teachers')}><Users size={18} aria-hidden="true" />Öğretmenler</button>
         <button type="button" aria-pressed={tab === 'classes'} onClick={() => setTab('classes')}><BarChart3 size={18} aria-hidden="true" />Sınıflar ve kampüsler</button>
       </div>
@@ -81,8 +82,8 @@ function TeachersTab({ schoolId }: { schoolId: string }) {
   const approved = list.filter((t) => t.approved);
 
   const row = (t: SchoolTeacher) => (
-    <li key={t.id} className={f.row}>
-      <div className={f.info}>
+    <li key={t.id} className={`${f.row} ${ui.teacherRow}`}>
+      <div className={`${f.info} ${ui.identity}`}>
         <p className={f.name}>{t.full_name || t.email || 'Öğretmen'}{t.is_school_admin && <span className={f.shared} style={{ marginLeft: 8 }}>Okul yöneticisi</span>}</p>
         <div className={f.meta}>
           <span>{t.branch || 'Branş belirtilmedi'}</span>
@@ -91,7 +92,7 @@ function TeachersTab({ schoolId }: { schoolId: string }) {
           {t.approved && !t.is_active && <span className={f.tag} style={{ background: '#fbe9ea', color: '#8f2232' }}>Pasif</span>}
         </div>
       </div>
-      <div className={f.rowActions}>
+      <div className={`${f.rowActions} ${ui.actions}`}>
         {t.verification_doc && (
           <button type="button" className={f.iconButton} onClick={() => openDoc(t)} aria-label={`${t.full_name} belgesini aç`} title="Belgeyi aç"><Eye size={18} aria-hidden="true" /></button>
         )}
@@ -121,14 +122,14 @@ function TeachersTab({ schoolId }: { schoolId: string }) {
   return (
     <section className={f.page} aria-label="Okul öğretmenleri">
       <Notice notice={notice} onClose={() => setNotice(null)} />
-      <div className={f.card}>
+      <div className={`${f.card} ${ui.panel}`}>
         <h3 className={f.cardTitle}>Onay bekleyen başvurular ({pending.length})</h3>
-        {pending.length === 0 ? <p className={f.muted}>Bekleyen başvuru yok.</p> : <ul className={f.list}>{pending.map(row)}</ul>}
+        {pending.length === 0 ? <p className={f.muted}>Bekleyen başvuru yok.</p> : <ul className={`${f.list} ${ui.teacherList}`}>{pending.map(row)}</ul>}
         <p className={f.muted}>Başvuruyu tamamen silmek ya da başka okula taşımak gerekirse süper yöneticiye bildirin.</p>
       </div>
-      <div className={f.card}>
+      <div className={`${f.card} ${ui.panel}`}>
         <h3 className={f.cardTitle}>Öğretmenler ({approved.length})</h3>
-        {approved.length === 0 ? <p className={f.muted}>Okulunuzda onaylı öğretmen yok.</p> : <ul className={f.list}>{approved.map(row)}</ul>}
+        {approved.length === 0 ? <p className={f.muted}>Okulunuzda onaylı öğretmen yok.</p> : <ul className={`${f.list} ${ui.teacherList}`}>{approved.map(row)}</ul>}
       </div>
     </section>
   );
@@ -200,15 +201,15 @@ function ClassesTab({ schoolId }: { schoolId: string }) {
   return (
     <section className={f.page} aria-label="Okul sınıfları">
       <Notice notice={notice} onClose={() => setNotice(null)} />
-      <div className={f.card}>
-        <div className={f.cardHead} style={{ justifyContent: 'space-between' }}>
+      <div className={`${f.card} ${ui.panel}`}>
+        <div className={`${f.cardHead} ${ui.panelHead}`}>
           <h3 className={f.cardTitle}>Kampüsler</h3>
           <button type="button" className={f.secondaryButton} onClick={addCampus}><Plus size={18} aria-hidden="true" />Kampüs ekle</button>
         </div>
         {campuses.length === 0 ? <p className={f.muted}>Okulunuz tek yerleşkeyse kampüs eklemenize gerek yok. Birden çok bina ya da kademe varsa kampüs ekleyip sınıfları bağlayabilirsiniz.</p> : (
-          <div className={f.folderBar}>
+          <div className={`${f.folderBar} ${ui.campuses}`}>
             {campuses.map((c) => (
-              <span key={c.id} className={f.folderChip} style={{ cursor: 'default' }}>
+              <span key={c.id} className={`${f.folderChip} ${ui.campus}`}>
                 {c.name} <small>{classes.filter((x) => x.campus_id === c.id).length} sınıf</small>
                 <button type="button" className={f.linkButton} onClick={() => rename(c)}>Adı</button>
                 <button type="button" className={f.linkButton} onClick={() => remove(c)} aria-label={`${c.name} kampüsünü sil`}><Trash2 size={14} aria-hidden="true" /></button>
@@ -218,17 +219,17 @@ function ClassesTab({ schoolId }: { schoolId: string }) {
         )}
       </div>
 
-      <div className={f.card}>
-        <div className={f.cardHead} style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+      <div className={`${f.card} ${ui.panel}`}>
+        <div className={`${f.cardHead} ${ui.panelHead}`}>
           <h3 className={f.cardTitle}>Sınıflar ({visible.length}) · {totals.students} öğrenci{totals.members ? ` · ${totals.members} grup üyesi` : ''}</h3>
           {campuses.length > 0 && (
-            <span style={{ minWidth: 220 }}>
+            <span className={ui.filter}>
               <CustomSelect value={campusFilter} onChange={setCampusFilter} options={[{ value: ALL, label: 'Bütün kampüsler' }, { value: NONE, label: 'Kampüssüz' }, ...campuses.map((c) => ({ value: c.id, label: c.name }))]} />
             </span>
           )}
         </div>
         {visible.length === 0 ? <p className={f.muted}>Gösterilecek sınıf yok.</p> : (
-          <div className={r.tableWrap}>
+          <div className={`${r.tableWrap} ${ui.tableWrap}`} tabIndex={0} role="region" aria-label="S?n?flar tablosu, yatay kayd?r?labilir">
             <table className={r.table}>
               <caption className={f.srOnly}>Okulun sınıfları</caption>
               <thead><tr><th scope="col">Sınıf</th><th scope="col" className={r.num}>Öğrenci</th><th scope="col">Öğretmenler</th>{campuses.length > 0 && <th scope="col">Kampüs</th>}<th scope="col"><span className={f.srOnly}>İşlemler</span></th></tr></thead>
@@ -245,7 +246,7 @@ function ClassesTab({ schoolId }: { schoolId: string }) {
                       </td>
                     )}
                     <td>
-                      <span className={f.cardActions} style={{ flexWrap: 'nowrap' }}>
+                      <span className={`${f.cardActions} ${ui.classActions}`}>
                         <button type="button" className={f.secondaryButton} onClick={() => setStudentsOf(c.class_name)}><Users size={16} aria-hidden="true" />Öğrenciler</button>
                         <button type="button" className={f.secondaryButton} onClick={() => setReportOf(c.class_name)}><BarChart3 size={16} aria-hidden="true" />Karne</button>
                         <button type="button" className={f.iconButton} onClick={() => setMembersOf(c.class_name)} aria-label={`${c.class_name} grup üyeleri`} title="Grup üyeleri ve kod"><UserPlus size={16} aria-hidden="true" /></button>

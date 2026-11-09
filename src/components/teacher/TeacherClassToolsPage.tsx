@@ -16,7 +16,8 @@ import s from './classtools/ClassTools.module.css';
  * Sınıf araçları: derste kullanılan küçük araçlar (EduBoard listesi, Paket 1).
  * Rastgele seçici, grup oluşturucu, kronometre, geri sayım.
  */
-type ToolId = 'picker' | 'groups' | 'stopwatch' | 'countdown';
+export type ClassToolId = 'picker' | 'groups' | 'stopwatch' | 'countdown';
+type ToolId = ClassToolId;
 
 const TOOLS: { id: ToolId; label: string; icon: React.FC<IconProps> }[] = [
   { id: 'picker', label: 'Rastgele seçici', icon: Shuffle },
@@ -36,9 +37,9 @@ const readTool = (): ToolId => {
   }
 };
 
-export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string }) {
+export function TeacherClassToolsPage({ selectedClass, initialTool }: { selectedClass: string; initialTool?: ClassToolId }) {
   const { students, loading, error } = useClassStudents(selectedClass);
-  const [tool, setToolState] = useState<ToolId>(readTool);
+  const [tool, setToolState] = useState<ToolId>(() => initialTool ?? readTool());
   const tabsRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -76,7 +77,7 @@ export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string
   };
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${s.workspace}`}>
       <div className={s.tabsNav}>
         <button
           type="button"
@@ -105,7 +106,17 @@ export function TeacherClassToolsPage({ selectedClass }: { selectedClass: string
                 id={`tool-tab-${t.id}`}
                 aria-selected={tool === t.id}
                 aria-controls={`tool-panel-${t.id}`}
+                tabIndex={tool === t.id ? 0 : -1}
                 onClick={(e) => setTool(t.id, e)}
+                onKeyDown={(e) => {
+                  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+                  e.preventDefault();
+                  const index = TOOLS.findIndex((item) => item.id === tool);
+                  const nextIndex = e.key === 'Home' ? 0 : e.key === 'End' ? TOOLS.length - 1 : (index + (e.key === 'ArrowRight' ? 1 : -1) + TOOLS.length) % TOOLS.length;
+                  const next = TOOLS[nextIndex];
+                  setTool(next.id);
+                  document.getElementById(`tool-tab-${next.id}`)?.focus();
+                }}
               >
                 <t.icon size={18} aria-hidden="true" />{t.label}
               </button>

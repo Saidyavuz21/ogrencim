@@ -260,7 +260,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
       )}
 
       <div className={styles.pointsLayout}>
-      <section className={styles.panel} aria-labelledby="student-list-title">
+      <section className={`${styles.panel} ${styles.studentDirectoryPanel}`} aria-labelledby="student-list-title">
         <div className={styles.listToolbar}>
           <h2 id="student-list-title" className={styles.panelTitle}>Öğrenci listesi <span className={styles.countPill}>{visible.length}</span></h2>
           <label className={styles.searchField}>
@@ -269,9 +269,10 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
             <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ad veya numara ara" />
           </label>
           <div className={styles.pageClassField}>
-            <span>Sınıf</span>
-            <div style={{ flex: 1, minWidth: 150, maxWidth: 240 }}>
+            <label htmlFor="student-directory-class">Sınıf</label>
+            <div className={styles.studentClassFilter}>
               <CustomSelect
+                id="student-directory-class"
                 value={filterClass}
                 onChange={(val) => setFilterClass(val)}
                 options={[
@@ -284,9 +285,9 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
           </div>
           <StudentSortToggle />
           {!pinsError && (
-            <button type="button" className={styles.secondary} aria-pressed={showPins} onClick={() => setShowPins((v) => !v)}>
+            <button type="button" className={`${styles.secondary} ${styles.studentPinToggle}`} aria-label={showPins ? "PIN'leri gizle" : "PIN'leri göster"} title={showPins ? "PIN'leri gizle" : "PIN'leri göster"} aria-pressed={showPins} onClick={() => setShowPins((v) => !v)}>
               {showPins ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
-              {showPins ? "PIN'leri gizle" : "PIN'leri göster"}
+              <span>{showPins ? "PIN'leri gizle" : "PIN'leri göster"}</span>
             </button>
           )}
         </div>
@@ -299,7 +300,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
 
         <ul className={styles.studentCards}>
           {visible.map((s) => (
-            <li key={s.id} className={styles.studentCard}>
+            <li key={s.id} className={`${styles.studentCard} ${styles.studentDirectoryRow}`}>
               <div className={styles.studentCardHead}>
                 <span className={styles.studentAvatar} aria-hidden="true">{s.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toLocaleUpperCase('tr-TR')}</span>
                 <div className={styles.studentCardInfo}>
@@ -308,8 +309,8 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
                   {showPins && <span className={pins[s.id] ? pinStyles.pinShown : pinStyles.pinUnknown}>PIN: {pinText(s.id)}</span>}
                 </div>
                 {editingId !== s.id && (
-                  <button type="button" className={styles.secondary} onClick={() => startEdit(s)} aria-label={`${s.name} düzenle`}>
-                    <Edit size={16} aria-hidden="true" />Düzenle
+                  <button type="button" className={`${styles.secondary} ${styles.studentEditButton}`} onClick={() => startEdit(s)} aria-label={`${s.name} düzenle`} title={`${s.name} düzenle`}>
+                    <Edit size={16} aria-hidden="true" /><span>Düzenle</span>
                   </button>
                 )}
               </div>
@@ -365,6 +366,7 @@ export function TeacherStudentsPage({ selectedClass, classNames, onOpenClasses }
       {isBulkOpen && <TeacherBulkStudents selectedClass={defaultClass} classNames={classNames} onClose={() => setIsBulkOpen(false)} onDone={load} />}
 
       <CollapsiblePanel title="Öğrenci ekle" summary={`Tekli veya toplu öğrenci ekleme (${classNames.join(', ')})`}>
+        <div className={styles.studentAddIntro}><h2>Öğrenci ekle</h2><p>Tek öğrenci ekleyin veya listenizi toplu olarak aktarın.</p></div>
         {!isAddOpen ? (
           <div className={styles.inlineRow}>
             <button type="button" className={styles.primary} onClick={() => { setIsAddOpen(true); setNotice(null); }}>

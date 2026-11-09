@@ -112,11 +112,15 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
   };
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.pointsWorkspace}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={styles.pointsLayout}>
       <section className={styles.studentList} aria-label="Öğrenci puanları">
+        <div className={styles.pointsRosterHeader}>
+          <div><h2>Öğrenciler</h2><p>{selectedClass}{!loading && !error ? ` · ${students.length} öğrenci` : ''}</p></div>
+          <span>Her dokunuşta +1 veya −1 puan</span>
+        </div>
         {students.length > 1 && <div className={styles.listSortBar}><StudentSortToggle /></div>}
         {loading && <Spinner center label="Öğrenciler yükleniyor…" />}
         {error && <p className={`${styles.noticeError} ${styles.listPad}`}>{error}</p>}
@@ -169,7 +173,9 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
       </section>
 
       <aside className={styles.pointsAside}>
+      <div className={styles.pointsReasonPanel}>
       <CollapsiblePanel title="Gerekçe seçin" summary={reason ? `Seçili: ${reason}` : 'İsteğe bağlı'}>
+        <h2 className={`${styles.panelTitle} ${styles.pointsReasonTitle}`}>Puan gerekçesi</h2>
         <label className={styles.field}>Gerekçe (isteğe bağlı, sonraki puanlara uygulanır)
           <input value={reason} onChange={(e) => setReason(e.target.value.slice(0, 200))} placeholder="Örn: Derse aktif katılım" />
         </label>
@@ -179,7 +185,8 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
           ))}
         </div>
       </CollapsiblePanel>
-
+      </div>
+      <div className={styles.pointsHistoryPanel}>
       <CollapsiblePanel title="Son verilen puanlar" summary={`${history.length} kayıt`}>
         <h2 id="points-history-title" className={styles.panelTitle}>Son verilen puanlar</h2>
         {history.length === 0 && <p className={styles.mutedText}>Bu sınıfta henüz puan verilmedi.</p>}
@@ -193,6 +200,7 @@ export function TeacherPointsPage({ selectedClass }: { selectedClass: string }) 
           ))}
         </ul>
       </CollapsiblePanel>
+      </div>
       </aside>
       </div>
     </div>

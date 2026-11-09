@@ -146,7 +146,7 @@ export function TeacherReadingPage({ selectedClass }: { selectedClass: string })
 
   if (!contests.length) {
     return (
-      <div className={styles.page}>
+      <div className={`${styles.page} ${styles.teacherReading}`}>
         <Notice notice={notice} onClose={() => setNotice(null)} />
         <section className={styles.empty}>
           <BookOpen size={32} aria-hidden="true" />
@@ -166,12 +166,14 @@ export function TeacherReadingPage({ selectedClass }: { selectedClass: string })
   const measuringStudent = measuring ? students.find((s) => s.id === measuring) : undefined;
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.teacherReading}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={styles.toolbar}>
         <div className={styles.contestPick}>
+          <label htmlFor="teacher-reading-contest">Okuma yarışması</label>
           <CustomSelect
+            id="teacher-reading-contest"
             value={active?.id || ''}
             onChange={(v) => { setActiveId(v); setNotice(null); }}
             options={contests.map((c) => ({ value: c.id, label: c.title, description: shortDate(c.contest_date), badge: c.finished_at ? 'Bitti' : 'Sürüyor' }))}
@@ -211,7 +213,7 @@ export function TeacherReadingPage({ selectedClass }: { selectedClass: string })
       {stError && <p className={styles.error}>{stError}</p>}
 
       {tab === 'olcum' && (
-        <ul className={styles.list} aria-label="Öğrenciler">
+        <ul className={`${styles.list} ${styles.measurementList}`} aria-label="Öğrenciler">
           {students.map((s) => {
             const r = resultOf.get(s.id);
             const locked = finished && !!r && !r.late;
@@ -278,7 +280,7 @@ export function TeacherReadingPage({ selectedClass }: { selectedClass: string })
       )}
 
       {tab === 'tablo' && (
-        <div className={styles.tableWrap}>
+        <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Okuma gelişimi tablosu">
           <table className={styles.table}>
             <caption className={styles.srOnly}>Öğrencilerin yarışmalara göre dakikada okudukları kelime sayısı</caption>
             <thead>

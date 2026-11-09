@@ -214,3 +214,62 @@
 @media (prefers-reduced-motion: reduce) {
   .timerArc, .startButton { transition: none; }
 }
+
+/* Teacher workspace; student screens and the measurement timer stay separate. */
+.page.teacherReading { gap: 22px; }
+.teacherReading .toolbar { padding: 22px 24px; gap: 18px; border: 1px solid var(--r-border); border-radius: 18px; background: white; }
+.teacherReading .contestPick { display: grid; gap: 8px; }
+.teacherReading .contestPick > label { color: var(--r-muted); font-size: 12px; font-weight: 500; }
+.teacherReading .toolbarActions { align-items: end; gap: 8px; }
+.teacherReading .toolbarActions button { min-height: 46px; border-radius: 10px; font-size: 13px; font-weight: 500; }
+.teacherReading .statusChip { font-size: 12px; line-height: 1.5; font-weight: 500; }
+.teacherReading .summary { gap: 0; padding: 20px 6px; border: 1px solid var(--r-border); border-radius: 18px; background: white; }
+.teacherReading .summary > div { padding: 0 18px; gap: 8px; border: 0; border-right: 1px solid #eeece5; border-radius: 0; background: transparent; }
+.teacherReading .summary > div:last-child { border-right: 0; }
+.teacherReading .summary strong { font-size: 26px; font-weight: 600; }
+.teacherReading .summary span { font-size: 12px; line-height: 1.6; }
+.teacherReading .tabs { border: 0; padding: 5px; background: #ecefe8; }
+.teacherReading .tabs button { font-size: 14px; font-weight: 500; }
+.teacherReading .tabs button[aria-pressed='true'] { box-shadow: 0 1px 3px rgb(20 35 28 / 6%); }
+.teacherReading .list { border-radius: 18px; }
+.teacherReading .row { min-height: 84px; padding: 18px 22px; gap: 14px; border-bottom-color: #eeece5; }
+.teacherReading .avatar { border-radius: 50%; background: #edf2e8; color: var(--r-primary); font-size: 12px; }
+.teacherReading .who strong { font-size: 15px; font-weight: 500; line-height: 1.5; }
+.teacherReading .who span { font-size: 12px; line-height: 1.6; }
+.teacherReading .result { font-size: 12px; }
+.teacherReading .result strong { font-size: 21px; font-weight: 600; }
+.teacherReading .pending { font-size: 12px; }
+.teacherReading .row > button { min-height: 44px; border-radius: 10px; font-size: 13px; }
+.teacherReading .rankNo { width: 36px; height: 36px; border-radius: 10px; font-size: 14px; font-weight: 600; }
+.teacherReading .medal1 { background: #fff0c2; color: #77500c; box-shadow: inset 0 0 0 1px #e0c575; }
+.teacherReading .medal2 { background: #eaf0f3; color: #445561; box-shadow: inset 0 0 0 1px #bcc9d0; }
+.teacherReading .medal3 { background: #f9e5d7; color: #85512f; box-shadow: inset 0 0 0 1px #dcb99d; }
+.teacherReading .tableWrap { border-radius: 18px; }
+.teacherReading .tableWrap:focus-visible { outline: 3px solid var(--r-primary); outline-offset: 2px; }
+.teacherReading .table th, .teacherReading .table td { padding: 14px 16px; border-bottom-color: #eeece5; }
+.teacherReading .table thead th { font-size: 12px; font-weight: 500; background: #f6f7f2; }
+.teacherReading .empty { padding: 40px 24px; border-style: solid; border-radius: 18px; }
+@media (max-width: 767px) {
+  .page.teacherReading { gap: 18px; }
+  .teacherReading .toolbar { padding: 18px 16px; gap: 14px; border-radius: 16px; }
+  .teacherReading .contestPick { flex-basis: 100%; max-width: none; }
+  .teacherReading .toolbarActions { display: grid; grid-template-columns: minmax(0, 1fr) 44px; width: 100%; margin: 0; }
+  .teacherReading .toolbarActions .secondaryButton { grid-column: 1 / -1; }
+  .teacherReading .toolbarActions .primaryButton { white-space: normal; min-height: 48px; padding: 8px 12px; line-height: 1.5; }
+  .teacherReading .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; border-radius: 16px; }
+  .teacherReading .summary > div { padding: 16px; border: 0; }
+  .teacherReading .summary > div:nth-child(odd) { border-right: 1px solid #eeece5; }
+  .teacherReading .summary > div:nth-child(-n+2) { border-bottom: 1px solid #eeece5; }
+  .teacherReading .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 4px; }
+  .teacherReading .tabs button { min-height: 46px; padding: 8px; font-size: 13px; white-space: normal; }
+  .teacherReading .list { border-radius: 16px; }
+  .teacherReading .row { min-height: 80px; padding: 16px 12px; gap: 10px; }
+  .teacherReading .who strong { font-size: 14px; }
+  .teacherReading .measurementList .row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 6px 10px; }
+  .teacherReading .measurementList .avatar { grid-column: 1; grid-row: 1; width: 36px; height: 36px; }
+  .teacherReading .measurementList .who { grid-column: 2; grid-row: 1; }
+  .teacherReading .measurementList .result, .teacherReading .measurementList .pending { grid-column: 2; grid-row: 2; flex-wrap: wrap; white-space: normal; }
+  .teacherReading .measurementList .row > button, .teacherReading .measurementList .lockNote { grid-column: 3; grid-row: 1 / span 2; min-height: 44px; max-width: 104px; padding-inline: 10px; white-space: normal; }
+  .teacherReading .tableWrap { border-radius: 16px; }
+  .teacherReading .table { min-width: 480px; }
+}

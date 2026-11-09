@@ -131,7 +131,7 @@ export function ClassReportPage({ selectedClass }: { selectedClass: string }) {
   };
 
   return (
-    <div className={styles.page} {...(progressOf ? {} : { 'data-print-area': '' })}>
+    <div className={`${styles.page} ${styles.classReportWorkspace}`} {...(progressOf ? {} : { 'data-print-area': '' })}>
       <p className="print-only" style={{ margin: 0, fontWeight: 700 }}>{selectedClass} · Sınıf karnesi · {new Date().toLocaleDateString('tr-TR')}</p>
       <div className={`${styles.toolbar} ${styles.noPrint}`}>
         <span className={styles.muted}>{selectedClass} · {students.length} öğrenci</span>
@@ -154,7 +154,7 @@ export function ClassReportPage({ selectedClass }: { selectedClass: string }) {
         </div>
         {model.subjects.length === 0 ? <p className={styles.muted}>Bu sınıfa henüz not girilmedi. Not girişi sayfasından not girdikçe karne dolar.</p> : (
           <>
-            <div className={styles.tableWrap}>
+            <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Ders sonuçları tablosu">
               <table className={styles.table}>
                 <caption className={styles.srOnly}>Ders bazında not ortalamaları</caption>
                 <thead><tr><th scope="col">Ders</th><th scope="col" className={styles.num}>Öğrenci</th><th scope="col" className={styles.num}>Ortalama</th><th scope="col" className={styles.num}>En düşük</th><th scope="col" className={styles.num}>En yüksek</th><th scope="col" className={styles.num}>50 altı</th></tr></thead>
@@ -201,9 +201,17 @@ export function ClassReportPage({ selectedClass }: { selectedClass: string }) {
       <section className={styles.card} aria-label="Öğrenciler">
         <div className={styles.cardHead}>
           <h2 className={styles.cardTitle}>Öğrenciler</h2>
-          <span className={styles.noPrint} style={{ minWidth: 220 }}><CustomSelect value={sort} onChange={(v) => setSort(v as Sort)} options={SORTS} /></span>
+          <span className={`${styles.noPrint} ${styles.reportSort}`}><CustomSelect value={sort} onChange={(v) => setSort(v as Sort)} options={SORTS} /></span>
         </div>
-        <div className={styles.tableWrap}>
+        <ul className={styles.mobileStudentReports} aria-label="Öğrenci özetleri">
+          {sortedRows.map((r) => <li key={r.student.id}>
+            <div className={styles.mobileReportStudent}><div><strong>{r.student.name}</strong><span>No {r.student.student_number}</span></div>
+              <button type="button" className={styles.linkButton} onClick={() => setProgressOf(r.student)} aria-label={`${r.student.name} gelişimi`}><TrendingUp size={18} aria-hidden="true" />Gelişim</button>
+            </div>
+            <dl><div><dt>Not ort.</dt><dd className={r.avg != null && r.avg < 50 ? styles.low : undefined}>{fmt(r.avg)}</dd></div><div><dt>Puan</dt><dd>{r.student.points}</dd></div><div><dt>Ödev yapma</dt><dd>{r.hwRate == null ? '—' : `%${r.hwRate}`}</dd></div></dl>
+          </li>)}
+        </ul>
+        <div className={`${styles.tableWrap} ${styles.studentReportTable}`}>
           <table className={styles.table}>
             <caption className={styles.srOnly}>Öğrenci özeti</caption>
             <thead><tr><th scope="col">No</th><th scope="col">Ad Soyad</th><th scope="col" className={styles.num}>Not ort.</th><th scope="col" className={styles.num}>Puan</th><th scope="col" className={styles.num}>Ödev yapma</th><th scope="col" className={styles.noPrint}><span className={styles.srOnly}>Gelişim</span></th></tr></thead>

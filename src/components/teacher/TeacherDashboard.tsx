@@ -24,7 +24,7 @@ import { TeacherAquariumPage } from './TeacherAquariumPage';
 import { TeacherReadingPage } from '../reading/TeacherReadingPage';
 import { TeacherGradesPage } from './TeacherGradesPage';
 import { TeacherMessagesPage } from './TeacherMessagesPage';
-import { TeacherClassToolsPage } from './TeacherClassToolsPage';
+import { TeacherClassToolsPage, type ClassToolId } from './TeacherClassToolsPage';
 import { TeacherFilesPage } from '../files/TeacherFilesPage';
 import { QuestionBankPage } from '../quiz/QuestionBankPage';
 import { ClassReportPage } from '../reports/ClassReportPage';
@@ -34,6 +34,8 @@ import { NeedClass } from './TeacherUi';
 import { TeacherPageId, getTeacherPage, pageIdFromSlug } from './teacherPages';
 import { TeacherClass } from '../../data/portalData';
 import styles from './TeacherDashboard.module.css';
+import { TeacherMobileNav } from './TeacherMobileNav';
+import { InstallAppBanner } from '../InstallAppBanner';
 
 /** Seçili sınıfa göre çalışan sayfalar (üst çubukta sınıf seçici gösterilir) */
 const CLASS_PAGES: TeacherPageId[] = ['class_tools', 'check_sheet', 'plus_minus', 'assignments', 'grade_entry', 'leaderboard', 'aquarium', 'messages'];
@@ -143,14 +145,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   }, [onSectionChange]);
 
   const pageInfo = getTeacherPage(page);
-  const showClassPicker = CLASS_PAGES.includes(page);
+  const showClassPicker = CLASS_PAGES.includes(page) && page !== 'assignments';
   const missingClass = NEEDS_CLASS.includes(page) && !effectiveClass;
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [homeClassTool, setHomeClassTool] = useState<ClassToolId | undefined>();
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   return (
-    <div className={styles.dashboardShell}>
+    <div className={`${styles.dashboardShell} ${sidebarCollapsed ? styles.dashboardSidebarCollapsed : ''}`}>
       <TeacherTopBar
         user={currentUser}
         unreadCount={unreadCount}
@@ -160,8 +164,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         onHome={() => openPage('home')}
         onNotifications={() => { openPage('announcements'); onOpenNotifications?.(); }}
         onProfile={() => openPage('profile')}
+        classNames={classNames}
+        selectedClass={effectiveClass}
+        onSelectClass={setSelectedClass}
+        onMessages={() => openPage('messages')}
+        unreadMessages={unreadMessages}
+        isMessages={page === 'messages'}
       />
       <TeacherSidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
         open={menuOpen}
         currentPage={page}
         badges={{ messages: unreadMessages }}
@@ -170,6 +182,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         onOpenPage={openPage}
       />
       <div className={styles.dashboard}>
+      <InstallAppBanner variant={page === 'profile' ? 'profile' : 'suggestion'} visible={page === 'home' || page === 'profile'} />
       {page === 'home' || !pageInfo ? (
         <TeacherHome
           user={currentUser}
@@ -178,6 +191,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           onSelectClass={setSelectedClass}
           onOpenPage={openPage}
           onNewClass={() => openPage('classes')}
+          onOpenClassTool={(tool) => { setHomeClassTool(tool); openPage('class_tools'); }}
           badges={{ messages: unreadMessages }}
         />
       ) : (
@@ -237,7 +251,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <TeacherCheckPage key={effectiveClass} selectedClass={effectiveClass} initialHomeworkId={checkHomeworkId} onCreateHomework={() => openPage('assignments')} />
           )}
           {page === 'plus_minus' && <TeacherPointsPage key={effectiveClass} selectedClass={effectiveClass} />}
-          {page === 'class_tools' && <TeacherClassToolsPage key={effectiveClass} selectedClass={effectiveClass} />}
+          {page === 'class_tools' && <TeacherClassToolsPage key={`${effectiveClass}-${homeClassTool || ''}`} selectedClass={effectiveClass} initialTool={homeClassTool} />}
           {page === 'leaderboard' && <TeacherLeaderboardPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'aquarium' && <TeacherAquariumPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'reading' && <TeacherReadingPage key={effectiveClass} selectedClass={effectiveClass} />}
@@ -247,6 +261,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         </>
       )}
       </div>
+      <TeacherMobileNav
+        key={page}
+        page={page}
+        unreadMessages={unreadMessages}
+        onOpenPage={(next) => { closeMenu(); openPage(next); }}
+        onOpenTool={(tool) => { closeMenu(); setHomeClassTool(tool); openPage('class_tools'); }}
+      />
     </div>
   );
 };

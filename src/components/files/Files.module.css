@@ -214,3 +214,59 @@
   .modalHead { padding: 16px 16px 0; }
   .modalActions > * { flex: 1 1 auto; }
 }
+
+/* Teacher library workspace; shared pickers retain their existing layout. */
+.teacherFilesPage { gap: 22px; }
+.teacherFilesPage > .tabs { padding: 5px; gap: 4px; border: 0; border-radius: 12px; background: #ecefe8; }
+.teacherFilesPage > .tabs button { min-height: 44px; padding-inline: 18px; border-radius: 9px; font-size: 14px; font-weight: 500; }
+.teacherFilesPage > .tabs button[aria-pressed='true'] { box-shadow: 0 1px 3px rgb(20 35 28 / 6%); }
+.personalWorkspace { gap: 20px; }
+.personalWorkspace > .topBar { padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; gap: 20px 32px; }
+.personalWorkspace .usage { gap: 10px; }
+.personalWorkspace .usage p { font-size: 13px; line-height: 1.6; }
+.personalWorkspace .usageBar { height: 6px; }
+.personalWorkspace .topActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.personalWorkspace .topActions button { min-height: 46px; border-radius: 10px; font-size: 14px; }
+.personalWorkspace .folderBar { gap: 8px; padding: 4px 0; }
+.personalWorkspace .folderChip { min-height: 44px; border-radius: 10px; font-size: 13px; }
+.personalWorkspace .folderChip[aria-pressed='true'] { border-color: #9bb3a1; }
+.personalWorkspace .folderTools { width: 100%; padding: 8px 0 0; }
+.personalWorkspace .folderTools button { min-height: 44px; font-size: 12px; }
+.personalWorkspace .filters { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 12px; align-items: end; padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; }
+.personalWorkspace .filters > .search { grid-column: 1 / -1; }
+.personalWorkspace .search input { min-height: 48px; font-size: 16px; }
+.fileFilterField { display: grid; gap: 8px; min-width: 0; }
+.fileFilterField > label { color: var(--teacher-muted, #58665f); font-size: 12px; font-weight: 500; }
+.personalWorkspace .list { border-radius: 18px; overflow: visible; }
+.personalWorkspace .row { min-height: 88px; padding: 18px 20px; border-bottom-color: #eeece5; }
+.personalWorkspace .row:first-child { border-top-left-radius: 18px; border-top-right-radius: 18px; }
+.personalWorkspace .row:last-child { border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; }
+.personalWorkspace .name { font-size: 15px; font-weight: 500; }
+.personalWorkspace .meta { margin-top: 4px; font-size: 12px; line-height: 1.6; }
+.personalWorkspace .kindIcon { width: 42px; height: 42px; border-radius: 12px; }
+.personalWorkspace .rowActions > button, .personalWorkspace .menu > summary { border-radius: 10px; }
+.personalWorkspace .bulkBar { border-color: #b6cbbd; border-radius: 14px; box-shadow: 0 4px 16px rgb(20 35 28 / 8%); }
+.personalWorkspace .empty { padding: 40px 24px; border-style: solid; border-radius: 18px; }
+@media (max-width: 767px) {
+  .teacherFilesPage { gap: 18px; }
+  .teacherFilesPage > .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .teacherFilesPage > .tabs button { padding: 8px; min-height: 46px; font-size: 13px; white-space: normal; }
+  .personalWorkspace { gap: 16px; }
+  .personalWorkspace > .topBar { padding: 18px 16px; gap: 16px; border-radius: 16px; }
+  .personalWorkspace .usage { flex-basis: 100%; max-width: none; }
+  .personalWorkspace .topActions { width: 100%; }
+  .personalWorkspace .topActions button { flex: 1; padding-inline: 12px; min-height: 48px; }
+  .personalWorkspace .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 18px 16px; gap: 14px 10px; border-radius: 16px; }
+  .personalWorkspace .list { border-radius: 16px; }
+  .personalWorkspace .row { display: grid; grid-template-columns: 20px 34px minmax(0, 1fr); gap: 10px; padding: 16px 12px; }
+  .personalWorkspace .grip { display: none; }
+  .personalWorkspace .kindIcon { width: 34px; height: 38px; border-radius: 9px; }
+  .personalWorkspace .name, .personalWorkspace .nameButton { white-space: normal; overflow-wrap: anywhere; font-size: 14px; line-height: 1.5; }
+  .personalWorkspace .rowActions { grid-column: 3; justify-content: flex-end; margin-left: 0; }
+  .personalWorkspace .meta { gap: 5px 8px; }
+  .personalWorkspace .bulkBar { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); padding: 12px; }
+  .personalWorkspace .empty { padding: 28px 16px; border-radius: 16px; }
+}
+@media (max-width: 359px) {
+  .personalWorkspace .filters { grid-template-columns: minmax(0, 1fr); }
+}

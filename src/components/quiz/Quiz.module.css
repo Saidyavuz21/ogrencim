@@ -1,5 +1,49 @@
 /* ===== Quiz: soru bankası, soru düzenleyici, öğrenci ekranı, sonuçlar ===== */
 
+.bankWorkspace { gap: 20px; }
+.bankIntro { padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; }
+.bankIntro > p { flex: 1 1 320px; max-width: 680px; font-size: 14px; line-height: 1.7; }
+.bankIntro > button { min-height: 46px; border-radius: 10px; }
+.bankFilters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: end; padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; }
+.bankFilters > label { grid-column: 1 / -1; min-width: 0; }
+.bankFilters input[type='search'] { font-size: 16px; }
+.bankFilterField { display: grid; gap: 8px; min-width: 0; }
+.bankFilterField > label { color: var(--teacher-muted, #58665f); font-size: 12px; font-weight: 500; }
+.bankResultBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; }
+.bankResultBar button { min-height: 44px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--teacher-primary, #25634b); font: inherit; font-size: 13px; cursor: pointer; }
+.bankResultBar button:hover { background: var(--teacher-selected, #e6f1e9); }
+.bankResultBar button:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+.bankList { display: grid; gap: 16px; min-width: 0; }
+.bankList .qCard { padding: 24px; gap: 18px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; }
+.bankList .qCard:last-child { border-bottom: 1px solid var(--teacher-border, #dedad0); }
+.bankList .qHead { gap: 16px; }
+.bankList .qBody { font-size: 16px; line-height: 1.7; }
+.bankList .qChoices { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; padding-top: 16px; border-top: 1px solid #eeece5; }
+.bankList .qChoices li { min-width: 0; padding: 10px; border-radius: 8px; font-size: 14px; line-height: 1.6; }
+.bankList .qChoices .qCorrect { background: #eef5ee; font-weight: 500; }
+.bankActions { flex-shrink: 0; gap: 6px; }
+.bankActions button { border-radius: 10px; }
+.bankEditor { gap: 22px; }
+.bankEditor textarea { font-size: 16px; line-height: 1.65; padding: 12px; border-radius: 10px; }
+.bankEditor .choiceRows { gap: 10px; }
+.bankEditor .imageBox { padding: 14px; border: 1px dashed var(--teacher-border, #dedad0); border-radius: 12px; background: #fafbf8; }
+@media (max-width: 767px) {
+  .bankWorkspace { gap: 16px; }
+  .bankIntro { padding: 18px 16px; gap: 14px; border-radius: 16px; }
+  .bankIntro > p { flex-basis: 100%; font-size: 13px; }
+  .bankIntro > button { width: 100%; min-height: 48px; }
+  .bankFilters { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px 16px; border-radius: 16px; }
+  .bankList .qCard { padding: 18px 16px; border-radius: 16px; gap: 14px; }
+  .bankList .qHead { flex-wrap: wrap; gap: 12px; }
+  .bankList .qBody { flex-basis: calc(100% - 90px); font-size: 15px; }
+  .bankActions { width: 100%; justify-content: flex-end; padding-top: 4px; }
+  .bankList .qChoices { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-top: 14px; }
+  .bankList .qThumb { width: 64px; height: 56px; }
+  .bankEditor .imageBox > button { flex: 1 1 160px; min-height: 48px; }
+  .bankEditor .choiceRow { gap: 6px; }
+  .bankEditor .choiceRow input { font-size: 16px; }
+}
+
 /* Şık düzenleme */
 .choiceRows { display: grid; gap: 8px; }
 .choiceRow { display: flex; align-items: center; gap: 8px; }

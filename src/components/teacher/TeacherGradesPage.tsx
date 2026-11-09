@@ -154,7 +154,7 @@ export function TeacherGradesPage({ selectedClass, defaultSubject }: { selectedC
   );
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.gradesWorkspace}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={styles.gradeTabs} role="tablist" aria-label="Not sayfası">
@@ -242,6 +242,7 @@ export function TeacherGradesPage({ selectedClass, defaultSubject }: { selectedC
           </section>
 
           <div className={styles.stickyActions}>
+            <span className={styles.gradeSaveHint}>{changes.length ? `${changes.length} kaydedilmemiş değişiklik` : 'Notlar 0–100 arasında olmalıdır.'}</span>
             <button type="button" className={styles.primary} disabled={busy || !changes.length} onClick={handleSave}>
               <Save size={18} aria-hidden="true" />
               {busy ? 'Kaydediliyor…' : changes.length ? `Notları kaydet (${changes.length})` : 'Notları kaydet'}
@@ -267,7 +268,7 @@ export function TeacherGradesPage({ selectedClass, defaultSubject }: { selectedC
                   </button>
                 ))}
               </div>
-              <div className={`${styles.tableScroll} ${styles.gradeViewTable}`}>
+              <div className={`${styles.tableScroll} ${styles.gradeViewTable}`} tabIndex={0} role="region" aria-label="Öğrenci notları tablosu">
                 <table className={styles.gradeTable}>
                   <caption className={styles.visuallyHidden}>
                     {activeView === ALL_SUBJECTS ? `${selectedClass} – derslere göre not ortalamaları` : `${selectedClass} – ${activeView} notları`}

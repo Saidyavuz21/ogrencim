@@ -13,6 +13,7 @@ import { Modal, normalize } from '../files/FilesUi';
 import { BoardEditor } from './BoardEditor';
 import styles from './Board.module.css';
 import f from '../files/Files.module.css';
+import bStyles from './TeacherBoards.module.css';
 
 const ALL = '__all__';
 const NONE = '__none__';
@@ -110,11 +111,11 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
   if (!boards) return <Spinner center label="Tahtalar yükleniyor…" />;
 
   const card = (b: BoardSummary) => (
-    <article key={b.id} className={styles.boardCard}>
-      <h3>{b.title}</h3>
+    <article key={b.id} className={`${styles.boardCard} ${bStyles.card}`}>
+      <div className={bStyles.cardHeading}><span className={bStyles.cardIcon}><Layers size={22} aria-hidden="true" /></span><h3>{b.title}</h3></div>
       <p>{[`${b.pageCount} sayfa`, b.subject, b.grade].filter(Boolean).join(' · ')}</p>
       <p>{dateLabel(b.updated_at)}</p>
-      <div className={f.cardActions}>
+      <div className={`${f.cardActions} ${bStyles.cardActions}`}>
         <button type="button" className={f.primaryButton} onClick={() => setOpenId(b.id)}>Aç</button>
         <button type="button" className={f.iconButton} onClick={() => setDialog({ board: b })} aria-label={`${b.title} bilgilerini düzenle`} title="Ad, kategori, ders, kademe"><Edit size={18} aria-hidden="true" /></button>
         <button type="button" className={f.iconButton} onClick={() => duplicate(b)} aria-label={`${b.title} çoğalt`} title="Çoğalt"><Copy size={18} aria-hidden="true" /></button>
@@ -124,8 +125,8 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
   );
 
   return (
-    <section className={f.page} aria-label="Tahtalarım">
-      <div className={f.topBar}>
+    <section className={`${f.page} ${bStyles.workspace}`} aria-label="Tahtalarım">
+      <div className={`${f.topBar} ${bStyles.intro}`}>
         <p className={f.muted}>Tahtayı derste tam ekran açın (akıllı tahta) ya da Ödev gönder’de türü “Tahta” seçip sınıfa gönderin; öğrenciler kendi kopyası üzerinde çözer.</p>
         <button type="button" className={f.primaryButton} onClick={() => setDialog({ board: null })}><Plus size={18} aria-hidden="true" />Yeni tahta</button>
       </div>
@@ -139,13 +140,14 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
         </div>
       ) : (
         <>
-          <div className={f.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) repeat(3, minmax(150px, 1fr)) auto' }}>
+          <div className={bStyles.filters}>
             <label className={f.search}>
               <span className={f.srOnly}>Tahtalarda ara</span>
               <Search size={18} aria-hidden="true" />
               <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, kategori ya da ders ara" />
             </label>
-            <CustomSelect
+            <div className={bStyles.filterField}><label htmlFor="boards-category">Kategori</label><CustomSelect
+              id="boards-category"
               value={view}
               onChange={setView}
               disabled={!categories.length}
@@ -154,9 +156,9 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
                 ...categories.map((c) => ({ value: c, label: `${c} (${all.filter((b) => b.category === c).length})` })),
                 ...(categories.length && all.some((b) => !b.category) ? [{ value: NONE, label: `Kategorisiz (${all.filter((b) => !b.category).length})` }] : []),
               ]}
-            />
-            <CustomSelect value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Tüm dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} />
-            <CustomSelect value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Tüm kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} />
+            /></div>
+            <div className={bStyles.filterField}><label htmlFor="boards-subject">Ders</label><CustomSelect id="boards-subject" value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Tüm dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} /></div>
+            <div className={bStyles.filterField}><label htmlFor="boards-grade">Kademe</label><CustomSelect id="boards-grade" value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Tüm kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} /></div>
             <button
               type="button"
               className={f.secondaryButton}
@@ -167,15 +169,16 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
               <X size={18} aria-hidden="true" />Temizle
             </button>
           </div>
+          <p className={`${f.muted} ${bStyles.resultCount}`}>{visible.length} / {all.length} tahta</p>
           {groups.length === 0 ? (
             <p className={f.muted}>
               Süzgece uyan tahta yok.{' '}
               {filtering && <button type="button" className={f.linkButton} onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); setView(ALL); }}>Süzgeçleri temizle</button>}
             </p>
           ) : groups.map((g) => (
-            <div key={g.key} style={{ display: 'grid', gap: 10 }}>
+            <div key={g.key} className={bStyles.categoryGroup}>
               {g.title && <h3 className={f.cardTitle}>{g.title} <span className={f.muted} style={{ display: 'inline', fontWeight: 400 }}>· {g.items.length}</span></h3>}
-              <div className={styles.boardCards}>{g.items.map(card)}</div>
+              <div className={`${styles.boardCards} ${bStyles.cardGrid}`}>{g.items.map(card)}</div>
             </div>
           ))}
           {categories.length === 0 && <p className={f.muted}>İpucu: Tahtaları kategorilere ayırmak için kalem düğmesine basıp “Kategori” yazın (ör. 1. Ünite).</p>}
@@ -225,7 +228,7 @@ function BoardInfoDialog({ board, categories, defaultSubject, defaultCategory, o
   };
   return (
     <Modal title={board ? 'Tahta bilgileri' : 'Yeni tahta'} onClose={onClose} busy={busy}>
-      <form className={f.form} onSubmit={submit}>
+      <form className={`${f.form} ${bStyles.infoForm}`} onSubmit={submit}>
         <label className={f.field} htmlFor={ids.title}>
           Tahtanın adı
           <input id={ids.title} value={info.title} maxLength={120} onChange={(e) => setInfo({ ...info, title: e.target.value })} placeholder="Örn. Kesirlerde toplama" data-autofocus required />

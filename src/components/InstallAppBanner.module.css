@@ -1,3 +1,13 @@
+.panelInstall.panelInstall { background: #eef4ef; color: #20352d; border: 1px solid #d5e0d7; border-radius: 14px; box-shadow: none; animation: none; }
+.panelInstall .bannerContent { max-width: none; padding: 14px 16px; flex-wrap: wrap; gap: 12px; }
+.panelInstall .textWrap { flex-basis: 180px; }
+.panelInstall .textWrap strong { color: #20352d; font-weight: 600; }
+.panelInstall .textWrap span { color: #58665f; line-height: 1.5; }
+.panelInstall .installBtn { min-height: 44px; border: 1px solid #a4b1a6; box-shadow: none; font-weight: 600; }
+.panelInstall .closeBtn { width: 44px; height: 44px; color: #58665f; }
+.panelInstall .closeBtn:hover { background: #dce9df; color: #20352d; }
+.panelInstall button:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
+
 .bannerContainer {
   width: 100%;
   background: linear-gradient(135deg, #1b4d37 0%, #25634b 100%);

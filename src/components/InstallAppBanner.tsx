@@ -1,14 +1,27 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import { Download, Smartphone, X } from './icons';
 import styles from './InstallAppBanner.module.css';
 
-export function InstallAppBanner() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+interface InstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+export function InstallAppBanner({ variant = 'banner', visible = true }: { variant?: 'banner' | 'suggestion' | 'profile'; visible?: boolean }) {
+  const [deferredPrompt, setDeferredPrompt] = useState<InstallPromptEvent | null>(null);
+  const isIOS = useSyncExternalStore(
+    () => () => {},
+    () => typeof window !== 'undefined' && /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()),
+    () => false
+  );
+  const isStandalone = useSyncExternalStore(
+    () => () => {},
+    () => typeof window !== 'undefined' && (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true),
+    () => false
+  );
   const [dismissed, setDismissed] = useState(true);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
@@ -16,36 +29,32 @@ export function InstallAppBanner() {
     // Check if running in standalone mode (already installed as PWA)
     const isInStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true;
-    setIsStandalone(isInStandalone);
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
     // Check if dismissed before in session/local storage
-    const wasDismissed = sessionStorage.getItem('tofutr_install_dismissed');
-    if (wasDismissed || isInStandalone) {
-      setDismissed(true);
-      return;
-    }
-
-    setDismissed(false);
+    let wasDismissed = false;
+    try {
+      wasDismissed = Boolean(variant === 'banner' ? sessionStorage.getItem('tofutr_install_dismissed') : localStorage.getItem('tofutr_panel_install_dismissed'));
+    } catch { /* Depolama kapalıysa yükleme seçeneği çalışmaya devam eder. */ }
+    queueMicrotask(() => { setDismissed(wasDismissed || isInStandalone); });
 
     // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(isIosDevice);
 
     // Chrome/Android PWA event
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
-      setDismissed(false);
+      setDeferredPrompt(e as InstallPromptEvent);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    const installed = () => { setDismissed(true); setDeferredPrompt(null); };
+    window.addEventListener('appinstalled', installed);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', installed);
     };
-  }, []);
+  }, [variant]);
 
   const handleInstallClick = async () => {
     if (isIOS) {
@@ -68,14 +77,17 @@ export function InstallAppBanner() {
 
   const handleDismiss = () => {
     setDismissed(true);
-    sessionStorage.setItem('tofutr_install_dismissed', '1');
+    try {
+      if (variant === 'banner') sessionStorage.setItem('tofutr_install_dismissed', '1');
+      else localStorage.setItem('tofutr_panel_install_dismissed', '1');
+    } catch { /* Geçerli görünümde kapatmak yine mümkündür. */ }
   };
 
-  if (dismissed || isStandalone) return null;
+  if (!visible || (dismissed && variant !== 'profile') || isStandalone) return null;
 
   return (
     <>
-      <div className={styles.bannerContainer}>
+      <div className={`${styles.bannerContainer} ${variant !== 'banner' ? styles.panelInstall : ''}`}>
         <div className={styles.bannerContent}>
           <div className={styles.iconWrap}>
             <Image
@@ -88,8 +100,8 @@ export function InstallAppBanner() {
           </div>
 
           <div className={styles.textWrap}>
-            <strong>tofutr uygulaması</strong>
-            <span>Hızlı giriş yapın, ödev ve duyuruları kaçırmayın.</span>
+            <strong>{variant === 'banner' ? 'tofutr uygulaması' : 'Uygulamayı yükle'}</strong>
+            <span>{variant === 'banner' ? 'Hızlı giriş yapın, ödev ve duyuruları kaçırmayın.' : 'tofutr’a ana ekranınızdan kolayca ulaşın.'}</span>
           </div>
 
           <div className={styles.actionWrap}>
@@ -101,14 +113,14 @@ export function InstallAppBanner() {
               <Download size={16} aria-hidden="true" />
               <span>Yükle</span>
             </button>
-            <button
+            {variant !== 'profile' && <button
               type="button"
               className={styles.closeBtn}
               onClick={handleDismiss}
               aria-label="Kapat"
             >
               <X size={18} aria-hidden="true" />
-            </button>
+            </button>}
           </div>
         </div>
       </div>

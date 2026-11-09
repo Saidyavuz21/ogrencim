@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Aquarium } from '../aquarium/Aquarium';
 import { AquariumStudent, listClassAquarium } from '../../lib/teacherData';
 import styles from './TeacherDashboard.module.css';
+import aquariumStyles from '../aquarium/Aquarium.module.css';
 
 /** Sınıf akvaryumu: tüm sınıf aynı akvaryumda; akıllı tahtaya yansıtmak için tam ekran */
 export function TeacherAquariumPage({ selectedClass }: { selectedClass: string }) {
@@ -21,7 +22,7 @@ export function TeacherAquariumPage({ selectedClass }: { selectedClass: string }
   }, [selectedClass]);
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${aquariumStyles.teacherSurface}`}>
       {error && <p role="alert" className={styles.noticeError}>{error}</p>}
       {!students && !error && <p className={styles.mutedText}>Akvaryum hazırlanıyor…</p>}
       {students && <Aquarium students={students} scopeKey={`ogretmen:${selectedClass}`} title={`${selectedClass} akvaryumu`} />}

@@ -1,5 +1,6 @@
 .dashboard,
 .teacherShell,
+.studentsPage,
 .studentModalBackdrop {
   --teacher-bg: #f7f6f2;
   --teacher-surface: #ffffff;
@@ -19,6 +20,49 @@
   background: var(--teacher-bg);
   overflow-x: hidden;
   max-width: 100%;
+}
+
+/* Keep the page and panel scrollbars unobtrusive. */
+.teacherShell,
+.teacherShell *,
+:global(html):has(.teacherShell) {
+  scrollbar-width: thin;
+  scrollbar-color: #a4b1a6 transparent;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  .teacherShell,
+  .teacherShell *,
+  :global(html):has(.teacherShell) {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  .teacherShell::-webkit-scrollbar,
+  .teacherShell *::-webkit-scrollbar,
+  :global(html):has(.teacherShell)::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  .teacherShell::-webkit-scrollbar-track,
+  .teacherShell *::-webkit-scrollbar-track,
+  :global(html):has(.teacherShell)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .teacherShell::-webkit-scrollbar-thumb,
+  .teacherShell *::-webkit-scrollbar-thumb,
+  :global(html):has(.teacherShell)::-webkit-scrollbar-thumb {
+    background: #a4b1a6;
+    border-radius: 4px;
+  }
+
+  .teacherShell::-webkit-scrollbar-thumb:hover,
+  .teacherShell *::-webkit-scrollbar-thumb:hover,
+  :global(html):has(.teacherShell)::-webkit-scrollbar-thumb:hover {
+    background: #75867b;
+  }
 }
 
 .dashboardShell {
@@ -86,6 +130,40 @@
   align-items: center;
   gap: 16px;
   min-width: 0;
+}
+
+.topBarClass,
+.topBarMessages,
+.topBarDesktopLabel,
+.topBarInitials,
+.topBarRole { display: none; }
+
+@media (min-width: 1024px) {
+  .dashboardShell > .topBar {
+    margin: 20px 24px 0;
+    width: auto;
+    border: 1px solid var(--teacher-border);
+    border-radius: 20px;
+    box-shadow: 0 3px 12px rgb(32 53 45 / 4%);
+  }
+  .topBarContainer { max-width: none; padding: 14px 24px; gap: 24px; min-height: 84px; }
+  .topBarLeft { padding-right: 24px; border-right: 1px solid var(--teacher-border); }
+  .topBarLogo img { height: 38px; }
+  .topBarClass { display: grid; gap: 2px; flex: 0 1 220px; min-width: 150px; }
+  .topBarClass > label { font-size: 12px; font-weight: 500; color: var(--teacher-muted); }
+  .topBarActions { margin-left: auto; gap: 12px; }
+  .topBarMessages, .topBar .notificationButton { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; min-height: 44px; padding: 0 12px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--teacher-text); font: inherit; font-size: 14px; cursor: pointer; }
+  .topBarMessages:hover, .topBarMessages[aria-current='page'], .topBar .notificationButton:hover { background: var(--teacher-selected); }
+  .topBarDesktopLabel { display: inline; }
+  .topBarMessageCount { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #a33342; color: #fff; font-size: 11px; font-weight: 600; }
+  .topBar .topBarProfile { margin-left: 4px; padding: 4px 8px 4px 20px; border-left: 1px solid var(--teacher-border); border-radius: 0 10px 10px 0; }
+  .topBarProfile .accountAvatar { width: 44px; height: 44px; border-radius: 50%; font-size: 16px; }
+  .topBarMobileAvatar { display: none; }
+  .topBarInitials { display: inline; }
+  .topBarRole { display: block; margin-top: 3px; color: var(--teacher-muted); font-size: 12px; font-weight: 400; }
+  .topBarProfileText { max-width: 180px; }
+  .sidebar .sidebarMobileMessage { display: none; }
+  .pageHeader .pageClassField { display: none; }
 }
 
 .topBarProfile {
@@ -2562,6 +2640,13 @@
 .sidebarClose { display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 12px; background: transparent; color: var(--teacher-text); cursor: pointer; }
 .sidebarClose:hover { background: var(--teacher-selected); }
 .sidebarNav { flex: 1; overflow-y: auto; padding: 8px 12px 24px; display: grid; align-content: start; gap: 4px; }
+.sidebarNav { scrollbar-width: thin; scrollbar-color: #a4b1a6 transparent; }
+@supports selector(::-webkit-scrollbar) {
+  .teacherShell .sidebarNav { scrollbar-width: auto; scrollbar-color: auto; }
+  .teacherShell .sidebarNav::-webkit-scrollbar { width: 3px; height: 3px; }
+  .teacherShell .sidebarNav::-webkit-scrollbar-track { background: transparent; }
+  .teacherShell .sidebarNav::-webkit-scrollbar-thumb { background: #a4b1a6; border-radius: 3px; }
+}
 .sidebarGroup { display: grid; gap: 4px; margin-top: 16px; }
 .sidebarGroup h2 { margin: 0 0 4px 8px; font-size: 13px; font-weight: 600; color: var(--teacher-muted); }
 .sidebarItem { text-decoration: none; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 10px 12px; border: 0; border-radius: 12px; background: transparent; color: var(--teacher-text); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
@@ -2623,6 +2708,214 @@
   }
   .sidebarBackdrop { display: none; }
   .sidebarClose, .topBar .menuButton { display: none; }
+}
+
+.mobileHomeHeader { display: none; }
+@media (min-width: 0px) {
+  .mobileHomeSection { display: none; }
+  .dashboard:has(> .desktopHome) { max-width: 1560px; }
+  .desktopHome { display: grid; gap: 28px; min-width: 0; padding: 8px 0 24px; }
+  .desktopHomeGreeting { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 8px 8px 0; }
+  .desktopHomeGreeting h1 { margin: 0; color: var(--teacher-text); font-size: clamp(26px, 2.3vw, 34px); font-weight: 600; line-height: 1.25; letter-spacing: -.025em; }
+  .desktopHomeGreeting p { margin: 10px 0 0; color: var(--teacher-muted); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+  .desktopNewClass { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; padding: 10px 16px; border: 1px solid var(--teacher-control-border, #a4b1a6); border-radius: 10px; background: white; color: var(--teacher-primary); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .desktopNewClass:hover { background: var(--teacher-selected); }
+  .desktopHomeGrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: stretch; }
+  .homeWorkspace { min-width: 0; padding: 26px; border: 1px solid var(--teacher-border); border-radius: 18px; background: white; }
+  .homeWorkspace h2 { margin: 0; color: var(--teacher-text); font-size: 22px; font-weight: 600; line-height: 1.35; letter-spacing: -.02em; }
+  .homeWorkspaceHint { margin: 8px 0 8px; color: var(--teacher-muted); font-size: 14px; line-height: 1.5; }
+  .homeActionList { margin-top: 14px; }
+  .homeActionRow { display: flex; align-items: center; gap: 16px; min-height: 96px; padding: 18px 6px; border-bottom: 1px solid #eeece5; border-radius: 6px; color: var(--teacher-text); text-decoration: none; }
+  .homeActionRow:last-child { border-bottom: 0; }
+  .homeActionRow > span:nth-child(2) { flex: 1; min-width: 0; }
+  .homeActionRow > svg { flex-shrink: 0; color: var(--teacher-primary); }
+  .homeActionRow strong { display: block; font-size: 17px; font-weight: 600; }
+  .homeActionRow small { display: block; margin-top: 5px; color: var(--teacher-muted); font-size: 13px; line-height: 1.5; }
+  .homeActionIcon { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: var(--teacher-selected); color: var(--teacher-primary); }
+  .homeToolGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; margin-top: 24px; }
+  .homeToolGrid button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 120px; padding: 12px 4px; border: 0; border-radius: 12px; background: transparent; color: var(--teacher-text); font-size: 14px; cursor: pointer; }
+  .homeToolGrid button { position: relative; }
+  .homeToolGrid button:nth-child(odd)::after { content: ''; position: absolute; top: 12px; bottom: 12px; right: -6px; width: 1px; background: var(--teacher-border); pointer-events: none; }
+  .homeToolGrid button:nth-child(-n+2)::before { content: ''; position: absolute; left: 12px; right: 12px; bottom: -8px; height: 1px; background: var(--teacher-border); pointer-events: none; }
+  .homeToolIcon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #edf2e8; color: var(--teacher-primary); }
+  .homeToolGrid button:nth-child(2) .homeToolIcon { background: #fbf3df; }
+  .homeToolGrid button:nth-child(4) .homeToolIcon { background: #eee8f6; color: #69518a; }
+  .homeShortcutGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 24px; }
+  .homeShortcutGrid a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 96px; padding: 12px 8px; border-right: 1px solid #eeece5; border-radius: 6px; color: var(--teacher-text); font-size: 14px; text-align: center; text-decoration: none; }
+  .homeShortcutGrid a:last-child { border-right: 0; }
+  .homeShortcutGrid svg { color: var(--teacher-primary); stroke-width: 1.75; }
+  .homeManagementList { margin-top: 18px; }
+  .homeManagementList a { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 4px; border-bottom: 1px solid #eeece5; border-radius: 6px; color: var(--teacher-text); font-size: 15px; text-decoration: none; }
+  .homeManagementList a:last-child { border-bottom: 0; }
+  .homeManagementList a span { flex: 1; }
+  .homeActionRow:hover, .homeToolGrid button:hover, .homeShortcutGrid a:hover, .homeManagementList a:hover { background: #f5f7f2; }
+  .desktopHome a:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 3px; }
+}
+@media (max-width: 1023px) {
+  .mobileHomeHeader { display: grid; }
+  .desktopHome { gap: 20px; padding: 0; }
+  .desktopHomeGreeting { display: none; }
+  .desktopHomeGreeting > div { flex: 1 1 200px; min-width: 0; }
+  .desktopHomeGreeting h1 { font-size: 25px; }
+  .desktopHomeGreeting p { margin-top: 6px; font-size: 13px; }
+  .desktopNewClass { padding: 8px 12px; font-size: 13px; }
+  .desktopHomeGrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .homeWorkspace { padding: 20px 16px; border-radius: 16px; }
+  .homeWorkspace h2 { font-size: 19px; }
+  .homeWorkspaceHint { font-size: 13px; }
+  .homeActionRow { min-height: 84px; gap: 12px; padding: 14px 0; }
+  .homeActionRow strong { font-size: 16px; }
+  .homeActionIcon { width: 42px; height: 42px; border-radius: 10px; }
+  .homeToolGrid { margin-top: 16px; }
+  .homeToolGrid button { min-height: 108px; font-size: 14px; }
+  .homeToolIcon { width: 48px; height: 48px; }
+  .homeShortcutGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+  .homeShortcutGrid a { min-height: 92px; border-right: 0; }
+  .homeShortcutGrid a:nth-child(odd) { border-right: 1px solid #eeece5; }
+  .homeShortcutGrid a:nth-child(-n+2) { border-bottom: 1px solid #eeece5; }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .homeWorkspace { padding: 20px; }
+  .homeShortcutGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .homeShortcutGrid a { border: 0; }
+}
+
+.sidebarFooter { display: none; }
+.sidebarTooltip {
+  position: fixed;
+  z-index: 200;
+  transform: translateY(-50%);
+  max-width: min(260px, calc(100vw - 120px));
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #20352d;
+  color: #fff;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgb(20 35 28 / 14%);
+  pointer-events: none;
+}
+.sidebarTooltip::before { content: ''; position: absolute; left: -4px; top: calc(50% - 4px); width: 8px; height: 8px; background: #20352d; transform: rotate(45deg); }
+
+.mobileBottomNav { display: none; }
+@media (max-width: 1023px) {
+  .dashboardShell { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .sidebarBackdrop { background: rgb(20 35 28 / 32%); }
+  .dashboardShell > .sidebar {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    width: min(344px, calc(100vw - 24px));
+    border: 1px solid var(--teacher-border);
+    border-radius: 18px;
+    background: var(--teacher-surface);
+    overflow: hidden;
+  }
+  .sidebar .sidebarHead {
+    flex-shrink: 0;
+    gap: 12px;
+    margin: 0 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--teacher-border);
+  }
+  .sidebar .sidebarTitle { font-size: 18px; font-weight: 600; letter-spacing: -.02em; }
+  .sidebar .sidebarClose { width: 44px; height: 44px; border-radius: 10px; background: #f4f5f1; color: var(--teacher-muted); }
+  .sidebar .sidebarClose:hover { background: var(--teacher-selected); color: var(--teacher-primary); }
+  .sidebar .sidebarNav { min-height: 0; padding: 12px 12px 20px; gap: 4px; overscroll-behavior: contain; }
+  .sidebar .sidebarItem { min-height: 48px; padding: 12px; gap: 12px; border-radius: 10px; font-size: 15px; font-weight: 400; line-height: 1.4; }
+  .sidebar .sidebarItem svg { width: 20px; height: 20px; stroke-width: 1.75; color: var(--teacher-muted); }
+  .sidebar .sidebarItem[aria-current='page'] { background: var(--teacher-selected); color: var(--teacher-primary); font-weight: 600; }
+  .sidebar .sidebarItem[aria-current='page'] svg { color: var(--teacher-primary); }
+  .sidebar .sidebarGroup { gap: 4px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eeece5; }
+  .sidebar .sidebarGroup h2 { margin: 0 12px 4px; font-size: 12px; font-weight: 500; line-height: 1.5; color: var(--teacher-muted); }
+  .sidebar .sidebarBadge { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; }
+  .mobileBottomNav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--teacher-border);
+    background: var(--teacher-surface);
+  }
+  .mobileBottomNav button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 56px;
+    padding: 6px 2px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--teacher-muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .mobileBottomNav button[aria-current='page'],
+  .mobileBottomNav button[aria-expanded='true'] { background: var(--teacher-selected); color: var(--teacher-primary); font-weight: 600; }
+  .mobileBottomNav button:focus-visible { outline: 2px solid var(--teacher-primary); outline-offset: 2px; }
+  .mobileToolsWrap { position: relative; min-width: 0; }
+  .mobileToolsWrap > .mobileToolsTrigger { width: 100%; height: 100%; }
+  .mobileToolsPopover { position: absolute; bottom: calc(100% + 16px); left: -40px; width: min(240px, calc(100vw - 32px)); padding: 8px; border: 1px solid var(--teacher-border); border-radius: 14px; background: var(--teacher-surface); box-shadow: 0 6px 24px rgb(20 35 28 / 12%); }
+  .mobileToolsTitle { display: block; padding: 8px 10px; color: var(--teacher-muted); font-size: 12px; font-weight: 600; }
+  .mobileToolsPopover button { flex-direction: row; justify-content: flex-start; gap: 12px; width: 100%; min-height: 48px; padding: 10px; color: var(--teacher-text); font-size: 14px; text-align: left; }
+  .mobileToolsPopover button:hover, .mobileToolsPopover button:focus-visible { background: var(--teacher-selected); color: var(--teacher-primary); }
+  .mobileNavBadge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 18px; padding: 1px 4px; border-radius: 10px; background: #a33342; color: white; font-size: 10px; }
+}
+
+@media (min-width: 1024px) {
+  .dashboardShell { grid-template-columns: 264px minmax(0, 1fr); column-gap: 0; row-gap: 20px; }
+  .dashboardShell.dashboardSidebarCollapsed { grid-template-columns: 104px minmax(0, 1fr); }
+  .dashboardShell > .sidebar {
+    position: sticky;
+    top: 20px;
+    align-self: start;
+    min-height: 0;
+    height: calc(100dvh - 144px);
+    max-height: calc(100dvh - 40px);
+    margin: 0 0 24px 24px;
+    padding: 10px 0 0;
+    border: 1px solid var(--teacher-border);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .dashboardShell > .sidebar .sidebarHead { display: none; }
+  .dashboardShell > .sidebar .sidebarNav {
+    position: static;
+    min-height: 0;
+    max-height: none;
+    padding: 0 10px 10px;
+    gap: 2px;
+    overscroll-behavior: contain;
+  }
+  .sidebar .sidebarItem { position: relative; min-height: 42px; padding: 9px 10px; gap: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; font-weight: 400; }
+  .sidebar .sidebarItem svg { width: 19px; height: 19px; stroke-width: 1.75; color: var(--teacher-muted); }
+  .sidebar .sidebarItem[aria-current='page'] { color: var(--teacher-primary); background: var(--teacher-selected); font-weight: 600; }
+  .sidebar .sidebarItem[aria-current='page'] svg { color: var(--teacher-primary); }
+  .sidebarGroup { margin-top: 12px; gap: 2px; padding-top: 10px; border-top: 1px solid #eeece5; }
+  .sidebarGroup h2 { margin: 0 10px 4px; color: var(--teacher-muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
+  .sidebar .sidebarHeaderGroup { display: none; }
+  .sidebarFooter { display: block; flex-shrink: 0; margin: 0 10px; padding: 8px 0; border-top: 1px solid var(--teacher-border); }
+  .sidebarCollapse { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 10px; color: var(--teacher-muted); background: transparent; font-size: 13px; text-align: left; cursor: pointer; }
+  .sidebarCollapse:hover { background: var(--teacher-selected); color: var(--teacher-primary); }
+  .dashboardSidebarCollapsed .sidebar .sidebarNav { padding: 0 8px 8px; }
+  .dashboardSidebarCollapsed .sidebarItem { justify-content: center; padding: 10px 0; }
+  .dashboardSidebarCollapsed .sidebarItem > span:not(.sidebarBadge),
+  .dashboardSidebarCollapsed .sidebarGroup h2,
+  .dashboardSidebarCollapsed .sidebarCollapse > span { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .dashboardSidebarCollapsed .sidebarGroup { margin-top: 8px; padding-top: 8px; }
+  .dashboardSidebarCollapsed .sidebarCollapse { justify-content: center; padding: 8px 0; }
+  .dashboardSidebarCollapsed .sidebarBadge { position: absolute; right: 0; top: 0; min-width: 16px; height: 16px; padding: 0 3px; font-size: 10px; }
+  .dashboardShell > .dashboard { padding-top: 0; }
 }
 
 /* ===== Toplu öğrenci tablosu durum renkleri ===== */
@@ -2694,7 +2987,7 @@
 .dashboard .pageHeaderToggle { display: none; margin-left: auto; width: 40px; height: 40px; flex-shrink: 0; place-items: center; border: 1px solid var(--teacher-border); border-radius: 12px; background: var(--teacher-selected); color: var(--teacher-primary); cursor: pointer; }
 .pageHeaderToggle svg, .mobileCollapseBar svg { transition: transform 150ms ease-out; }
 
-.dashboard .mobileCollapseBar { display: none; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 4px 0; border: 0; background: transparent; color: var(--teacher-text); text-align: left; cursor: pointer; }
+:is(.dashboard, .studentsPage) .mobileCollapseBar { display: none; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 4px 0; border: 0; background: transparent; color: var(--teacher-text); text-align: left; cursor: pointer; }
 .mobileCollapseText { display: grid; gap: 2px; min-width: 0; }
 .mobileCollapseText strong { font-size: 16px; font-weight: 700; }
 .mobileCollapseText span { font-size: 13px; font-weight: 500; color: var(--teacher-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2708,7 +3001,7 @@
 }
 
 @media (max-width: 1023px) {
-  .dashboard .mobileCollapseBar { display: flex; }
+  :is(.dashboard, .studentsPage) .mobileCollapseBar { display: flex; }
   .mobileCollapseClosed { display: none; }
   .mobileCollapseBody > .panelTitle { display: none; }
 }
@@ -2905,6 +3198,161 @@
 .checkListBar { justify-content: space-between; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
 .checkPointsHint { margin: 0; font-size: 13px; color: var(--teacher-muted); }
 .checkPointsHint b { color: var(--teacher-text); font-weight: 600; }
+.pointsRosterHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 16px; }
+.pointsRosterHeader h2 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 600; }
+.pointsRosterHeader p { margin: 5px 0 0; color: var(--teacher-muted); font-size: 13px; }
+.pointsRosterHeader > span { color: var(--teacher-muted); font-size: 12px; line-height: 1.5; }
+.pointsWorkspace .studentList { border-radius: 18px; background: white; }
+.pointsWorkspace .listSortBar { padding: 12px 24px; margin: 0; background: #fafbf8; border-block: 1px solid #eeece5; }
+.pointsWorkspace .pointRow { padding: 18px 24px; gap: 16px; min-height: 88px; border-bottom-color: #eeece5; }
+.pointsWorkspace .studentIdentity { flex: 1; min-width: 0; }
+.pointsWorkspace .studentAvatar { width: 42px; height: 42px; border-radius: 50%; background: #edf2e8; color: var(--teacher-primary); font-size: 12px; }
+.pointsWorkspace .studentIdentity h4 { font-size: 15px; font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
+.pointsWorkspace .studentIdentity p { font-size: 12px; line-height: 1.6; white-space: normal; }
+.pointsWorkspace .pointActions { flex-shrink: 0; gap: 8px; }
+.pointsWorkspace .pointActions button { min-width: 60px; min-height: 46px; height: auto; border-radius: 10px; font-size: 15px; box-shadow: none; }
+.pointsWorkspace .pointActions .minusButton { background: #fff5f5; border-color: #e4c2c7; color: #a33342; }
+.pointsWorkspace .pointActions .plusButton { background: var(--teacher-selected); border-color: #a0bda9; color: var(--teacher-primary); }
+.pointsWorkspace .pointActions .minusButton:hover:not(:disabled) { background: #fcecef; }
+.pointsWorkspace .pointActions .plusButton:hover:not(:disabled) { background: #d7e9dc; }
+.pointsWorkspace .panel { border-radius: 18px; padding: 22px; }
+.pointsWorkspace .panelTitle { font-size: 18px; font-weight: 600; margin: 0; }
+.pointsWorkspace .chipRow { gap: 8px; }
+.pointsWorkspace .chip { padding: 9px 12px; min-height: 44px; border-radius: 10px; font-size: 13px; text-align: left; line-height: 1.5; }
+.pointsWorkspace .historyList li { grid-template-columns: 36px minmax(0, 1fr); padding: 14px 0; border-color: #eeece5; font-size: 13px; line-height: 1.6; }
+.pointsWorkspace .historyList strong { font-weight: 500; }
+.pointsWorkspace .historyList li > span { min-width: 0; overflow-wrap: anywhere; }
+.pointsWorkspace .historyList li > span:last-child { font-size: 12px; }
+@media (min-width: 1024px) {
+  .dashboard:has(> .pointsWorkspace) { max-width: 1560px; }
+  .pointsWorkspace > .pointsLayout { grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; }
+  .pointsWorkspace .pointsAside { gap: 18px; }
+  .pointsWorkspace .pointsReasonPanel .mobileCollapseBody { gap: 18px; }
+}
+@media (max-width: 1023px) {
+  .pointsWorkspace > .pointsLayout { display: flex; flex-direction: column; gap: 18px; }
+  .pointsWorkspace .pointsAside { display: contents; }
+  .pointsReasonPanel { order: 0; }
+  .pointsWorkspace .studentList { order: 1; width: 100%; border-radius: 16px; }
+  .pointsHistoryPanel { order: 2; }
+  .pointsWorkspace .panel { padding: 16px; border-radius: 16px; }
+  .pointsReasonTitle { display: none; }
+  .pointsRosterHeader { padding: 18px 16px 14px; gap: 8px; }
+  .pointsRosterHeader h2 { font-size: 18px; }
+  .pointsWorkspace .listSortBar { padding: 10px 16px; }
+  .pointsWorkspace .pointRow { padding: 16px 14px; gap: 12px; min-height: 86px; }
+  .pointsWorkspace .studentAvatar { width: 36px; height: 36px; min-width: 36px; }
+  .pointsWorkspace .studentIdentity { gap: 8px; }
+  .pointsWorkspace .studentIdentity h4 { font-size: 14px; line-height: 1.5; text-overflow: clip; }
+  .pointsWorkspace .studentIdentity p { font-size: 12px; line-height: 1.5; text-overflow: clip; }
+  .pointsWorkspace .pointActions { gap: 6px; }
+  .pointsWorkspace .pointActions button { min-width: 46px; min-height: 46px; padding: 8px; font-size: 14px; }
+}
+@media (max-width: 359px) {
+  .pointsWorkspace .pointRow { flex-wrap: wrap; }
+  .pointsWorkspace .pointRow .studentIdentity { flex-basis: 100%; }
+  .pointsWorkspace .pointActions { width: 100%; justify-content: flex-end; }
+}
+
+.leaderboardWorkspace .studentList { border-radius: 18px; background: white; }
+.leaderboardWorkspace .listHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px; border-bottom: 1px solid var(--teacher-border); background: white; }
+.leaderboardWorkspace .listHeading > div { min-width: 0; }
+.leaderboardWorkspace .listHeading h2 { margin: 0; color: var(--teacher-text); font-size: 20px; line-height: 1.4; font-weight: 600; }
+.leaderboardWorkspace .listHeading p { margin: 7px 0 0; color: var(--teacher-muted); font-size: 13px; line-height: 1.6; }
+.leaderboardWorkspace .listHeading > span { color: var(--teacher-muted); font-size: 13px; }
+.leaderboardWorkspace .rankRow { gap: 16px; min-height: 84px; padding: 18px 24px; border-bottom: 1px solid #eeece5; background: white; box-shadow: none; }
+.leaderboardWorkspace .rankRow:last-child { border-bottom: 0; }
+.leaderboardWorkspace .rankNo { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: #f3f4f0; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.leaderboardWorkspace .rankRowFirst { background: #fffcf3; }
+.leaderboardWorkspace .rankRowSecond { background: #f7f9fa; }
+.leaderboardWorkspace .rankRowThird { background: #fff9f4; }
+.leaderboardWorkspace .rankFirst { background: #fff0c2; border-color: #e0c575; color: #77500c; }
+.leaderboardWorkspace .rankSecond { background: #eaf0f3; border-color: #bcc9d0; color: #445561; }
+.leaderboardWorkspace .rankThird { background: #f9e5d7; border-color: #dcb99d; color: #85512f; }
+.leaderboardWorkspace .studentCardInfo { min-width: 0; }
+.leaderboardWorkspace .studentCardInfo strong { font-size: 15px; line-height: 1.5; font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
+.leaderboardWorkspace .studentCardInfo > span { font-size: 12px; line-height: 1.6; white-space: normal; }
+.leaderboardWorkspace .rankPoints { display: inline-grid; place-items: center; flex-shrink: 0; min-width: 52px; min-height: 38px; padding: 6px 10px; border-radius: 10px; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.leaderboardWorkspace .panel { padding: 22px; border-radius: 18px; }
+.leaderboardWorkspace .panelTitle { margin: 0; font-size: 18px; line-height: 1.5; font-weight: 600; }
+.leaderboardWorkspace .tierLegend li { gap: 8px; padding-block: 12px; border-color: #eeece5; }
+.leaderboardWorkspace .tierLegend strong { font-size: 12px; font-weight: 500; }
+.leaderboardWorkspace .tierPill { font-size: 12px; border-radius: 8px; }
+.leaderboardWorkspace .tierLabel { font-size: 13px; }
+.leaderboardWorkspace .infoList > div { padding-block: 12px; border-color: #eeece5; }
+.leaderboardWorkspace .infoList dt { font-size: 13px; }
+.leaderboardWorkspace .infoList dd { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (min-width: 1024px) {
+  .dashboard:has(> .leaderboardWorkspace) { max-width: 1560px; }
+  .leaderboardWorkspace > .pointsLayout { grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; }
+  .leaderboardWorkspace .pointsAside { gap: 18px; }
+}
+@media (max-width: 1023px) {
+  .leaderboardWorkspace > .pointsLayout { gap: 18px; }
+  .leaderboardWorkspace .pointsAside { order: 0; }
+  .leaderboardWorkspace .studentList { border-radius: 16px; }
+  .leaderboardWorkspace .listHeading { padding: 18px 16px; }
+  .leaderboardWorkspace .listHeading h2 { font-size: 18px; }
+  .leaderboardWorkspace .listHeading p { font-size: 12px; }
+  .leaderboardWorkspace .rankRow { padding: 16px 14px; gap: 12px; min-height: 78px; }
+  .leaderboardWorkspace .rankNo { width: 32px; height: 32px; font-size: 13px; }
+  .leaderboardWorkspace .rankPoints { min-width: 44px; min-height: 36px; padding: 6px 8px; font-size: 16px; }
+  .leaderboardWorkspace .studentCardInfo strong { font-size: 14px; }
+  .leaderboardWorkspace .panel { padding: 16px; border-radius: 16px; }
+}
+
+.checkOverview, .checkRosterHeading { display: none; }
+.dashboard > .checkPageHeader { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.checkPageHeader > .pageHeaderRow,
+.checkPageHeader .pageCardIcon { display: none; }
+.checkPageHeader > .pageTitleRow { padding: 0; }
+.checkPageHeader .pageTitleText h1 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 600; letter-spacing: -.02em; }
+@media (min-width: 1024px) {
+  .dashboard > .checkPageHeader { display: block; padding: 4px 0 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .checkPageHeader > .pageHeaderRow,
+  .checkPageHeader .pageCardIcon { display: none; }
+  .checkPageHeader > .pageTitleRow { padding: 0; }
+  .checkPageHeader .pageTitleText h1 { margin: 0; font-size: 22px; line-height: 1.4; font-weight: 600; letter-spacing: -.02em; }
+  .dashboard:has(> .checkWorkspace) { max-width: 1560px; }
+  .checkWorkspace { gap: 24px; }
+  .checkOverview { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 24px; border: 1px solid var(--teacher-border); border-radius: 18px; background: white; }
+  .checkOverviewTitle { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 240px; }
+  .checkOverviewTitle > div { min-width: 0; }
+  .checkOverviewTitle h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+  .checkOverviewTitle p { margin: 5px 0 0; color: var(--teacher-muted); font-size: 13px; }
+  .checkOverviewIcon { display: grid; place-items: center; width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px; background: var(--teacher-selected); color: var(--teacher-primary); }
+  .checkOverviewCounts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0; }
+  .checkOverviewCounts > div { display: flex; flex-direction: column; gap: 6px; padding: 0 20px; border-left: 1px solid var(--teacher-border); }
+  .checkOverviewCounts dt { color: var(--teacher-muted); font-size: 12px; }
+  .checkOverviewCounts dd { margin: 0; color: var(--teacher-text); font-size: 23px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .checkOverviewCounts > div:first-child dd { color: #216044; }
+  .checkOverviewCounts > div:nth-child(2) dd { color: #805217; }
+  .checkOverviewCounts > div:nth-child(3) dd { color: #a33342; }
+  .checkWorkspace > .pointsLayout { grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; }
+  .checkWorkspace .studentList { border-radius: 18px; background: white; }
+  .checkRosterHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 12px; }
+  .checkRosterHeading h2 { margin: 0; font-size: 19px; font-weight: 600; }
+  .checkRosterHeading > span { color: var(--teacher-muted); font-size: 13px; }
+  .checkWorkspace .checkListBar { margin: 0; padding: 12px 24px 18px; background: white; border-bottom: 1px solid var(--teacher-border); }
+  .checkWorkspace .checkPointsHint { max-width: 460px; line-height: 1.6; font-size: 12px; }
+  .checkWorkspace .studentRow { grid-template-columns: minmax(0, 1fr); padding: 20px 24px; gap: 16px 20px; border-bottom-color: #eeece5; }
+  .checkWorkspace .studentRow:last-child { border-bottom: 0; }
+  .checkWorkspace .studentIdentity h4 { font-size: 15px; font-weight: 500; }
+  .checkWorkspace .studentAvatar { background: #f1f4ef; color: var(--teacher-primary); border-radius: 50%; width: 40px; height: 40px; font-size: 12px; }
+  .checkWorkspace .statusGroup legend { font-size: 12px; }
+  .checkWorkspace .statusChoices { gap: 5px; }
+  .checkWorkspace .statusChoice { min-height: 44px; font-size: 13px; border-radius: 8px; }
+  .checkWorkspace .addNoteButton { justify-self: start; align-self: center; font-size: 13px; }
+  .checkWorkspace .pointsAside { gap: 16px; }
+  .checkWorkspace .pointsAside > .panel { padding: 20px; border-radius: 18px; gap: 18px; }
+  .checkWorkspace .pointsAside .field { gap: 10px; }
+  .checkWorkspace .pointsAside .mutedText { font-size: 13px; line-height: 1.7; }
+  .checkWorkspace .stickyActions { padding: 0; background: transparent; border: 0; }
+  .checkWorkspace .stickyActions > button { width: 100%; justify-content: center; min-height: 48px; border-radius: 12px; }
+}
+@media (min-width: 1400px) {
+  .checkWorkspace .studentRow { grid-template-columns: minmax(170px, 1fr) minmax(290px, 1.2fr); align-items: center; }
+}
 
 /* ===== Not girişi: sekmeler, tek sütun not girişi, öğrenci notları ===== */
 .gradeTabs {
@@ -3049,6 +3497,110 @@
 .dashboard .alsoSend .chip { min-height: 32px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
 .chipLocked { opacity: .7; cursor: default; }
 
+.assignmentComposerHint { display: none; }
+.assignmentKindHint { display: none; }
+.assignmentClassSelect { display: none; }
+@media (min-width: 0px) {
+  .assignmentHeadingRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .assignmentWorkspace .assignmentMobileClasses { display: none; }
+  .assignmentClassSelect { display: block; position: relative; min-width: 120px; max-width: 100%; }
+  .assignmentClassSelect > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; padding: 10px 14px; border: 1px solid #c8d3cc; border-radius: 10px; background: white; color: var(--teacher-text); font-size: 14px; cursor: pointer; list-style: none; }
+  .assignmentClassSelect > summary::-webkit-details-marker { display: none; }
+  .assignmentClassSelect > summary:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+  .assignmentClassSelect[open] > summary { border-color: var(--teacher-primary); }
+  .assignmentSelectArrow { width: 7px; height: 7px; flex-shrink: 0; border-right: 1.5px solid var(--teacher-primary); border-bottom: 1.5px solid var(--teacher-primary); transform: rotate(45deg) translateY(-2px); }
+  .assignmentClassOptions { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: min(260px, 60vw); max-height: 320px; overflow-y: auto; padding: 8px; border: 1px solid var(--teacher-border); border-radius: 12px; background: white; box-shadow: 0 8px 24px rgb(20 35 28 / 12%); }
+  .assignmentClassHelp { display: block; padding: 8px; color: var(--teacher-muted); font-size: 12px; line-height: 1.5; }
+  .assignmentClassOptions label { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 10px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .assignmentClassOptions label:has(input:checked), .assignmentClassOptions label:hover { background: var(--teacher-selected); color: var(--teacher-primary); }
+  .assignmentClassOptions input { width: 16px; height: 16px; accent-color: var(--teacher-primary); }
+  .assignmentClassOptions > button { width: 100%; border: 0; border-top: 1px solid var(--teacher-border); background: white; color: var(--teacher-primary); font-size: 13px; cursor: pointer; }
+}
+@media (min-width: 1024px) {
+  .dashboard > .assignmentPageHeader { display: block; padding: 4px 0 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .assignmentPageHeader > .pageHeaderRow, .assignmentPageHeader .pageCardIcon { display: none; }
+  .assignmentPageHeader > .pageTitleRow { padding: 0; }
+  .assignmentPageHeader h1 { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; }
+  .dashboard:has(> .assignmentWorkspace) { max-width: 1560px; }
+  .assignmentWorkspace > .pointsLayout { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  .assignmentWorkspace .assignmentComposerPanel { position: static; grid-column: 1; grid-row: 1; min-width: 0; }
+  .assignmentWorkspace .assignmentListPanel { grid-column: 2; grid-row: 1; min-width: 0; }
+  .assignmentWorkspace .panel { padding: 24px; border-radius: 18px; gap: 20px; }
+  .assignmentComposerHint { display: block; margin: 8px 0 0; color: var(--teacher-muted); font-size: 13px; line-height: 1.6; }
+  .assignmentComposerHeading { padding-bottom: 20px; border-bottom: 1px solid var(--teacher-border); }
+  .assignmentWorkspace .panelTitle { margin: 0; font-size: 20px; font-weight: 600; }
+  .assignmentWorkspace .homeworkComposer { gap: 24px; }
+  .assignmentWorkspace .chipFieldset legend { margin-bottom: 10px; font-size: 14px; font-weight: 500; }
+  .assignmentWorkspace .homeworkComposer > .field > label { font-size: 14px; font-weight: 500; }
+  .assignmentWorkspace .homeworkComposer .subjectChips { gap: 8px; }
+  .assignmentWorkspace .homeworkComposer .dueChip { border-radius: 10px; background: #fafbf8; }
+  .assignmentWorkspace .homeworkComposer .dueChip[aria-pressed='true'] { border-color: #7d9e88; background: var(--teacher-selected); color: var(--teacher-primary); }
+  .assignmentWorkspace .homeworkComposer textarea { min-height: 128px; padding: 14px; border-radius: 12px; line-height: 1.65; }
+  .assignmentWorkspace .composerDetails { padding-top: 16px; }
+  .assignmentWorkspace .composerDetails > summary { min-height: 44px; font-size: 14px; }
+  .assignmentWorkspace .formActions { padding-top: 20px; border-top: 1px solid var(--teacher-border); }
+  .assignmentWorkspace .formActions > button { min-height: 50px; border-radius: 12px; }
+  .assignmentWorkspace .hwSearchBar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 0 18px; border-bottom: 1px solid var(--teacher-border); }
+  .assignmentWorkspace .hwSubjectFilter { width: 100%; max-width: none; }
+  .assignmentWorkspace .studentCards { gap: 0; }
+  .assignmentWorkspace .assignmentRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; margin: 0; padding: 22px 0; border: 0; border-bottom: 1px solid #eeece5; border-radius: 0; background: transparent; box-shadow: none; }
+  .assignmentWorkspace .assignmentRow:first-child { padding-top: 0; }
+  .assignmentWorkspace .assignmentRow:last-child { padding-bottom: 0; border-bottom: 0; }
+  .assignmentWorkspace .assignmentTitle { font-size: 16px; line-height: 1.5; font-weight: 600; }
+  .assignmentWorkspace .assignmentMeta { margin-top: 10px; gap: 8px 12px; font-size: 12px; line-height: 1.6; }
+  .assignmentWorkspace .assignmentDescription { margin-top: 12px; color: var(--teacher-text); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+  .assignmentWorkspace .assignmentActions { flex-direction: row; justify-content: flex-end; align-items: center; align-self: center; gap: 8px; }
+  .assignmentWorkspace .assignmentActions > .primary { min-height: 44px; padding: 8px 14px; border-color: var(--teacher-border); background: white; color: var(--teacher-primary); border-radius: 10px; box-shadow: none; font-size: 13px; }
+  .assignmentWorkspace .assignmentActions > .primary:hover { background: var(--teacher-selected); }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .assignmentWorkspace > .pointsLayout { grid-template-columns: minmax(0, 1fr); }
+  .assignmentWorkspace .assignmentListPanel { grid-column: 1; grid-row: 2; }
+}
+@media (max-width: 1023px) {
+  .dashboard > .assignmentPageHeader { display: block; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .assignmentPageHeader > .pageHeaderRow, .assignmentPageHeader .pageCardIcon { display: none; }
+  .assignmentPageHeader > .pageTitleRow { padding: 0; }
+  .assignmentPageHeader .pageTitleText h1 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 600; }
+  .assignmentWorkspace > .pointsLayout { gap: 20px; }
+  .assignmentWorkspace .assignmentComposerPanel { position: static; min-width: 0; }
+  .assignmentWorkspace .panel { padding: 18px 16px; border-radius: 16px; gap: 18px; }
+  .assignmentWorkspace .assignmentComposerPanel .mobileCollapseBar { display: none; }
+  .assignmentWorkspace .assignmentComposerPanel .mobileCollapseBody { display: grid; }
+  .assignmentComposerHeading { padding-bottom: 16px; border-bottom: 1px solid var(--teacher-border); }
+  .assignmentWorkspace .panelTitle { margin: 0; font-size: 18px; font-weight: 600; }
+  .assignmentComposerHint { display: block; margin: 10px 0 0; color: var(--teacher-muted); font-size: 13px; line-height: 1.6; }
+  .assignmentClassSelect { min-width: 104px; }
+  .assignmentClassOptions { width: min(260px, calc(100vw - 64px)); max-height: min(320px, 50dvh); }
+  .assignmentWorkspace .homeworkComposer { gap: 22px; }
+  .assignmentWorkspace .chipFieldset legend { margin-bottom: 10px; font-size: 14px; }
+  .assignmentWorkspace .homeworkComposer .dueChip { min-height: 48px; max-width: 100%; padding: 10px 12px; font-size: 14px; border-radius: 10px; }
+  .assignmentWorkspace .homeworkComposer .dueChip small { white-space: normal; line-height: 1.5; }
+  .assignmentWorkspace .assignmentKindChoices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: #f0f2ed; }
+  .assignmentWorkspace .assignmentKindChoices .dueChip { align-items: center; justify-content: center; min-width: 0; min-height: 44px; padding: 8px 4px; border: 1px solid transparent; border-radius: 8px; background: transparent; font-size: 14px; font-weight: 500; color: var(--teacher-muted); box-shadow: none; }
+  .assignmentWorkspace .assignmentKindChoices .dueChip[aria-pressed='true'] { border-color: #c6d8ca; background: white; color: var(--teacher-primary); font-weight: 600; box-shadow: 0 1px 3px rgb(20 35 28 / 6%); }
+  .assignmentWorkspace .assignmentKindChoices small { display: none; }
+  .assignmentKindHint { display: block; margin: 0; padding: 0 2px; color: var(--teacher-muted); font-size: 12px; line-height: 1.6; }
+  .assignmentWorkspace .homeworkComposer textarea { min-height: 132px; padding: 12px; font-size: 16px; line-height: 1.6; }
+  .assignmentWorkspace .dueRow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .assignmentWorkspace .dueRow input { min-width: 0; max-width: 100%; flex: 1 1 140px; }
+  .assignmentWorkspace .composerDetails { padding-top: 14px; }
+  .assignmentWorkspace .composerDetails > summary { min-height: 48px; font-size: 14px; }
+  .assignmentWorkspace .fileDrop { padding: 14px; gap: 10px; }
+  .assignmentWorkspace .fileDropButton { width: 100%; min-height: 48px; justify-content: center; }
+  .assignmentWorkspace .formActions { padding-top: 16px; border-top: 1px solid var(--teacher-border); }
+  .assignmentWorkspace .formActions > button { width: 100%; min-height: 50px; justify-content: center; border-radius: 12px; }
+  .assignmentWorkspace .hwSearchBar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .assignmentWorkspace .hwSubjectFilter { width: 100%; max-width: none; }
+  .assignmentWorkspace .studentCards { gap: 0; }
+  .assignmentWorkspace .assignmentRow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 20px 0; border: 0; border-bottom: 1px solid #eeece5; border-radius: 0; background: transparent; }
+  .assignmentWorkspace .assignmentRow:last-child { border-bottom: 0; padding-bottom: 0; }
+  .assignmentWorkspace .assignmentMeta { gap: 8px; line-height: 1.6; }
+  .assignmentWorkspace .assignmentDescription { overflow-wrap: anywhere; font-size: 14px; line-height: 1.7; }
+  .assignmentWorkspace .assignmentActions { justify-content: flex-end; gap: 8px; }
+  .assignmentWorkspace .assignmentActions > .primary { flex: 0 1 auto; min-height: 44px; padding: 10px 14px; border-color: var(--teacher-border); border-radius: 10px; background: white; color: var(--teacher-primary); box-shadow: none; font-size: 13px; }
+}
+
 /* Compact homework flow; secondary options stay available on demand. */
 .homeworkComposer { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 .homeworkComposer .field :is(input, select, textarea) { font-size: 16px; }
@@ -3080,4 +3632,260 @@
 }
 @media (min-width: 640px) {
   .gradeSelectors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.studentsPage .panel { padding: 22px; border-radius: 18px; }
+.studentsPage .panelTitle { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 600; }
+.studentsPage .listToolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--teacher-border); align-items: center; }
+.studentsPage .listToolbar > h2, .studentsPage .listToolbar > .searchField { grid-column: 1 / -1; }
+.studentsPage .searchField { width: 100%; min-width: 0; max-width: none; min-height: 48px; background: #fafbf8; border-radius: 10px; }
+.studentsPage .searchField input { min-width: 0; width: 100%; font-size: 16px; }
+.studentsPage .listToolbar .pageClassField { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0; background: transparent; min-width: 0; }
+.studentsPage .pageClassField > label { color: var(--teacher-muted); font-size: 12px; }
+.studentClassFilter { flex: 1; min-width: 0; max-width: 240px; }
+.studentsPage .listToolbar > .secondary { grid-column: 1 / -1; justify-self: start; min-height: 44px; padding: 8px 12px; border-radius: 10px; font-size: 13px; }
+.studentDirectoryPanel > .studentCards { gap: 0; }
+.studentsPage .studentDirectoryRow { margin: 0; padding: 18px 0; border: 0; border-bottom: 1px solid #eeece5; border-radius: 0; background: transparent; }
+.studentsPage .studentDirectoryRow:last-child { padding-bottom: 0; border-bottom: 0; }
+.studentsPage .studentAvatar { width: 40px; height: 40px; border-radius: 50%; background: #edf2e8; color: var(--teacher-primary); font-size: 12px; }
+.studentsPage .studentCardInfo strong { font-size: 15px; line-height: 1.5; font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
+.studentsPage .studentCardInfo > span { font-size: 12px; line-height: 1.6; white-space: normal; overflow-wrap: anywhere; }
+.studentsPage .studentCardHead > .secondary { min-height: 44px; padding: 8px 12px; border-radius: 10px; font-size: 13px; }
+.studentAddIntro h2 { margin: 0; font-size: 18px; line-height: 1.4; font-weight: 600; }
+.studentAddIntro p { margin: 8px 0 0; color: var(--teacher-muted); font-size: 13px; line-height: 1.6; }
+.studentsPage .pointsAside .inlineRow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.studentsPage .pointsAside .inlineRow > button { width: 100%; min-height: 46px; padding: 10px 12px; border-radius: 10px; justify-content: center; white-space: normal; font-size: 14px; }
+.studentsPage .pointsAside .formGrid { gap: 18px; }
+.studentsPage .pointsAside .hintText { padding-top: 14px; border-top: 1px solid #eeece5; font-size: 12px; line-height: 1.7; }
+.studentsPage .formActions button { min-height: 48px; border-radius: 10px; }
+@media (min-width: 1024px) {
+  .dashboard:has(> .studentsPage) { max-width: 1560px; }
+  .studentsPage > .pointsLayout { grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; }
+  .studentsPage .listToolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .studentsPage .listToolbar > h2 { flex: 0 0 100%; margin-bottom: 4px; }
+  .studentsPage .listToolbar > .searchField { flex: 1 1 180px; width: auto; }
+  .studentsPage .listToolbar > .pageClassField { flex: 0 1 180px; flex-wrap: nowrap; }
+  .studentsPage .listToolbar .studentClassFilter { min-width: 110px; }
+  .studentsPage .listToolbar > .secondary { flex-shrink: 0; margin: 0; min-height: 48px; }
+}
+@media (max-width: 1023px) {
+  .studentsPage > .pointsLayout { gap: 18px; }
+  .studentsPage .panel { padding: 18px 16px; border-radius: 16px; }
+  .studentsPage .panelTitle { font-size: 18px; }
+  .studentsPage .studentAddIntro { display: none; }
+  .studentsPage .listToolbar { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-bottom: 18px; }
+  .studentsPage .listToolbar .pageClassField { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+  .studentsPage .studentClassFilter { max-width: none; }
+  .studentsPage .listToolbar > .secondary { justify-self: stretch; justify-content: center; }
+  .studentsPage .studentDirectoryRow { padding-block: 16px; }
+  .studentsPage .studentCardInfo strong { font-size: 14px; }
+  .studentsPage .studentCardHead { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }
+  .studentsPage .studentCardHead > .secondary { grid-column: 2; justify-self: start; }
+}
+
+@media (max-width: 1023px) {
+  .studentsPage .listToolbar { grid-template-columns: minmax(0, 1fr) auto 44px; gap: 12px 8px; }
+  .studentsPage .listToolbar > .pageClassField { grid-column: 1; display: block; min-width: 0; }
+  .studentsPage .listToolbar .pageClassField > label,
+  .studentsPage .listToolbar .sortToggleLabel,
+  .studentsPage .studentPinToggle > span,
+  .studentsPage .studentEditButton > span { display: none; }
+  .studentsPage .listToolbar > .sortToggle { grid-column: 2; gap: 4px; }
+  .studentsPage .sortToggle button { min-width: 44px; min-height: 44px; padding: 8px; font-size: 13px; }
+  .studentsPage .listToolbar > .studentPinToggle { grid-column: 3; width: 44px; min-height: 44px; padding: 0; }
+  .studentsPage .studentPinToggle svg { width: 20px; height: 20px; }
+  .studentsPage .studentCardHead { grid-template-columns: 36px minmax(0, 1fr) 44px; align-items: center; gap: 10px; }
+  .studentsPage .studentAvatar { width: 36px; height: 36px; }
+  .studentsPage .studentCardHead > .studentEditButton { grid-column: 3; grid-row: 1; justify-self: end; width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+}
+
+.classesWorkspace .panel { padding: 24px; border-radius: 18px; gap: 20px; }
+.classesWorkspace .panelTitle { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.4; }
+.classesWorkspace .studentCards { gap: 12px; }
+.classesWorkspace .studentCard { padding: 18px; border: 1px solid #eeece5; border-radius: 12px; background: white; }
+.classesWorkspace .classRowSelected { border-color: #b5cdbc; background: #f4f8f2; }
+.classesWorkspace .studentCardHead { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.classesWorkspace .studentAvatar { width: 44px; height: 44px; border-radius: 12px; background: #edf2e8; color: var(--teacher-primary); }
+.classesWorkspace .studentCardInfo { min-width: 0; }
+.classesWorkspace .studentCardInfo strong { font-size: 16px; line-height: 1.5; font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
+.classesWorkspace .studentCardInfo span { font-size: 13px; line-height: 1.6; white-space: normal; }
+.classRowActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.classesWorkspace .classRowActions button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px 12px; border-radius: 10px; font-size: 13px; }
+.classesWorkspace .formGrid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.classesWorkspace .field { font-size: 14px; }
+.classesWorkspace .formActions { padding-top: 16px; border-top: 1px solid #eeece5; }
+.classesWorkspace .formActions > button { width: 100%; min-height: 48px; border-radius: 10px; justify-content: center; }
+.classesWorkspace .mutedText { font-size: 13px; line-height: 1.7; }
+@media (min-width: 1024px) {
+  .dashboard:has(> .classesWorkspace) { max-width: 1560px; }
+  .classesWorkspace > .pointsLayout { grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; }
+  .classesWorkspace .pointsAside { gap: 18px; }
+}
+@media (max-width: 1023px) {
+  .classesWorkspace > .pointsLayout { gap: 18px; }
+  .classesWorkspace .panel { padding: 18px 16px; border-radius: 16px; gap: 16px; }
+  .classesWorkspace .panelTitle { font-size: 18px; }
+  .classesWorkspace .studentCard { padding: 14px 12px; }
+  .classesWorkspace .studentCardHead { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; }
+  .classesWorkspace .studentAvatar { width: 40px; height: 40px; }
+  .classesWorkspace .studentCardInfo strong { font-size: 15px; }
+  .classesWorkspace .studentCardInfo span { font-size: 12px; }
+  .classRowActions { grid-column: 2; justify-content: flex-start; gap: 8px; }
+  .classesWorkspace .pointsAside { order: 0; }
+}
+
+.gradesWorkspace { gap: 22px; }
+.gradesWorkspace .gradeTabs { padding: 5px; border: 0; border-radius: 12px; background: #ecefe8; }
+.gradesWorkspace .gradeTab { min-height: 44px; border-radius: 9px; font-size: 14px; font-weight: 500; }
+.gradesWorkspace .gradeTab[aria-selected='true'] { background: white; color: var(--teacher-primary); box-shadow: 0 1px 3px rgb(20 35 28 / 6%); }
+.gradesWorkspace .gradeEntry { gap: 22px; }
+.gradesWorkspace .panel { padding: 24px; border-radius: 18px; gap: 20px; }
+.gradesWorkspace .gradeSelectors { gap: 20px; }
+.gradesWorkspace .gradeSelectors label { font-size: 13px; font-weight: 500; }
+.gradesWorkspace .studentList { border-radius: 18px; background: white; }
+.gradesWorkspace .checkListBar { margin: 0; padding: 18px 24px; border-bottom: 1px solid var(--teacher-border); background: #fafbf8; }
+.gradesWorkspace .checkPointsHint { line-height: 1.7; }
+.gradesWorkspace .gradeEntryRow { min-height: 84px; padding: 16px 24px; gap: 20px; border-bottom-color: #eeece5; }
+.gradesWorkspace .gradeEntryName { gap: 4px; }
+.gradesWorkspace .gradeEntryName span { font-size: 15px; font-weight: 500; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+.gradesWorkspace .gradeEntryName small { font-size: 12px; }
+.gradesWorkspace .gradeEntryInput { width: 82px; min-height: 48px; padding: 10px; border-radius: 10px; font-size: 18px; font-weight: 600; flex-shrink: 0; background: white; }
+.gradesWorkspace .gradeEntryChanged { background: #fffaeb; border-color: #cda943; }
+.gradesWorkspace .stickyActions { justify-self: stretch; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 18px; border: 1px solid var(--teacher-border); border-radius: 14px; background: white; }
+.gradeSaveHint { color: var(--teacher-muted); font-size: 13px; line-height: 1.6; }
+.gradesWorkspace .stickyActions > button { min-height: 48px; border-radius: 10px; box-shadow: none; }
+.gradesWorkspace .subjectChips { gap: 8px; }
+.gradesWorkspace .subjectChip { min-height: 44px; border-radius: 10px; }
+.gradesWorkspace .gradeViewTable { margin-top: 0; border-radius: 12px; }
+.gradesWorkspace .gradeViewTable:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+.gradesWorkspace .gradeTable th, .gradesWorkspace .gradeTable td { padding: 14px 16px; border-bottom-color: #eeece5; font-size: 14px; }
+.gradesWorkspace .gradeTable thead th { background: #f6f7f2; font-size: 12px; font-weight: 500; }
+.gradesWorkspace .gradeTable tbody th { font-weight: 500; }
+@media (max-width: 1023px) {
+  .gradesWorkspace, .gradesWorkspace .gradeEntry { gap: 18px; }
+  .gradesWorkspace .gradeTabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-self: stretch; }
+  .gradesWorkspace .gradeTab { padding: 10px 8px; }
+  .gradesWorkspace .panel { padding: 18px 16px; border-radius: 16px; }
+  .gradesWorkspace .gradeSelectors { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .gradesWorkspace .studentList { border-radius: 16px; }
+  .gradesWorkspace .checkListBar { padding: 14px 16px; gap: 12px; }
+  .gradesWorkspace .gradeEntryRow { padding: 14px 16px; gap: 12px; min-height: 80px; }
+  .gradesWorkspace .gradeEntryName span { font-size: 14px; }
+  .gradesWorkspace .gradeEntryInput { width: 72px; min-height: 48px; font-size: 17px; }
+  .gradesWorkspace .sortToggle button { min-width: 44px; min-height: 44px; }
+  .gradesWorkspace .stickyActions { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); padding: 12px; gap: 10px; }
+  .gradesWorkspace .stickyActions > button { width: 100%; justify-content: center; }
+  .gradeSaveHint { font-size: 12px; }
+  .gradesWorkspace .gradeViewTable .gradeTable { min-width: 520px; }
+  .gradesWorkspace .gradeTable tbody th { position: sticky; left: 0; z-index: 1; max-width: 180px; background: white; white-space: normal; }
+}
+
+.messagesWorkspace .messagesSplit { gap: 20px; }
+.messagesWorkspace .convPane { padding: 18px 12px; border-radius: 18px; }
+.messagesWorkspace .convPane .listToolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 10px 16px; border-bottom: 1px solid #eeece5; }
+.messagesWorkspace .panelTitle { margin: 0; font-size: 19px; font-weight: 600; }
+.messagesWorkspace .convGroupTitle { padding-inline: 10px; font-size: 12px; font-weight: 500; }
+.messagesWorkspace .convList { display: grid; gap: 4px; }
+.messagesWorkspace .convList li + li { border: 0; }
+.messagesWorkspace .convItem { min-height: 78px; padding: 14px 10px; border-radius: 12px; gap: 12px; }
+.messagesWorkspace .convItem[aria-current='true'] { background: var(--teacher-selected); }
+.messagesWorkspace .convItem .studentAvatar { width: 40px; height: 40px; border-radius: 50%; background: #edf2e8; color: var(--teacher-primary); font-size: 12px; }
+.messagesWorkspace .convItem .studentCardInfo strong { font-size: 14px; font-weight: 500; line-height: 1.5; }
+.messagesWorkspace .convItem .studentCardInfo > span { font-size: 12px; line-height: 1.6; }
+.messagesWorkspace .chatPanel, .messagesWorkspace .chatEmpty { border-radius: 18px; }
+.messagesWorkspace .chatHeader { min-height: 76px; padding: 16px 20px; gap: 14px; }
+.messagesWorkspace .chatHeader strong { font-size: 16px; font-weight: 600; }
+.messagesWorkspace .chatHeader > div { gap: 4px; }
+.messagesWorkspace .chatHeader > div > span { font-size: 12px; }
+.messagesWorkspace .chatThread { gap: 14px; padding: 24px; background: #f8f9f5; overscroll-behavior: contain; }
+.messagesWorkspace .bubble { padding: 12px 16px; border-color: #e4e7df; border-radius: 16px 16px 16px 5px; }
+.messagesWorkspace .bubbleMine { background: #e6f1e9; border-color: #c7dbce; border-radius: 16px 16px 5px 16px; }
+.messagesWorkspace .bubble p { font-size: 14px; line-height: 1.7; }
+.messagesWorkspace .bubble > span { font-size: 11px; }
+.messagesWorkspace .chatComposer { gap: 12px; padding: 16px 20px; align-items: end; }
+.messagesWorkspace .chatComposer textarea { border-color: #c3cfc5; border-radius: 12px; background: #fafbf8; font-size: 16px; }
+.messagesWorkspace .chatComposer > button { border-radius: 12px; box-shadow: none; }
+.messagesWorkspace .alsoSend { padding: 12px 20px 0; }
+.messagesWorkspace .alsoSendToggle { min-height: 44px; font-size: 13px; text-align: left; }
+.messagesWorkspace .alsoSend .chip { min-height: 44px; padding: 8px 12px; border-radius: 10px; }
+@media (min-width: 1024px) {
+  .dashboard:has(> .messagesWorkspace) { max-width: 1560px; }
+  .messagesWorkspace .messagesSplit { grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); }
+}
+@media (max-width: 1023px) {
+  .messagesWorkspace .convPane { padding: 16px 10px; border-radius: 16px; }
+  .messagesWorkspace .chatPanel { position: fixed; inset: 0; z-index: 70; width: 100%; height: 100dvh; min-height: 0; max-width: none; margin: 0; border: 0; border-radius: 0; padding-top: env(safe-area-inset-top, 0px); }
+  :global(body):has(.messagesWorkspace .chatPanel) { overflow: hidden; }
+  .messagesWorkspace .chatHeader { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; padding: 12px; gap: 10px; min-height: 68px; }
+  .messagesWorkspace .chatHeader > .backButton { grid-column: 1; grid-row: 1; width: 44px; min-height: 44px; padding: 0; justify-content: center; border: 1px solid var(--teacher-border); border-radius: 10px; }
+  .messagesWorkspace .chatHeader > .backButton span { display: none; }
+  .messagesWorkspace .chatHeader > div { grid-column: 2; min-width: 0; }
+  .messagesWorkspace .chatHeader > div > strong { font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+  .messagesWorkspace .chatHeader > :last-child { grid-column: 3; }
+  .messagesWorkspace .chatThread { padding: 18px 14px; gap: 12px; }
+  .messagesWorkspace .bubble { max-width: 88%; padding: 10px 12px; }
+  .messagesWorkspace .chatComposer { display: grid; grid-template-columns: minmax(0, 1fr) 48px; gap: 8px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .messagesWorkspace .chatComposer textarea { width: 100%; min-width: 0; font-size: 16px; }
+  .messagesWorkspace .alsoSend { padding: 8px 14px 0; }
+}
+
+.profileWorkspace .panel { padding: 24px; border-radius: 18px; gap: 22px; }
+.profileWorkspace .panelTitle { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.4; }
+.profileIdentityBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; padding-bottom: 20px; border-bottom: 1px solid var(--teacher-border); }
+.profileWorkspace .profileHead { min-width: 0; flex: 1 1 220px; }
+.profileWorkspace .profileHead > div { min-width: 0; }
+.profileWorkspace .profileHead h2 { overflow-wrap: anywhere; }
+.profileWorkspace .accountAvatar { width: 48px; height: 48px; border-radius: 50%; background: var(--teacher-selected); }
+.profileWorkspace .mutedText { font-size: 13px; line-height: 1.7; }
+.profileWorkspace .infoList { margin: 0; }
+.profileWorkspace .infoList > div { padding-block: 15px; border-color: #eeece5; gap: 16px; }
+.profileWorkspace .infoList dt { color: var(--teacher-muted); font-size: 13px; }
+.profileWorkspace .infoList dd { min-width: 0; margin: 0; font-size: 14px; line-height: 1.6; font-weight: 500; overflow-wrap: anywhere; }
+.profileWorkspace .infoList dt button { min-height: 44px; }
+.profileWorkspace .secondary, .profileWorkspace .primary, .profileWorkspace .dangerButton { min-height: 46px; border-radius: 10px; font-size: 13px; padding: 10px 14px; white-space: normal; }
+.profileEditFields { display: grid; gap: 20px; }
+.profileFormActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; padding-top: 8px; }
+.profileEmailForm { display: grid; gap: 16px; padding: 18px; border: 1px solid var(--teacher-border); border-radius: 12px; background: #fafbf8; }
+.profileEmailForm > div:first-child > button { min-width: 44px; min-height: 44px; }
+.profileWorkspace .field { gap: 8px; font-size: 14px; }
+.profileWorkspace .field > input { min-height: 48px; font-size: 16px; border-radius: 10px; }
+.profileWorkspace .formGrid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.profileWorkspace .pointsAside .inlineRow { display: grid; grid-template-columns: minmax(0, 1fr) 48px; gap: 8px; }
+.profileWorkspace .pointsAside .inlineRow > input { width: 100%; min-width: 0; }
+.profileWorkspace .pointsAside .inlineRow > button { min-width: 48px; padding: 0; }
+.profileWorkspace .formActions { padding-top: 16px; border-top: 1px solid #eeece5; }
+.profileWorkspace .formActions > button, .profileWorkspace .dangerButton { width: 100%; justify-content: center; min-height: 48px; }
+.profileWorkspace .hintText { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding-top: 16px; border-top: 1px solid #eeece5; font-size: 12px; line-height: 1.7; }
+.profileWorkspace .hintText > svg { flex-shrink: 0; margin-top: 2px; }
+@media (min-width: 1024px) {
+  .dashboard:has(> .profileWorkspace) { max-width: 1560px; }
+  .profileWorkspace > .pointsLayout { grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; }
+  .profileWorkspace .pointsAside { gap: 18px; }
+}
+@media (max-width: 1023px) {
+  .profileWorkspace > .pointsLayout { gap: 18px; }
+  .profileWorkspace .pointsAside { order: 0; }
+  .profileWorkspace .panel { padding: 18px 16px; border-radius: 16px; gap: 18px; }
+  .profileWorkspace .panelTitle { font-size: 18px; }
+  .profileIdentityBar { gap: 14px; padding-bottom: 16px; }
+  .profileWorkspace .profileHead { flex-basis: 100%; }
+  .profileIdentityBar > button { width: 100%; justify-content: center; }
+  .profileWorkspace .infoList > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding-block: 14px; }
+  .profileWorkspace .infoList dd { text-align: left; }
+  .profileFormActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profileFormActions > button { min-width: 0; justify-content: center; }
+  .profileEmailForm { padding: 14px; }
+}
+
+/* Balance the header groups with generous desktop edge spacing. */
+@media (min-width: 1024px) {
+  .topBar .topBarContainer {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 48px;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .topBar .topBarContainer { padding-inline: 32px; gap: 20px; }
 }

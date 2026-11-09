@@ -292,11 +292,11 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
     });
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.assignmentWorkspace}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={styles.pointsLayout}>
-        <section className={styles.panel} aria-labelledby="hw-list-title">
+        <section className={`${styles.panel} ${styles.assignmentListPanel}`} aria-labelledby="hw-list-title">
           <h2 id="hw-list-title" className={styles.panelTitle}>
             {selectedClass ? `${selectedClass} ödevleri` : 'Gönderdiğim ödevler'} <span className={styles.countPill}>{filtering ? `${visible.length} / ${classHomeworks.length}` : visible.length}</span>
           </h2>
@@ -365,11 +365,30 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
           </ul>
         </section>
 
-        <aside className={styles.pointsAside}>
-            <CollapsiblePanel title="Yeni ödev" summary={targets.length ? `${targets.join(', ')} ${targets.length > 1 ? 'sınıflarına' : 'sınıfına'} gönder` : undefined}>
+        <aside className={`${styles.pointsAside} ${styles.assignmentComposerPanel}`}>
+            <CollapsiblePanel defaultOpen title="Yeni ödev" summary={targets.length ? `${targets.join(', ')} ${targets.length > 1 ? 'sınıflarına' : 'sınıfına'} gönder` : undefined}>
               <form className={`${styles.formGrid} ${styles.homeworkComposer}`} onSubmit={handleCreate}>
-                <h2 className={styles.panelTitle}>Yeni ödev</h2>
-                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
+                <div className={styles.assignmentComposerHeading}>
+                  <div className={styles.assignmentHeadingRow}>
+                  <h2 className={styles.panelTitle}>Yeni ödev</h2>
+                  <details className={styles.assignmentClassSelect} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false; }} onKeyDown={(event) => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
+                    <summary aria-label={`Gönderilecek sınıflar: ${targets.join(', ') || 'seçilmedi'}`}>
+                      <span>{targets.length === 1 ? targets[0] : targets.length ? `${targets.length} sınıf seçili` : 'Sınıf seçin'}</span>
+                      <span className={styles.assignmentSelectArrow} aria-hidden="true" />
+                    </summary>
+                    <div className={styles.assignmentClassOptions}>
+                      <span className={styles.assignmentClassHelp}>{classNames.length ? 'Birden çok sınıf seçebilirsiniz' : 'Önce Sınıflarım sayfasından sınıf ekleyin.'}</span>
+                      {classNames.map((name) => <label key={name}>
+                        <input type="checkbox" checked={targets.includes(name)} onChange={() => toggleTarget(name)} />
+                        <span>{name}</span>
+                      </label>)}
+                      {classNames.length > 2 && <button type="button" onClick={() => setTargetList(targets.length === classNames.length ? classNames.slice(0, 1) : [...classNames])}>{targets.length === classNames.length ? 'Yalnızca ilki' : 'Tümünü seç'}</button>}
+                    </div>
+                  </details>
+                  </div>
+                  <p className={styles.assignmentComposerHint}>Sınıfınızı seçin, içeriği hazırlayın ve öğrencilerinizle paylaşın.</p>
+                </div>
+                <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset} ${styles.assignmentMobileClasses}`}>
                   <legend>
                     {classNames.length > 1 ? 'Sınıflar' : 'Sınıf'}{' '}
                     {classNames.length > 1 && <span className={styles.optionalHint}>(birden çok seçilebilir)</span>}
@@ -394,8 +413,8 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                 </fieldset>
                 <fieldset className={`${styles.field} ${styles.fullRow} ${styles.chipFieldset}`}>
                   <legend>Tür</legend>
-                  <div className={styles.subjectChips}>
-                    <button type="button" className={styles.dueChip} aria-pressed={!isQuiz} onClick={() => setKind('homework')}>
+                  <div className={`${styles.subjectChips} ${styles.assignmentKindChoices}`}>
+                    <button type="button" className={styles.dueChip} aria-pressed={!isQuiz && !isBoard} onClick={() => setKind('homework')}>
                       Ödev<small>Metin, dosya, bağlantı</small>
                     </button>
                     <button type="button" className={styles.dueChip} aria-pressed={isQuiz} onClick={() => setKind('quiz')}>
@@ -405,6 +424,9 @@ export function TeacherAssignmentsPage({ selectedClass, classNames, defaultSubje
                       Tahta<small>Öğrenci üzerine çizerek çözer</small>
                     </button>
                   </div>
+                  <p className={styles.assignmentKindHint}>
+                    {isBoard ? 'Öğrenci üzerine çizerek çözer.' : isQuiz ? 'Çoktan seçmeli sorular, otomatik puanlama.' : 'Metin, dosya veya bağlantı paylaşın.'}
+                  </p>
                 </fieldset>
                 <div className={`${styles.field} ${styles.fullRow}`}>
                   <label htmlFor="hw-subject">Ders</label>

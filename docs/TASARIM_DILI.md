@@ -4,6 +4,8 @@ Tarih: 3 Kasım 2026. Durum: kaynak kod incelemesi ve kullanıcının yön terci
 
 ## İnceleme bulguları
 
+> Arşiv notu — 9 Kasım 2026: Bu dosya ilk öneriyi saklar; aşağıdaki bulgular güncel uygulamanın tarifi değildir. Yeni arayüzler için bağlayıcı kaynaklar [DESIGN.md](../DESIGN.md) ve [UI_KURALLARI.md](UI_KURALLARI.md) dosyalarıdır. Eski yatay modül menüsü gibi ilk öneriler tekrar uygulanmamalıdır.
+
 - globals.css yalnızca zemin/metin değişkenlerini içeriyor; çoğu renk ve ölçü bileşenlerin içinde tekrar tanımlanıyor.
 - layout.tsx Tailwind'i tarayıcı betiğiyle yüklüyor. Geist değişkenleri tanımlı ancak font-sans bunlara açıkça bağlanmamış; gerçek yazı tipi tarayıcıdan doğrulanmalı.
 - AuthPage.tsx öğrenci için indigo, öğretmen için mavi, yönetici ve giriş işlemi için koyu slate kullanıyor. Ortak ana eylem rengi belirgin değil.

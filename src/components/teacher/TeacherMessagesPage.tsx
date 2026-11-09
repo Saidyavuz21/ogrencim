@@ -145,7 +145,7 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
   };
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.messagesWorkspace}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
       {/* Masaüstü: solda konuşmalar, sağda sohbet. Dar ekran: liste ya da sohbet */}
       <div ref={splitRef} className={styles.messagesSplit} data-active={active ? 'true' : 'false'}>
@@ -189,7 +189,7 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
         {active ? (
           <section className={styles.chatPanel} aria-label={active.title}>
             <div className={styles.chatHeader}>
-              <button type="button" className={styles.backButton} onClick={() => setActiveConv(null)}><ArrowLeft size={20} aria-hidden="true" /><span>Konuşmalar</span></button>
+              <button type="button" className={styles.backButton} onClick={() => setActiveConv(null)} aria-label="Konuşmalara dön"><ArrowLeft size={20} aria-hidden="true" /><span>Konuşmalar</span></button>
               <div>
                 <strong>{active.title}</strong>
                 <span>{active.subtitle}</span>

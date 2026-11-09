@@ -106,22 +106,23 @@ export function TeacherClassesPage({ homeroomClass, classes, studentCounts, sele
   ];
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.classesWorkspace}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={styles.pointsLayout}>
       <section className={styles.panel} aria-labelledby="classes-list-title">
         <h2 id="classes-list-title" className={styles.panelTitle}>Sınıflarım <span className={styles.countPill}>{rows.length}</span></h2>
-        {rows.length === 0 && <p className={styles.mutedText}>Henüz sınıfınız yok. Yandaki alandan ders verdiğiniz sınıfları ekleyin.</p>}
+        {rows.length === 0 && <p className={styles.mutedText}>Henüz sınıfınız yok. Sınıf ekle alanından ders verdiğiniz sınıfları ekleyin.</p>}
         <ul className={styles.studentCards}>
           {rows.map((r) => (
-            <li key={r.key} className={styles.studentCard}>
+            <li key={r.key} className={`${styles.studentCard} ${r.name === selectedClass ? styles.classRowSelected : ''}`}>
               <div className={styles.studentCardHead}>
-                <span className={styles.studentAvatar} aria-hidden="true">{r.name}</span>
+                <span className={styles.studentAvatar} aria-hidden="true"><Users size={21} /></span>
                 <div className={styles.studentCardInfo}>
                   <strong>{r.name}{r.homeroom ? ' · Rehberlik sınıfı' : ''}</strong>
                   <span>{studentCounts[r.name] ?? 0} öğrenci{r.name === selectedClass ? ' · Şu an seçili' : ''}</span>
                 </div>
+                <div className={styles.classRowActions}>
                 {r.name !== selectedClass && (
                   <button type="button" className={styles.secondary} onClick={() => onSelectClass(r.name)}>Seç</button>
                 )}
@@ -133,6 +134,7 @@ export function TeacherClassesPage({ homeroomClass, classes, studentCounts, sele
                     <Trash2 size={16} aria-hidden="true" />
                   </button>
                 )}
+                </div>
               </div>
             </li>
           ))}

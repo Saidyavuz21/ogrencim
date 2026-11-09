@@ -12,6 +12,7 @@ import { CustomSelect } from './CustomSelect';
 import { useDialog } from './ConfirmDialog';
 import styles from './teacher/TeacherDashboard.module.css';
 import own from './AnnouncementsPage.module.css';
+import { Spinner } from './Spinner';
 
 const ALL_SCHOOLS = '__tum_okullar__';
 
@@ -107,10 +108,11 @@ export function AnnouncementsPage({ manager }: AnnouncementsPageProps) {
   };
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${manager === 'teacher' ? own.workspace : ''}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
-      <section className={styles.panel}>
-        <form className={styles.formGrid} onSubmit={handleCreate}>
+      <div className={own.layout}>
+      <section className={`${styles.panel} ${own.composer}`}>
+        <form className={`${styles.formGrid} ${own.form}`} onSubmit={handleCreate}>
           <h2 className={styles.panelTitle}>Yeni duyuru</h2>
           {isAdmin && (
             <div className={`${styles.field} ${styles.fullRow}`}>
@@ -146,19 +148,22 @@ export function AnnouncementsPage({ manager }: AnnouncementsPageProps) {
           </div>
         </form>
       </section>
+      <section className={own.feed} aria-labelledby="announcement-feed-title">
+      <div className={own.feedHead}><h2 id="announcement-feed-title">Yayınlanan duyurular</h2>{loaded && <span>{items.length} duyuru</span>}</div>
+      {!loaded && <Spinner center label="Duyurular yükleniyor…" />}
       {loaded && !items.length && <p className={`${styles.panel} ${styles.mutedText}`}>Henüz duyuru yok.</p>}
       {items.map((a) => {
         const audience = audienceOf(a);
         const canDelete = isAdmin || (a.author_id !== null && a.author_id === myId);
         return (
-          <article key={a.id} className={styles.panel}>
-            <h2 className={styles.panelTitle}>
+          <article key={a.id} className={`${styles.panel} ${own.entry}`}>
+            <h3 className={`${styles.panelTitle} ${own.entryTitle}`}>
               {a.priority === 'urgent' && <span className={styles.urgentPill}>Önemli</span>}
               {a.title}
-            </h2>
+            </h3>
             {audience && <span className={own.audience}>{audience}</span>}
-            <p className={styles.announcementBody}>{a.content}</p>
-            <div className={styles.listToolbar}>
+            <p className={`${styles.announcementBody} ${own.body}`}>{a.content}</p>
+            <div className={`${styles.listToolbar} ${own.entryFooter}`}>
               <p className={styles.mutedText}>{a.teacher_name} · {formatDateTime(a.created_at)}</p>
               {canDelete && (
                 <button type="button" className={styles.secondary} onClick={() => handleDelete(a)}><Trash2 size={16} aria-hidden="true" />Sil</button>
@@ -167,6 +172,8 @@ export function AnnouncementsPage({ manager }: AnnouncementsPageProps) {
           </article>
         );
       })}
+      </section>
+      </div>
     </div>
   );
 }

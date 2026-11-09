@@ -1,4 +1,61 @@
 /* ===== Sınıf karnesi, öğrenci gelişimi, grafikler ===== */
+.mobileStudentReports { display: none; }
+.reportSort { min-width: 220px; }
+@media screen {
+  .page.classReportWorkspace { gap: 24px; }
+  .classReportWorkspace .toolbar { padding: 18px 22px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; gap: 10px; }
+  .classReportWorkspace .toolbar .button { border-radius: 10px; font-size: 13px; font-weight: 500; }
+  .classReportWorkspace .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 20px 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; }
+  .classReportWorkspace .tile { padding: 0 18px; border: 0; border-right: 1px solid #eeece5; border-radius: 0; gap: 8px; background: transparent; }
+  .classReportWorkspace .tile:last-child { border-right: 0; }
+  .classReportWorkspace .tile span { font-size: 12px; font-weight: 500; line-height: 1.6; }
+  .classReportWorkspace .tile strong { font-size: 28px; font-weight: 600; color: var(--teacher-text, #20352d); }
+  .classReportWorkspace .tile small { font-size: 12px; line-height: 1.6; }
+  .classReportWorkspace .card { padding: 24px; border-radius: 18px; gap: 20px; }
+  .classReportWorkspace .cardTitle { font-size: 20px; font-weight: 600; line-height: 1.4; }
+  .classReportWorkspace .tableWrap { border-radius: 12px; }
+  .classReportWorkspace .tableWrap:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+  .classReportWorkspace .table td, .classReportWorkspace .table th { padding: 14px 16px; border-bottom-color: #eeece5; }
+  .classReportWorkspace .table thead th { background: #f6f7f2; font-size: 12px; font-weight: 500; }
+  .classReportWorkspace .table th[scope='row'] { font-weight: 500; }
+  .classReportWorkspace .rowButton { min-height: 44px; font-weight: 500; }
+  .classReportWorkspace .linkButton { min-height: 44px; text-decoration: none; font-size: 13px; }
+  .classReportWorkspace .twoCol { gap: 24px; padding-top: 8px; }
+  .classReportWorkspace .muted { font-size: 13px; line-height: 1.7; }
+}
+@media screen and (max-width: 767px) {
+  .page.classReportWorkspace { gap: 18px; }
+  .classReportWorkspace .toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; gap: 10px; border-radius: 16px; }
+  .classReportWorkspace .toolbar > span:first-child { grid-column: 1 / -1; }
+  .classReportWorkspace .toolbar .spacer { display: none; }
+  .classReportWorkspace .toolbar .button { min-height: 48px; padding: 8px; white-space: normal; text-align: center; line-height: 1.5; font-size: 12px; }
+  .classReportWorkspace .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; border-radius: 16px; }
+  .classReportWorkspace .tile { padding: 16px; border: 0; }
+  .classReportWorkspace .tile:nth-child(odd) { border-right: 1px solid #eeece5; }
+  .classReportWorkspace .tile:nth-child(-n+2) { border-bottom: 1px solid #eeece5; }
+  .classReportWorkspace .tile strong { font-size: 25px; }
+  .classReportWorkspace .card { padding: 18px 16px; border-radius: 16px; gap: 18px; }
+  .classReportWorkspace .cardTitle { font-size: 18px; }
+  .classReportWorkspace .cardHead { gap: 14px; }
+  .reportSort { flex-basis: 100%; min-width: 0; }
+  .classReportWorkspace .table { min-width: 620px; }
+  .classReportWorkspace .twoCol { grid-template-columns: minmax(0, 1fr); }
+  .classReportWorkspace .studentReportTable { display: none; }
+  .mobileStudentReports { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+  .mobileStudentReports > li { padding: 18px 0; border-bottom: 1px solid #eeece5; }
+  .mobileStudentReports > li:first-child { padding-top: 0; }
+  .mobileStudentReports > li:last-child { padding-bottom: 0; border-bottom: 0; }
+  .mobileReportStudent { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+  .mobileReportStudent > div { display: grid; gap: 5px; min-width: 0; }
+  .mobileReportStudent strong { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+  .mobileReportStudent span { color: var(--teacher-muted, #58665f); font-size: 12px; }
+  .mobileReportStudent button { flex-shrink: 0; }
+  .mobileStudentReports dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
+  .mobileStudentReports dl > div { padding-left: 10px; border-left: 1px solid #eeece5; }
+  .mobileStudentReports dl > div:first-child { padding-left: 0; border-left: 0; }
+  .mobileStudentReports dt { color: var(--teacher-muted, #58665f); font-size: 12px; }
+  .mobileStudentReports dd { margin: 6px 0 0; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+}
 .page { display: grid; gap: 16px; min-width: 0; color: var(--teacher-text, #20352d); }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .toolbar .spacer { flex: 1; }

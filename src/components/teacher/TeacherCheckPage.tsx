@@ -255,8 +255,22 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   }
 
   return (
-    <div className={styles.pageBody}>
+    <div className={`${styles.pageBody} ${styles.checkWorkspace}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
+      {activeHw && loadedFor === activeHw.id && !stLoading && !stError && (
+        <section className={styles.checkOverview} aria-label="Seçili ödevin kontrol özeti">
+          <div className={styles.checkOverviewTitle}>
+            <span className={styles.checkOverviewIcon}><BookOpen size={22} aria-hidden="true" /></span>
+            <div><h2>{activeHw.title}</h2><p>{selectedClass}{activeHw.subject ? ` · ${activeHw.subject}` : ''}</p></div>
+          </div>
+          <dl className={styles.checkOverviewCounts}>
+            <div><dt>Yaptı</dt><dd>{counts.yapti}</dd></div>
+            <div><dt>Kısmen</dt><dd>{counts.kismen}</dd></div>
+            <div><dt>Yapmadı</dt><dd>{counts.yapmadi}</dd></div>
+            <div><dt>İşaretlenmedi</dt><dd>{counts.bos}</dd></div>
+          </dl>
+        </section>
+      )}
       {activeHw?.has_board && (
         <section className={styles.panel} aria-label="Tahta">
           <h2 className={styles.panelTitle}>Etkileşimli tahta</h2>
@@ -273,6 +287,7 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
 
       <div className={styles.pointsLayout}>
         <section className={styles.studentList} aria-label="Öğrenci kontrol listesi">
+          <div className={styles.checkRosterHeading}><h2>Öğrenciler</h2><span>{stLoading ? 'Yükleniyor…' : `${students.length} öğrenci`}</span></div>
           {students.length > 0 && (
             <div className={`${styles.listSortBar} ${styles.checkListBar}`}>
               <p className={styles.checkPointsHint}>Puan: <b>Yaptı +1</b> · Kısmen 0 · <b>Yapmadı −1</b>{activeHw && !activeHw.results_released && ' · sonuçlar açıklanınca işlenir'}</p>

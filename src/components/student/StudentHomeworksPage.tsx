@@ -11,8 +11,17 @@ import { QUIZ_MODE_LABEL } from '../../lib/quizData';
 import q from '../quiz/Quiz.module.css';
 import { AttachmentList, formatDate } from '../teacher/TeacherUi';
 import { Spinner } from '../Spinner';
-import styles from '../teacher/TeacherDashboard.module.css';
+import sharedStyles from '../teacher/TeacherDashboard.module.css';
+
 import s from './StudentPortal.module.css';
+
+const styles: Record<string, string> = {
+  ...sharedStyles,
+  pageBody: `${sharedStyles.pageBody} ${s.pageBody}`,
+  panel: `${sharedStyles.panel} ${s.panel}`,
+  assignmentTitle: `${sharedStyles.assignmentTitle} ${s.homeworkTitle}`,
+  studentHomeworkList: `${sharedStyles.studentHomeworkList} ${s.homeworkList}`,
+};
 
 const STATUS_LABEL = { yapti: 'Yaptı', kismen: 'Kısmen', yapmadi: 'Yapmadı' } as const;
 const STATUS_STYLE = { yapti: styles.done, kismen: styles.partial, yapmadi: styles.missing } as const;

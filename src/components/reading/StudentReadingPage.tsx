@@ -5,7 +5,20 @@ import { BookOpen } from '../icons';
 import { Spinner } from '../Spinner';
 import { getReadingOverview, ReadingOverviewContest } from '../../lib/readingData';
 import { MedalBadge } from './TeacherReadingPage';
-import styles from './Reading.module.css';
+import sharedStyles from './Reading.module.css';
+
+import s from '../student/StudentPortal.module.css';
+const styles: Record<string, string> = {
+  ...sharedStyles,
+  page: `${sharedStyles.page} ${s.readingPage}`,
+  card: `${sharedStyles.card} ${s.panel}`,
+  empty: `${sharedStyles.empty} ${s.empty}`,
+  list: `${sharedStyles.list} ${s.flatList}`,
+  twoCol: `${sharedStyles.twoCol} ${s.readingColumns}`,
+  hero: `${sharedStyles.hero} ${s.readingResult}`,
+  heroValue: `${sharedStyles.heroValue} ${s.readingValue}`,
+  tableWrap: `${sharedStyles.tableWrap} ${s.scrollRegion}`,
+};
 
 const shortDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
 
@@ -50,7 +63,7 @@ export function StudentReadingPage() {
       </div>
 
       <section className={styles.hero} aria-label={`${active.title} sonucun`}>
-        <p className={styles.heroKicker}>{active.title} · {shortDate(active.date)}{active.finished ? '' : ' · sürüyor'}</p>
+        <h2>{active.title} · {shortDate(active.date)}{active.finished ? '' : ' · sürüyor'}</h2>
         {mine ? (
           <>
             <p className={styles.heroValue}><strong>{mine.words}</strong> kelime/dk</p>
@@ -149,7 +162,7 @@ function ProgressChart({ contests }: { contests: ReadingOverviewContest[] }) {
       </div>
 
       {showTable ? (
-        <div className={styles.tableWrap}>
+        <div className={styles.tableWrap} role="region" aria-label="Okuma hızı tablosu" tabIndex={0}>
           <table className={styles.table}>
             <thead><tr><th scope="col">Yarışma</th><th scope="col">Sen</th><th scope="col">Sınıf ortalaması</th></tr></thead>
             <tbody>

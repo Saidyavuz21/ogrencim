@@ -121,6 +121,19 @@ Kontroller 8–12 px, ana paneller masaüstünde 18 px / mobilde 16 px köşelid
 
 ## Components
 
+### Öğrenci paneli
+
+Öğrenci panelinin ana sayfası ve 12 alt sayfası aynı yeşil/sıcak nötr sistemi kullanır. Öğrenciye özel sunum `src/components/student/StudentPortal.module.css` içinde `.portal` kapsamında tutulur; ortak öğretmen ve yönetici stilleri değiştirilmez.
+
+- Mevcut öğrenci üst menüsü ve gruplu yan menü korunur. Mobil hızlı menü **Ana sayfa / Ödevler / Mesajlar / Hesabım** şeklindedir; diğer sayfalar çekmeceden erişilir.
+- Alt sayfalarda çerçevesiz 22 px / mobilde 20 px başlık ve kısa açıklama vardır. Tekrar eden büyük başlık kartı ve geri düğmesi kullanılmaz.
+- Ana sayfadaki yeşil kimlik alanında okul/sınıf bilgisi ve gerçek puan, sıra ve bekleyen ödev sayısı yer alır. Sayfa bağlantıları gruplu, ince ayırıcılı listelerdir.
+- Ödev teslimi, notlar, puan geçmişi, materyaller, sınıflar, duyurular ve hesap sayfaları ortak panel ölçülerini kullanır. Gelişim raporundaki öğrenci görünümü `self` ile sınırlandırılır; öğretmen raporunun sunumu korunur.
+- Mobilde içerik alt menü ve güvenli alan kadar boşluk bırakır. Materyal filtreleri tek sütuna iner; uzun adlar satıra yayılır. Rapor tabloları etiketli, klavyeyle odaklanabilen yatay kaydırma alanında kalır.
+- Akvaryum sahnesi, quiz/tahta oynatıcıları ve canlı dersin kendi etkileşimleri ve tam ekran davranışları korunur.
+
+Doğrulama kapsamı: yerel öğrenci önizlemesinde test verileriyle masaüstü ve mobil yerleşimler; gerçek öğrenci oturumu ve canlı sunucu doğrulaması değildir.
+
 - Tekli açılır seçeneklerde `CustomSelect`; yeni native `<select>` ekleme. Çoklu seçim tekli seçime indirgenmez; Ödev gönder başlığındaki checkbox menüsü örnektir.
 - İkonlar `src/components/icons.tsx` üzerinden, tutarlı ölçü ve çizgi ağırlığıyla gelir. Küçük ikonlar 16–20 px, ana araçlar 20–24 px; emojiyle ikon taklidi yapma.
 - Listede kimlik solda, işlem sağda; satırlar ince çizgiyle ayrılır. Mobilde işlem metni gizlenebilir; erişilebilir ad ve en az 44 × 44 px alan korunur.

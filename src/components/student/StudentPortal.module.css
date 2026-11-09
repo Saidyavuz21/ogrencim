@@ -1,434 +1,224 @@
-/* ===== Öğrenci paneli: ana sayfa, ödev etiketleri, hesap bilgileri ===== */
-
-/* Karşılama kartı: kimlik + üç özet sayı */
-.hero {
-  display: grid;
-  gap: 20px;
-  padding: 24px;
-  border-radius: 18px;
-  background: var(--teacher-primary);
-  color: #fff;
-}
-
-.heroIdentity {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.heroAvatar {
-  display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  flex-shrink: 0;
-  border-radius: 16px;
-  background: #fff;
-  color: var(--teacher-primary);
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.heroIdentity h1 {
-  margin: 0;
-  font-size: clamp(22px, 4vw, 28px);
-  line-height: 1.25;
-  letter-spacing: -.02em;
-  overflow-wrap: anywhere;
-}
-
-.heroIdentity p {
-  margin: 4px 0 0;
-  color: rgb(255 255 255 / 85%);
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-.heroStats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.heroStat {
-  display: grid;
-  gap: 2px;
-  padding: 14px 12px;
-  border-radius: 12px;
-  background: #fff;
+/* Öğrenci paneline özel kapsam; öğretmen ve yönetici sayfalarını etkilemez. */
+.portal {
+  --teacher-bg: #f7f6f2;
+  --teacher-surface: #fff;
+  --teacher-text: #20352d;
+  --teacher-muted: #58665f;
+  --teacher-border: #dedad0;
+  --teacher-primary: #25634b;
+  --teacher-hover: #1d503d;
+  --teacher-selected: #e6f1e9;
+  min-height: 100dvh;
+  padding-bottom: 0;
+  background: var(--teacher-bg);
   color: var(--teacher-text);
-  text-align: center;
-  text-decoration: none;
-  transition: transform 150ms ease-out, box-shadow 150ms;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  accent-color: var(--teacher-primary);
+  caret-color: var(--teacher-primary);
+  scrollbar-color: #a4b1a6 transparent;
+  scrollbar-width: thin;
 }
-
-.heroStat strong {
-  font-size: 24px;
-  line-height: 1.15;
-  font-weight: 700;
-  color: var(--teacher-primary);
-  font-variant-numeric: tabular-nums;
+.portal ::selection { background: #d6e8db; color: #20352d; }
+.portal .content { max-width: 1360px; gap: 24px; padding: 28px 32px 40px; }
+.portal > header > nav { max-width: none; padding: 16px 32px; }
+.pageHeader h1 { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; }
+.pageHeader p { margin: 6px 0 0; color: var(--teacher-muted); font-size: 14px; line-height: 1.6; }
+.portal .pageBody { display: grid; align-content: start; gap: 24px; min-width: 0; }
+.portal .panel, .upcoming, .navGroup {
+  display: grid; align-content: start; gap: 16px; min-width: 0; padding: 24px;
+  border: 1px solid var(--teacher-border); border-radius: 18px; background: #fff; box-shadow: none;
 }
-
-.heroStat span {
-  font-size: 13px;
-  line-height: 1.35;
-  color: var(--teacher-muted);
+.portal .panelTitle, .upcomingHead h2, .navGroup h2 { margin: 0; font-size: 18px; line-height: 1.4; font-weight: 600; }
+.portal .panelTitle { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.portal .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 22px 8px; }
+.portal .summary > div { display: grid; gap: 6px; padding: 0 16px; border: 0; border-right: 1px solid #eeece5; border-radius: 0; background: transparent; text-align: left; min-width: 0; }
+.portal .summary > div:last-child { border: 0; }
+.portal .summary strong { color: var(--teacher-text); font-size: 26px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.portal .summary span { color: var(--teacher-muted); font-size: 13px; line-height: 1.5; }
+/* Ana sayfa: kimlik, gerçek özet ve yaklaşan çalışmalar. */
+.home { display: grid; gap: 24px; min-width: 0; }
+.hero { display: grid; gap: 24px; padding: 24px; border-radius: 18px; background: var(--teacher-primary); color: white; }
+.heroIdentity { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.heroAvatar { display: grid; place-items: center; width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%; background: #e6f1e9; color: #25634b; font-size: 18px; font-weight: 600; }
+.heroIdentity h1 { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.heroIdentity p { margin: 5px 0 0; color: #e0ede4; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.heroStats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #5c8b74; }
+.heroStat { display: grid; gap: 5px; min-width: 0; padding: 18px 16px 0; color: white; text-decoration: none; }
+.heroStat:first-child { padding-left: 0; }
+.heroStat + .heroStat { border-left: 1px solid #5c8b74; margin-top: 18px; padding-top: 0; }
+.heroStat strong { font-size: 26px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.heroStat span { font-size: 13px; color: #e0ede4; line-height: 1.5; }
+.heroStat:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.heroStat:focus-visible { outline: 3px solid white; outline-offset: 4px; border-radius: 4px; }
+.alertRow { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 14px 18px; border: 1px solid #e5d4ab; border-radius: 12px; background: #fff3d6; color: #805217; font-size: 14px; line-height: 1.6; text-decoration: none; }
+.alertRow > span { flex: 1; min-width: 0; }
+.alertRow svg { flex-shrink: 0; }
+.alertRow:hover { background: #ffedc1; }
+.upcomingHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.seeAll { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; flex-shrink: 0; color: var(--teacher-primary); font-size: 14px; font-weight: 500; text-decoration: none; }
+.seeAll:hover { text-decoration: underline; }
+.upcomingEmpty { margin: 0; padding: 12px 0; color: var(--teacher-muted); font-size: 14px; line-height: 1.6; }
+.upcomingList { display: grid; margin: 0; padding: 0; list-style: none; }
+.upcomingList li + li { border-top: 1px solid #eeece5; }
+.upcomingList a { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 72px; padding: 14px 0; color: var(--teacher-text); text-decoration: none; }
+.upcomingText { display: grid; gap: 5px; min-width: 0; }
+.upcomingText strong { font-size: 15px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
+.upcomingText span { font-size: 13px; color: var(--teacher-muted); line-height: 1.6; overflow-wrap: anywhere; }
+.upcomingList a:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.homeNavigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.navGroup { gap: 8px; }
+.navLink { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 14px 0; color: var(--teacher-text); text-decoration: none; }
+.navLink + .navLink { border-top: 1px solid #eeece5; }
+.navLink > svg { color: var(--teacher-primary); flex-shrink: 0; }
+.navLink > span:not(.countBadge) { flex: 1; display: grid; gap: 4px; min-width: 0; }
+.navLink strong { font-size: 14px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
+.navLink small { color: var(--teacher-muted); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.navLink:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.countBadge { padding: 3px 8px; border-radius: 8px; background: #e6f1e9; color: #216044; font-size: 12px; font-variant-numeric: tabular-nums; }
+/* Ödevler ve teslim alanı. */
+.dueLabel { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 9px; border-radius: 8px; font-size: 12px; font-weight: 500; line-height: 1.5; white-space: nowrap; flex-shrink: 0; }
+.dueLate { background: #fcecef; color: #a33342; }
+.dueSoon { background: #fff3d6; color: #805217; }
+.dueLater { background: #e6f1e9; color: #216044; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid var(--teacher-border); border-radius: 12px; background: #eeece5; width: fit-content; max-width: 100%; }
+.tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 16px; border: 0; border-radius: 8px; background: transparent; color: var(--teacher-muted); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.tabs button[aria-pressed='true'] { background: white; color: var(--teacher-primary); }
+.tabs button:hover:not([aria-pressed='true']) { background: #e1e5dc; color: var(--teacher-text); }
+.tabCount { min-width: 22px; padding: 1px 5px; border-radius: 6px; background: #e6f1e9; color: #216044; font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+.homeworkHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.homeworkHead h2 { min-width: 0; overflow-wrap: anywhere; }
+.portal .homeworkTitle { font-size: 18px; font-weight: 600; line-height: 1.5; }
+.portal .homeworkList { gap: 20px; }
+.submitBox { display: grid; gap: 14px; padding-top: 18px; border-top: 1px solid #eeece5; }
+.submitTitle { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.5; }
+.submitActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.submittedTag { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; font-weight: 500; line-height: 1.6; color: #216044; }
+.submittedTag svg { flex-shrink: 0; }
+/* Notlar, puan geçmişi ve kişisel bilgiler. */
+.portal .gradeGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.portal .gradeHead { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.portal .gradeHead h2 { font-size: 18px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.portal .gradeAverage { border-radius: 10px; background: #e6f1e9; color: #216044; font-size: 24px; font-weight: 600; }
+.portal .gradeList div { padding: 10px 0; border-bottom: 1px solid #eeece5; }
+.portal .gradeList div:last-child { border-bottom: 0; }
+.portal .gradeList dt { font-size: 14px; }
+.portal .gradeList dd { font-weight: 600; }
+.portal .historyList { display: grid; margin: 0; padding: 0; list-style: none; }
+.portal .historyList li { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 4px 14px; padding: 16px 0; border-bottom: 1px solid #eeece5; }
+.portal .historyList li:last-child { border-bottom: 0; }
+.portal .historyList li > span:first-child { grid-row: 1 / 3; align-self: center; text-align: center; font-variant-numeric: tabular-nums; }
+.portal .historyList li > span:nth-child(2) { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.portal .historyList li > span:last-child { grid-column: 2; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.portal .rankList { border-radius: 0 0 18px 18px; }
+.portal .rankingList { border-radius: 18px; }
+.portal .rankRow { min-height: 72px; padding: 16px 22px; gap: 14px; box-shadow: none; border-bottom-color: #eeece5; }
+.portal .rankMe { background: #e6f1e9; outline: 1px solid #a4b1a6; }
+.portal .rankRow strong { font-weight: 500; overflow-wrap: anywhere; }
+.infoList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin: 0; }
+.infoList div { display: grid; gap: 5px; min-width: 0; padding: 16px 0; border-bottom: 1px solid #eeece5; }
+.infoList dt { font-size: 13px; font-weight: 500; color: var(--teacher-muted); }
+.infoList dd { margin: 0; font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
+/* Dosyalar, sınıflar, okuma ve gelişim: sadece öğrenci bağlamında. */
+.portal .materialsFilters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr); align-items: end; gap: 14px; padding: 18px 24px; border: 1px solid var(--teacher-border); border-radius: 18px; background: white; }
+.materialFilter { display: grid; gap: 8px; min-width: 0; color: var(--teacher-muted); font-size: 13px; }
+.materialFilter input { font-size: 16px; }
+.portal .flatList { border: 0; border-radius: 0; }
+.portal .fileRow { padding: 14px 0; border-color: #eeece5; }
+.portal .fileName { white-space: normal; overflow-wrap: anywhere; font-size: 14px; font-weight: 500; }
+.portal .groupsList { gap: 0; }
+.portal .groupsList li { flex-wrap: wrap; padding: 16px 0; border: 0; border-bottom: 1px solid #eeece5; border-radius: 0; gap: 12px; }
+.portal .groupsList li:last-child { border-bottom: 0; }
+.joinCode { display: grid; flex: 1 1 180px; gap: 8px; min-width: 0; font-size: 14px; color: var(--teacher-muted); }
+.joinCode input { min-width: 0; width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid #a4b1a6; border-radius: 10px; color: var(--teacher-text); background: white; font: inherit; font-size: 18px; font-weight: 500; letter-spacing: .06em; }
+.portal .joinActions { align-items: end; }
+.portal .readingResult { background: white; border: 1px solid var(--teacher-border); border-radius: 18px; padding: 24px; gap: 12px; }
+.readingResult h2 { margin: 0; color: var(--teacher-text); font-size: 18px; line-height: 1.5; font-weight: 600; }
+.portal .readingValue strong { font-size: 36px; font-weight: 600; }
+.portal .readingPage { --series-me: #25634b; --series-avg: #805217; gap: 24px; }
+.portal .readingColumns { gap: 24px; }
+.portal .progressPage { gap: 24px; }
+.portal .progressTiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 22px 8px; border: 1px solid var(--teacher-border); border-radius: 18px; background: white; }
+.portal .progressTile { border: 0; border-right: 1px solid #eeece5; border-radius: 0; background: transparent; padding: 0 16px; }
+.portal .progressTile:last-child { border-right: 0; }
+.portal .progressTile strong { font-weight: 600; font-size: 26px; }
+.portal .progressToolbar { justify-content: flex-end; }
+.portal .progressToolbar button { min-height: 44px; font-size: 14px; font-weight: 500; }
+.portal .scrollRegion:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 3px; }
+.portal .scrollRegion { border: 0; border-radius: 0; }
+.portal .reportTable th, .portal .reportTable td { padding: 14px 12px; border-bottom-color: #eeece5; }
+.portal .empty { padding: 40px 24px; border: 1px solid var(--teacher-border); border-radius: 18px; background: white; color: var(--teacher-muted); text-align: center; line-height: 1.7; }
+.portal .empty h2, .portal .empty h3 { margin: 0; color: var(--teacher-text); font-size: 18px; font-weight: 600; }
+.portal .announcementBody { margin: 0; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.portal .chatHeader { min-height: 76px; padding: 16px 20px; }
+.portal .chatHeader strong { font-size: 16px; font-weight: 600; }
+.portal .chatHeader > div { min-width: 0; overflow-wrap: anywhere; }
+.portal .chatPanel, .portal .chatEmpty { border-radius: 18px; }
+.portal .chatComposer { padding: 14px 18px; gap: 12px; }
+.portal .chatComposer textarea { font-size: 16px; border-radius: 10px; background: #fafbf8; border-color: #a4b1a6; }
+.portal .conversation { min-height: 80px; }
+.portal .aquariumPage { padding: 24px; border: 1px solid var(--teacher-border); border-radius: 18px; background: white; }
+.mobileNav { display: none; }
+:is(.navLink, .alertRow, .upcomingList a, .seeAll, .tabs button, .joinCode input):focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 3px; border-radius: 8px; }
+@media (min-width: 1024px) {
+  .portal .content { grid-column: 2; }
 }
-
-.heroStat:hover {
-  box-shadow: 0 4px 14px rgb(0 0 0 / 14%);
-  transform: translateY(-1px);
+@media (max-width: 1023px) {
+  .portal .content { padding: 24px 20px calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .portal > header > nav { padding: 12px 20px; }
+  .mobileNav { position: fixed; inset: auto 0 0; z-index: 40; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--teacher-border); background: white; }
+  .mobileNav a { display: grid; justify-items: center; align-content: center; gap: 5px; min-height: 52px; border-radius: 10px; color: var(--teacher-muted); font-size: 12px; font-weight: 500; text-decoration: none; }
+  .mobileNav a[aria-current='page'] { background: #e6f1e9; color: #216044; }
+  .mobileNav a:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: -3px; }
+  .navIcon { position: relative; display: grid; place-items: center; }
+  .navBadge { position: absolute; top: -7px; left: 14px; min-width: 17px; padding: 1px 4px; border-radius: 6px; background: #a33342; color: white; font-size: 10px; line-height: 15px; text-align: center; }
 }
-
-.heroStat:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 2px;
+@media (max-width: 767px) {
+  .portal .content { gap: 18px; padding-inline: 16px; padding-top: 20px; }
+  .portal .pageBody, .home { gap: 18px; }
+  .pageHeader h1, .heroIdentity h1 { font-size: 20px; }
+  .pageHeader p { font-size: 13px; }
+  .hero { padding: 18px; gap: 18px; border-radius: 16px; }
+  .heroIdentity { gap: 12px; }
+  .heroAvatar { width: 44px; height: 44px; font-size: 16px; }
+  .heroIdentity p { font-size: 13px; }
+  .heroStat { padding: 16px 10px 0; }
+  .heroStat + .heroStat { margin-top: 16px; }
+  .heroStat strong { font-size: 22px; }
+  .heroStat span { font-size: 12px; }
+  .portal .panel, .upcoming, .navGroup { padding: 18px 16px; border-radius: 16px; gap: 14px; }
+  .homeNavigation, .portal .gradeGrid, .portal .readingColumns { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .portal .summary { padding: 18px 0; gap: 0; }
+  .portal .summary > div { padding: 0 12px; }
+  .portal .summary strong { font-size: 23px; }
+  .portal .summary span { font-size: 12px; }
+  .upcomingList a { flex-wrap: wrap; gap: 10px; }
+  .upcomingText { flex: 1 1 180px; }
+  .homeworkHead { flex-wrap: wrap; gap: 10px; }
+  .tabs { width: 100%; }
+  .tabs button { flex: 1 1 auto; padding: 8px 10px; font-size: 13px; gap: 5px; }
+  .infoList { grid-template-columns: minmax(0, 1fr); }
+  .portal .materialsFilters { grid-template-columns: minmax(0, 1fr); padding: 16px; border-radius: 16px; }
+  .portal .fileRow { flex-wrap: wrap; gap: 10px; }
+  .portal .fileRow > div:first-of-type { flex: 1 1 160px; }
+  .portal .fileRow > div:last-child { margin-left: auto; }
+  .portal .readingResult { padding: 18px 16px; border-radius: 16px; }
+  .portal .readingPage, .portal .progressPage { gap: 18px; }
+  .portal .progressTiles { grid-template-columns: minmax(0, 1fr); padding: 0 16px; border-radius: 16px; }
+  .portal .progressTile { padding: 16px 0; border: 0; border-bottom: 1px solid #eeece5; }
+  .portal .progressTile:last-child { border-bottom: 0; }
+  .portal .progressToolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .portal .progressToolbar > span { display: none; }
+  .portal .progressToolbar button { white-space: normal; padding: 10px; font-size: 13px; }
+  .portal .chatHeader { padding: 12px; gap: 10px; }
+  .portal .chatHeader > div { flex: 1; }
+  .portal .chatHeader > div > strong { font-size: 14px; }
+  .portal .chatComposer { padding: 12px; gap: 8px; }
+  .portal .chatPanel, .portal .chatEmpty { border-radius: 16px; }
+  .portal .aquariumPage { padding: 16px; border-radius: 16px; }
+  .portal .rankRow { padding: 14px; gap: 10px; }
 }
-
-/* Okunmamış mesaj uyarısı */
-.alertRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid #e5d4ab;
-  border-radius: 14px;
-  background: #fff9ec;
-  color: #5c4210;
-  font-size: 15px;
-  line-height: 1.5;
-  text-decoration: none;
-}
-
-.alertRow>span {
-  flex: 1;
-  min-width: 0;
-}
-
-.alertRow svg {
-  flex-shrink: 0;
-  color: #9a6b12;
-}
-
-.alertRow:hover {
-  background: #fff4dc;
-}
-
-.alertRow:focus-visible {
-  outline: 3px solid var(--teacher-primary);
-  outline-offset: 2px;
-}
-
-/* Yaklaşan ödevler */
-.upcoming {
-  display: grid;
-  gap: 8px;
-  padding: 20px;
-  border: 1px solid var(--teacher-border);
-  border-radius: 16px;
-  background: var(--teacher-surface);
-}
-
-.upcomingHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.upcomingHead h2 {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--teacher-text);
-}
-
-.seeAll {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 40px;
-  color: var(--teacher-primary);
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.seeAll:hover {
-  text-decoration: underline;
-}
-
-.upcomingEmpty {
-  margin: 0;
-  color: var(--teacher-muted);
-  font-size: 14px;
-}
-
-.upcomingList {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.upcomingList li+li {
-  border-top: 1px solid var(--teacher-border);
-}
-
-.upcomingList a {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 0;
-  color: var(--teacher-text);
-  text-decoration: none;
-}
-
-.upcomingList a:hover strong {
-  text-decoration: underline;
-}
-
-.upcomingList a:focus-visible,
-.seeAll:focus-visible {
-  outline: 3px solid var(--teacher-primary);
-  outline-offset: 2px;
-}
-
-.upcomingText {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.upcomingText strong {
-  font-size: 15px;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.upcomingText span {
-  font-size: 13px;
-  color: var(--teacher-muted);
-}
-
-/* Teslim etiketi */
-.dueLabel {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.dueLate {
-  background: #fbecee;
-  color: #943747;
-}
-
-.dueSoon {
-  background: #fff0cc;
-  color: #775516;
-}
-
-.dueLater {
-  background: var(--teacher-selected);
-  color: var(--teacher-primary);
-}
-
-/* Ödev filtresi */
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--teacher-border);
-  border-radius: 12px;
-  background: #f0eee7;
-  width: fit-content;
-  max-width: 100%;
-}
-
-.tabs button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--teacher-muted);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tabs button[aria-pressed='true'] {
-  background: #fff;
-  color: var(--teacher-primary);
-  box-shadow: 0 1px 2px rgb(20 35 28 / 12%);
-}
-
-.tabs button:hover:not([aria-pressed='true']) {
-  color: var(--teacher-text);
-}
-
-.tabs button:focus-visible {
-  outline: 3px solid var(--teacher-primary);
-  outline-offset: 2px;
-}
-
-.tabCount {
-  min-width: 24px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 6%);
-  font-size: 13px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.homeworkHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-/* Ödev teslimi */
-.submitBox {
-  display: grid;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--teacher-border);
-}
-
-.submitTitle {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--teacher-text);
-}
-
-.submitActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-}
-
-.submittedTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--teacher-primary);
-}
-
-.submittedTag svg {
-  flex-shrink: 0;
-}
-
-/* Hesabım */
-.infoList {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 24px;
-  margin: 0;
-}
-
-.infoList div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.infoList dt {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--teacher-muted);
-}
-
-.infoList dd {
-  margin: 0;
-  font-size: 16px;
-  color: var(--teacher-text);
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 640px) {
-  .hero {
-    padding: 20px 16px;
-    gap: 16px;
-    border-radius: 16px;
-  }
-
-  .heroAvatar {
-    width: 48px;
-    height: 48px;
-    font-size: 17px;
-  }
-
-  .heroStats {
-    gap: 8px;
-  }
-
-  .heroStat {
-    padding: 12px 6px;
-  }
-
-  .heroStat strong {
-    font-size: 20px;
-  }
-
-  .heroStat span {
-    font-size: 12px;
-  }
-
-  .upcoming {
-    padding: 16px;
-  }
-
-  .tabs {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .tabs button {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    justify-content: center;
-    padding: 0 12px;
-    font-size: 14px;
-  }
-
-  .infoList {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .heroStat {
-    transition: none;
-  }
-
-  .heroStat:hover {
-    transform: none;
-  }
+@media print {
+  .mobileNav { display: none; }
+  .portal .content { max-width: none; padding: 0; }
+  .portal .progressTiles { break-inside: avoid; }
 }

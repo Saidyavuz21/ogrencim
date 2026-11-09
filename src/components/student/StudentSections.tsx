@@ -11,8 +11,28 @@ import {
   LeaderboardTierLegend, TIER_CLASS, TIER_ROW_CLASS,
 } from '../teacher/TeacherLeaderboardPage';
 import { Spinner } from '../Spinner';
-import styles from '../teacher/TeacherDashboard.module.css';
+import sharedStyles from '../teacher/TeacherDashboard.module.css';
+
 import s from './StudentPortal.module.css';
+
+const styles: Record<string, string> = {
+  ...sharedStyles,
+  pageBody: `${sharedStyles.pageBody} ${s.pageBody}`,
+  panel: `${sharedStyles.panel} ${s.panel}`,
+  panelTitle: `${sharedStyles.panelTitle} ${s.panelTitle}`,
+  statRow: `${sharedStyles.statRow} ${s.summary}`,
+  gradeCards: `${sharedStyles.gradeCards} ${s.gradeGrid}`,
+  gradeCard: `${sharedStyles.gradeCard} ${s.panel}`,
+  gradeCardHead: `${sharedStyles.gradeCardHead} ${s.gradeHead}`,
+  gradeCardAvg: `${sharedStyles.gradeCardAvg} ${s.gradeAverage}`,
+  gradeCardList: `${sharedStyles.gradeCardList} ${s.gradeList}`,
+  historyList: `${sharedStyles.historyList} ${s.historyList}`,
+  rankList: `${sharedStyles.rankList} ${s.rankList}`,
+  studentList: `${sharedStyles.studentList} ${s.rankingList}`,
+  rankRow: `${sharedStyles.rankRow} ${s.rankRow}`,
+  rankMe: `${sharedStyles.rankMe} ${s.rankMe}`,
+  announcementBody: `${sharedStyles.announcementBody} ${s.announcementBody}`,
+};
 
 type CSSVars = React.CSSProperties & Record<`--${string}`, string | number>;
 const fmtGrade = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
@@ -70,8 +90,8 @@ export function StudentPointsPage({ me, points, loaded }: { me: MyStudent | null
     <div className={styles.pageBody}>
       <section className={`${styles.panel} ${styles.statRow}`} aria-label="Puan özeti">
         <div><strong>{me?.points ?? '—'}</strong><span>Toplam puan</span></div>
-        <div><strong>+{me?.plus_count ?? 0}</strong><span>Artı</span></div>
-        <div><strong>−{me?.minus_count ?? 0}</strong><span>Eksi</span></div>
+        <div><strong>{me ? `+${me.plus_count}` : '—'}</strong><span>Artı</span></div>
+        <div><strong>{me ? `−${me.minus_count}` : '—'}</strong><span>Eksi</span></div>
       </section>
       <section className={styles.panel}>
         <h2 className={styles.panelTitle}>Geçmiş</h2>
@@ -92,9 +112,11 @@ export function StudentPointsPage({ me, points, loaded }: { me: MyStudent | null
 }
 
 // ---------------- Sınıf sıralaması ----------------
-export function StudentRankingPage({ ranking, myId, className }: { ranking: ClassmateRank[]; myId: string; className: string }) {
+export function StudentRankingPage({ ranking, myId, className, loaded = true }: { ranking: ClassmateRank[]; myId: string; className: string; loaded?: boolean }) {
   const ranks = useMemo(() => computeCompetitionRanks(ranking), [ranking]);
   const counts = useMemo(() => countTiers(ranking), [ranking]);
+
+  if (!loaded) return <Spinner center label="Sıralama yükleniyor…" />;
 
   return (
     <div className={styles.pageBody}>

@@ -5,7 +5,6 @@ import { ChevronRight, MessageSquare } from '../icons';
 import { MyHomework, MyStudent } from '../../lib/studentData';
 import { initialsOf } from '../teacher/TeacherUi';
 import { isPlainLeftClick } from '../teacher/teacherPages';
-import { PortalPageCards } from '../shell/PortalShell';
 import { STUDENT_PAGES, STUDENT_PAGE_GROUPS, StudentPageId, studentPageHref } from './studentRoutes';
 import { DueLabel, sortPending } from './StudentHomeworksPage';
 import s from './StudentPortal.module.css';
@@ -44,7 +43,7 @@ export function StudentHome({ me, fallbackName, fallbackNo, fallbackClass, myRan
   ];
 
   return (
-    <>
+    <div className={s.home}>
       <header className={s.hero}>
         <div className={s.heroIdentity}>
           <span className={s.heroAvatar} aria-hidden="true">{initialsOf(name)}</span>
@@ -99,7 +98,23 @@ export function StudentHome({ me, fallbackName, fallbackNo, fallbackClass, myRan
         </section>
       )}
 
-      <PortalPageCards pages={STUDENT_PAGES} groups={STUDENT_PAGE_GROUPS} badges={badges} hrefFor={studentPageHref} onOpenPage={onOpenPage} idPrefix="student" />
-    </>
+      <div className={s.homeNavigation}>
+        {STUDENT_PAGE_GROUPS.map((group) => (
+          <section key={group} className={s.navGroup} aria-labelledby={`student-group-${group}`}>
+            <h2 id={`student-group-${group}`}>{group}</h2>
+            <div>
+              {STUDENT_PAGES.filter((item) => item.group === group).map((item) => (
+                <a key={item.id} {...link(item.id)} className={s.navLink}>
+                  <item.icon size={21} aria-hidden="true" />
+                  <span><strong>{item.title}</strong><small>{item.description}</small></span>
+                  {(badges[item.id] || 0) > 0 && <span className={s.countBadge} aria-label={`${badges[item.id]} yeni`}>{badges[item.id]}</span>}
+                  <ChevronRight size={17} aria-hidden="true" />
+                </a>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
   );
 }

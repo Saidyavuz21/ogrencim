@@ -46,6 +46,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
     setIsAuthenticated(false);
     setCurrentUser(SIGNED_OUT_USER);
     await signOutUser();
+    window.location.replace('/');
   };
 
   // Sayfa yenilendiğinde / tarayıcı yeniden açıldığında mevcut Supabase oturumunu geri yükle
@@ -70,12 +71,13 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
     };
   }, [handleLoginSuccess, restoreAttempt, variant]);
 
-  // Başka sekmede çıkış yapıldığında veya oturum yenilenemediğinde paneli kapat
+  // Başka sekmede çıkış yapıldığında veya oturum yenilenemediğinde paneli kapat ve ana sayfaya yönlendir
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setCurrentUser(SIGNED_OUT_USER);
+        window.location.replace('/');
       }
     });
     return () => data.subscription.unsubscribe();

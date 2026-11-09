@@ -8,7 +8,20 @@ import { useLiveMessages } from '../../lib/useLiveMessages';
 import { listMyGroups, markGroupRead } from '../../lib/schoolData';
 import { LiveBadge, Notice, NoticeState, formatDateTime } from '../teacher/TeacherUi';
 import { useFitToViewport } from '../shell/PortalShell';
-import styles from '../teacher/TeacherDashboard.module.css';
+import sharedStyles from '../teacher/TeacherDashboard.module.css';
+
+import s from '../student/StudentPortal.module.css';
+const styles: Record<string, string> = {
+  ...sharedStyles,
+  pageBody: `${sharedStyles.pageBody} ${s.pageBody}`,
+  panel: `${sharedStyles.panel} ${s.panel}`,
+  panelTitle: `${sharedStyles.panelTitle} ${s.panelTitle}`,
+  chatPanel: `${sharedStyles.chatPanel} ${s.chatPanel}`,
+  chatHeader: `${sharedStyles.chatHeader} ${s.chatHeader}`,
+  chatComposer: `${sharedStyles.chatComposer} ${s.chatComposer}`,
+  chatEmpty: `${sharedStyles.chatEmpty} ${s.chatEmpty}`,
+  convItem: `${sharedStyles.convItem} ${s.conversation}`,
+};
 
 /**
  * Öğrencinin mesajları: öğretmenlerle tek birebir konuşma (ogr:<id>) + sınıf grubu (yalnızca okunur).

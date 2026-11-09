@@ -9,7 +9,7 @@ import {
 import { studentConversationId } from '../../lib/teacherData';
 import { Aquarium } from '../aquarium/Aquarium';
 import { Notice } from '../teacher/TeacherUi';
-import { PortalPageHeader, PortalSidebar, PortalTopBar, usePageRoute } from '../shell/PortalShell';
+import { PortalSidebar, PortalTopBar, usePageRoute } from '../shell/PortalShell';
 import { STUDENT_PAGES, STUDENT_PAGE_GROUPS, StudentPageGroup, StudentPageId, getStudentPage, studentPageHref, studentPageIdFromSlug, studentPageSlug } from './studentRoutes';
 import { StudentHome } from './StudentHome';
 import { StudentHomeworksPage } from './StudentHomeworksPage';
@@ -23,6 +23,8 @@ import { StudentGroupsPage } from '../school/StudentGroupsPage';
 import { LiveJoinStrip, LiveStudentSession } from '../live/LiveStudentSession';
 import { useMyLiveSessions } from '../../lib/liveData';
 import styles from '../teacher/TeacherDashboard.module.css';
+import s from './StudentPortal.module.css';
+import { StudentNavigation } from './StudentNavigation';
 
 interface StudentPortalProps {
   user: UserAccount;
@@ -112,7 +114,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
   const handleLogout = () => { route.clearRoute(); onLogout(); };
 
   return (
-    <div className={styles.dashboardShell}>
+    <div className={`${styles.dashboardShell} ${s.portal}`}>
       <PortalTopBar
         label="Öğrenci üst menüsü"
         userName={studentName}
@@ -136,7 +138,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
         onClose={closeMenu}
         onOpenPage={openPage}
       />
-      <div className={styles.dashboard}>
+      <main id="student-content" className={`${styles.dashboard} ${s.content}`}>
         <LiveJoinStrip sessions={liveSessions} onJoin={setLiveId} />
         {page === 'home' || !info ? (
           <StudentHome
@@ -153,7 +155,10 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
             onOpenPage={openPage}
           />
         ) : (
-          <PortalPageHeader icon={info.icon} title={info.title} description={info.description} backLabel="Ana sayfa" onBack={() => openPage('home')} />
+          <header className={s.pageHeader}>
+            <h1>{info.title}</h1>
+            <p>{info.description}</p>
+          </header>
         )}
 
         {loadError && <Notice notice={{ kind: 'error', text: `Bazı bilgiler alınamadı: ${loadError}` }} />}
@@ -181,9 +186,9 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
         {page === 'notlar' && <StudentGradesPage grades={grades} loaded={loaded} />}
         {page === 'okuma' && <StudentReadingPage />}
         {page === 'puanlar' && <StudentPointsPage me={me} points={points} loaded={loaded} />}
-        {page === 'siralama' && <StudentRankingPage ranking={ranking} myId={user.id} className={me?.class_name || ''} />}
+        {page === 'siralama' && <StudentRankingPage ranking={ranking} myId={user.id} className={me?.class_name || ''} loaded={loaded} />}
         {page === 'akvaryum' && (
-          <div className={styles.pageBody}>
+          <div className={`${styles.pageBody} ${s.aquariumPage}`}>
             {loaded
               ? <Aquarium students={ranking} highlightId={user.id} scopeKey={`ogrenci:${user.id}`} title={`${me?.class_name || 'Sınıf'} akvaryumu`} />
               : <Spinner center label="Akvaryum hazırlanıyor…" />}
@@ -196,7 +201,8 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
         {page === 'hesap' && (
           <StudentAccountPage me={me} fallbackName={user.name} fallbackNo={user.studentNo} fallbackClass={user.className} onLogout={handleLogout} />
         )}
-      </div>
+      </main>
+      <StudentNavigation page={page} badges={badges} onOpenPage={openPage} />
       {liveId && <LiveStudentSession sessionId={liveId} studentId={user.id} onClose={() => setLiveId(null)} />}
     </div>
   );

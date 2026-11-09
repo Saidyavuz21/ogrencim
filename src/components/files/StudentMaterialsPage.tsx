@@ -7,7 +7,18 @@ import { Spinner } from '../Spinner';
 import { formatBytes } from '../../lib/teacherData';
 import { FILES_BUCKET, fileKind, KIND_LABEL, listMyMaterials, MaterialFile, MaterialShare } from '../../lib/filesData';
 import { DownloadButton, FilePreview, KindIcon, normalize } from './FilesUi';
-import styles from './Files.module.css';
+import sharedStyles from './Files.module.css';
+
+import s from '../student/StudentPortal.module.css';
+const styles: Record<string, string> = {
+  ...sharedStyles,
+  page: `${sharedStyles.page} ${s.pageBody}`,
+  matCard: `${sharedStyles.matCard} ${s.panel}`,
+  empty: `${sharedStyles.empty} ${s.empty}`,
+  list: `${sharedStyles.list} ${s.flatList}`,
+  row: `${sharedStyles.row} ${s.fileRow}`,
+  nameButton: `${sharedStyles.nameButton} ${s.fileName}`,
+};
 
 const ANY = '';
 const filesOf = (r: MaterialShare) => (r.file ? [r.file] : r.set?.files || []);
@@ -74,15 +85,18 @@ export function StudentMaterialsPage() {
 
   return (
     <section className={styles.page} aria-label="Ders materyalleri">
-      <div className={styles.filters} style={{ gridTemplateColumns: subjects.length ? 'minmax(200px, 2fr) minmax(160px, 1fr)' : 'minmax(0, 1fr)' }}>
-        <label className={styles.search}>
-          <span className={styles.srOnly}>Materyallerde ara</span>
+      <div className={s.materialsFilters}>
+        <label className={s.materialFilter}>
+          <span>Materyallerde ara</span>
+          <span className={styles.search}>
           <Search size={18} aria-hidden="true" />
           <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Dosya, konu ya da öğretmen ara" />
+          </span>
         </label>
-        {subjects.length > 0 && <CustomSelect value={subject} onChange={setSubject} options={[{ value: ANY, label: 'Bütün dersler' }, ...subjects]} />}
+        {subjects.length > 0 && <div className={s.materialFilter}><label htmlFor="student-material-subject">Ders</label><CustomSelect id="student-material-subject" value={subject} onChange={setSubject} options={[{ value: ANY, label: 'Bütün dersler' }, ...subjects]} /></div>}
       </div>
 
+      {(q || subject) && <button type="button" className={styles.linkButton} onClick={() => { setQ(''); setSubject(ANY); }}>Filtreleri temizle</button>}
       {visible.length === 0 ? <p className={styles.muted}>Aramaya uyan materyal yok.</p> : (
         <div className={styles.materials}>
           {visible.map((r) => (

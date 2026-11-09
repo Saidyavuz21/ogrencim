@@ -5,7 +5,17 @@ import { School, Users } from '../icons';
 import { Spinner } from '../Spinner';
 import { useDialog } from '../ConfirmDialog';
 import { joinClassWithCode, leaveGroup, listMyGroups, MyGroupRow } from '../../lib/schoolData';
-import f from '../files/Files.module.css';
+import sharedStyles from '../files/Files.module.css';
+
+import s from '../student/StudentPortal.module.css';
+const f: Record<string, string> = {
+  ...sharedStyles,
+  page: `${sharedStyles.page} ${s.pageBody}`,
+  card: `${sharedStyles.card} ${s.panel}`,
+  cardTitle: `${sharedStyles.cardTitle} ${s.panelTitle}`,
+  shareList: `${sharedStyles.shareList} ${s.groupsList}`,
+  cardActions: `${sharedStyles.cardActions} ${s.joinActions}`,
+};
 
 /** Öğrenci: ana şube, katıldığı gruplar ve sınıf koduyla katılım */
 export function StudentGroupsPage({ studentId, className, onChanged }: { studentId: string; className: string | null; onChanged?: () => void }) {
@@ -82,6 +92,7 @@ export function StudentGroupsPage({ studentId, className, onChanged }: { student
         <h3 className={f.cardTitle}>Sınıf koduyla gruba katıl</h3>
         <p className={f.cardText}>Seçmeli ders, etüt ya da kulüp öğretmeninin verdiği 8 karakterli kodu yaz. Öğretmen onaylayınca grubun ödevlerini, quizlerini ve mesajlarını görürsün.</p>
         <div className={f.cardActions}>
+          <label className={s.joinCode}>Sınıf kodu
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 9))}
@@ -90,8 +101,8 @@ export function StudentGroupsPage({ studentId, className, onChanged }: { student
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            style={{ flex: '1 1 180px', minHeight: 48, padding: '0 14px', border: '1px solid var(--teacher-border, #dedad0)', borderRadius: 12, font: 'inherit', fontSize: 20, fontWeight: 700, letterSpacing: '0.1em' }}
           />
+          </label>
           <button type="submit" className={f.primaryButton} disabled={busy}>{busy ? 'Gönderiliyor…' : 'Katıl'}</button>
         </div>
         {msg && <p className={msg.kind === 'error' ? f.error : f.progress} role={msg.kind === 'error' ? 'alert' : 'status'}>{msg.text}</p>}
@@ -106,7 +117,7 @@ export function StudentGroupsPage({ studentId, className, onChanged }: { student
           <ul className={f.shareList}>
             {groups.map((g) => (
               <li key={g.class_name}>
-                <span className={f.kindIcon} style={{ background: '#efe9fb', color: '#5b3d9c' }} aria-hidden="true"><Users size={18} /></span>
+                <span className={f.kindIcon} style={{ background: '#e6f1e9', color: '#25634b' }} aria-hidden="true"><Users size={18} /></span>
                 <div><strong>{g.class_name}</strong><span>{g.status === 'approved' ? 'Üyesin' : 'Onay bekliyor'}</span></div>
                 <button type="button" className={f.linkButton} onClick={() => leave(g)} disabled={busy}>{g.status === 'pending' ? 'İsteği geri çek' : 'Ayrıl'}</button>
               </li>

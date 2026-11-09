@@ -9,7 +9,8 @@ import {
 } from '../../lib/reportData';
 import type { ExamId } from '../../lib/teacherData';
 import { LineChart } from './Charts';
-import styles from './Reports.module.css';
+import sharedStyles from './Reports.module.css';
+import s from '../student/StudentPortal.module.css';
 
 const shortDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 
@@ -24,6 +25,16 @@ export function StudentProgress({ studentId, studentName, currentPoints, self }:
   /** Öğrencinin kendi sayfası (metinler "sen" diliyle) */
   self?: boolean;
 }) {
+  const styles: Record<string, string> = self ? {
+    ...sharedStyles,
+    page: `${sharedStyles.page} ${s.progressPage}`,
+    card: `${sharedStyles.card} ${s.panel}`,
+    tiles: `${sharedStyles.tiles} ${s.progressTiles}`,
+    tile: `${sharedStyles.tile} ${s.progressTile}`,
+    toolbar: `${sharedStyles.toolbar} ${s.progressToolbar}`,
+    tableWrap: `${sharedStyles.tableWrap} ${s.scrollRegion}`,
+    table: `${sharedStyles.table} ${s.reportTable}`,
+  } : sharedStyles;
   const [grades, setGrades] = useState<GradeCell[] | null>(null);
   const [events, setEvents] = useState<PointEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +126,7 @@ export function StudentProgress({ studentId, studentName, currentPoints, self }:
           />
         )}
         {subjects.length === 0 ? <p className={styles.muted}>{self ? 'Henüz notun girilmedi.' : 'Bu öğrenciye henüz not girilmedi.'}</p> : (
-          <div className={styles.tableWrap}>
+          <div className={styles.tableWrap} role="region" aria-label="Ders bazında notlar" tabIndex={0}>
             <table className={styles.table}>
               <caption className={styles.srOnly}>Ders bazında notlar</caption>
               <thead>

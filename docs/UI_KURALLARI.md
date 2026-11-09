@@ -52,6 +52,8 @@ Güncelleme: 9 Kasım 2026. Codex, Claude, Gemini ve diğer kodlama ajanları ye
 
 ## Mobil ve erişilebilirlik
 
+- Öğrenci panelinin kendi alt menüsü **Ana sayfa / Ödevler / Mesajlar / Hesabım** olarak kalır. Öğretmen araç menüsü öğrenciye taşınmaz. Öğrenci sunum değişiklikleri `StudentPortal.module.css` içindeki `.portal` kapsamındadır; ortak rol bileşenlerini genel seçicilerle yeniden biçimlendirme.
+
 - Ortak kabuk kırılımı 1024 px; içerikte mevcut 640/767/768 eşiklerini bağlama göre kullan.
 - Mobilde ana liste tek sütun; işlem gerektiğinde ikon olur, `aria-label` ve minimum 44 × 44 px alan korunur. `title` tek başına erişilebilir ad değildir.
 - Öğrenciler örneği: sınıf / No–A-Z / PIN göz ikonu aynı satır; öğrenci adı ve düzenle kalemi aynı satır. Çok dar alanda küçültmek yerine yerleşimi uyarla.

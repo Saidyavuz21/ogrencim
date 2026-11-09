@@ -12,6 +12,7 @@ Güncelleme: 10 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
 - **Gizlilik ayarları** öğretmendedir. Kapalı bilgi diğer üyelere ve ziyaretçilere **sunucudan hiç gönderilmez**. Yönetici her şeyi görür.
 - Bildirimler yalnızca site içi (zil); e-posta/SMS yok. Aynı gün birikenler birleştirilir.
 - Öğrenciler topluluğu kullanamaz.
+- **Görünüm:** giriş yapan öğretmene alt alta **akış** (Facebook gibi); üstte "Akış / Galeri" seçimiyle yalnızca tahta ve soru setleri **galeri** (ızgara) olarak da görülebilir. Ziyaretçiye ve öğretmen sayfasındaki paylaşımlar için **galeri**. Mobilde galeri 2 sütun, akış tek sütun.
 
 ## Aşama 0 – Gezinme ✅
 
@@ -44,6 +45,8 @@ Güncelleme: 10 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
 - [ ] Tahta ve soru seti paylaşımı akışta kart olarak görünür (mevcut paylaşım altyapısı korunur)
 - [ ] **Önizleme resmi:** tahtanın ilk sayfasından küçük resim, paylaşım anında üretilir (~30 KB)
 - [ ] **Akış sekmeleri:** Takip ettiklerim / Branşım / Herkes; takip ettiklerim boşsa öneriler gösterilir
+- [ ] "Akış / Galeri" görünüm seçimi (galeri: yalnızca tahta ve soru setleri, ızgara; mobilde 2 sütun; seçim cihazda hatırlanır)
+- [ ] Öğretmen sayfasında paylaşımlar galeri olarak
 - [ ] Sayfalı yükleme (aşağı kaydırdıkça)
 - [ ] **Tepkiler:** Teşekkürler, Derste kullandım, Kaydet (mevcut favoriler), Kopyala (mevcut)
 - [ ] Mevcut kişisel veri taraması (öğrenci adı, telefon, e-posta, TC no) yazılara ve bağlantı başlıklarına da uygulanır
@@ -76,6 +79,19 @@ Güncelleme: 10 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
 - [ ] Profil tamamlama yönlendirmesi
 - [ ] Gruplar (ör. "Sivas Matematik Öğretmenleri", "LGS Hazırlık")
 - [ ] Yayından önce her branştan başlangıç içeriği (kullanıcı ve tanıdık öğretmenler)
+
+## Tahmini süre (kabaca, çalışma günü)
+
+| Aşama | Süre |
+|---|---|
+| 1 – Profil, profil resmi, gizlilik, takip | 2–3 gün |
+| 2 – Akış, yazı/bağlantı, önizleme resmi, galeri, tepkiler | 3–4 gün |
+| 3 – Yorum, bildirim, şikâyet ve denetim | 2–3 gün |
+| 4 – Herkese açık önizleme sayfası | 1–2 gün |
+| **Toplam (1–4)** | **~8–12 gün** |
+| 5 – Rozetler, öne çıkanlar, gruplar | sonra, 3–5 gün |
+
+Her aşama ayrı ayrı kullanılabilir hâlde biter. Tahmine tarayıcıda görsel kontrol ve düzeltmeler dahildir; gerçek öğretmenlerle deneme dahil değildir.
 
 ## Açık sorular
 

@@ -13,9 +13,9 @@ import { BoardCanvas, Tool } from '../board/BoardCanvas';
 import { WidgetContext, WidgetView } from '../board/Widgets';
 import { BoardContent, StrokeEl, WidgetEl } from '../../lib/boardData';
 import { CHOICE_LETTERS, QuestionRow, quizImageUrls } from '../../lib/quizData';
-import { ClassStudent, listClassStudents, listMyClasses } from '../../lib/teacherData';
+import { ClassStudent, listClassStudents } from '../../lib/teacherData';
 import {
-  getLiveContent, getMyOpenLive, LIVE_PEN_SECONDS, liveClearShared, liveCloseQuestion, liveControl, liveEnd, liveOpenQuestion,
+  getLiveContent, getMyOpenLive, LIVE_PEN_SECONDS, listLiveClasses, liveClearShared, liveCloseQuestion, liveControl, liveEnd, liveOpenQuestion,
   LiveLayer, LivePatch, LiveSession, startLive, useLiveSession,
 } from '../../lib/liveData';
 import { isOnline, LiveBadge, penLeft, QuestionBars, QuestionBody, strokesOf, useNow, useOwnLayer, withStrokes } from './liveShared';
@@ -57,13 +57,13 @@ function LiveSetup({ boardId, title, content, onStarted, onClose }: {
 
   useEffect(() => {
     let alive = true;
-    Promise.all([listMyClasses(), getMyOpenLive()]).then(([c, o]) => {
+    Promise.all([listLiveClasses(), getMyOpenLive()]).then(([c, o]) => {
       if (!alive) return;
-      const names = c.ok ? c.data.map((x) => x.class_name) : [];
+      const names = c.ok ? c.data : [];
       setClasses(names);
       if (!c.ok) setError(c.error);
       if (o.ok && o.data) setOpen(o.data);
-      if (names.length === 1) setClassName(names[0]);
+      if (names.length) setClassName(names[0]);
     });
     return () => { alive = false; };
   }, []);
@@ -100,7 +100,7 @@ function LiveSetup({ boardId, title, content, onStarted, onClose }: {
               <span>Sınıf</span>
               <CustomSelect id="live-class" value={className} onChange={setClassName} placeholder="Sınıf seçin" options={classes.map((c) => ({ value: c, label: c }))} />
             </label>
-          ) : <p className={f.muted}>Listenizde sınıf yok. Önce Sınıflarım bölümünden sınıf ekleyin.</p>}
+          ) : <p className={f.muted}>Size bağlı sınıf yok. Profilinizde ana sınıf tanımlı değil ve Sınıflarım listeniz boş; Sınıflarım bölümünden sınıf ekleyebilirsiniz.</p>}
           {error && <p className={f.error} role="alert">{error}</p>}
           <div className={f.cardActions}>
             <button type="button" className={f.secondaryButton} onClick={onClose} disabled={busy}>Vazgeç</button>

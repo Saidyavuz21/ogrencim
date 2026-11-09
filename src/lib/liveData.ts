@@ -122,6 +122,32 @@ export async function liveEnd(sessionId: string): Promise<Result> {
   return { ok: true, data: undefined };
 }
 
+/**
+ * Canlı ders açılabilecek sınıflar (sunucudaki teacher_has_class ile aynı kural):
+ * ana sınıf (profil) + Sınıflarım; okul yöneticisinde okulun bütün sınıfları.
+ */
+export async function listLiveClasses(): Promise<Result<string[]>> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return { ok: false, error: 'Oturum bulunamadı.' };
+  const [profile, classes] = await Promise.all([
+    supabase.from('profiles').select('class_name, is_school_admin, school_id').eq('id', auth.user.id).maybeSingle(),
+    supabase.from('teacher_classes').select('class_name').eq('teacher_id', auth.user.id),
+  ]);
+  if (profile.error) return fail(profile.error);
+  if (classes.error) return fail(classes.error);
+  const p = profile.data as { class_name: string | null; is_school_admin: boolean | null; school_id: string | null } | null;
+  const names = new Set<string>();
+  if (p?.class_name?.trim()) names.add(p.class_name.trim());
+  ((classes.data as { class_name: string }[]) || []).forEach((c) => { if (c.class_name?.trim()) names.add(c.class_name.trim()); });
+  if (p?.is_school_admin && p.school_id) {
+    const { data } = await supabase.from('students').select('class_name').eq('school_id', p.school_id);
+    ((data as { class_name: string | null }[]) || []).forEach((s) => { if (s.class_name?.trim()) names.add(s.class_name.trim()); });
+  }
+  const home = p?.class_name?.trim();
+  const sorted = Array.from(names).sort((a, b) => a.localeCompare(b, 'tr', { numeric: true }));
+  return { ok: true, data: home ? [home, ...sorted.filter((n) => n !== home)] : sorted };
+}
+
 /** Öğretmenin açık kalmış oturumu (sayfa yenilenince devam etmek için) */
 export async function getMyOpenLive(): Promise<Result<LiveSession | null>> {
   const { data: auth } = await supabase.auth.getUser();

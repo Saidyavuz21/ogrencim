@@ -360,6 +360,24 @@ export interface BoardCanvasProps {
   ariaLabel?: string;
 }
 
+/**
+ * Çizim imleci: kalemde seçili renkte nokta, silgide boş daire, vurgulayıcıda yarı saydam kare.
+ * Koyu + beyaz çift halka sayesinde beyaz tahtada da koyu zeminde de görünür (tarayıcının ince artısı kayboluyordu).
+ */
+function drawCursor(tool: Tool, color: string): string {
+  const c = /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#1f2a24';
+  let shape: string;
+  if (tool === 'eraser') {
+    shape = "<circle cx='12' cy='12' r='9' fill='rgba(255,255,255,0.6)' stroke='#ffffff' stroke-width='4'/><circle cx='12' cy='12' r='9' fill='none' stroke='#1f2a24' stroke-width='1.6'/>";
+  } else if (tool === 'highlighter') {
+    shape = `<rect x='5' y='5' width='14' height='14' rx='3' fill='${c}' fill-opacity='0.55' stroke='#ffffff' stroke-width='3'/><rect x='5' y='5' width='14' height='14' rx='3' fill='none' stroke='#1f2a24' stroke-width='1.2'/>`;
+  } else {
+    shape = `<circle cx='12' cy='12' r='6' fill='${c}' stroke='#ffffff' stroke-width='3'/><circle cx='12' cy='12' r='7.5' fill='none' stroke='#1f2a24' stroke-width='1.2'/>`;
+  }
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>${shape}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, crosshair`;
+}
+
 export function BoardCanvas(props: BoardCanvasProps) {
   const {
     page,
@@ -764,7 +782,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
     ? (shown.find((el) => (el.id === editingNoteId || (selectedIds.length === 1 && el.id === selectedIds[0])) && el.type === 'note') as NoteEl | undefined)
     : undefined;
   const widgets = renderWidget ? shown.filter((el): el is WidgetEl => el.type === 'widget') : [];
-  const cursor = !interactive ? 'default' : drawingOnLayer || DRAW_TOOLS.includes(tool) ? 'crosshair' : tool === 'select' ? 'default' : 'crosshair';
+  const drawTool = drawingOnLayer || DRAW_TOOLS.includes(tool);
+  const cursor = !interactive ? 'default' : drawTool ? drawCursor(tool, color) : tool === 'select' ? 'default' : 'crosshair';
 
   // Boyut tutamağı: çoklu seçim / grup için birleşik çerçevenin, tek seçimde öğenin sağ alt köşesi
   let handlePos: { x: number; y: number; kind: 'multi' } | { x: number; y: number; kind: 'single'; sel: BoardEl } | null = null;

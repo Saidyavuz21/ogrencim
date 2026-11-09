@@ -3,10 +3,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './AdminManagement.module.css';
 import { CustomSelect } from '../CustomSelect';
+import { X } from '../icons';
 import {
   AccessRow, AuditRow, AUDIT_PAGE_SIZE, ClientErrorRow, listAccessLog, listAuditLog, listClientErrors, profileNames,
 } from '../../lib/privacyData';
-import { AdminData, EmptyState, FilterBar } from './adminShared';
+import { AdminData, EmptyState, FilterBar, SearchInput, matchesQuery } from './adminShared';
 
 interface Props {
   data: AdminData;
@@ -77,7 +78,6 @@ const show = (v: unknown): string => {
   return s.length > 80 ? `${s.slice(0, 77)}…` : s;
 };
 
-/** Kaydın tek satırlık özeti: değişiklikte "alan: eski → yeni", eklemede/silmede ad/başlık/miktar */
 function summarize(row: AuditRow): string {
   const d = row.new_data || row.old_data || {};
   if (row.action === 'UPDATE' && row.new_data) {
@@ -93,14 +93,28 @@ function summarize(row: AuditRow): string {
   return parts.join(' · ') || (row.action === 'ERASE' ? 'Kişisel veriler kalıcı olarak silindi' : '');
 }
 
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+  if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
 /**
- * İşlem kaydı (kim, ne zaman, neyi değiştirdi) ve erişim kaydı (kim hangi öğrencinin verisini görüntüledi).
- * Süper admin bütün okulları, okul yöneticisi yalnızca kendi okulunu görür (RLS).
+ * İşlem kaydı ve erişim kaydı.
+ * Arama, filtreleme ve sayfalama ile desteklenir.
  */
 export function AdminLogsPage({ data }: Props) {
   const [tab, setTab] = useState<Tab>('audit');
   const [table, setTable] = useState('');
   const [action, setAction] = useState('');
+  const [accessAction, setAccessAction] = useState('');
+  const [errorKind, setErrorKind] = useState('');
+  const [query, setQuery] = useState('');
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [access, setAccess] = useState<AccessRow[]>([]);
   const [errors, setErrors] = useState<ClientErrorRow[]>([]);
@@ -150,17 +164,79 @@ export function AdminLogsPage({ data }: Props) {
 
   useEffect(() => { queueMicrotask(() => load(false)); }, [load]);
 
-  const actorName = (id: string | null, kind: string) => (id && names[id]) || ACTOR_LABEL[kind] || kind;
+  const actorName = useCallback(
+    (id: string | null, kind: string) => (id && names[id]) || ACTOR_LABEL[kind] || kind,
+    [names]
+  );
 
-  const studentOf = (row: AuditRow): string | null => {
-    const d = row.new_data || row.old_data || {};
-    const id = row.table_name === 'students' ? row.row_id : (d.student_id as string | undefined) ?? null;
-    if (!id) return null;
-    return studentNames[id] || (typeof d.name === 'string' && row.table_name === 'students' ? d.name : null);
+  const studentOf = useCallback(
+    (row: AuditRow): string | null => {
+      const d = row.new_data || row.old_data || {};
+      const id = row.table_name === 'students' ? row.row_id : (d.student_id as string | undefined) ?? null;
+      if (!id) return null;
+      return studentNames[id] || (typeof d.name === 'string' && row.table_name === 'students' ? d.name : null);
+    },
+    [studentNames]
+  );
+
+  // --- Filtrelenmiş Kayıtlar ---
+  const filteredAudit = useMemo(() => {
+    return audit.filter((r) => {
+      if (!query) return true;
+      const student = studentOf(r) || '';
+      const actor = actorName(r.actor_id, r.actor_kind);
+      const sum = summarize(r);
+      const tbl = TABLE_LABEL[r.table_name] || r.table_name;
+      return matchesQuery(query, student, actor, sum, tbl);
+    });
+  }, [audit, query, actorName, studentOf]);
+
+  const filteredAccess = useMemo(() => {
+    return access.filter((r) => {
+      if (accessAction && r.action !== accessAction) return false;
+      if (!query) return true;
+      const std = studentNames[r.student_id] || '';
+      const actor = actorName(r.actor_id, r.actor_kind);
+      return matchesQuery(query, std, actor);
+    });
+  }, [access, accessAction, query, actorName, studentNames]);
+
+  const filteredErrors = useMemo(() => {
+    return errors.filter((r) => {
+      if (errorKind && r.kind !== errorKind) return false;
+      if (!query) return true;
+      return matchesQuery(query, r.message, r.path || '', r.stack || '');
+    });
+  }, [errors, errorKind, query]);
+
+  // Geçerli sekmenin filtrelenmiş satırları
+  const currentFilteredRows = tab === 'audit' ? filteredAudit : tab === 'access' ? filteredAccess : filteredErrors;
+
+  // Sayfalama
+  const totalPages = Math.max(1, Math.ceil(currentFilteredRows.length / pageSize));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, currentFilteredRows.length);
+  const paginatedRows = currentFilteredRows.slice(startIndex, endIndex);
+
+  const rawRows: { id: number }[] = tab === 'audit' ? audit : tab === 'access' ? access : errors;
+  const last = rawRows[rawRows.length - 1]?.id;
+
+  const handleTabChange = (t: Tab) => {
+    setTab(t);
+    setPage(1);
+    setQuery('');
   };
 
-  const rows: { id: number }[] = tab === 'audit' ? audit : tab === 'access' ? access : errors;
-  const last = rows[rows.length - 1]?.id;
+  const hasFilters = Boolean(query || table || action || accessAction || errorKind);
+  const handleClearFilters = () => {
+    setQuery('');
+    setTable('');
+    setAction('');
+    setAccessAction('');
+    setErrorKind('');
+    setPage(1);
+  };
 
   return (
     <div className={styles.stack}>
@@ -168,9 +244,9 @@ export function AdminLogsPage({ data }: Props) {
         <div className={styles.between}>
           <h2 id="logs-title" className={styles.sectionTitle}>{TAB_TITLE[tab]}</h2>
           <div className={styles.segmented} role="group" aria-label="Kayıt türü">
-            <button type="button" aria-pressed={tab === 'audit'} onClick={() => setTab('audit')}>İşlemler</button>
-            <button type="button" aria-pressed={tab === 'access'} onClick={() => setTab('access')}>Erişimler</button>
-            <button type="button" aria-pressed={tab === 'errors'} onClick={() => setTab('errors')}>Hatalar</button>
+            <button type="button" aria-pressed={tab === 'audit'} onClick={() => handleTabChange('audit')}>İşlemler</button>
+            <button type="button" aria-pressed={tab === 'access'} onClick={() => handleTabChange('access')}>Erişimler</button>
+            <button type="button" aria-pressed={tab === 'errors'} onClick={() => handleTabChange('errors')}>Hatalar</button>
           </div>
         </div>
         <p className={styles.muted}>
@@ -181,33 +257,84 @@ export function AdminLogsPage({ data }: Props) {
               : 'Kullanıcıların tarayıcısında oluşan beklenmedik hatalar. E-posta, kimlik ve uzun sayılar kayda geçmeden silinir; kayıtlar 30 gün tutulur. Yalnızca süper admin görür.'}
         </p>
 
-        {tab === 'audit' && (
-          <FilterBar>
+        {/* Çoklu Filtre Çubuğu */}
+        <FilterBar>
+          <SearchInput
+            id="log-search"
+            value={query}
+            onChange={(v) => { setQuery(v); setPage(1); }}
+            placeholder={
+              tab === 'audit'
+                ? 'Kişi, öğrenci adı veya değişiklik ara...'
+                : tab === 'access'
+                ? 'Öğrenci adı veya görüntüleyen kişi ara...'
+                : 'Hata mesajı veya sayfa yolu ara...'
+            }
+          />
+
+          {tab === 'audit' && (
+            <>
+              <div className={styles.filterSelect}>
+                <CustomSelect
+                  value={table}
+                  onChange={(v) => { setTable(v); setPage(1); }}
+                  options={[{ value: '', label: 'Bütün kayıt türleri' }, ...Object.entries(TABLE_LABEL).map(([value, label]) => ({ value, label }))]}
+                  placeholder="Kayıt türü"
+                />
+              </div>
+              <div className={styles.filterSelect}>
+                <CustomSelect
+                  value={action}
+                  onChange={(v) => { setAction(v); setPage(1); }}
+                  options={[{ value: '', label: 'Bütün işlemler' }, ...Object.entries(ACTION_LABEL).map(([value, label]) => ({ value, label }))]}
+                  placeholder="İşlem"
+                />
+              </div>
+            </>
+          )}
+
+          {tab === 'access' && (
             <div className={styles.filterSelect}>
               <CustomSelect
-                value={table}
-                onChange={setTable}
-                options={[{ value: '', label: 'Bütün kayıt türleri' }, ...Object.entries(TABLE_LABEL).map(([value, label]) => ({ value, label }))]}
-                placeholder="Kayıt türü"
+                value={accessAction}
+                onChange={(v) => { setAccessAction(v); setPage(1); }}
+                options={[{ value: '', label: 'Bütün erişim türleri' }, ...Object.entries(ACCESS_LABEL).map(([value, label]) => ({ value, label }))]}
+                placeholder="Erişim türü"
               />
             </div>
+          )}
+
+          {tab === 'errors' && (
             <div className={styles.filterSelect}>
               <CustomSelect
-                value={action}
-                onChange={setAction}
-                options={[{ value: '', label: 'Bütün işlemler' }, ...Object.entries(ACTION_LABEL).map(([value, label]) => ({ value, label }))]}
-                placeholder="İşlem"
+                value={errorKind}
+                onChange={(v) => { setErrorKind(v); setPage(1); }}
+                options={[{ value: '', label: 'Bütün hata türleri' }, ...Object.entries(ERROR_KIND_LABEL).map(([value, label]) => ({ value, label }))]}
+                placeholder="Hata türü"
               />
             </div>
-          </FilterBar>
-        )}
+          )}
+
+          {hasFilters && (
+            <button
+              type="button"
+              className={styles.clearFilterButton}
+              onClick={handleClearFilters}
+            >
+              <X size={15} /> Temizle
+            </button>
+          )}
+        </FilterBar>
 
         {error && <EmptyState>Kayıtlar alınamadı: {error}</EmptyState>}
-        {!error && !loading && rows.length === 0 && <EmptyState>Henüz kayıt yok.</EmptyState>}
+        {!error && !loading && currentFilteredRows.length === 0 && (
+          <EmptyState>Aramanıza veya filtrelere uyan kayıt bulunamadı.</EmptyState>
+        )}
 
-        {tab === 'audit' && audit.length > 0 && (
+        {/* Tab 1: İşlem Kaydı */}
+        {tab === 'audit' && currentFilteredRows.length > 0 && (
           <ul className={styles.list}>
-            {audit.map((r) => {
+            {(paginatedRows as AuditRow[]).map((r) => {
               const student = studentOf(r);
               return (
                 <li key={r.id} className={styles.row}>
@@ -227,9 +354,10 @@ export function AdminLogsPage({ data }: Props) {
           </ul>
         )}
 
-        {tab === 'access' && access.length > 0 && (
+        {/* Tab 2: Erişim Kaydı */}
+        {tab === 'access' && currentFilteredRows.length > 0 && (
           <ul className={styles.list}>
-            {access.map((r) => (
+            {(paginatedRows as AccessRow[]).map((r) => (
               <li key={r.id} className={styles.row}>
                 <div className={styles.details}>
                   <span className={styles.name}>
@@ -242,9 +370,10 @@ export function AdminLogsPage({ data }: Props) {
           </ul>
         )}
 
-        {tab === 'errors' && errors.length > 0 && (
+        {/* Tab 3: Hatalar */}
+        {tab === 'errors' && currentFilteredRows.length > 0 && (
           <ul className={styles.list}>
-            {errors.map((r) => (
+            {(paginatedRows as ClientErrorRow[]).map((r) => (
               <li key={r.id} className={styles.row}>
                 <div className={styles.details}>
                   <div className={styles.identity}>
@@ -267,9 +396,70 @@ export function AdminLogsPage({ data }: Props) {
           </ul>
         )}
 
+        {/* Sayfalama (Pagination) */}
+        {currentFilteredRows.length > pageSize && (
+          <nav className={styles.pagination} aria-label="Kayıtlar sayfalama">
+            <div className={styles.paginationInfo}>
+              Toplam <strong>{currentFilteredRows.length}</strong> kayıttan <strong>{startIndex + 1}–{endIndex}</strong> arası gösteriliyor
+            </div>
+            <div className={styles.paginationControls}>
+              <div className={styles.pageSizeSelector}>
+                <label htmlFor="log-page-size-select">Sayfa başı:</label>
+                <select
+                  id="log-page-size-select"
+                  className={styles.pageSizeSelect}
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                >
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className={styles.pageButton}
+                disabled={currentPage <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Önceki
+              </button>
+
+              {getPageNumbers(currentPage, totalPages).map((p, idx) =>
+                p === '...' ? (
+                  <span key={`log-dots-${idx}`} className={styles.pageDots}>…</span>
+                ) : (
+                  <button
+                    key={`log-p-${p}`}
+                    type="button"
+                    className={`${styles.pageButton} ${p === currentPage ? styles.pageButtonActive : ''}`}
+                    onClick={() => setPage(Number(p))}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              <button
+                type="button"
+                className={styles.pageButton}
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Sonraki
+              </button>
+            </div>
+          </nav>
+        )}
+
         {loading && <EmptyState>Yükleniyor…</EmptyState>}
         {!loading && hasMore && last !== undefined && (
-          <button type="button" className={styles.button} onClick={() => load(true, last)}>Daha eski kayıtlar</button>
+          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+            <button type="button" className={styles.button} onClick={() => load(true, last)}>
+              Sunucudan daha eski kayıtları getir ({AUDIT_PAGE_SIZE} kayıt)
+            </button>
+          </div>
         )}
       </section>
     </div>

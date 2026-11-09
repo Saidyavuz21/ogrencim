@@ -20,6 +20,7 @@ import { TeacherAssignmentsPage } from './TeacherAssignmentsPage';
 import { TeacherCheckPage } from './TeacherCheckPage';
 import { TeacherPointsPage } from './TeacherPointsPage';
 import { TeacherLeaderboardPage } from './TeacherLeaderboardPage';
+import { TeacherConsentPage } from './TeacherConsentPage';
 import { TeacherAquariumPage } from './TeacherAquariumPage';
 import { TeacherReadingPage } from '../reading/TeacherReadingPage';
 import { TeacherGradesPage } from './TeacherGradesPage';
@@ -39,9 +40,9 @@ import { TeacherMobileNav } from './TeacherMobileNav';
 import { InstallAppBanner } from '../InstallAppBanner';
 
 /** Seçili sınıfa göre çalışan sayfalar (üst çubukta sınıf seçici gösterilir) */
-const CLASS_PAGES: TeacherPageId[] = ['class_tools', 'check_sheet', 'plus_minus', 'assignments', 'grade_entry', 'leaderboard', 'aquarium', 'messages'];
+const CLASS_PAGES: TeacherPageId[] = ['class_tools', 'check_sheet', 'plus_minus', 'assignments', 'grade_entry', 'leaderboard', 'aquarium', 'messages', 'consent'];
 /** Sınıf seçilmeden açılamayan sayfalar */
-const NEEDS_CLASS: TeacherPageId[] = ['class_tools', 'check_sheet', 'plus_minus', 'grade_entry', 'leaderboard', 'aquarium', 'messages', 'class_report'];
+const NEEDS_CLASS: TeacherPageId[] = ['class_tools', 'check_sheet', 'plus_minus', 'grade_entry', 'leaderboard', 'aquarium', 'messages', 'class_report', 'consent'];
 
 interface TeacherDashboardProps {
   activeSection?: 'dashboard' | 'announcements';
@@ -255,6 +256,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           {page === 'plus_minus' && <TeacherPointsPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'class_tools' && <TeacherClassToolsPage key={`${effectiveClass}-${homeClassTool || ''}`} selectedClass={effectiveClass} initialTool={homeClassTool} />}
           {page === 'leaderboard' && <TeacherLeaderboardPage key={effectiveClass} selectedClass={effectiveClass} />}
+          {page === 'consent' && <TeacherConsentPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'aquarium' && <TeacherAquariumPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'reading' && <TeacherReadingPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'class_report' && <ClassReportPage key={effectiveClass} selectedClass={effectiveClass} />}

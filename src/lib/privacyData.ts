@@ -238,6 +238,19 @@ export async function listConsents(): Promise<Result<ConsentRow[]>> {
   return { ok: true, data: (data as ConsentRow[]) || [] };
 }
 
+/** Verilen öğrencilerin rıza durumu (öğretmen paneli: sınıf listesiyle eşleştirilir) */
+export async function listConsentsFor(studentIds: string[]): Promise<Result<Record<string, string | null>>> {
+  if (studentIds.length === 0) return { ok: true, data: {} };
+  const { data, error } = await supabase
+    .from('students')
+    .select('id, guardian_consent_at')
+    .in('id', studentIds);
+  if (error) return fail(error);
+  const map: Record<string, string | null> = {};
+  for (const row of (data as { id: string; guardian_consent_at: string | null }[]) || []) map[row.id] = row.guardian_consent_at;
+  return { ok: true, data: map };
+}
+
 export async function setGuardianConsent(studentId: string, given: boolean): Promise<Result> {
   const { error } = await supabase.rpc('staff_set_guardian_consent', {
     p_student_id: studentId,

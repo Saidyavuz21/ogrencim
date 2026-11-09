@@ -1,4 +1,32 @@
-/* Yalnızca süper admin ana sayfası. Ortak kabuk ve alt sayfalar bu stilleri kullanmaz. */
+
+.adminShell { --teacher-bg: #f7f6f2; --teacher-surface: #fff; --teacher-text: #20352d; --teacher-muted: #58665f; --teacher-border: #dedad0; --teacher-primary: #25634b; --teacher-hover: #1d503d; --teacher-selected: #e6f1e9; min-height: 100dvh; padding-bottom: 0; background: var(--teacher-bg); color: var(--teacher-text); font-family: var(--font-geist-sans), Arial, sans-serif; accent-color: #25634b; caret-color: #25634b; }
+.adminShell ::selection { background: #d6e8db; color: #20352d; }
+.adminShell .content { max-width: 1440px; gap: 24px; padding: 28px 32px 40px; }
+.adminShell > header > nav { max-width: none; padding: 16px 32px; }
+.pageHeader h1 { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.pageHeader p { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: #58665f; }
+.adminShell .libraryPage { gap: 24px; }
+.adminShell .libraryUpload { padding: 24px; border-radius: 18px; gap: 18px; }
+.adminShell .libraryFilters { grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr); gap: 14px; padding: 18px 24px; border: 1px solid #dedad0; border-radius: 18px; background: white; }
+.adminShell .libraryList { padding: 0 24px; border-radius: 18px; }
+.adminShell .libraryRow { min-height: 80px; padding: 16px 0; border-bottom-color: #eeece5; }
+.adminShell .libraryName { white-space: normal; overflow-wrap: anywhere; font-size: 14px; font-weight: 500; }
+.adminShell .libraryPage input { font-size: 16px; }
+@media (max-width: 1023px) { .adminShell .content { padding: 24px 20px calc(32px + env(safe-area-inset-bottom, 0px)); } .adminShell > header > nav { padding: 12px 20px; } }
+@media (max-width: 767px) {
+  .adminShell .content { padding-inline: 16px; padding-top: 20px; gap: 18px; }
+  .pageHeader h1 { font-size: 20px; }
+  .pageHeader p { font-size: 13px; }
+  .adminShell .libraryPage { gap: 18px; }
+  .adminShell .libraryUpload, .adminShell .libraryFilters { padding: 18px 16px; border-radius: 16px; }
+  .adminShell .libraryFilters { grid-template-columns: minmax(0, 1fr); }
+  .adminShell .libraryList { padding: 0 16px; border-radius: 16px; }
+  .adminShell .libraryRow { flex-wrap: wrap; gap: 12px; }
+  .adminShell .libraryRow > div:first-of-type { flex: 1 1 180px; }
+  .adminShell .libraryRow > div:last-child { margin-left: auto; }
+}
+
+/* Süper admin kabuğu ve genel bakış. Diğer rollerin stillerinden bağımsızdır. */
 .home { display: grid; gap: 24px; min-width: 0; }
 .home ::selection { background: #e6f1e9; color: #20352d; }
 .homeIntro { display: flex; align-items: center; justify-content: space-between; gap: 16px; }

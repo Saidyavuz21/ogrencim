@@ -121,6 +121,18 @@ Kontroller 8–12 px, ana paneller masaüstünde 18 px / mobilde 16 px köşelid
 
 ## Components
 
+### Süper admin paneli
+
+Genel bakış ve 13 alt sayfa mevcut yönetici üst menüsü/yan menüsüyle aynı yeşil ve sıcak nötr dili kullanır. `AdminDashboard.module.css` içindeki `.adminShell` kabuğu; `AdminManagement.module.css` yalnızca yönetim listeleri, formları ve pencereleri için kullanılır.
+
+- Alt sayfa başlığı çerçevesiz 22 px / mobilde 20 px ve 600 ağırlıktadır. İçerik en fazla 1440 px; paneller masaüstünde 24 px, mobilde 18 × 16 px dolguludur.
+- Başvurular, kullanıcılar, okullar, sınıflar, KVKK ve kayıtlar beyaz yüzeylerde ince ayırıcılı satırlardır. Durumlar renkli metin/rozetle belirtilir; bütün satır uyarı kartına dönüştürülmez.
+- Mobilde kimlik ve işlemler ayrı satırlara geçer. Düğmeler ve sayfalama en az 44 px; giriş alanları 16 px font kullanır. Sayfa başına kayıt sayısı `CustomSelect` ile seçilir.
+- Okul → sınıf → öğrenci gezinmesi, PIN gösterme, onay/red, birleştirme, silme/geri alma ve hesap işlemlerinin mevcut davranışı korunur.
+- Yönetici kütüphanesinin stilleri `.adminShell` kapsamındadır; öğretmen kütüphanesinin görünümü değişmez. Yönetici duyuruları mevcut form/liste yerleşimini kullanır; topluluk ve hesap sayfaları güncel ortak bileşenleri korur.
+
+Görsel kontrol sınırı: yerel önizleme ve test verileri; canlı yönetici oturumu veya gerçek kayıt işlemi doğrulaması değildir.
+
 ### Öğrenci paneli
 
 Öğrenci panelinin ana sayfası ve 12 alt sayfası aynı yeşil/sıcak nötr sistemi kullanır. Öğrenciye özel sunum `src/components/student/StudentPortal.module.css` içinde `.portal` kapsamında tutulur; ortak öğretmen ve yönetici stilleri değiştirilmez.

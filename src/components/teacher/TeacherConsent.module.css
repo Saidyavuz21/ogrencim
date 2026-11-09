@@ -1,0 +1,19 @@
+/* Veli onayları sayfasına özel küçük eklemeler; liste ve panel görünümü TeacherDashboard.module.css'ten gelir. */
+.filter { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter > button { min-height: 44px; justify-content: center; }
+
+.row { flex-wrap: wrap; }
+
+.statusOk { color: #216044; font-weight: 500; }
+.statusMissing { color: #805217; font-weight: 500; }
+
+.action { flex-shrink: 0; min-height: 44px; padding: 8px 14px; white-space: nowrap; }
+.action:disabled { opacity: .6; cursor: default; }
+
+.help { margin: 0; color: var(--teacher-muted); font-size: 14px; line-height: 1.65; }
+.printLink { text-decoration: none; }
+
+@media (max-width: 767px) {
+  .filter { width: 100%; }
+  .filter > button { flex: 1 1 0; }
+}

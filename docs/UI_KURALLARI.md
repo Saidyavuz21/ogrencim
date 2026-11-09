@@ -52,6 +52,8 @@ Güncelleme: 9 Kasım 2026. Codex, Claude, Gemini ve diğer kodlama ajanları ye
 
 ## Mobil ve erişilebilirlik
 
+- Süper admin sayfaları `AdminDashboard` kabuğunu ve `AdminManagement.module.css` yönetim desenlerini kullanır. Mobilde tek ikonlu işlem kimliğin sağında, birden çok işlem kimliğin altında kalır. Sayfalama ve seçim kontrolleri en az 44 px olmalıdır; okul–sınıf–öğrenci gezinmesi ve PIN gizleme davranışı korunur.
+
 - Öğrenci panelinin kendi alt menüsü **Ana sayfa / Ödevler / Mesajlar / Hesabım** olarak kalır. Öğretmen araç menüsü öğrenciye taşınmaz. Öğrenci sunum değişiklikleri `StudentPortal.module.css` içindeki `.portal` kapsamındadır; ortak rol bileşenlerini genel seçicilerle yeniden biçimlendirme.
 
 - Ortak kabuk kırılımı 1024 px; içerikte mevcut 640/767/768 eşiklerini bağlama göre kullan.

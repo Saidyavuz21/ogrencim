@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { UserAccount } from '../../data/portalData';
 import { TeacherProfilePage } from '../teacher/TeacherProfilePage';
 import { AnnouncementsPage } from '../AnnouncementsPage';
-import { PortalTopBar, PortalSidebar, PortalPageHeader, usePageRoute } from '../shell/PortalShell';
+import { PortalTopBar, PortalSidebar, usePageRoute } from '../shell/PortalShell';
 import { AdminHome } from './AdminHome';
 import { AdminTeacherRequestsPage } from './AdminTeacherRequestsPage';
 import { AdminSchoolRequestsPage } from './AdminSchoolRequestsPage';
@@ -20,6 +20,7 @@ import { AdminPrivacyPage } from './AdminPrivacyPage';
 import { AdminNotice, useAdminData, useNotify } from './adminShared';
 import { ADMIN_PAGES, ADMIN_PAGE_GROUPS, AdminPageId, adminPageHref, adminPageIdFromSlug, getAdminPage } from './adminPages';
 import styles from '../teacher/TeacherDashboard.module.css';
+import s from './AdminDashboard.module.css';
 
 interface AdminDashboardProps {
   onLogout?: () => void;
@@ -61,7 +62,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   const handleLogout = onLogout && (() => { route.clearRoute(); onLogout(); });
 
   return (
-    <div className={styles.dashboardShell}>
+    <div className={`${styles.dashboardShell} ${s.adminShell}`}>
       <PortalTopBar
         label="Yönetim üst menüsü"
         userName={currentUser?.name}
@@ -85,11 +86,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         onClose={closeMenu}
         onOpenPage={openPage}
       />
-      <div className={styles.dashboard}>
+      <main className={`${styles.dashboard} ${s.content}`}>
         {page === 'home' || !pageInfo ? (
           <AdminHome user={currentUser} data={data} badges={badges} onOpenPage={openPage} />
         ) : (
-          <PortalPageHeader icon={pageInfo.icon} title={pageInfo.title} description={pageInfo.description} backLabel="Genel bakış" onBack={() => openPage('home')} />
+          <header className={s.pageHeader}>
+            <h1>{pageInfo.title}</h1>
+            <p>{pageInfo.description}</p>
+          </header>
         )}
 
         <AdminNotice message={message} onClose={clearMessage} />
@@ -111,7 +115,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
         {page === 'community' && <CommunityPage admin />}
         {page === 'logs' && <AdminLogsPage data={data} />}
         {page === 'account' && <TeacherProfilePage user={currentUser} onLogout={handleLogout} />}
-      </div>
+      </main>
     </div>
   );
 };

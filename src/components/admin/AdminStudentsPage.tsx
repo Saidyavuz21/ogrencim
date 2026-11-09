@@ -321,9 +321,9 @@ export function AdminStudentsPage({ data, notify }: Props) {
             <div className={`${styles.field} ${styles.fullWidth}`}>
               <span className={styles.fieldLabel}>Okul</span>
               {selectedSchool ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', border: '1px solid #c8d3cc', borderRadius: '10px', background: '#e6f1e9' }}>
+                <div className={styles.selectedContext}>
                   <span><strong>{selectedSchool.name}</strong> ({selectedSchool.district} / {selectedSchool.city})</span>
-                  <button type="button" onClick={() => setNewSchool(null)} className={styles.button} style={{ minHeight: '32px', padding: '4px 10px', fontSize: '12px' }}>
+                  <button type="button" onClick={() => setNewSchool(null)} className={styles.button}>
                     Değiştir
                   </button>
                 </div>
@@ -387,14 +387,14 @@ export function AdminStudentsPage({ data, notify }: Props) {
               aria-pressed={viewMode === 'hierarchy'}
               onClick={() => setViewMode('hierarchy')}
             >
-              Okul ➔ Sınıf ➔ Öğrenci (Hiyerarşi)
+              Okul ve sınıf gezintisi
             </button>
             <button
               type="button"
               aria-pressed={viewMode === 'quick_search'}
               onClick={() => setViewMode('quick_search')}
             >
-              Genel Öğrenci Arama (Tüm Okullar)
+              Tüm öğrencilerde ara
             </button>
           </div>
 
@@ -604,17 +604,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
                         <div className={styles.paginationControls}>
                           <div className={styles.pageSizeSelector}>
                             <label htmlFor="school-page-size-select">Sayfa başı:</label>
-                            <select
-                              id="school-page-size-select"
-                              className={styles.pageSizeSelect}
-                              value={schoolPageSize}
-                              onChange={(e) => { setSchoolPageSize(Number(e.target.value)); setSchoolPage(1); }}
-                            >
-                              <option value={10}>10</option>
-                              <option value={15}>15</option>
-                              <option value={25}>25</option>
-                              <option value={50}>50</option>
-                            </select>
+                            <CustomSelect id="school-page-size-select" className={styles.pageSizeSelect} value={String(schoolPageSize)} onChange={(value) => { setSchoolPageSize(Number(value)); setSchoolPage(1); }} options={[{ value: '10', label: '10' }, { value: '15', label: '15' }, { value: '25', label: '25' }, { value: '50', label: '50' }]} />
                           </div>
 
                           <button
@@ -832,16 +822,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
                         <div className={styles.paginationControls}>
                           <div className={styles.pageSizeSelector}>
                             <label htmlFor="student-page-size-select">Sayfa başı:</label>
-                            <select
-                              id="student-page-size-select"
-                              className={styles.pageSizeSelect}
-                              value={studentPageSize}
-                              onChange={(e) => { setStudentPageSize(Number(e.target.value)); setStudentPage(1); }}
-                            >
-                              <option value={15}>15</option>
-                              <option value={25}>25</option>
-                              <option value={50}>50</option>
-                            </select>
+                            <CustomSelect id="student-page-size-select" className={styles.pageSizeSelect} value={String(studentPageSize)} onChange={(value) => { setStudentPageSize(Number(value)); setStudentPage(1); }} options={[{ value: '15', label: '15' }, { value: '25', label: '25' }, { value: '50', label: '50' }]} />
                           </div>
 
                           <button

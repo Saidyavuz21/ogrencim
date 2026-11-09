@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building, Layers, Globe } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building, Layers, Globe, ShieldCheck } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -17,6 +17,7 @@ export type TeacherPageId =
   | 'boards'
   | 'community'
   | 'students'
+  | 'consent'
   | 'leaderboard'
   | 'aquarium'
   | 'classes'
@@ -52,6 +53,7 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'boards', slug: 'tahtalarim', title: 'Tahtalarım', description: 'Etkileşimli tahta: çiz, sun, ödev olarak gönder', icon: Layers, group: 'Ders ve değerlendirme' },
   { id: 'community', slug: 'kesfet', title: 'Keşfet', description: 'Öğretmenlerin paylaştığı tahta ve soru setleri', icon: Globe, group: 'Ders ve değerlendirme' },
   { id: 'students', slug: 'ogrenciler', title: 'Öğrenciler', description: 'Listele, ekle, düzenle, PIN', icon: Users, group: 'Öğrenciler ve sınıflar' },
+  { id: 'consent', slug: 'veli-onayi', title: 'Veli onayları', description: 'İmzalı KVKK onay formunu işaretle', icon: ShieldCheck, group: 'Öğrenciler ve sınıflar' },
   { id: 'class_report', slug: 'sinif-karnesi', title: 'Sınıf karnesi', description: 'Not ortalamaları, dağılım, öğrenci gelişimi', icon: BarChart3, group: 'Öğrenciler ve sınıflar' },
   { id: 'classes', slug: 'siniflar', title: 'Sınıflarım', description: 'Ders verdiğin sınıfları ekle ve çıkar', icon: School, group: 'Öğrenciler ve sınıflar' },
   { id: 'school_admin', slug: 'okul-yonetimi', title: 'Okul yönetimi', description: 'Öğretmen onayı, bütün sınıflar, kampüsler', icon: Building, group: 'Okul yönetimi', schoolAdminOnly: true },

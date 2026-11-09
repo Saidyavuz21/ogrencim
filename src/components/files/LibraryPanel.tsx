@@ -11,7 +11,17 @@ import {
   deleteLibraryItem, fileKind, KIND_LABEL, LIBRARY_BUCKET, libraryFileName, LibraryItemRow, listLibrary, TEACHER_FILE_ACCEPT, updateLibraryItem, uploadLibraryItems,
 } from '../../lib/filesData';
 import { DownloadButton, FilePreview, KindIcon, Modal, normalize, TagInput } from './FilesUi';
-import styles from './Files.module.css';
+import sharedStyles from './Files.module.css';
+import admin from '../admin/AdminDashboard.module.css';
+const styles: Record<string, string> = {
+ ...sharedStyles,
+ page: `${sharedStyles.page} ${admin.libraryPage}`,
+ libraryUpload: `${sharedStyles.libraryUpload} ${admin.libraryUpload}`,
+ filters: `${sharedStyles.filters} ${admin.libraryFilters}`,
+ list: `${sharedStyles.list} ${admin.libraryList}`,
+ row: `${sharedStyles.row} ${admin.libraryRow}`,
+ nameButton: `${sharedStyles.nameButton} ${admin.libraryName}`,
+};
 
 const ANY = '';
 /** Önerilen kategoriler (yönetici yenisini de yazabilir) */
@@ -77,7 +87,7 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
         </div>
       ) : (
         <>
-          <div className={styles.filters} style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(160px, 1fr)' }}>
+          <div className={styles.filters} style={manage ? undefined : { gridTemplateColumns: 'minmax(200px, 2fr) minmax(160px, 1fr)' }}>
             <label className={styles.search}>
               <span className={styles.srOnly}>Kütüphanede ara</span>
               <Search size={18} aria-hidden="true" />

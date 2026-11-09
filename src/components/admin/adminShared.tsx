@@ -311,7 +311,7 @@ export function FilterBar({ children }: { children: React.ReactNode }) {
 export function SearchInput({ id, value, onChange, placeholder }: { id: string; value: string; onChange: (v: string) => void; placeholder: string }) {
   return (
     <label className={styles.searchField} htmlFor={id}>
-      <span className={styles.visuallyHidden}>Ara</span>
+      <span className={styles.fieldLabel}>Arama</span>
       <input id={id} type="search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={styles.input} autoComplete="off" />
     </label>
   );

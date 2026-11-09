@@ -20,9 +20,16 @@ interface Props {
 
 const STATUS_LABEL: Record<DataRequest['status'], string> = { open: 'Açık', done: 'Tamamlandı', rejected: 'Reddedildi' };
 
+function getPageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+  if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
 /**
  * KVKK: veli talepleri (verinin kopyası, silinmesi, düzeltilmesi) ve veli açık rızası.
- * Talepler 30 gün içinde yanıtlanmalıdır (KVKK md. 13).
+ * Okul ve sınıf filtreleri, talep durumu ve gelişmiş sayfalama ile desteklenir.
  */
 export function AdminPrivacyPage({ data, notify }: Props) {
   const { confirm } = useDialog();
@@ -30,10 +37,16 @@ export function AdminPrivacyPage({ data, notify }: Props) {
   const [reqError, setReqError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  // Talebin kaçıncı günde olduğu: liste yüklendiği andaki saate göre (render saf kalsın)
   const [loadedAt, setLoadedAt] = useState(0);
 
-  // Yeni talep
+  // Veli Talepleri Filtreleri
+  const [requestQuery, setRequestQuery] = useState('');
+  const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | 'open' | 'closed'>('open');
+  const [requestKindFilter, setRequestKindFilter] = useState('');
+  const [requestPage, setRequestPage] = useState(1);
+  const [requestPageSize] = useState(10);
+
+  // Yeni talep formu
   const [formOpen, setFormOpen] = useState(false);
   const [studentQuery, setStudentQuery] = useState('');
   const [picked, setPicked] = useState<AdminStudentRecord | null>(null);
@@ -42,11 +55,15 @@ export function AdminPrivacyPage({ data, notify }: Props) {
   const [contact, setContact] = useState('');
   const [note, setNote] = useState('');
 
-  // Rıza
+  // Rıza Listesi ve Filtreleri
   const [consents, setConsents] = useState<ConsentRow[]>([]);
   const [consentError, setConsentError] = useState<string | null>(null);
   const [consentQuery, setConsentQuery] = useState('');
-  const [onlyMissing, setOnlyMissing] = useState(true);
+  const [schoolFilter, setSchoolFilter] = useState('');
+  const [classFilter, setClassFilter] = useState('');
+  const [consentStatusFilter, setConsentStatusFilter] = useState<'missing' | 'given' | 'all'>('missing');
+  const [consentPage, setConsentPage] = useState(1);
+  const [consentPageSize, setConsentPageSize] = useState(20);
 
   const load = useCallback(async () => {
     const [r, c] = await Promise.all([listDataRequests(), listConsents()]);
@@ -62,6 +79,18 @@ export function AdminPrivacyPage({ data, notify }: Props) {
     [studentQuery, data.students],
   );
   const studentById = useMemo(() => new Map(data.students.map((s) => [s.id, s])), [data.students]);
+
+  // Okullar Haritası
+  const approvedSchools = useMemo(() => {
+    return data.schools.filter((s) => s.status === 'approved');
+  }, [data.schools]);
+
+  // Sınıf Seçenekleri (Seçili okula göre dinamik)
+  const availableClasses = useMemo(() => {
+    const pool = schoolFilter ? consents.filter((c) => c.school_id === schoolFilter) : consents;
+    const set = new Set(pool.map((c) => c.class_name).filter(Boolean) as string[]);
+    return [...set].sort((a, b) => a.localeCompare(b, 'tr', { numeric: true }));
+  }, [consents, schoolFilter]);
 
   const resetForm = () => {
     setPicked(null); setStudentQuery(''); setKind('export'); setRequester(''); setContact(''); setNote('');
@@ -129,13 +158,45 @@ export function AdminPrivacyPage({ data, notify }: Props) {
     setConsents((prev) => prev.map((c) => (c.id === row.id ? { ...c, guardian_consent_at: given ? new Date().toISOString() : null } : c)));
   };
 
-  const open = requests.filter((r) => r.status === 'open');
-  const closed = requests.filter((r) => r.status !== 'open');
-  const missing = consents.filter((c) => !c.guardian_consent_at).length;
-  const consentRows = consents.filter((c) =>
-    (!onlyMissing || !c.guardian_consent_at) && matchesQuery(consentQuery, c.name, c.student_number, c.class_name));
-
   const daysOld = (iso: string) => Math.max(0, Math.floor((loadedAt - new Date(iso).getTime()) / 86_400_000));
+
+  // --- Filtrelenmiş Veli Talepleri ---
+  const filteredRequests = useMemo(() => {
+    return requests.filter((r) => {
+      if (requestStatusFilter === 'open' && r.status !== 'open') return false;
+      if (requestStatusFilter === 'closed' && r.status === 'open') return false;
+      if (requestKindFilter && r.kind !== requestKindFilter) return false;
+      if (requestQuery && !matchesQuery(requestQuery, r.student_name, r.student_number, r.requester_name, r.note)) return false;
+      return true;
+    });
+  }, [requests, requestStatusFilter, requestKindFilter, requestQuery]);
+
+  const reqTotalPages = Math.max(1, Math.ceil(filteredRequests.length / requestPageSize));
+  const reqCurrentPage = Math.min(Math.max(1, requestPage), reqTotalPages);
+  const reqStartIndex = (reqCurrentPage - 1) * requestPageSize;
+  const reqEndIndex = Math.min(reqStartIndex + requestPageSize, filteredRequests.length);
+  const paginatedRequests = filteredRequests.slice(reqStartIndex, reqEndIndex);
+
+  // --- Filtrelenmiş Veli Açık Rızaları ---
+  const totalMissing = consents.filter((c) => !c.guardian_consent_at).length;
+  const filteredConsents = useMemo(() => {
+    return consents.filter((c) => {
+      if (schoolFilter && c.school_id !== schoolFilter) return false;
+      if (classFilter && c.class_name !== classFilter) return false;
+      if (consentStatusFilter === 'missing' && c.guardian_consent_at) return false;
+      if (consentStatusFilter === 'given' && !c.guardian_consent_at) return false;
+      if (consentQuery && !matchesQuery(consentQuery, c.name, c.student_number, c.class_name)) return false;
+      return true;
+    });
+  }, [consents, schoolFilter, classFilter, consentStatusFilter, consentQuery]);
+
+  const consentTotalPages = Math.max(1, Math.ceil(filteredConsents.length / consentPageSize));
+  const consentCurrentPage = Math.min(Math.max(1, consentPage), consentTotalPages);
+  const consentStartIndex = (consentCurrentPage - 1) * consentPageSize;
+  const consentEndIndex = Math.min(consentStartIndex + consentPageSize, filteredConsents.length);
+  const paginatedConsents = filteredConsents.slice(consentStartIndex, consentEndIndex);
+
+  const hasConsentFilters = Boolean(consentQuery || schoolFilter || classFilter || consentStatusFilter !== 'missing');
 
   const requestRow = (r: DataRequest) => {
     const age = daysOld(r.created_at);
@@ -183,9 +244,14 @@ export function AdminPrivacyPage({ data, notify }: Props) {
 
   return (
     <div className={styles.stack}>
+      {/* =========================================================================
+          BÖLÜM 1: VELİ TALEPLERİ
+         ========================================================================= */}
       <section className={styles.section} aria-labelledby="kvkk-requests-title">
         <div className={styles.between}>
-          <h2 id="kvkk-requests-title" className={styles.sectionTitle}>Veli talepleri ({open.length} açık)</h2>
+          <h2 id="kvkk-requests-title" className={styles.sectionTitle}>
+            Veli talepleri ({requests.filter((r) => r.status === 'open').length} açık)
+          </h2>
           <button type="button" className={formOpen ? styles.button : styles.primary} aria-expanded={formOpen} onClick={() => { setFormOpen((v) => !v); if (formOpen) resetForm(); }}>
             {formOpen ? <><X className={styles.icon} /> Kapat</> : <><Plus className={styles.icon} /> Yeni talep</>}
           </button>
@@ -247,67 +313,279 @@ export function AdminPrivacyPage({ data, notify }: Props) {
           </form>
         )}
 
+        {/* Talep Filtreleri */}
+        <div style={{ marginTop: '16px' }}>
+          <FilterBar>
+            <SearchInput
+              id="request-search"
+              value={requestQuery}
+              onChange={(v) => { setRequestQuery(v); setRequestPage(1); }}
+              placeholder="Öğrenci, veli veya not ara..."
+            />
+            <div className={styles.filterSelect}>
+              <CustomSelect
+                value={requestStatusFilter}
+                onChange={(v) => { setRequestStatusFilter(v as 'all' | 'open' | 'closed'); setRequestPage(1); }}
+                options={[
+                  { value: 'open', label: 'Yalnızca Açık Talepler' },
+                  { value: 'closed', label: 'Kapanan Talepler' },
+                  { value: 'all', label: 'Tüm Talepler' },
+                ]}
+                placeholder="Durum"
+              />
+            </div>
+            <div className={styles.filterSelect}>
+              <CustomSelect
+                value={requestKindFilter}
+                onChange={(v) => { setRequestKindFilter(v); setRequestPage(1); }}
+                options={[
+                  { value: '', label: 'Tüm talep türleri' },
+                  ...(Object.keys(REQUEST_KIND_LABEL) as DataRequestKind[]).map((k) => ({ value: k, label: REQUEST_KIND_LABEL[k] })),
+                ]}
+                placeholder="Talep türü"
+              />
+            </div>
+            {(requestQuery || requestStatusFilter !== 'open' || requestKindFilter) && (
+              <button
+                type="button"
+                className={styles.clearFilterButton}
+                onClick={() => {
+                  setRequestQuery('');
+                  setRequestStatusFilter('open');
+                  setRequestKindFilter('');
+                  setRequestPage(1);
+                }}
+              >
+                <X size={15} /> Temizle
+              </button>
+            )}
+          </FilterBar>
+        </div>
+
         {loading && <EmptyState>Yükleniyor…</EmptyState>}
         {!loading && reqError && <EmptyState>Talepler alınamadı: {reqError}</EmptyState>}
-        {!loading && !reqError && requests.length === 0 && <EmptyState>Kayıtlı talep yok.</EmptyState>}
-        {open.length > 0 && <ul className={styles.list}>{open.map(requestRow)}</ul>}
-        {closed.length > 0 && (
-          <details>
-            <summary className={styles.muted}>Kapanan talepler ({closed.length})</summary>
-            <ul className={styles.list}>{closed.map(requestRow)}</ul>
-          </details>
+        {!loading && !reqError && filteredRequests.length === 0 && (
+          <EmptyState>Aramanıza uyan veli talebi bulunamadı.</EmptyState>
+        )}
+
+        {filteredRequests.length > 0 && (
+          <>
+            <ul className={styles.list}>{paginatedRequests.map(requestRow)}</ul>
+
+            {filteredRequests.length > requestPageSize && (
+              <nav className={styles.pagination} aria-label="Veli talepleri sayfalama">
+                <div className={styles.paginationInfo}>
+                  Toplam <strong>{filteredRequests.length}</strong> talepten <strong>{reqStartIndex + 1}–{reqEndIndex}</strong> arası gösteriliyor
+                </div>
+                <div className={styles.paginationControls}>
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={reqCurrentPage <= 1}
+                    onClick={() => setRequestPage((p) => Math.max(1, p - 1))}
+                  >
+                    Önceki
+                  </button>
+                  {getPageNumbers(reqCurrentPage, reqTotalPages).map((p, idx) =>
+                    p === '...' ? (
+                      <span key={`req-dots-${idx}`} className={styles.pageDots}>…</span>
+                    ) : (
+                      <button
+                        key={`req-p-${p}`}
+                        type="button"
+                        className={`${styles.pageButton} ${p === reqCurrentPage ? styles.pageButtonActive : ''}`}
+                        onClick={() => setRequestPage(Number(p))}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={reqCurrentPage >= reqTotalPages}
+                    onClick={() => setRequestPage((p) => Math.min(reqTotalPages, p + 1))}
+                  >
+                    Sonraki
+                  </button>
+                </div>
+              </nav>
+            )}
+          </>
         )}
       </section>
 
+      {/* =========================================================================
+          BÖLÜM 2: VELİ AÇIK RIZASI (OKUL / SINIF / DURUM FİLTRELERİ İLE)
+         ========================================================================= */}
       <section className={styles.section} aria-labelledby="kvkk-consent-title">
         <h2 id="kvkk-consent-title" className={styles.sectionTitle}>
-          Veli açık rızası {consents.length > 0 && `(${consents.length - missing} / ${consents.length} alındı)`}
+          Veli açık rızası {consents.length > 0 && `(${consents.length - totalMissing} / ${consents.length} alındı)`}
         </h2>
         <p className={styles.muted}>
           Öğrencinin platformu kullanması için velinin <Link href="/aydinlatma">aydınlatma metnini</Link> okuyup onay vermesi gerekir.
           İmzalı onay formunu teslim aldığınızda burada işaretleyin; tarih ve işaretleyen kişi kaydedilir.
         </p>
+
+        {/* Çoklu Filtre Çubuğu */}
         <FilterBar>
-          <SearchInput id="consent-search" value={consentQuery} onChange={setConsentQuery} placeholder="Ad, okul numarası veya sınıf ara" />
-          <div className={styles.segmented} role="group" aria-label="Gösterilecek öğrenciler">
-            <button type="button" aria-pressed={onlyMissing} onClick={() => setOnlyMissing(true)}>Rızası eksik ({missing})</button>
-            <button type="button" aria-pressed={!onlyMissing} onClick={() => setOnlyMissing(false)}>Hepsi</button>
+          <SearchInput
+            id="consent-search"
+            value={consentQuery}
+            onChange={(v) => { setConsentQuery(v); setConsentPage(1); }}
+            placeholder="Ad, okul numarası veya sınıf ara"
+          />
+
+          {approvedSchools.length > 1 && (
+            <div className={styles.filterSelect}>
+              <CustomSelect
+                value={schoolFilter}
+                onChange={(v) => { setSchoolFilter(v); setClassFilter(''); setConsentPage(1); }}
+                options={[{ value: '', label: 'Tüm Okullar' }, ...approvedSchools.map((s) => ({ value: s.id, label: s.name }))]}
+                placeholder="Okul"
+              />
+            </div>
+          )}
+
+          {availableClasses.length > 0 && (
+            <div className={styles.filterSelect}>
+              <CustomSelect
+                value={classFilter}
+                onChange={(v) => { setClassFilter(v); setConsentPage(1); }}
+                options={[{ value: '', label: 'Tüm Sınıflar' }, ...availableClasses.map((c) => ({ value: c, label: c }))]}
+                placeholder="Sınıf"
+              />
+            </div>
+          )}
+
+          <div className={styles.filterSelect}>
+            <CustomSelect
+              value={consentStatusFilter}
+              onChange={(v) => { setConsentStatusFilter(v as 'missing' | 'given' | 'all'); setConsentPage(1); }}
+              options={[
+                { value: 'missing', label: `Rızası eksik (${totalMissing})` },
+                { value: 'given', label: 'Rızası alınanlar' },
+                { value: 'all', label: 'Tüm öğrenciler' },
+              ]}
+              placeholder="Rıza durumu"
+            />
           </div>
+
+          {hasConsentFilters && (
+            <button
+              type="button"
+              className={styles.clearFilterButton}
+              onClick={() => {
+                setConsentQuery('');
+                setSchoolFilter('');
+                setClassFilter('');
+                setConsentStatusFilter('missing');
+                setConsentPage(1);
+              }}
+            >
+              <X size={15} /> Temizle
+            </button>
+          )}
         </FilterBar>
+
         {consentError && <EmptyState>Rıza bilgisi alınamadı: {consentError}</EmptyState>}
-        {!consentError && !loading && consentRows.length === 0 && (
-          <EmptyState>{onlyMissing && consents.length > 0 ? 'Bütün öğrencilerin veli rızası alınmış.' : 'Öğrenci yok.'}</EmptyState>
+        {!consentError && !loading && filteredConsents.length === 0 && (
+          <EmptyState>
+            {consentStatusFilter === 'missing' && consents.length > 0
+              ? 'Filtrelere uyan rızası eksik öğrenci bulunmuyor (Tüm veli rızaları tamam).'
+              : 'Aramanıza uyan öğrenci bulunamadı.'}
+          </EmptyState>
         )}
-        {consentRows.length > 0 && (
-          <ul className={styles.list}>
-            {consentRows.slice(0, 200).map((c) => (
-              <li key={c.id} className={styles.row}>
-                <div className={styles.details}>
-                  <span className={styles.name}>{c.name}</span>
-                  <span className={styles.muted}>
-                    No {c.student_number} • {c.class_name || 'Sınıfsız'} •{' '}
-                    {c.guardian_consent_at ? `Rıza ${formatDate(c.guardian_consent_at)} tarihinde alındı` : 'Rıza alınmadı'}
-                  </span>
+
+        {filteredConsents.length > 0 && (
+          <>
+            <ul className={styles.list}>
+              {paginatedConsents.map((c) => (
+                <li key={c.id} className={styles.row}>
+                  <div className={styles.details}>
+                    <span className={styles.name}>{c.name}</span>
+                    <span className={styles.muted}>
+                      No {c.student_number} • {c.class_name || 'Sınıfsız'} •{' '}
+                      {c.guardian_consent_at ? (
+                        <strong style={{ color: '#25634b' }}>Rıza {formatDate(c.guardian_consent_at)} tarihinde alındı</strong>
+                      ) : (
+                        <span style={{ color: '#943747' }}>Rıza alınmadı</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className={styles.actions}>
+                    {c.guardian_consent_at ? (
+                      <button type="button" className={styles.button} disabled={busy === `consent-${c.id}`} onClick={() => handleConsent(c, false)}>
+                        Rızayı geri çek
+                      </button>
+                    ) : (
+                      <button type="button" className={styles.primary} disabled={busy === `consent-${c.id}`} onClick={() => handleConsent(c, true)}>
+                        <Check className={styles.icon} /> Rıza alındı
+                      </button>
+                    )}
+                    <button type="button" className={styles.button} disabled={busy === `export-${c.id}`} onClick={() => handleExport(c.id, c.name)} aria-label={`${c.name} verisini indir`}>
+                      <Download className={styles.icon} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Veli Rızası Sayfalama */}
+            {filteredConsents.length > consentPageSize && (
+              <nav className={styles.pagination} aria-label="Veli rızası sayfalama">
+                <div className={styles.paginationInfo}>
+                  Toplam <strong>{filteredConsents.length}</strong> öğrenciden <strong>{consentStartIndex + 1}–{consentEndIndex}</strong> arası gösteriliyor
                 </div>
-                <div className={styles.actions}>
-                  {c.guardian_consent_at ? (
-                    <button type="button" className={styles.button} disabled={busy === `consent-${c.id}`} onClick={() => handleConsent(c, false)}>
-                      Rızayı geri çek
-                    </button>
-                  ) : (
-                    <button type="button" className={styles.primary} disabled={busy === `consent-${c.id}`} onClick={() => handleConsent(c, true)}>
-                      <Check className={styles.icon} /> Rıza alındı
-                    </button>
+                <div className={styles.paginationControls}>
+                  <div className={styles.pageSizeSelector}>
+                    <label htmlFor="consent-page-size-select">Sayfa başı:</label>
+                    <CustomSelect
+                      id="consent-page-size-select"
+                      className={styles.pageSizeSelect}
+                      value={String(consentPageSize)}
+                      onChange={(value) => { setConsentPageSize(Number(value)); setConsentPage(1); }}
+                      options={[{ value: '15', label: '15' }, { value: '20', label: '20' }, { value: '50', label: '50' }]}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={consentCurrentPage <= 1}
+                    onClick={() => setConsentPage((p) => Math.max(1, p - 1))}
+                  >
+                    Önceki
+                  </button>
+
+                  {getPageNumbers(consentCurrentPage, consentTotalPages).map((p, idx) =>
+                    p === '...' ? (
+                      <span key={`consent-dots-${idx}`} className={styles.pageDots}>…</span>
+                    ) : (
+                      <button
+                        key={`consent-p-${p}`}
+                        type="button"
+                        className={`${styles.pageButton} ${p === consentCurrentPage ? styles.pageButtonActive : ''}`}
+                        onClick={() => setConsentPage(Number(p))}
+                      >
+                        {p}
+                      </button>
+                    )
                   )}
-                  <button type="button" className={styles.button} disabled={busy === `export-${c.id}`} onClick={() => handleExport(c.id, c.name)} aria-label={`${c.name} verisini indir`}>
-                    <Download className={styles.icon} />
+
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={consentCurrentPage >= consentTotalPages}
+                    onClick={() => setConsentPage((p) => Math.min(consentTotalPages, p + 1))}
+                  >
+                    Sonraki
                   </button>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </nav>
+            )}
+          </>
         )}
-        {consentRows.length > 200 && <p className={styles.muted}>İlk 200 öğrenci gösteriliyor; aramayla daraltın.</p>}
       </section>
     </div>
   );

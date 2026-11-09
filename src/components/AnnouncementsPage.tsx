@@ -108,7 +108,7 @@ export function AnnouncementsPage({ manager }: AnnouncementsPageProps) {
   };
 
   return (
-    <div className={`${styles.pageBody} ${manager === 'teacher' ? own.workspace : ''}`}>
+    <div className={`${styles.pageBody} ${manager ? own.workspace : ''}`}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
       <div className={own.layout}>
       <section className={`${styles.panel} ${own.composer}`}>

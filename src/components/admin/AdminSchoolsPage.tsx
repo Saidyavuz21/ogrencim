@@ -442,16 +442,7 @@ export function AdminSchoolsPage({ data, notify, startWithForm = false }: Props)
                 <div className={styles.paginationControls}>
                   <div className={styles.pageSizeSelector}>
                     <label htmlFor="school-page-size">Sayfa başı:</label>
-                    <select
-                      id="school-page-size"
-                      className={styles.pageSizeSelect}
-                      value={pageSize}
-                      onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </select>
+                    <CustomSelect id="school-page-size" className={styles.pageSizeSelect} value={String(pageSize)} onChange={(value) => handlePageSizeChange(Number(value))} options={[{ value: '10', label: '10' }, { value: '20', label: '20' }, { value: '50', label: '50' }]} />
                   </div>
 
                   <button

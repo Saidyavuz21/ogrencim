@@ -162,10 +162,10 @@ export function translate(el: BoardEl, dx: number, dy: number): BoardEl {
   return { ...el, x: Math.round(el.x + dx), y: Math.round(el.y + dy) };
 }
 
-export const FONT_SIZES = [24, 32, 42, 56, 72, 96];
+export const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 42, 56, 72, 96];
 
 export function getFontSizeOptions(currentSize?: number): number[] {
-  const base = [24, 32, 42, 56, 72, 96];
+  const base = FONT_SIZES;
   if (currentSize && !base.includes(currentSize)) {
     return [...base, currentSize].sort((a, b) => a - b);
   }

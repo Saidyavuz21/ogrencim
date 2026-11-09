@@ -24,11 +24,11 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
 | 8 | Güvenlik ve KVKK | 9 / 13 |
-| 9 | Kalite: test, CI, izleme | 5 / 7 |
+| 9 | Kalite: test, CI, izleme | 6 / 7 |
 | 10 | Canlı ders | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **94 / 121** |
+| | **Toplam** | **95 / 121** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -180,7 +180,7 @@ Ortak kararlar:
 - [~] Uçtan uca testler: öğretmen kaydı → onay → giriş → puan → ödev → mesaj → çıkış — *K-17* · Playwright kuruldu, CI'da (`9640876`): sayfalar, giriş uyarıları, telefon taşması; öğretmen/öğrenci giriş-çıkış testi test hesabı (E2E_* gizli değişkenleri) bekliyor; kayıt→onay→puan zinciri test veritabanı bekliyor
 - [x] Veritabanı kuralları (RLS) için otomatik yetki testleri — *K-17* · 9 Kasım 2026 · `4b382fc` (25 senaryo, hepsi geçti; CI'da TEST_DATABASE_URL ile)
 - [x] CI: her commit'te tip kontrolü, lint ve build (GitHub Actions) — *K-17* · 9 Kasım 2026 · `6b2f029`
-- [~] Hata izleme (ör. Sentry) — *K-16* · kendi hata kaydımız (dış servis yok, `ff9800e`); `20261109160000_client_errors.sql` çalıştırılınca devreye girer
+- [x] Hata izleme (ör. Sentry) — *K-16* · kendi hata kaydımız (dış servis yok, `ff9800e`); veritabanı 9 Kasım 2026 akşam uygulandı
 - [x] Günlüklerde kişisel verinin gizlenmesi — *K-16* · 9 Kasım 2026 · `ff9800e` (hata kaydında e-posta/kimlik/sayı maskeleme; işlem kayıtlarında PIN ***)
 - [x] Yedekleme ve geri yükleme planı — *K-16* · 9 Kasım 2026 · `989a384` (docs/YEDEKLEME.md; cron VPS'e geçişte kurulacak)
 - [x] Büyük bileşenlerin bölünmesi ve Supabase tiplerinin otomatik üretilmesi — *K-17* · 9 Kasım 2026 · `3750d7c`, `e588234`, `ceef6cd` (tahta dosyaları bölündü; tipler üretildi, client'a bağlanması ayrı iş)

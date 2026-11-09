@@ -23,12 +23,14 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
-| 8 | Canlı ders | 0 / 7 |
-| 9 | Güvenlik ve KVKK | 0 / 13 |
-| 10 | Kalite: test, CI, izleme | 0 / 7 |
+| 8 | Güvenlik ve KVKK | 0 / 13 |
+| 9 | Kalite: test, CI, izleme | 0 / 7 |
+| 10 | Canlı ders | 0 / 7 |
 | 11 | Topluluk / Keşfet | 0 / 9 |
 | 12 | Yapay zekâ | 0 / 5 |
 | | **Toplam** | **80 / 121** |
+
+**Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
 ---
 
@@ -157,17 +159,7 @@ Ortak kararlar:
 - [x] **Metinde kelime bazında biçim (kalın/italik/altı çizili/renk/vurgu) ve listeler** · 8 Kasım 2026 · `575eca5`
 - [x] **Metin kutusu (zemin/kenarlık/köşe), Okul yazı tipi (Andika), satır ve harf aralığı** · 8 Kasım 2026 · `f60c00c`
 
-## 8. Canlı ders
-
-- [ ] Anlık quiz: öğretmen ders sırasında soruyu bütün sınıfa açar, cevaplar canlı gelir — *K-11*
-- [ ] Öğrenci çözümünü sınıfa yansıtma — *K-11*
-- [ ] Öğrenciye süreli (30 sn) tahta kalemi izni — *K-11*
-- [ ] Sürükle-bırak eşleştirme etkinliği — *K-4, K-11*
-- [ ] Sesli not — *K-4, K-11*
-- [ ] Tahtada eşzamanlı ortak çalışma — *K-11*
-- [ ] Tahta değişiklik geçmişi ve geri dönme — *K-11*
-
-## 9. Güvenlik ve KVKK
+## 8. Güvenlik ve KVKK
 
 - [ ] Admin şifresini değiştir (eski şifre git geçmişinde açık) — *K-14*
 - [ ] Supabase: sızdırılmış şifre korumasını aç — *K-1*
@@ -183,7 +175,7 @@ Ortak kararlar:
 - [ ] Aydınlatma metni ve veli açık rızası — *K-15*
 - [ ] Supabase güvenlik ve performans uyarılarını (advisors) sıfırlama — *K-14*
 
-## 10. Kalite: test, CI, izleme
+## 9. Kalite: test, CI, izleme
 
 - [ ] Uçtan uca testler: öğretmen kaydı → onay → giriş → puan → ödev → mesaj → çıkış — *K-17*
 - [ ] Veritabanı kuralları (RLS) için otomatik yetki testleri — *K-17*
@@ -192,6 +184,16 @@ Ortak kararlar:
 - [ ] Günlüklerde kişisel verinin gizlenmesi — *K-16*
 - [ ] Yedekleme ve geri yükleme planı — *K-16*
 - [ ] Büyük bileşenlerin bölünmesi ve Supabase tiplerinin otomatik üretilmesi — *K-17*
+
+## 10. Canlı ders
+
+- [ ] Anlık quiz: öğretmen ders sırasında soruyu bütün sınıfa açar, cevaplar canlı gelir — *K-11*
+- [ ] Öğrenci çözümünü sınıfa yansıtma — *K-11*
+- [ ] Öğrenciye süreli (30 sn) tahta kalemi izni — *K-11*
+- [ ] Sürükle-bırak eşleştirme etkinliği — *K-4, K-11*
+- [ ] Sesli not — *K-4, K-11*
+- [ ] Tahtada eşzamanlı ortak çalışma — *K-11*
+- [ ] Tahta değişiklik geçmişi ve geri dönme — *K-11*
 
 ## 11. Topluluk / Keşfet
 

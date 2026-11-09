@@ -84,4 +84,4 @@ Amaç: Gerçek öğrenci verisi girilebilecek kadar güvenli bir giriş ve yetki
 - Veri saklama süresi, silme talebi akışı
 - Erişim kayıtları (kim hangi öğrencinin verisini gördü/değiştirdi)
 
-Ayrıntılı iş kalemleri: [EduBoard listesi, Paket 9](EDUBOARD_IS_LISTESI.md#9-güvenlik-ve-kvkk).
+Ayrıntılı iş kalemleri: [EduBoard listesi, Paket 8](EDUBOARD_IS_LISTESI.md#8-güvenlik-ve-kvkk).

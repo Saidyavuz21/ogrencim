@@ -121,6 +121,8 @@ Kontroller 8–12 px, ana paneller masaüstünde 18 px / mobilde 16 px köşelid
 
 ## Components
 
+Profilim/Hesabım masaüstü yerleşimi: `TeacherProfile.module.css` ortak sayfa kabuğunun bütün içerik genişliğini kullanır; içeride ayrı bir 1120 px sınırı yoktur. Solda 280 px genişliğinde, fotoğraf kontrolleri ve bölüm menüsünü içeren kalıcı bir panel; sağda kalan genişliği kullanan içerik bulunur. Hesap bilgileri, Topluluk profili ve Güvenlik arasında geçişte profil resmi yerinde kalır. Hesap alanları uygun genişlikte iki sütuna çıkar. Topluluk ayarları fotoğraf kontrollerini tekrar etmez. Diğer kullanım yerleri ve 1024 px altındaki mobil yerleşim korunur.
+
 ### Süper admin paneli
 
 Genel bakış ve 13 alt sayfa mevcut yönetici üst menüsü/yan menüsüyle aynı yeşil ve sıcak nötr dili kullanır. `AdminDashboard.module.css` içindeki `.adminShell` kabuğu; `AdminManagement.module.css` yalnızca yönetim listeleri, formları ve pencereleri için kullanılır.

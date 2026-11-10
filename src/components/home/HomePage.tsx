@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, Globe, MessageSquare } from 'lucide-react';
+import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, LogIn, MessageSquare, UserPlus } from 'lucide-react';
 import { restoreSession, signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
 import styles from './HomePage.module.css';
 import { BrandLogo } from '../BrandLogo';
@@ -83,8 +83,18 @@ export default function HomePage() {
           </Link>
           <nav className={styles.nav} aria-label="Ana menü">
             {['Ana Sayfa', 'Sistem Hakkında', 'İletişim'].map(item => <button key={item} type="button" aria-current={section === item ? 'page' : undefined} onClick={() => setSection(item)}>{item}</button>)}
+            <Link href="/topluluk">Topluluk</Link>
           </nav>
-          <Link className={styles.communityLink} href="/topluluk"><Globe size={17} aria-hidden="true" />Topluluk</Link>
+          <div className={styles.headerActions}>
+            <Link className={styles.btnSecondary} href="/giris">
+              <LogIn size={17} aria-hidden="true" />
+              <span>Giriş yap</span>
+            </Link>
+            <Link className={styles.btnPrimary} href="/giris#kayit">
+              <UserPlus size={17} aria-hidden="true" />
+              <span>Ücretsiz kayıt ol</span>
+            </Link>
+          </div>
         </div>
       </header>
 

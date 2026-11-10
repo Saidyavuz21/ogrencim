@@ -56,14 +56,12 @@ export function TeacherTopBar({ user, unreadCount, isProfile, menuOpen, onMenu, 
             <span>Topluluk</span>
             {unreadCommunity > 0 && <span className={styles.topBarMessageCount} aria-hidden="true">{unreadCommunity > 99 ? '99+' : unreadCommunity}</span>}
           </button>
-          <button type="button" className={styles.topBarMessages} onClick={onMessages} aria-current={isMessages ? 'page' : undefined} aria-label={unreadMessages > 0 ? `Mesajlar, ${unreadMessages} okunmamış` : 'Mesajlar'}>
-            <MessageSquare size={21} aria-hidden="true" />
-            <span>Mesajlar</span>
+          <button type="button" className={`${styles.topBarMessages} ${styles.topBarIconAction}`} onClick={onMessages} aria-current={isMessages ? 'page' : undefined} aria-label={unreadMessages > 0 ? `Mesajlar, ${unreadMessages} okunmamış` : 'Mesajlar'} title="Mesajlar">
+            <MessageSquare size={26} aria-hidden="true" />
             {unreadMessages > 0 && <span className={styles.topBarMessageCount} aria-hidden="true">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
           </button>
-          <button type="button" className={styles.notificationButton} onClick={onNotifications} aria-label={unreadCount > 0 ? `Bildirimler, ${unreadCount} okunmamış` : 'Bildirimler'}>
-            <Bell size={22} aria-hidden="true" />
-            <span className={styles.topBarDesktopLabel}>Bildirimler</span>
+          <button type="button" className={`${styles.notificationButton} ${styles.topBarIconAction}`} onClick={onNotifications} aria-label={unreadCount > 0 ? `Bildirimler, ${unreadCount} okunmamış` : 'Bildirimler'} title="Bildirimler">
+            <Bell size={26} aria-hidden="true" />
             {unreadCount > 0 && <span className={styles.notificationCount} aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}
           </button>
           <button type="button" className={styles.topBarProfile} onClick={onProfile} aria-label={user?.name ? `${user.name}, profilim` : 'Profilim'} aria-current={isProfile ? 'page' : undefined}>

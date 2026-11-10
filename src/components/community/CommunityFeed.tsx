@@ -33,15 +33,18 @@ import {
   Award,
   Bell,
   Bookmark,
-  ChevronDown,
+  BookOpen,
   Filter,
+  Globe,
   HelpCircle,
   Layers,
+  Menu,
   Plus,
   Search,
   Star,
   UserCheck,
   UserPlus,
+  Users,
   X,
 } from '../icons';
 import { Notice, type NoticeState } from '../teacher/TeacherUi';
@@ -370,6 +373,175 @@ export function CommunityFeed({
 
   const renderSideWidgets = (suffix: string) => (
     <>
+      <nav className={s.sideMenuCard} aria-label="Topluluk menüsü">
+        <div className={s.sideMenuHeader}>
+          <h3 className={s.asideTitle}>Topluluk menüsü</h3>
+          {specialScope === null && !notifOpen && !singlePost && !singlePostLoading && (
+            <div className={s.viewSwitch} role="group" aria-label="Görünüm biçimi">
+              <button
+                type="button"
+                className={s.viewSwitchBtn}
+                aria-pressed={viewMode === 'feed'}
+                onClick={() => handleChangeView('feed')}
+              >
+                Akış
+              </button>
+              <button
+                type="button"
+                className={s.viewSwitchBtn}
+                aria-pressed={viewMode === 'gallery'}
+                onClick={() => handleChangeView('gallery')}
+              >
+                Galeri
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className={s.sideMenuList}>
+          <span className={s.sideMenuGroupTitle}>Akış</span>
+
+          <button
+            type="button"
+            className={s.sideMenuBtn}
+            aria-pressed={!notifOpen && !singlePost && specialScope === null && tab === 'all'}
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope(null);
+              setTab('all');
+              setMobileSideOpen(false);
+            }}
+          >
+            <span className={s.sideMenuBtnLeft}>
+              <Globe size={16} aria-hidden="true" />
+              <span>{FEED_TAB_LABEL.all}</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={s.sideMenuBtn}
+            aria-pressed={
+              !notifOpen && !singlePost && specialScope === null && tab === 'following'
+            }
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope(null);
+              setTab('following');
+              setMobileSideOpen(false);
+            }}
+          >
+            <span className={s.sideMenuBtnLeft}>
+              <Users size={16} aria-hidden="true" />
+              <span>{FEED_TAB_LABEL.following}</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={s.sideMenuBtn}
+            aria-pressed={
+              !notifOpen && !singlePost && specialScope === null && tab === 'subject'
+            }
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope(null);
+              setTab('subject');
+              setMobileSideOpen(false);
+            }}
+          >
+            <span className={s.sideMenuBtnLeft}>
+              <BookOpen size={16} aria-hidden="true" />
+              <span>{FEED_TAB_LABEL.subject}</span>
+            </span>
+          </button>
+
+          <div className={s.sideMenuDivider} role="separator" />
+          <span className={s.sideMenuGroupTitle}>Kütüphane ve Bildirimler</span>
+
+          <button
+            type="button"
+            className={s.sideMenuBtn}
+            aria-pressed={!notifOpen && !singlePost && specialScope === 'featured'}
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope('featured');
+              setMobileSideOpen(false);
+            }}
+          >
+            <span className={s.sideMenuBtnLeft}>
+              <Award size={16} aria-hidden="true" />
+              <span>{SCOPE_LABEL.featured}</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={s.sideMenuBtn}
+            aria-pressed={!notifOpen && !singlePost && specialScope === 'favorites'}
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope('favorites');
+              setMobileSideOpen(false);
+            }}
+          >
+            <span className={s.sideMenuBtnLeft}>
+              <Bookmark size={16} aria-hidden="true" />
+              <span>{SCOPE_LABEL.favorites}</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={s.sideMenuBtn}
+            aria-pressed={!notifOpen && !singlePost && specialScope === 'mine'}
+            onClick={() => {
+              setNotifOpen(false);
+              closeSinglePost();
+              setSpecialScope('mine');
+              setMobileSideOpen(false);
+            }}
+          >
+            <span className={s.sideMenuBtnLeft}>
+              <Layers size={16} aria-hidden="true" />
+              <span>{SCOPE_LABEL.mine}</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={s.sideMenuBtn}
+            aria-expanded={notifOpen}
+            aria-pressed={notifOpen}
+            aria-label={
+              unreadNotifications > 0
+                ? `Bildirimler, ${unreadNotifications} okunmamış`
+                : 'Bildirimler'
+            }
+            onClick={() => {
+              setNotifOpen((v) => !v);
+              closeSinglePost();
+              setMobileSideOpen(false);
+            }}
+          >
+            <span className={s.sideMenuBtnLeft}>
+              <Bell size={16} aria-hidden="true" />
+              <span>Bildirimler</span>
+            </span>
+            {unreadNotifications > 0 && (
+              <span className={s.unreadBadgePill} aria-hidden="true">
+                {unreadNotifications > 99 ? '99+' : unreadNotifications}
+              </span>
+            )}
+          </button>
+        </div>
+      </nav>
+
       <section className={s.asideCard} aria-label="Takip önerileri">
         <h3 className={s.asideTitle}>Takip önerileri</h3>
         {suggestions.length === 0 ? (
@@ -380,7 +552,14 @@ export function CommunityFeed({
               const isFollowing = Boolean(followedIds[c.id]);
               return (
                 <li key={c.id} className={s.suggestionRow}>
-                  <TeacherByline card={c} size={32} onOpenTeacher={onOpenTeacher} />
+                  <TeacherByline
+                    card={c}
+                    size={32}
+                    onOpenTeacher={(id) => {
+                      setMobileSideOpen(false);
+                      onOpenTeacher(id);
+                    }}
+                  />
                   <button
                     type="button"
                     className={isFollowing ? s.btnSecondary : s.btnPrimary}
@@ -492,279 +671,209 @@ export function CommunityFeed({
 
   return (
     <div className={s.hubWrap}>
-      {/* Üst sekmeler, Bildirimler ve Akış / Galeri anahtarı */}
-      <div className={s.feedTopBar}>
-        <div className={s.tabsBar} role="tablist" aria-label="Topluluk akışı sekmeleri">
-          {(Object.keys(FEED_TAB_LABEL) as FeedTab[]).map((t) => (
+      {!notifOpen && !singlePost && !singlePostLoading && !singlePostError ? (
+        <div className={s.searchBarWrap}>
+          <div className={s.searchBarRow}>
+            <label className={s.searchInputLabel}>
+              <Search size={18} aria-hidden="true" />
+              <input
+                type="search"
+                className={s.searchInput}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Başlık, konu, etiket ya da öğretmen ara…"
+                aria-label="Toplulukta ara"
+              />
+            </label>
+
             <button
-              key={t}
               type="button"
-              className={s.tabBtn}
-              aria-pressed={!notifOpen && !singlePost && specialScope === null && tab === t}
-              onClick={() => {
-                setNotifOpen(false);
-                closeSinglePost();
-                setSpecialScope(null);
-                setTab(t);
-              }}
+              className={s.btnSecondary}
+              aria-expanded={filterOpen}
+              aria-pressed={filterOpen || Boolean(kindFilter || subject || grade)}
+              onClick={() => setFilterOpen((v) => !v)}
             >
-              {FEED_TAB_LABEL[t]}
+              <Filter size={16} aria-hidden="true" />
+              <span>Süz</span>
             </button>
-          ))}
 
-          <button
-            type="button"
-            className={s.tabBtn}
-            aria-pressed={!notifOpen && !singlePost && specialScope === 'featured'}
-            onClick={() => {
-              setNotifOpen(false);
-              closeSinglePost();
-              setSpecialScope('featured');
-            }}
-          >
-            <Award size={15} aria-hidden="true" />{' '}
-            <span>{SCOPE_LABEL.featured}</span>
-          </button>
+            {hasActiveFilters && (
+              <button type="button" className={s.btnSecondary} onClick={clearFilters}>
+                <X size={16} aria-hidden="true" />
+                <span>Temizle</span>
+              </button>
+            )}
 
-          <button
-            type="button"
-            className={s.tabBtn}
-            aria-pressed={!notifOpen && !singlePost && specialScope === 'favorites'}
-            onClick={() => {
-              setNotifOpen(false);
-              closeSinglePost();
-              setSpecialScope('favorites');
-            }}
-          >
-            <Bookmark size={15} aria-hidden="true" />{' '}
-            <span>{SCOPE_LABEL.favorites}</span>
-          </button>
-
-          <button
-            type="button"
-            className={s.tabBtn}
-            aria-pressed={!notifOpen && !singlePost && specialScope === 'mine'}
-            onClick={() => {
-              setNotifOpen(false);
-              closeSinglePost();
-              setSpecialScope('mine');
-            }}
-          >
-            {SCOPE_LABEL.mine}
-          </button>
-        </div>
-
-        <div className={s.itemActions}>
-          <button
-            type="button"
-            className={s.tabBtn}
-            aria-expanded={notifOpen}
-            aria-pressed={notifOpen}
-            aria-label={
-              unreadNotifications > 0
-                ? `Bildirimler, ${unreadNotifications} okunmamış`
-                : 'Bildirimler'
-            }
-            onClick={() => {
-              setNotifOpen((v) => !v);
-              closeSinglePost();
-            }}
-          >
-            <Bell size={16} aria-hidden="true" />{' '}
-            <span>Bildirimler</span>
-            {unreadNotifications > 0 && (
-              <>
-                {' '}
+            <button
+              type="button"
+              className={`${s.btnSecondary} ${s.mobileMenuBtn}`}
+              aria-expanded={mobileSideOpen}
+              aria-label="Topluluk menüsü ve öneriler"
+              onClick={() => setMobileSideOpen(true)}
+            >
+              <Menu size={16} aria-hidden="true" />
+              <span>Menü</span>
+              {unreadNotifications > 0 && (
                 <span className={s.unreadBadgePill} aria-hidden="true">
                   {unreadNotifications > 99 ? '99+' : unreadNotifications}
                 </span>
-              </>
-            )}
-          </button>
+              )}
+            </button>
+          </div>
 
-          {specialScope === null && !notifOpen && !singlePost && !singlePostLoading && (
-            <div className={s.viewSwitch} role="group" aria-label="Görünüm biçimi">
-              <button
-                type="button"
-                className={s.viewSwitchBtn}
-                aria-pressed={viewMode === 'feed'}
-                onClick={() => handleChangeView('feed')}
-              >
-                Akış
-              </button>
-              <button
-                type="button"
-                className={s.viewSwitchBtn}
-                aria-pressed={viewMode === 'gallery'}
-                onClick={() => handleChangeView('gallery')}
-              >
-                Galeri
-              </button>
+          {filterOpen && (
+            <div className={s.filterDrawer}>
+              <div className={s.field}>
+                <label htmlFor={kindSelectId}>Tür</label>
+                <CustomSelect
+                  id={kindSelectId}
+                  value={kindFilter}
+                  options={KIND_FILTER_OPTIONS}
+                  onChange={setKindFilter}
+                />
+              </div>
+              <div className={s.field}>
+                <label htmlFor={subjectSelectId}>Ders</label>
+                <CustomSelect
+                  id={subjectSelectId}
+                  value={subject}
+                  options={SUBJECT_FILTER_OPTIONS}
+                  onChange={setSubject}
+                />
+              </div>
+              <div className={s.field}>
+                <label htmlFor={gradeSelectId}>Sınıf</label>
+                <CustomSelect
+                  id={gradeSelectId}
+                  value={grade}
+                  options={GRADE_FILTER_OPTIONS}
+                  onChange={setGrade}
+                />
+              </div>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Bildirimler paneli */}
-      {notifOpen && (
-        <CommunityNotifications
-          onOpenPost={(postId) => void openSinglePost(postId)}
-          onOpenTeacher={(tId) => {
-            setNotifOpen(false);
-            onOpenTeacher(tId);
-          }}
-          onClose={() => setNotifOpen(false)}
-          onMarkedRead={onNotificationsRead}
-        />
+      ) : (
+        <div className={s.mobileTopMenuRow}>
+          <button
+            type="button"
+            className={`${s.btnSecondary} ${s.mobileMenuBtn}`}
+            aria-expanded={mobileSideOpen}
+            aria-label="Topluluk menüsü ve öneriler"
+            onClick={() => setMobileSideOpen(true)}
+          >
+            <Menu size={16} aria-hidden="true" />
+            <span>Topluluk menüsü</span>
+            {unreadNotifications > 0 && (
+              <span className={s.unreadBadgePill} aria-hidden="true">
+                {unreadNotifications > 99 ? '99+' : unreadNotifications}
+              </span>
+            )}
+          </button>
+        </div>
       )}
 
-      {/* Tek gönderi görünümü (bildirimden tıklanınca) */}
-      {(singlePostLoading || singlePostError || singlePost) && (
-        <div className={s.feedMain}>
-          <div>
-            <button
-              type="button"
-              className={s.backBtn}
-              onClick={closeSinglePost}
-            >
-              <ArrowLeft size={16} aria-hidden="true" />
-              <span>Akışa dön</span>
-            </button>
-          </div>
-          {singlePostLoading ? (
-            <Spinner center label="Gönderi yükleniyor…" />
-          ) : singlePostError ? (
-            <div className={s.emptyBox}>
-              <Notice notice={{ kind: 'error', text: singlePostError }} />
+      {/* Mobilde sağdan açılır çekmece (< 1024px) */}
+      {mobileSideOpen && (
+        <div
+          className={s.mobileDrawerBackdrop}
+          onClick={() => setMobileSideOpen(false)}
+        >
+          <aside
+            className={s.mobileDrawerPanel}
+            aria-label="Topluluk menüsü, öneriler ve konular"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={s.mobileDrawerHead}>
+              <h2 className={s.mobileDrawerTitle}>Topluluk menüsü</h2>
               <button
                 type="button"
                 className={s.btnSecondary}
-                onClick={closeSinglePost}
+                onClick={() => setMobileSideOpen(false)}
+                aria-label="Menüyü kapat"
               >
-                Akışa dön
+                <X size={16} aria-hidden="true" />
+                <span>Kapat</span>
               </button>
             </div>
-          ) : singlePost ? (
-            <PostCard
-              post={singlePost}
-              defaultCommentsOpen
-              onOpenTeacher={onOpenTeacher}
-              onOpenPreview={(sum) => setPreviewItem(sum)}
-              onUpdated={(_, patch) => {
-                setSinglePost((prev) => (prev ? { ...prev, ...patch } : null));
-              }}
-              onDeleted={() => {
-                closeSinglePost();
-              }}
-              onMutedAuthor={() => {
-                closeSinglePost();
-              }}
-            />
-          ) : null}
+            <div className={s.mobileDrawerBody}>{renderSideWidgets('mobile')}</div>
+          </aside>
         </div>
       )}
-
-      {!notifOpen && !singlePost && !singlePostLoading && !singlePostError && (
-        <>
-          {/* Arama ve Süz çubuğu */}
-          <div className={s.searchBarWrap}>
-        <div className={s.searchBarRow}>
-          <label className={s.searchInputLabel}>
-            <Search size={18} aria-hidden="true" />
-            <input
-              type="search"
-              className={s.searchInput}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Başlık, konu, etiket ya da öğretmen ara…"
-              aria-label="Toplulukta ara"
-            />
-          </label>
-
-          <button
-            type="button"
-            className={s.btnSecondary}
-            aria-expanded={filterOpen}
-            aria-pressed={filterOpen || Boolean(kindFilter || subject || grade)}
-            onClick={() => setFilterOpen((v) => !v)}
-          >
-            <Filter size={16} aria-hidden="true" />
-            <span>Süz</span>
-          </button>
-
-          {hasActiveFilters && (
-            <button type="button" className={s.btnSecondary} onClick={clearFilters}>
-              <X size={16} aria-hidden="true" />
-              <span>Temizle</span>
-            </button>
-          )}
-        </div>
-
-        {filterOpen && (
-          <div className={s.filterDrawer}>
-            <div className={s.field}>
-              <label htmlFor={kindSelectId}>Tür</label>
-              <CustomSelect
-                id={kindSelectId}
-                value={kindFilter}
-                options={KIND_FILTER_OPTIONS}
-                onChange={setKindFilter}
-              />
-            </div>
-            <div className={s.field}>
-              <label htmlFor={subjectSelectId}>Ders</label>
-              <CustomSelect
-                id={subjectSelectId}
-                value={subject}
-                options={SUBJECT_FILTER_OPTIONS}
-                onChange={setSubject}
-              />
-            </div>
-            <div className={s.field}>
-              <label htmlFor={gradeSelectId}>Sınıf</label>
-              <CustomSelect
-                id={gradeSelectId}
-                value={grade}
-                options={GRADE_FILTER_OPTIONS}
-                onChange={setGrade}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mobilde katlanabilir Öneriler & Konular */}
-      <div className={s.mobileSideCollapse}>
-        <button
-          type="button"
-          className={s.mobileSideToggle}
-          aria-expanded={mobileSideOpen}
-          onClick={() => setMobileSideOpen((v) => !v)}
-        >
-          <span>Takip önerileri ve konular ({topics.length})</span>
-          <ChevronDown size={18} aria-hidden="true" />
-        </button>
-        {mobileSideOpen && <div className={s.feedMain}>{renderSideWidgets('mobile')}</div>}
-      </div>
 
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       <div className={s.feedLayout}>
         <div className={s.feedMain}>
-          {/* Paylaşım kutusu (yalnızca ana sekmelerde) */}
-          {specialScope === null && (
-            <PostComposer
-              onCreated={(newPost) => {
-                setPosts((prev) => [newPost, ...prev.filter((p) => p.id !== newPost.id)]);
+          {notifOpen ? (
+            <CommunityNotifications
+              onOpenPost={(postId) => void openSinglePost(postId)}
+              onOpenTeacher={(tId) => {
+                setNotifOpen(false);
+                onOpenTeacher(tId);
               }}
-              onOpenBoards={onOpenBoards}
-              onOpenQuestions={onOpenQuestions}
+              onClose={() => setNotifOpen(false)}
+              onMarkedRead={onNotificationsRead}
             />
-          )}
+          ) : singlePostLoading || singlePostError || singlePost ? (
+            <>
+              <div>
+                <button
+                  type="button"
+                  className={s.backBtn}
+                  onClick={closeSinglePost}
+                >
+                  <ArrowLeft size={16} aria-hidden="true" />
+                  <span>Akışa dön</span>
+                </button>
+              </div>
+              {singlePostLoading ? (
+                <Spinner center label="Gönderi yükleniyor…" />
+              ) : singlePostError ? (
+                <div className={s.emptyBox}>
+                  <Notice notice={{ kind: 'error', text: singlePostError }} />
+                  <button
+                    type="button"
+                    className={s.btnSecondary}
+                    onClick={closeSinglePost}
+                  >
+                    Akışa dön
+                  </button>
+                </div>
+              ) : singlePost ? (
+                <PostCard
+                  post={singlePost}
+                  defaultCommentsOpen
+                  onOpenTeacher={onOpenTeacher}
+                  onOpenPreview={(sum) => setPreviewItem(sum)}
+                  onUpdated={(_, patch) => {
+                    setSinglePost((prev) => (prev ? { ...prev, ...patch } : null));
+                  }}
+                  onDeleted={() => {
+                    closeSinglePost();
+                  }}
+                  onMutedAuthor={() => {
+                    closeSinglePost();
+                  }}
+                />
+              ) : null}
+            </>
+          ) : (
+            <>
+              {/* Paylaşım kutusu (yalnızca ana sekmelerde) */}
+              {specialScope === null && (
+                <PostComposer
+                  onCreated={(newPost) => {
+                    setPosts((prev) => [newPost, ...prev.filter((p) => p.id !== newPost.id)]);
+                  }}
+                  onOpenBoards={onOpenBoards}
+                  onOpenQuestions={onOpenQuestions}
+                />
+              )}
 
-          {/* Özel kapsam görünümü (Editörün seçimi / Favorilerim / Paylaştıklarım) */}
-          {specialScope !== null ? (
-            scopeError ? (
+              {/* Özel kapsam görünümü (Editörün seçimi / Favorilerim / Paylaştıklarım) */}
+              {specialScope !== null ? (
+                scopeError ? (
               <div className={s.emptyBox}>
                 <Notice notice={{ kind: 'error', text: scopeError }} />
                 <button
@@ -1033,13 +1142,13 @@ export function CommunityFeed({
               )}
             </>
           )}
+            </>
+          )}
         </div>
 
         {/* Masaüstü sağ kenar çubuğu */}
         <aside className={s.feedAside}>{renderSideWidgets('desktop')}</aside>
       </div>
-        </>
-      )}
 
       {/* Materyal Önizleme Modalı */}
       {previewItem && (

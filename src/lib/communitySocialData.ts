@@ -75,7 +75,7 @@ export interface TeacherProfile extends TeacherCard {
 export type DisplayMode = 'full' | 'short' | 'alias';
 export type ProfileVisibility = 'public' | 'teachers' | 'followers' | 'nobody';
 
-export const DISPLAY_MODE_LABEL: Record<DisplayMode, string> = { full: 'Tam adım', short: 'Kısaltılmış (Ayşe Y.)', alias: 'Takma ad' };
+export const DISPLAY_MODE_LABEL: Record<DisplayMode, string> = { full: 'Tam adım', short: 'Kısaltılmış adım', alias: 'Takma ad' };
 export const VISIBILITY_LABEL: Record<ProfileVisibility, string> = {
   public: 'Herkes (giriş yapmayanlar dahil)',
   teachers: 'Yalnızca öğretmenler',

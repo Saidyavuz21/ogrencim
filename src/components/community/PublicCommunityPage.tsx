@@ -15,6 +15,7 @@ import {
 import { restoreSession } from '../../lib/supabaseClient';
 import { BrandLogo } from '../BrandLogo';
 import { CustomSelect } from '../CustomSelect';
+import { InstallAppBanner } from '../InstallAppBanner';
 import { Spinner } from '../Spinner';
 import {
   ArrowLeft,
@@ -71,6 +72,7 @@ export function PublicCommunityPage() {
 
   // Oturum kontrolü: yalnızca giriş yapmış öğretmene "Topluluğa git" düğmesi göstermek için
   const [hasTeacherSession, setHasTeacherSession] = useState(false);
+  const [section, setSection] = useState<'Topluluk' | 'Sistem Hakkında' | 'İletişim'>('Topluluk');
 
   useEffect(() => {
     let alive = true;
@@ -243,12 +245,27 @@ export function PublicCommunityPage() {
 
   return (
     <div className={s.page}>
+      <InstallAppBanner />
       <header className={s.header}>
         <div className={s.headerInner}>
           <Link className={s.brand} href="/" aria-label="tofutr.com ana sayfa">
-            <BrandLogo height={46} priority />
-            <span className={s.brandDescription}>Öğretmen Topluluğu</span>
+            <BrandLogo height={52} priority />
+            <span className={s.brandDescription}>Okulunla aynı yerde.</span>
           </Link>
+
+          <nav className={s.nav} aria-label="Ana menü">
+            <Link href="/">Ana Sayfa</Link>
+            {(['Sistem Hakkında', 'İletişim', 'Topluluk'] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                aria-current={section === item ? 'page' : undefined}
+                onClick={() => setSection(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
 
           <div className={s.headerActions}>
             {hasTeacherSession ? (
@@ -274,6 +291,44 @@ export function PublicCommunityPage() {
       </header>
 
       <main className={s.main}>
+        {section !== 'Topluluk' ? (
+          <section className={s.emptyBox}>
+            <h2>{section}</h2>
+            {section === 'Sistem Hakkında' ? (
+              <>
+                <p>
+                  tofutr.com; öğretmen, öğrenci ve veliyi ödev takibi, öğrenci gelişimi ve
+                  okul–aile iletişimi etrafında bir araya getiren bir okul portalıdır.
+                </p>
+                <p>
+                  Öğrenciler okul numarası ve PIN ile, öğretmenler kendi hesaplarıyla giriş
+                  yapar.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  Giriş bilgileriniz ve okulunuza ilişkin sorularınız için sınıf
+                  öğretmeninizle iletişime geçebilirsiniz.
+                </p>
+                <p>
+                  Hesabınızla ilgili sorunlarda okul yönetiminize başvurabilirsiniz.
+                </p>
+              </>
+            )}
+            <div className={s.emptyActions}>
+              <button
+                type="button"
+                className={s.btnPrimary}
+                onClick={() => setSection('Topluluk')}
+              >
+                <span>Topluluğa dön</span>
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </section>
+        ) : (
+          <>
         <div className={s.introRow}>
           <div>
             <h1 className={s.pageTitle}>Öğretmen Topluluğu</h1>
@@ -585,6 +640,8 @@ export function PublicCommunityPage() {
                 </button>
               </div>
             )}
+          </>
+        )}
           </>
         )}
       </main>

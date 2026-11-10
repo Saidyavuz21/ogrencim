@@ -14,9 +14,15 @@
 .brand img { display: block; flex-shrink: 0; }
 .brand > .brandDescription { margin-top: 0; padding-left: 14px; border-left: 1px solid #dedad0; max-width: 12ch; line-height: 1.4; }
 .nav { display: flex; gap: 32px; align-items: center; }
-.nav button { min-height: 44px; background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 0; font-size: 14px; font-weight: 550; color: #58665f; }
-.nav button[aria-current] { color: #25634b; border-bottom-color: #25634b; }
-.nav button:hover { color: #25634b; }
+.nav button, .nav a { min-height: 44px; display: inline-flex; align-items: center; background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 0; font-size: 14px; font-weight: 550; color: #58665f; text-decoration: none; }
+.nav button[aria-current], .nav a[aria-current] { color: #25634b; border-bottom-color: #25634b; }
+.nav button:hover, .nav a:hover { color: #25634b; }
+.headerActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; flex-shrink: 0; }
+.btnPrimary, .btnSecondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.btnPrimary, .page a.btnPrimary { border: 1px solid #25634b; background: #25634b; color: #fff; }
+.btnPrimary:hover, .page a.btnPrimary:hover { background: #1d503d; border-color: #1d503d; color: #fff; }
+.btnSecondary, .page a.btnSecondary { border: 1px solid #a4b1a6; background: #fff; color: #20352d; }
+.btnSecondary:hover, .page a.btnSecondary:hover { border-color: #25634b; background: #e6f1e9; color: #25634b; }
 .communityLink { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid #a4b1a6; border-radius: 10px; color: #25634b; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
 .communityLink:hover { background: #e6f1e9; border-color: #25634b; }
 .communityLink:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
@@ -32,8 +38,9 @@
 .mobileNav button[aria-current] { background: #e6f1e9; color: #25634b; font-weight: 600; }
 .mobileNav button:hover { background: #f0f5ef; }
 @media (max-width: 760px) {
-  .header .headerInner { flex-wrap: nowrap; gap: 12px; padding: 16px 12px; }
-  .header .nav { display: none; }
+  .header .headerInner { flex-wrap: wrap; gap: 14px; padding: 16px 16px; min-height: auto; }
+  .header .nav { display: flex; width: 100%; justify-content: space-between; gap: 12px; order: 3; }
+  .header .nav button, .header .nav a { font-size: 13px; }
   .menuToggle { display: inline-flex; }
   .header .brand { min-width: 0; }
   .header .brand img { width: 116px; height: auto; }

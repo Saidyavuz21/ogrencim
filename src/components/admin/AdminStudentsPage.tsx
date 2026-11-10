@@ -347,7 +347,7 @@ export function AdminStudentsPage({ data, notify }: Props) {
               section={newSection}
               onChange={({ level, section }) => { setNewLevel(level); setNewSection(section); }}
               emptyLabel="Sınıf seviyesi"
-              selectClassName={styles.input}
+              selectClassName={styles.selectField}
               renderField={({ id, label, control }) => (
                 <div className={styles.field}>
                   <label htmlFor={id} className={styles.fieldLabel}>{label}</label>

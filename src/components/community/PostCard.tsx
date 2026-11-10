@@ -45,7 +45,6 @@ import {
   MoreHorizontal,
   Save,
   Send,
-  Star,
   Trash2,
   VolumeX,
   X,
@@ -701,8 +700,14 @@ export function PostCard({
 
           {/* Materyal kutusu (kind = 'item') */}
           {post.kind === 'item' && it && (
-            <div className={s.itemBox}>
-              <div className={subjectThumbClass(it.subject)}>
+            <div className={showItemThumb ? s.itemBox : `${s.itemBox} ${s.itemBoxNoThumb}`}>
+              <div
+                className={
+                  showItemThumb
+                    ? subjectThumbClass(it.subject)
+                    : `${subjectThumbClass(it.subject)} ${s.thumbBoxIconOnly}`
+                }
+              >
                 {showItemThumb && tUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -713,43 +718,40 @@ export function PostCard({
                     onError={() => setThumbFailed(true)}
                   />
                 ) : (
-                  <ItemIcon size={32} />
+                  <ItemIcon size={26} />
                 )}
               </div>
 
               <div className={s.itemBoxBody}>
-                <div className={s.field}>
-                  <h3 className={s.itemBoxTitle}>{it.title}</h3>
-                  <div className={s.itemBadges}>
+                <div className={s.itemMetaBlock}>
+                  <div className={s.itemTitleRow}>
                     <span className={`${s.itemBadge} ${s.itemBadgePrimary}`}>
                       {KIND_LABEL[it.kind]}
                     </span>
-                    {[it.subject, it.grade].filter(Boolean).map((tag) => (
-                      <span key={tag} className={s.itemBadge}>
-                        {tag}
-                      </span>
-                    ))}
-                    <span className={s.itemBadge}>
-                      {it.kind === 'board'
-                        ? `${it.page_count} sayfa`
-                        : `${it.question_count} soru`}
-                    </span>
-                    <span className={s.itemBadge}>{it.copy_count} kopya</span>
-                    <span className={s.itemBadge}>
-                      <Star size={13} aria-hidden="true" />
-                      <span>
-                        {it.rating_avg != null
-                          ? `${it.rating_avg.toLocaleString('tr-TR')} (${it.rating_count})`
-                          : 'Puan yok'}
-                      </span>
-                    </span>
+                    <h3 className={s.itemBoxTitle}>{it.title}</h3>
                   </div>
+
+                  <p className={s.itemMetaText}>
+                    {[
+                      it.subject,
+                      it.grade,
+                      it.kind === 'board'
+                        ? `${it.page_count} sayfa`
+                        : `${it.question_count} soru`,
+                      it.copy_count > 0 ? `${it.copy_count} kopya` : null,
+                      it.rating_avg != null
+                        ? `★ ${it.rating_avg.toLocaleString('tr-TR')} (${it.rating_count})`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
                 </div>
 
-                <div className={s.itemActions}>
+                <div className={s.itemActionsRow}>
                   <button
                     type="button"
-                    className={s.btnPrimary}
+                    className={`${s.btnPrimary} ${s.itemActionBtn}`}
                     onClick={() => {
                       const sum = feedPostToSummary(post);
                       if (sum) onOpenPreview(sum);
@@ -761,7 +763,7 @@ export function PostCard({
 
                   <button
                     type="button"
-                    className={s.btnSecondary}
+                    className={`${s.btnSecondary} ${s.itemActionBtn}`}
                     disabled={copyBusy}
                     onClick={handleCopyItem}
                   >
@@ -771,7 +773,7 @@ export function PostCard({
 
                   <button
                     type="button"
-                    className={s.btnSecondary}
+                    className={`${s.btnSecondary} ${s.itemActionBtn}`}
                     aria-pressed={it.is_favorite}
                     disabled={favBusy}
                     onClick={handleToggleFavorite}

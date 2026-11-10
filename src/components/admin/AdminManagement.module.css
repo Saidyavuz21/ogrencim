@@ -39,6 +39,8 @@
 .textarea { min-height: 140px; resize: vertical; }
 .pinInput { text-align: center; letter-spacing: .2em; }
 .field { display: grid; gap: 8px; min-width: 0; }
+.selectField { min-width: 0; }
+.selectField > button { min-height: 48px; font-size: 16px; border-color: #a4b1a6; }
 .selectedContext { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #a4b1a6; border-radius: 10px; background: #e6f1e9; }
 .selectedContext > span { min-width: 0; flex: 1 1 180px; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; }
 .fieldLabel { display: block; margin: 0; color: #58665f; font-size: 13px; font-weight: 500; line-height: 1.5; }

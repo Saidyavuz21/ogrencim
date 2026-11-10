@@ -1,19 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Eye, EyeOff, LogOut, AlertCircle, CheckCircle2, Info, Edit, X, Save, MailCheck } from '../icons';
+import React, { useState, useSyncExternalStore } from 'react';
+import { Eye, EyeOff, LogOut, AlertCircle, CheckCircle2, Info, Edit, X, Save, MailCheck, User, Globe, ShieldCheck } from '../icons';
 import { UserAccount, TEACHER_BRANCH_OPTIONS } from '../../data/portalData';
 import { changeMyPassword, updateMyProfile, changeMyEmail } from '../../lib/supabaseClient';
 import { CustomSelect } from '../CustomSelect';
 import { CollapsiblePanel } from './TeacherUi';
 import { CommunityProfileSettings } from '../community/CommunityProfileSettings';
 import styles from './TeacherDashboard.module.css';
+import profileStyles from './TeacherProfile.module.css';
 
 interface TeacherProfilePageProps {
   user?: UserAccount;
   onLogout?: () => void;
   onUserUpdated?: (updated: UserAccount) => void;
 }
+
+const subscribeDesktop = (onChange: () => void) => {
+  const media = window.matchMedia('(min-width: 1024px)');
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+};
+const getDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
 
 export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherProfilePageProps) {
   // Şifre değiştirme state
@@ -35,6 +43,9 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
   const [newEmail, setNewEmail] = useState('');
   const [savingEmail, setSavingEmail] = useState(false);
   const [emailNotice, setEmailNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [profileSection, setProfileSection] = useState<'account' | 'community' | 'security'>('account');
+  const [avatarTarget, setAvatarTarget] = useState<HTMLDivElement | null>(null);
+  const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktop, () => false);
 
   // Görüntülenen satırlar
   const rows: { label: string; value?: string; editable?: boolean }[] = [
@@ -137,11 +148,22 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
   };
 
   return (
-    <div className={`${styles.pageBody} ${styles.profileWorkspace}`}>
-      <div className={styles.pointsLayout}>
-        <section className={styles.panel} aria-labelledby="profile-info-title">
-          <div className={styles.profileIdentityBar}>
-            <div className={styles.profileHead}>
+    <div className={`${styles.pageBody} ${styles.profileWorkspace} ${profileStyles.profile}`} data-section={profileSection}>
+      <aside className={profileStyles.profileSidebar} aria-label="Profil ve ayar bölümleri">
+      <div ref={setAvatarTarget} className={profileStyles.avatarSlot} />
+      <div className={profileStyles.sidebarIdentity}><strong>{user?.name || 'Hesabım'}</strong><span>{user?.branch || user?.title || ''}</span></div>
+      <nav className={profileStyles.sectionNav} aria-label="Profil bölümleri">
+        {([{ id: 'account', label: 'Hesap bilgileri', icon: User }, { id: 'community', label: 'Topluluk profili', icon: Globe }, { id: 'security', label: 'Güvenlik', icon: ShieldCheck }] as const).map((section) => (
+          <button key={section.id} type="button" aria-pressed={profileSection === section.id} onClick={() => setProfileSection(section.id)}><section.icon size={19} aria-hidden="true" />{section.label}</button>
+        ))}
+      </nav>
+      </aside>
+      <div className={profileStyles.content}>
+      <div className={`${styles.pointsLayout} ${profileStyles.layout}`}>
+        <section className={`${styles.panel} ${profileStyles.account}`} aria-labelledby="profile-info-title">
+          <div className={`${styles.profileIdentityBar} ${profileStyles.identity}`}>
+            <h2 className={`${styles.panelTitle} ${profileStyles.desktopOnly}`}>Hesap bilgileri</h2>
+            <div className={`${styles.profileHead} ${profileStyles.mobileIdentity}`}>
               <span className={styles.accountAvatar} aria-hidden="true">{user?.avatar || 'Ö'}</span>
               <div>
                 <h2 id="profile-info-title" className={styles.panelTitle}>{user?.name || 'Öğretmen'}</h2>
@@ -188,7 +210,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
 
           {isEditing ? (
             /* DÜZENLEME FORMU: Sadece Ad Soyad ve Branş değiştirilebilir */
-            <form onSubmit={handleSaveProfile} className={styles.profileEditFields}>
+            <form onSubmit={handleSaveProfile} className={`${styles.profileEditFields} ${profileStyles.editForm}`}>
               <div className="p-3 bg-emerald-50/60 border border-emerald-200/60 rounded-xl text-xs text-emerald-900 leading-relaxed">
                 Ad soyad ve branş bilginizi buradan güncelleyebilirsiniz. Okul, il/ilçe ve sınıf bilgileriniz okul yetkinizle ilişkili olduğu için yalnızca okul yönetimi tarafından değiştirilebilir.
               </div>
@@ -239,7 +261,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
           ) : (
             /* MEVCUT GÖRÜNTÜLEME ALANI */
             <>
-              <dl className={styles.infoList}>
+              <dl className={`${styles.infoList} ${profileStyles.details}`}>
                 {rows.map((row) => (
                   <div key={row.label}>
                     <dt className="flex items-center gap-2">
@@ -322,7 +344,7 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
           )}
         </section>
 
-        <aside className={styles.pointsAside}>
+        <aside className={`${styles.pointsAside} ${profileStyles.security}`}>
           <CollapsiblePanel title="Şifre değiştir" summary="Giriş şifrenizi güncelleyin">
             <h2 id="profile-password-title" className={styles.panelTitle}>Şifre değiştir</h2>
             {passwordNotice && (
@@ -374,7 +396,9 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
           </CollapsiblePanel>
 
           {onLogout && (
-            <section className={styles.panel}>
+            <section className={`${styles.panel} ${profileStyles.logoutPanel}`}>
+              <h2 className={`${styles.panelTitle} ${profileStyles.desktopOnly}`}>Oturum</h2>
+              <p className={`${styles.mutedText} ${profileStyles.desktopOnly}`}>Ortak bir cihaz kullanıyorsanız işiniz bittiğinde hesabınızdan çıkış yapın.</p>
               <button type="button" className={styles.dangerButton} onClick={onLogout}>
                 <LogOut size={18} aria-hidden="true" />Çıkış yap
               </button>
@@ -383,10 +407,11 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
         </aside>
       </div>
 
-      <section className={styles.panel} aria-labelledby="profile-community-title">
+      <section className={`${styles.panel} ${profileStyles.community}`} aria-labelledby="profile-community-title">
         <h2 id="profile-community-title" className={styles.panelTitle}>Topluluk profilim</h2>
-        <CommunityProfileSettings />
+        <CommunityProfileSettings desktopColumns avatarTarget={isDesktop ? avatarTarget : null} avatarFeedbackInSidebar={profileSection !== 'community'} />
       </section>
+      </div>
     </div>
   );
 }

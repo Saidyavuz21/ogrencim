@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DISPLAY_MODE_LABEL,
   VISIBILITY_LABEL,
@@ -44,7 +45,11 @@ const VISIBILITY_OPTIONS = (Object.keys(VISIBILITY_LABEL) as ProfileVisibility[]
 
 const DISPLAY_MODES = Object.keys(DISPLAY_MODE_LABEL) as DisplayMode[];
 
-export function CommunityProfileSettings() {
+export function CommunityProfileSettings({ desktopColumns = false, avatarTarget, avatarFeedbackInSidebar = false }: {
+  desktopColumns?: boolean;
+  avatarTarget?: HTMLElement | null;
+  avatarFeedbackInSidebar?: boolean;
+}) {
   const { confirm } = useDialog();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aliasId = useId();
@@ -195,11 +200,11 @@ export function CommunityProfileSettings() {
   };
 
   if (loading) {
-    return <Spinner center label="Topluluk profili ayarları yükleniyor…" />;
+    return <>{avatarTarget && createPortal(<Spinner center label="Profil yükleniyor…" />, avatarTarget)}<Spinner center label="Topluluk profili ayarları yükleniyor…" /></>;
   }
 
   if (loadError || !data) {
-    return (
+    const errorContent = (
       <div className={s.settingsWrap}>
         <Notice notice={{ kind: 'error', text: loadError || 'Ayarlar yüklenemedi.' }} />
         <div>
@@ -209,6 +214,7 @@ export function CommunityProfileSettings() {
         </div>
       </div>
     );
+    return avatarTarget ? createPortal(errorContent, avatarTarget) : errorContent;
   }
 
   const aliasText = form.alias || '';
@@ -249,19 +255,8 @@ export function CommunityProfileSettings() {
     { key: 'notify_follow_posts', label: 'Takip ettiklerim paylaşınca bildirim al' },
   ];
 
-  return (
-    <form className={s.settingsWrap} onSubmit={handleSave}>
-      {data.suspended_until && (
-        <div role="alert" className={s.suspendBanner}>
-          <AlertCircle size={18} aria-hidden="true" />
-          <span>
-            Topluluk hesabınız {formatDate(data.suspended_until)} tarihine kadar durduruldu.
-          </span>
-        </div>
-      )}
-
-      {/* Profil resmi */}
-      <div className={s.avatarRow}>
+  const avatarControls = (
+      <div className={`${s.avatarRow} ${avatarTarget ? s.avatarSidebar : ''}`}>
         <TeacherAvatar
           card={{
             name: livePreviewName,
@@ -305,9 +300,20 @@ export function CommunityProfileSettings() {
           <span className={s.privacyNote}>JPG, PNG veya WebP · Otomatik 256×256 kare</span>
         </div>
       </div>
+  );
+
+  return (
+    <form className={`${s.settingsWrap} ${desktopColumns ? s.profileSettingsWide : ''}`} onSubmit={handleSave}>
+      {data.suspended_until && (
+        <div role="alert" className={s.suspendBanner}>
+          <AlertCircle size={18} aria-hidden="true" />
+          <span>Topluluk hesabınız {formatDate(data.suspended_until)} tarihine kadar durduruldu.</span>
+        </div>
+      )}
+      {avatarTarget ? createPortal(<>{avatarControls}{avatarFeedbackInSidebar && <Notice notice={notice} onClose={() => setNotice(null)} />}</>, avatarTarget) : avatarControls}
 
       {/* Görünen ad */}
-      <div className={s.sectionGroup}>
+      <div className={`${s.sectionGroup} ${s.settingsName}`}>
         <p className={s.groupTitle}>Görünen ad</p>
         <div className={s.radioList} role="radiogroup" aria-label="Görünen ad biçimi">
           {DISPLAY_MODES.map((m) => {
@@ -353,7 +359,7 @@ export function CommunityProfileSettings() {
       </div>
 
       {/* Tanıtım (bio) */}
-      <div className={s.sectionGroup}>
+      <div className={`${s.sectionGroup} ${s.settingsBio}`}>
         <div className={s.field}>
           <label htmlFor={bioId}>Tanıtım (en fazla 200 karakter)</label>
           <textarea
@@ -369,7 +375,7 @@ export function CommunityProfileSettings() {
       </div>
 
       {/* Görünürlük anahtarları */}
-      <div className={s.sectionGroup}>
+      <div className={`${s.sectionGroup} ${s.settingsPreferences}`}>
         <p className={s.groupTitle}>Paylaşılan bilgiler ve tercihler</p>
         <div className={s.toggleList}>
           {toggleItems.map((item) => {
@@ -402,7 +408,7 @@ export function CommunityProfileSettings() {
       </div>
 
       {/* Profilimi kimler görsün */}
-      <div className={s.sectionGroup}>
+      <div className={`${s.sectionGroup} ${s.settingsVisibility}`}>
         <div className={s.field}>
           <label htmlFor={visibilityId}>Profilimi kimler görsün</label>
           <CustomSelect
@@ -419,9 +425,9 @@ export function CommunityProfileSettings() {
         ziyaretçilere gönderilmez.
       </p>
 
-      <Notice notice={notice} onClose={() => setNotice(null)} />
+      {(!avatarTarget || !avatarFeedbackInSidebar) && <Notice notice={notice} onClose={() => setNotice(null)} />}
 
-      <div>
+      <div className={s.settingsSaveRow}>
         <button type="submit" className={s.btnPrimary} disabled={saving}>
           <Save size={16} aria-hidden="true" />
           <span>{saving ? 'Kaydediliyor…' : 'Kaydet'}</span>

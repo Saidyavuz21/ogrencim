@@ -32,6 +32,8 @@ Güncelleme: 9 Kasım 2026. Codex, Claude, Gemini ve diğer kodlama ajanları ye
 
 ## Ölçü ve yüzey
 
+- Profilim/Hesabım masaüstü yerleşimi `TeacherProfile.module.css` kapsamındadır ve ortak kabuğun içerik genişliğine uyar; içeriye ayrı dar bir maksimum genişlik koyma. Fotoğraf ve bölüm menüsü soldaki kalıcı panelde, seçilen Hesap bilgileri / Topluluk profili / Güvenlik içeriği sağda kalır. Fotoğraf yükleme/kaldırma kontrolleri tektir; bölümler arasında kaybolmaz ve tekrar oluşturulmaz. Mobil düzeni bu masaüstü kurallarıyla değiştirme.
+
 - `DESIGN.md` renkleri ve mevcut `--teacher-*` değişkenleri kullanılır. Sayfa sıcak kırık beyaz, yüzey beyaz, vurgu yeşildir. Baskın mavi tema yok.
 - Panel: 1 px `--teacher-border`; masaüstü radius 18 px / padding 22–24 px, mobil radius 16 px / padding 16–18 px.
 - Panel arası masaüstü 20–24 px / mobil 16–18 px; yakın kontroller arası 8–12 px.

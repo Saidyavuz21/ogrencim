@@ -18,7 +18,7 @@
   outline-offset: 2px;
 }
 
-/* Üst çubuk — HomePage ile uyumlu */
+/* Üst çubuk — HomePage ile birebir uyumlu */
 .header {
   background: #fff;
   border-bottom: 1px solid #dedad0;
@@ -26,30 +26,76 @@
 
 .headerInner {
   max-width: 1440px;
-  min-height: 88px;
+  min-height: 100px;
   margin: 0 auto;
-  padding: 16px 32px;
+  padding: 20px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 32px;
 }
 
 .brand {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 12px;
   color: #20352d;
+  font-size: 29px;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
   text-decoration: none;
 }
 
+.brand img {
+  display: block;
+  flex-shrink: 0;
+}
+
 .brandDescription {
+  margin-top: 0;
   padding-left: 14px;
   border-left: 1px solid #dedad0;
+  max-width: 12ch;
   color: #58665f;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.35;
+  font-size: 11px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+.nav {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.nav a,
+.nav button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 10px 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  color: #58665f;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav a[aria-current],
+.nav button[aria-current] {
+  color: #25634b;
+  border-bottom-color: #25634b;
+}
+
+.nav a:hover,
+.nav button:hover {
+  color: #25634b;
 }
 
 .headerActions {
@@ -57,6 +103,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .btnPrimary,
@@ -77,15 +124,18 @@
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.btnPrimary {
+.btnPrimary,
+.page a.btnPrimary {
   border: 1px solid #25634b;
   background: #25634b;
   color: #fff;
 }
 
-.btnPrimary:hover:not(:disabled) {
+.btnPrimary:hover:not(:disabled),
+.page a.btnPrimary:hover {
   background: #1d503d;
   border-color: #1d503d;
+  color: #fff;
 }
 
 .btnSecondary {
@@ -741,12 +791,32 @@
 
 @media (max-width: 767px) {
   .headerInner {
-    padding: 14px 16px;
-    min-height: 72px;
+    flex-wrap: wrap;
+    padding: 16px 16px;
+    min-height: auto;
+    gap: 14px;
+  }
+
+  .brand img {
+    width: 116px;
+    height: auto;
   }
 
   .brandDescription {
-    display: none;
+    font-size: 10px;
+    padding-left: 10px;
+  }
+
+  .nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+    order: 3;
+  }
+
+  .nav a,
+  .nav button {
+    font-size: 13px;
   }
 
   .main {

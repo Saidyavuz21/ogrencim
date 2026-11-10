@@ -258,7 +258,10 @@ export function TeacherEditDialog({ teacher, onClose, onSaved, notify }: {
             onChange={({ level: l, section: s }) => setForm({ ...form, class_level: l, class_section: s })}
             allowEmpty
             emptyLabel="Sınıfı yok"
-            selectClassName={styles.input}
+            selectClassName={styles.selectField}
+            renderField={({ id, label, control }) => (
+              <div className={styles.field}><label htmlFor={id} className={styles.fieldLabel}>{label}</label>{control}</div>
+            )}
           />
         </div>
 
@@ -291,7 +294,7 @@ export function TeacherEditDialog({ teacher, onClose, onSaved, notify }: {
           newSchoolName=""
           currentSchoolName={teacher.school_id === form.school_id ? teacher.school_name : null}
           onChange={({ schoolId }) => setForm({ ...form, school_id: schoolId })}
-          selectClassName={styles.input}
+          selectClassName={styles.selectField}
         />
 
         <div className={styles.actions}>

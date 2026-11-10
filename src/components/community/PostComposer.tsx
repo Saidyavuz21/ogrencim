@@ -42,8 +42,11 @@ export function PostComposer({
   const [showLink, setShowLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
+  const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<NoticeState>(null);
+
+  const isExpanded = expanded || body.trim().length > 0 || showLink || linkUrl.trim().length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +90,7 @@ export function PostComposer({
     setLinkUrl('');
     setLinkTitle('');
     setShowLink(false);
+    setExpanded(false);
     setNotice({ kind: 'ok', text: 'Paylaşımınız yayınlandı.' });
 
     if (postRes.ok && postRes.data) {
@@ -97,18 +101,21 @@ export function PostComposer({
   const canSubmit = !busy && (body.trim().length > 0 || (showLink && linkUrl.trim().length > 0));
 
   return (
-    <form className={s.composerCard} onSubmit={handleSubmit}>
+    <form className={isExpanded ? s.composerCard : s.composerCardCompact} onSubmit={handleSubmit}>
       <div className={s.field}>
-        <label htmlFor={bodyId}>Toplulukla paylaş</label>
+        {isExpanded && <label htmlFor={bodyId}>Toplulukla paylaş</label>}
         <textarea
           id={bodyId}
-          className={s.textarea}
+          className={isExpanded ? s.textarea : s.textareaCompact}
+          rows={isExpanded ? 3 : 1}
           maxLength={2000}
           value={body}
+          onFocus={() => setExpanded(true)}
           onChange={(e) => setBody(e.target.value.slice(0, 2000))}
-          placeholder="Bir şey yaz…"
+          placeholder="Bir şey yaz veya paylaş…"
+          aria-label="Toplulukla paylaş"
         />
-        <span className={s.charCount}>{body.length} / 2000</span>
+        {isExpanded && <span className={s.charCount}>{body.length} / 2000</span>}
       </div>
 
       {showLink && (
@@ -140,65 +147,88 @@ export function PostComposer({
         </div>
       )}
 
-      <div className={s.composerMetaRow}>
-        <div className={s.field}>
-          <label htmlFor={subjectId}>Ders</label>
-          <CustomSelect
-            id={subjectId}
-            value={subject}
-            options={SUBJECT_SELECT_OPTIONS}
-            onChange={setSubject}
-          />
-        </div>
-        <div className={s.field}>
-          <label htmlFor={gradeId}>Sınıf / Kademe (isteğe bağlı)</label>
-          <CustomSelect
-            id={gradeId}
-            value={grade}
-            options={GRADE_SELECT_OPTIONS}
-            onChange={setGrade}
-          />
-        </div>
-      </div>
+      {isExpanded && (
+        <>
+          <div className={s.composerMetaRow}>
+            <div className={s.field}>
+              <label htmlFor={subjectId}>Ders</label>
+              <CustomSelect
+                id={subjectId}
+                value={subject}
+                options={SUBJECT_SELECT_OPTIONS}
+                onChange={setSubject}
+              />
+            </div>
+            <div className={s.field}>
+              <label htmlFor={gradeId}>Sınıf / Kademe</label>
+              <CustomSelect
+                id={gradeId}
+                value={grade}
+                options={GRADE_SELECT_OPTIONS}
+                onChange={setGrade}
+              />
+            </div>
+          </div>
 
-      <p className={s.privacyNote}>
-        Fotoğraf ve dosya paylaşılamaz; Drive ya da YouTube bağlantısı ekleyebilirsin.
-      </p>
+          <p className={s.privacyNote}>
+            Fotoğraf ve dosya paylaşılamaz; Drive ya da YouTube bağlantısı ekleyebilirsin.
+          </p>
+        </>
+      )}
 
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
-      <div className={s.composerFooter}>
-        <div className={s.composerTools}>
-          <button
-            type="button"
-            className={s.btnSecondary}
-            aria-pressed={showLink}
-            onClick={() => setShowLink((v) => !v)}
-          >
-            <Link2 size={16} aria-hidden="true" />
-            <span>Bağlantı ekle</span>
-          </button>
-
-          {onOpenBoards && (
-            <button type="button" className={s.btnSecondary} onClick={onOpenBoards}>
-              <Layers size={16} aria-hidden="true" />
-              <span>Tahta paylaş</span>
+      {isExpanded && (
+        <div className={s.composerFooter}>
+          <div className={s.composerTools}>
+            <button
+              type="button"
+              className={s.btnSecondary}
+              aria-pressed={showLink}
+              onClick={() => {
+                setExpanded(true);
+                setShowLink((v) => !v);
+              }}
+            >
+              <Link2 size={16} aria-hidden="true" />
+              <span>Bağlantı ekle</span>
             </button>
-          )}
 
-          {onOpenQuestions && (
-            <button type="button" className={s.btnSecondary} onClick={onOpenQuestions}>
-              <HelpCircle size={16} aria-hidden="true" />
-              <span>Soru seti paylaş</span>
+            {onOpenBoards && (
+              <button type="button" className={s.btnSecondary} onClick={onOpenBoards}>
+                <Layers size={16} aria-hidden="true" />
+                <span>Tahta paylaş</span>
+              </button>
+            )}
+
+            {onOpenQuestions && (
+              <button type="button" className={s.btnSecondary} onClick={onOpenQuestions}>
+                <HelpCircle size={16} aria-hidden="true" />
+                <span>Soru seti paylaş</span>
+              </button>
+            )}
+          </div>
+
+          <div className={s.composerSubmitGroup}>
+            {!body.trim() && !linkUrl.trim() && (
+              <button
+                type="button"
+                className={s.btnSecondary}
+                onClick={() => {
+                  setShowLink(false);
+                  setExpanded(false);
+                }}
+              >
+                Daralt
+              </button>
+            )}
+            <button type="submit" className={s.btnPrimary} disabled={!canSubmit}>
+              <Send size={16} aria-hidden="true" />
+              <span>{busy ? 'Paylaşılıyor…' : 'Paylaş'}</span>
             </button>
-          )}
+          </div>
         </div>
-
-        <button type="submit" className={s.btnPrimary} disabled={!canSubmit}>
-          <Send size={16} aria-hidden="true" />
-          <span>{busy ? 'Paylaşılıyor…' : 'Paylaş'}</span>
-        </button>
-      </div>
+      )}
     </form>
   );
 }

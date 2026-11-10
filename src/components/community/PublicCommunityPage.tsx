@@ -438,10 +438,11 @@ export function PublicCommunityPage() {
           <Spinner center label="Paylaşımlar yükleniyor…" />
         ) : items.length === 0 ? (
           <section className={s.emptyBox}>
-            <h2>Henüz herkese açık paylaşım yok</h2>
+            <h2>{hasActiveFilters ? 'Aramanıza uyan paylaşım yok' : 'Henüz herkese açık paylaşım yok'}</h2>
             <p>
-              Henüz herkese açık paylaşım yok. Öğretmenlerin paylaştıkları içerikler
-              burada görünecek.
+              {hasActiveFilters
+                ? 'Süzgeçleri değiştirip yeniden deneyin.'
+                : 'Öğretmenlerin hazırlayıp paylaştığı tahtalar ve soru setleri burada görünecek. Siz de öğretmenseniz ücretsiz kayıt olup ilk paylaşımı yapabilirsiniz.'}
             </p>
             <div className={s.emptyActions}>
               {hasActiveFilters && (

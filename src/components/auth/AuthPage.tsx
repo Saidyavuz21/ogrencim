@@ -26,7 +26,8 @@ interface AuthPageProps {
 export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'public' }) => {
   const isAdminPage = variant === 'admin';
 
-  const [teacherMode, setTeacherMode] = useState<TeacherMode>('register');
+  // Önce giriş formu; "Kayıt olun" ya da /giris#kayit bağlantısı kayıt formunu açar
+  const [teacherMode, setTeacherMode] = useState<TeacherMode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -67,7 +68,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     setTeacherMode(next);
     setShowPassword(false);
     clearFeedback();
+    // Adres çubuğu da kayıt/giriş durumunu göstersin (#kayit paylaşılabilir)
+    const url = new URL(window.location.href);
+    url.hash = next === 'register' ? 'kayit' : '';
+    window.history.replaceState(null, '', url);
+    window.scrollTo({ top: 0 });
   };
+
+  // "Ücretsiz kayıt ol" bağlantıları /giris#kayit adresine gelir
+  useEffect(() => {
+    const syncFromHash = () => {
+      if (window.location.hash === '#kayit') setTeacherMode('register');
+    };
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
 
   const resetSchool = () => {
     setRegSchoolId('');
@@ -168,6 +184,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     setIdentifier(regEmail.trim());
     setRegStep('hesap');
     setTeacherMode('login');
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
     setShowPassword(false);
     if (res.docWarning) {
       setErrorMsg(res.docWarning);
@@ -446,9 +463,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                 </form>
               )}
           <p className={styles.accountPrompt}>
-            {isRegister ? 'Zaten hesabınız var mı?' : 'Henüz hesabınız yok mu?'}{' '}
+            {isRegister ? 'Zaten hesabınız var mı?' : 'Hesabınız yok mu?'}{' '}
             <button className={styles.textButton} type="button" disabled={isSubmitting} onClick={() => switchTeacherMode(isRegister ? 'login' : 'register')}>
-              {isRegister ? 'Giriş yap' : 'Hesap oluştur'}
+              {isRegister ? 'Giriş yap' : 'Kayıt olun'}
             </button>
           </p>
         </section>

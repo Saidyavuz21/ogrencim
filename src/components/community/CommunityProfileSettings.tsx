@@ -244,7 +244,7 @@ export function CommunityProfileSettings() {
     { key: 'show_follow_counts', label: 'Takipçi sayılarım görünsün' },
     {
       key: 'public_preview',
-      label: 'Paylaşımlarım giriş yapmayanlara önizleme olarak görünsün',
+      label: 'Yeni paylaşımlarımda "Herkese açık önizleme" seçili gelsin',
     },
     { key: 'notify_follow_posts', label: 'Takip ettiklerim paylaşınca bildirim al' },
   ];

@@ -16,6 +16,7 @@ import {
   deletePost,
   listComments,
   react as reactToPost,
+  setItemPublic,
   reportContent,
   thumbUrl,
   updatePost,
@@ -36,6 +37,7 @@ import {
   Edit,
   Eye,
   Flag,
+  Globe,
   HeartHandshake,
   HelpCircle,
   Layers,
@@ -368,6 +370,26 @@ export function PostCard({
     onDeleted(post.id);
   };
 
+  const handleTogglePublic = async () => {
+    if (!post.item) return;
+    setMenuOpen(false);
+    const next = !post.item.is_public;
+    setBusy(true);
+    const res = await setItemPublic(post.item.id, next);
+    setBusy(false);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: res.error });
+      return;
+    }
+    onUpdated(post.id, { item: { ...post.item, is_public: next } });
+    setNotice({
+      kind: 'ok',
+      text: next
+        ? 'Artık giriş yapmayanlar da bu içeriğin önizlemesini görebilir.'
+        : 'Artık bu içeriği yalnızca öğretmenler görebilir.',
+    });
+  };
+
   const handleUnpublishItem = async () => {
     if (!post.item) return;
     setMenuOpen(false);
@@ -527,6 +549,18 @@ export function PostCard({
                     <span>Sil</span>
                   </button>
                 </>
+              )}
+
+              {post.is_mine && post.kind === 'item' && post.item && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={s.menuItem}
+                  onClick={handleTogglePublic}
+                >
+                  <Globe size={16} aria-hidden="true" />
+                  <span>{post.item.is_public ? 'Yalnızca öğretmenler görsün' : 'Herkese açık önizleme yap'}</span>
+                </button>
               )}
 
               {post.is_mine && post.kind === 'item' && post.item && (

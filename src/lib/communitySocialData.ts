@@ -134,6 +134,8 @@ export interface PostItem {
   is_favorite: boolean;
   origin_author: string | null;
   origin_title: string | null;
+  /** Yalnızca yazara gelir: giriş yapmayanlara önizleme olarak görünüyor mu */
+  is_public?: boolean | null;
 }
 
 export interface FeedPost {
@@ -443,6 +445,9 @@ export const getPublicGallery = (q: { query?: string; kind?: 'board' | 'question
     p_query: q.query?.trim() || null, p_kind: q.kind || null, p_subject: q.subject || null, p_grade: q.grade || null,
     p_author: q.authorId || null, p_sort: q.sort || 'popular', p_limit: q.limit || 24, p_offset: q.offset || 0,
   });
+
+/** Yazar: paylaşılan tahta/soru seti giriş yapmayanlara önizleme olarak görünsün mü */
+export const setItemPublic = (itemId: string, on: boolean) => rpc<null>('community_set_public', { p_item: itemId, p_on: on });
 
 export const getPublicItem = (itemId: string) => rpc<PublicItem | null>('community_public_item', { p_item: itemId });
 

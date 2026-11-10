@@ -25,7 +25,7 @@ import {
   publishToCommunity,
   scanForPublish,
 } from '../../lib/communityData';
-import { uploadItemThumb } from '../../lib/communitySocialData';
+import { getMySettings, setItemPublic, uploadItemThumb } from '../../lib/communitySocialData';
 import f from '../files/Files.module.css';
 import styles from './Community.module.css';
 import socialStyles from './CommunitySocial.module.css';
@@ -43,6 +43,13 @@ export function PublishDialog({ source, initial, onClose, onPublished }: {
   const [outcomes, setOutcomes] = useState((initial.outcomes || []).join(', '));
   const [tags, setTags] = useState((initial.tags || []).join(', '));
   const [confirm, setConfirm] = useState(false);
+  // Giriş yapmayanlara önizleme: varsayılanı profil ayarından gelir
+  const [isPublic, setIsPublic] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getMySettings().then((res) => { if (alive && res.ok) setIsPublic(!!res.data.public_preview); });
+    return () => { alive = false; };
+  }, []);
   const [scan, setScan] = useState<{ findings: string[]; page_count: number; question_count: number } | null>(null);
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -144,6 +151,10 @@ export function PublishDialog({ source, initial, onClose, onPublished }: {
       setError(res.error);
       return;
     }
+    if (isPublic) {
+      const pub = await setItemPublic(res.data, true);
+      if (!pub.ok) setError(`Paylaşıldı, ancak herkese açık yapılamadı: ${pub.error}`);
+    }
     await generateAndUploadThumb(res.data);
     setBusy(false);
     onPublished(res.data);
@@ -207,6 +218,14 @@ export function PublishDialog({ source, initial, onClose, onPublished }: {
             </p>
           )
         )}
+
+        <label className={styles.confirm}>
+          <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+          <span>
+            <b>Herkese açık önizleme:</b> giriş yapmayan ziyaretçiler de bu içeriğin küçük önizlemesini (ilk sayfa, başlık, ders, sınıf) görsün.
+            İçeriği açmak ve kopyalamak için yine giriş gerekir. Kapalıysa yalnızca öğretmenler görür.
+          </span>
+        </label>
 
         <label className={styles.confirm}>
           <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />

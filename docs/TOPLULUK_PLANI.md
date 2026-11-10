@@ -26,57 +26,57 @@ Güncelleme: 10 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
 - [x] Arayüz için veri katmanı: `src/lib/communitySocialData.ts`
 - Ekranlar Gemini ile yapılacak: istemler `docs/TOPLULUK_GEMINI_ISTEMLERI.md`; her istemden sonra Claude kontrol eder.
 
-## Aşama 1 – Profil, gizlilik, takip
+## Aşama 1 – Profil, gizlilik, takip ✅ (10 Kasım 2026, `bfc73ae`)
 
-- [ ] **Profil bilgileri:** görünen ad, branş, il, okul, kısa tanıtım (en fazla 200 karakter)
-- [ ] **Profil resmi:** yüklenirken 256 × 256 px'e küçültülür (~20 KB); kotaya sayılmaz; değiştirilince eskisi silinir. Resim yoksa baş harfler. Yüz zorunlu değil.
-- [ ] **Gizlilik ayarları** (varsayılanlar parantezde):
+- [x] **Profil bilgileri:** görünen ad, branş, il, okul, kısa tanıtım (en fazla 200 karakter)
+- [x] **Profil resmi:** yüklenirken 256 × 256 px'e küçültülür (~20 KB); kotaya sayılmaz; değiştirilince eskisi silinir. Resim yoksa baş harfler. Yüz zorunlu değil.
+- [x] **Gizlilik ayarları** (varsayılanlar parantezde):
   - Ad: tam / kısaltılmış (Ayşe Y.) / takma ad (kısaltılmış)
   - Profil resmi görünsün (evet)
   - Okul görünsün (hayır) · İl görünsün (evet) · Branş görünsün (evet)
   - Profilimi kimler görsün: herkes / yalnızca öğretmenler / yalnızca takipçilerim / kimse (yalnızca öğretmenler)
   - Takip edilebilirim (evet) · Takipçi sayım görünsün (evet)
   - Paylaşımlarım herkese açık önizlemede çıksın (hayır)
-- [ ] Gizliliğe göre süzülmüş profil verisi yalnızca sunucu fonksiyonundan gelir (tablolar doğrudan okunamaz)
-- [ ] **Öğretmen sayfası:** resim, ad, branş, il, tanıtım, takipçi/takip sayısı, paylaşımları, teşekkür ve kopya toplamları, Takip et düğmesi
-- [ ] **Takip:** öğretmen takip etme/bırakma; takipçi ve takip listeleri; kendini takip edemez
-- [ ] **Konu takibi:** branş + sınıf (ör. "5. sınıf matematik")
-- [ ] Takip önerileri: aynı branş, aynı il
+- [x] Gizliliğe göre süzülmüş profil verisi yalnızca sunucu fonksiyonundan gelir (tablolar doğrudan okunamaz)
+- [x] **Öğretmen sayfası:** resim, ad, branş, il, tanıtım, takipçi/takip sayısı, paylaşımları, teşekkür ve kopya toplamları, Takip et düğmesi
+- [x] **Takip:** öğretmen takip etme/bırakma; takipçi ve takip listeleri; kendini takip edemez
+- [x] **Konu takibi:** branş + sınıf (ör. "5. sınıf matematik")
+- [x] Takip önerileri: aynı branş, aynı il
 
-## Aşama 2 – Akış ve paylaşım
+## Aşama 2 – Akış ve paylaşım ✅ (`59f72c4`)
 
-- [ ] **Paylaşım kutusu** akışın üstünde: "Bir şey yaz…" + Tahta ekle / Soru seti ekle / Bağlantı ekle
-- [ ] **Yazı gönderisi:** metin (en fazla 2000 karakter), ders; fotoğraf yok
-- [ ] **Bağlantı gönderisi:** adres + başlık; yalnızca http/https; önizleme resmi çekilmez (dış sitelere istek yok)
-- [ ] Tahta ve soru seti paylaşımı akışta kart olarak görünür (mevcut paylaşım altyapısı korunur)
-- [ ] **Önizleme resmi:** tahtanın ilk sayfasından küçük resim, paylaşım anında üretilir (~30 KB)
-- [ ] **Akış sekmeleri:** Takip ettiklerim / Branşım / Herkes; takip ettiklerim boşsa öneriler gösterilir
-- [ ] "Akış / Galeri" görünüm seçimi (galeri: yalnızca tahta ve soru setleri, ızgara; mobilde 2 sütun; seçim cihazda hatırlanır)
-- [ ] Öğretmen sayfasında paylaşımlar galeri olarak
-- [ ] Sayfalı yükleme (aşağı kaydırdıkça)
-- [ ] **Tepkiler:** Teşekkürler, Derste kullandım, Kaydet (mevcut favoriler), Kopyala (mevcut)
-- [ ] Mevcut kişisel veri taraması (öğrenci adı, telefon, e-posta, TC no) yazılara ve bağlantı başlıklarına da uygulanır
-- [ ] Paylaşım sıklığı sınırı (ör. günde 20 gönderi)
-- [ ] Öğretmen kendi gönderisini düzenler/siler
+- [x] **Paylaşım kutusu** akışın üstünde: "Bir şey yaz…" + Tahta ekle / Soru seti ekle / Bağlantı ekle
+- [x] **Yazı gönderisi:** metin (en fazla 2000 karakter), ders; fotoğraf yok
+- [x] **Bağlantı gönderisi:** adres + başlık; yalnızca http/https; önizleme resmi çekilmez (dış sitelere istek yok)
+- [x] Tahta ve soru seti paylaşımı akışta kart olarak görünür (mevcut paylaşım altyapısı korunur)
+- [x] **Önizleme resmi:** tahtanın ilk sayfasından küçük resim, paylaşım anında üretilir (~30 KB)
+- [x] **Akış sekmeleri:** Takip ettiklerim / Branşım / Herkes; takip ettiklerim boşsa öneriler gösterilir
+- [x] "Akış / Galeri" görünüm seçimi (galeri: yalnızca tahta ve soru setleri, ızgara; mobilde 2 sütun; seçim cihazda hatırlanır)
+- [x] Öğretmen sayfasında paylaşımlar galeri olarak
+- [x] Sayfalı yükleme (aşağı kaydırdıkça)
+- [x] **Tepkiler:** Teşekkürler, Derste kullandım, Kaydet (mevcut favoriler), Kopyala (mevcut)
+- [x] Mevcut kişisel veri taraması (öğrenci adı, telefon, e-posta, TC no) yazılara ve bağlantı başlıklarına da uygulanır
+- [x] Paylaşım sıklığı sınırı (ör. günde 20 gönderi)
+- [x] Öğretmen kendi gönderisini düzenler/siler
 
-## Aşama 3 – Yorum, bildirim, denetim
+## Aşama 3 – Yorum, bildirim, denetim ✅ (`e296c4d`)
 
-- [ ] **Yorumlar** (yalnızca öğretmenler; en fazla 1000 karakter; kişisel veri taraması; sıklık sınırı)
-- [ ] **Bildirimler:** yeni takipçi, takip ettiğin öğretmen paylaştı, içeriğin kopyalandı, teşekkür, yorum; aynı gün birikenler tek satırda
-- [ ] Bildirim ayarları: takip ettiklerim paylaşınca bildir (açık/kapalı); öğretmen sayfasında "bu öğretmenin paylaşımlarında bildir"
-- [ ] **Şikâyet et** (gönderi, yorum, profil) → yönetici panelinde **denetim kuyruğu**: kaldır, uyar, toplulukta askıya al
-- [ ] **Engelle / sessize al**
-- [ ] Kaldırılan içerik ve şikâyet kayıtları saklanır (5651 sayılı kanun: yer sağlayıcı yükümlülükleri)
+- [x] **Yorumlar** (yalnızca öğretmenler; en fazla 1000 karakter; kişisel veri taraması; sıklık sınırı)
+- [x] **Bildirimler:** yeni takipçi, takip ettiğin öğretmen paylaştı, içeriğin kopyalandı, teşekkür, yorum; aynı gün birikenler tek satırda
+- [x] Bildirim ayarları: takip ettiklerim paylaşınca bildir (açık/kapalı); öğretmen sayfasında "bu öğretmenin paylaşımlarında bildir"
+- [x] **Şikâyet et** (gönderi, yorum, profil) → yönetici panelinde **denetim kuyruğu**: kaldır, uyar, toplulukta askıya al
+- [x] **Engelle / sessize al**
+- [x] Kaldırılan içerik ve şikâyet kayıtları saklanır (5651 sayılı kanun: yer sağlayıcı yükümlülükleri)
 
-## Aşama 4 – Herkese açık topluluk
+## Aşama 4 – Herkese açık topluluk ✅
 
-- [ ] Giriş gerektirmeyen `/topluluk` sayfası: yalnızca önizleme kartları (ilk sayfa resmi, başlık, ders, sınıf, sayfa/soru sayısı, yazar gizliliğe göre, teşekkür ve kopya sayısı)
-- [ ] Soru setinde yalnızca ilk sorunun metni; şıklar ve cevaplar yok. Tahtanın içeriği hiçbir zaman gönderilmez
-- [ ] Herkese açık öğretmen sayfası (profil gizliliği "herkes" ise)
-- [ ] Yalnızca öğretmenin "herkese açık önizlemede çıksın" dediği içerikler
-- [ ] Her işlem düğmesi "Giriş yap / Ücretsiz kayıt ol"a götürür
-- [ ] Ana sayfadaki Topluluk bağlantısı bu sayfaya yönlenir; arama motorları için başlık/açıklama
-- [ ] Ziyaretçi isteklerine sıklık sınırı (kazıma önlemi)
+- [x] Giriş gerektirmeyen `/topluluk` sayfası: yalnızca önizleme kartları (ilk sayfa resmi, başlık, ders, sınıf, sayfa/soru sayısı, yazar gizliliğe göre, teşekkür ve kopya sayısı)
+- [x] Soru setinde yalnızca ilk sorunun metni; şıklar ve cevaplar yok. Tahtanın içeriği hiçbir zaman gönderilmez
+- [x] Herkese açık öğretmen sayfası (profil gizliliği "herkes" ise)
+- [x] Yalnızca öğretmenin "herkese açık önizlemede çıksın" dediği içerikler
+- [x] Her işlem düğmesi "Giriş yap / Ücretsiz kayıt ol"a götürür
+- [x] Ana sayfadaki Topluluk bağlantısı bu sayfaya yönlenir; arama motorları için başlık/açıklama
+- [ ] Ziyaretçi isteklerine sıklık sınırı (kazıma önlemi) — veritabanında IP bilinmediği için yapılmadı; VPS/CDN katmanında eklenecek
 
 ## Aşama 5 – Büyüme (sonra)
 
@@ -98,6 +98,11 @@ Güncelleme: 10 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
 | 5 – Rozetler, öne çıkanlar, gruplar | sonra, 3–5 gün |
 
 Her aşama ayrı ayrı kullanılabilir hâlde biter. Tahmine tarayıcıda görsel kontrol ve düzeltmeler dahildir; gerçek öğretmenlerle deneme dahil değildir.
+
+## Doğrulama durumu
+
+- Tip ve lint kontrolleri geçti; ziyaretçinin yalnızca önizleme fonksiyonlarına erişebildiği canlı sunucuda denendi.
+- Ekranlar tarayıcıda gerçek öğretmen hesabıyla henüz kontrol edilmedi.
 
 ## Açık sorular
 

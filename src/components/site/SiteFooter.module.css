@@ -1,0 +1,18 @@
+/* Kendi başına çalışır: ana sayfa ve topluluk sayfasında da kullanılır. */
+.footer { border-top: 1px solid #dedad0; background: #f7f6f2; color: #58665f; font-family: var(--font-geist-sans), Arial, sans-serif; }
+.footer * { box-sizing: border-box; }
+.inner { max-width: 1440px; margin: 0 auto; padding: 28px 32px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.groups { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 24px 48px; }
+.group h2 { margin: 0 0 6px; color: #20352d; font-size: 13px; font-weight: 600; line-height: 1.5; }
+.group ul { margin: 0; padding: 0; list-style: none; }
+.group a { display: inline-flex; align-items: center; min-height: 32px; color: #58665f; font-size: 13px; line-height: 1.5; text-decoration: none; text-underline-offset: 4px; }
+.group a:hover { color: #25634b; text-decoration: underline; }
+.group a:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; border-radius: 4px; }
+.note { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid #eeece5; font-size: 12px; line-height: 1.6; }
+
+@media (max-width: 760px) {
+  .inner { padding: 24px 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .groups { grid-template-columns: 1fr; gap: 18px; }
+  .group a { min-height: 44px; font-size: 14px; }
+}
+@media print { .footer { display: none; } }

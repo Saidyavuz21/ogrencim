@@ -1,0 +1,124 @@
+/* Herkese açık bilgi sayfaları: Hakkında, Özellikler, İletişim, Yardım ve hukuki metinler. */
+.page { min-height: 100svh; display: flex; flex-direction: column; background: #f7f6f2; color: #20352d; font-family: var(--font-geist-sans), Arial, sans-serif; }
+.page * { box-sizing: border-box; }
+.page ::selection { background: #d5e8d9; color: #20352d; }
+.page :is(a, button, summary):focus-visible { outline: 3px solid #25634b; outline-offset: 3px; border-radius: 4px; }
+.page button { font: inherit; cursor: pointer; }
+.page :is(a, button) { -webkit-tap-highlight-color: transparent; }
+
+/* Üst menü — ana sayfadaki ölçülerle aynı */
+.header { background: #fff; border-bottom: 1px solid #dedad0; }
+.headerInner { max-width: 1440px; min-height: 100px; margin: 0 auto; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.brand img { display: block; flex-shrink: 0; }
+.brandDescription { max-width: 12ch; padding-left: 14px; border-left: 1px solid #dedad0; color: #58665f; font-size: 11px; line-height: 1.4; }
+.navigationGroup { display: contents; }
+.nav { display: flex; align-items: center; gap: 32px; }
+.nav a { min-height: 44px; display: inline-flex; align-items: center; padding: 10px 0; border-bottom: 2px solid transparent; color: #58665f; font-size: 14px; font-weight: 550; text-decoration: none; white-space: nowrap; }
+.nav a:hover { color: #25634b; }
+.nav a[aria-current] { color: #25634b; border-bottom-color: #25634b; }
+.headerActions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.btnPrimary, .btnSecondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.btnPrimary { border: 1px solid #25634b; background: #25634b; color: #fff; }
+.btnPrimary:hover { background: #1d503d; border-color: #1d503d; }
+.btnSecondary { border: 1px solid #a4b1a6; background: #fff; color: #20352d; }
+.btnSecondary:hover { border-color: #25634b; background: #e6f1e9; color: #25634b; }
+.menuToggle { display: none; width: 44px; height: 44px; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #dedad0; border-radius: 10px; background: #fff; color: #25634b; }
+
+/* İçerik */
+.main { width: 100%; max-width: 824px; margin: 0 auto; padding: 44px 32px 72px; flex: 1; }
+.wide { max-width: 1144px; }
+.pageHeader { margin-bottom: 28px; }
+.pageHeader h1 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.3; letter-spacing: -.02em; text-wrap: balance; }
+.lead { max-width: 68ch; margin: 10px 0 0; color: #58665f; font-size: 16px; line-height: 1.7; }
+
+/* Düz yazı */
+.prose { max-width: 72ch; }
+.prose h2 { margin: 36px 0 10px; font-size: 20px; font-weight: 600; line-height: 1.4; letter-spacing: -.01em; }
+.prose > h2:first-child { margin-top: 0; }
+.prose h3 { margin: 22px 0 6px; font-size: 16px; font-weight: 600; line-height: 1.5; }
+.prose :is(p, li) { font-size: 15px; line-height: 1.75; }
+.prose p { margin: 0 0 14px; }
+.prose :is(ul, ol) { margin: 0 0 14px; padding-left: 22px; }
+.prose li + li { margin-top: 6px; }
+.prose a, .textLink { color: #25634b; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.prose a:hover, .textLink:hover { color: #1d503d; }
+.updated { margin: 32px 0 0; color: #58665f; font-size: 13px; line-height: 1.6; }
+
+/* Beyaz panel ve ince ayırıcılı liste */
+.panel { margin: 0 0 24px; padding: 24px; border: 1px solid #dedad0; border-radius: 18px; background: #fff; }
+.panel > h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.4; letter-spacing: -.01em; }
+.panelLead { max-width: 68ch; margin: 6px 0 0; color: #58665f; font-size: 14px; line-height: 1.65; }
+.rows { margin: 16px 0 0; padding: 0; list-style: none; }
+.rows > li { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-top: 1px solid #eeece5; }
+.rows > li:last-child { padding-bottom: 0; }
+.rowIcon { width: 36px; height: 36px; display: grid; place-items: center; flex-shrink: 0; border-radius: 10px; background: #e6f1e9; color: #25634b; }
+.rowText { min-width: 0; }
+.rowText strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.5; }
+.rowText span, .rowText p { display: block; margin: 2px 0 0; color: #58665f; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+.twoColumns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+/* İki sütunda satır çizgileri iki sütunu da ayırır; son satırın alt boşluğu eşit kalır */
+.twoColumns > li:last-child, .twoColumns > li:nth-last-child(2):nth-child(odd) { padding-bottom: 0; }
+
+/* Sayfa içi kısa yollar ve eylemler */
+.jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; padding: 0; list-style: none; }
+.jump a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid #dedad0; border-radius: 10px; background: #fff; color: #20352d; font-size: 14px; font-weight: 500; text-decoration: none; }
+.jump a:hover { border-color: #25634b; background: #e6f1e9; color: #25634b; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.anchor { scroll-margin-top: 24px; }
+
+/* Sık sorulanlar */
+.faq { margin: 16px 0 0; }
+.faq details { border-top: 1px solid #eeece5; }
+.faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 12px 0; font-size: 15px; font-weight: 600; line-height: 1.5; cursor: pointer; list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; flex-shrink: 0; width: 24px; color: #25634b; font-size: 20px; font-weight: 400; line-height: 1; text-align: center; }
+.faq details[open] summary::after { content: '−'; }
+.faq summary:hover { color: #25634b; }
+.faq details > :not(summary) { max-width: 68ch; margin: 0 0 14px; color: #58665f; font-size: 14px; line-height: 1.7; }
+.faq details > ol, .faq details > ul { padding-left: 22px; }
+
+/* İletişim adresi */
+.mail { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; color: #25634b; font-size: 18px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.mail:hover { color: #1d503d; }
+
+@media (max-width: 1100px) {
+  .brandDescription { display: none; }
+  .headerInner { gap: 24px; }
+  .nav { gap: 22px; }
+}
+@media (max-width: 900px) {
+  .twoColumns { grid-template-columns: 1fr; }
+  .twoColumns > li:nth-last-child(2):nth-child(odd) { padding-bottom: 14px; }
+}
+@media (max-width: 760px) {
+  .headerInner { flex-wrap: wrap; min-height: 76px; padding: 14px 20px; gap: 12px; }
+  .brand { margin-right: auto; min-width: 0; }
+  .brand img { width: 116px; height: auto; }
+  .menuToggle { display: inline-flex; }
+  .navigationGroup { display: none; }
+  .navigationOpen { display: grid; width: 100%; gap: 16px; padding-top: 12px; border-top: 1px solid #eeece5; }
+  .nav { display: grid; gap: 4px; }
+  .nav a { padding: 10px 12px; border: 0; border-radius: 10px; }
+  .nav a[aria-current] { background: #e6f1e9; }
+  .headerActions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .headerActions a { padding-inline: 8px; font-size: 13px; white-space: normal; text-align: center; }
+  .main { padding: 28px 16px 48px; }
+  .pageHeader { margin-bottom: 22px; }
+  .pageHeader h1 { font-size: 24px; }
+  .lead { font-size: 15px; }
+  .prose h2 { margin-top: 30px; font-size: 19px; }
+  .panel { margin-bottom: 16px; padding: 18px 16px; border-radius: 16px; }
+  .panel > h2 { font-size: 18px; }
+  .jump a { flex: 1 1 auto; justify-content: center; }
+  .actions a { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .page :is(a, button) { transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease; }
+  .navigationOpen { animation: siteMenuEnter 180ms ease-out; }
+  @keyframes siteMenuEnter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+}
+@media print {
+  .header, .jump, .actions { display: none; }
+  .page { background: #fff; }
+}

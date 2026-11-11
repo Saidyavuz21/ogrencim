@@ -100,16 +100,20 @@ Geist Sans CSS değişkeni ve mevcut yedekler kullanılır; yeni font eklenmez. 
 
 Ortak kabuk: `TeacherDashboard`, `TeacherTopBar`, `TeacherSidebar`, `TeacherMobileNav`, `TeacherPageHeader`. Yeni sayfa bu kabuğa eklenir; ikinci header/sidebar üretilmez.
 
+Masaüstü öğretmen üst çubuğunun tam ortasında Topluluk / Sınıf araçlarım / Tahtalarım sekme görünümünde hızlı bağlantılar bulunur. Bu üç bağlantı sidebar içinde de kalır; mobil gezinme korunur.
+
 - Masaüstü kabuğu 1024 px ve üstüdür. Sidebar grid kolonları açıkken 264 px, daraltıldığında 104 px; bunlar dış boşluğu da içerir.
 - Header geniş tek beyaz yüzeydir. Logo/sınıf solda; mesaj, bildirim ve profil sağda. Öğeleri 1200 px ortalanmış dar kümeye sıkıştırma. Geniş ekranda 48 px, 1024–1199 px arasında 32 px yatay iç boşluk vardır.
 - İçerik header'dan bağımsızdır. Genel `.dashboard` 1152 px; yenilenen çalışma alanları en fazla 1560 px kullanır. Benzer sayfanın kapsamlı seçicilerini izle; bütün sayfaları yanlışlıkla yeniden boyutlandırma.
 - Panel içi masaüstünde 22–24 px, mobilde 16–18 px; panel arası masaüstünde 20–24 px, mobilde 16–18 px.
-- 1024 px altında üstte logo yanında menü ikonu, yandan çekmece, altta **Ana sayfa / Sınıf araçları / Mesajlar / Profilim** bulunur. Sınıf araçları dört aracı açan menüdür.
+- 1024 px altında üstte logo yanında menü ikonu, yandan çekmece, altta **Ana sayfa / Sınıf araçları / Mesajlar / Menü** bulunur. Sınıf araçları dört aracı açan menüdür.
 - Sayfaya özel içerik kırılımlarında mevcut 640/767/768 px eşikleri izlenir. Mobil alt menü ve güvenli alan için boşluk ayrılır; kaydet/toplu işlem çubukları alt menüyü örtmez.
 - Alt sayfalarda küçük, çerçevesiz H1; büyük ikonlu başlık kartı ve gereksiz Ana sayfa geri bağlantısı yok. Gerekli mobil sınıf seçimini koru. Ödev gönder başlığı altında ikinci sınıf seçici yok; formun hedef sınıf seçimi ayrıdır.
 - Mobil ana sayfadaki yeşil okul/öğretmen/sınıf paneli kullanıcının özellikle koruduğu istisnadır.
 
 Giriş/kayıt istisnası: tek sütun, en fazla 520 px içerik; mobilde 20 px, 540 px üstünde 32 px panel dolgusu. Alanlar ve ana düğme 52 px; PIN kutuları 52 × 56 px. Bu genişlik öğretmen dashboard'una taşınmaz.
+
+Herkese açık ana sayfanın 760 px ve altındaki görünümü girişe odaklanır: kompakt logo/menü başlığı, görünür karşılama metni, yeşil seçili öğrenci/öğretmen seçimi ve tek giriş formu. Site bağlantıları açılır menüdedir; kayıt ve topluluk bağlantıları formun altında kalır. Masaüstü tanıtım/giriş yerleşimi ve kimlik doğrulama akışı korunur.
 
 ## Elevation & Depth
 

@@ -1,16 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { LayoutDashboard, Shuffle, MessageSquare, User, Clock, Users, Bell } from '../icons';
+import { LayoutDashboard, Shuffle, MessageSquare, Menu, Clock, Users, Bell } from '../icons';
 import type { ClassToolId } from './TeacherClassToolsPage';
 import type { TeacherPageId } from './teacherPages';
 import styles from './TeacherDashboard.module.css';
 
-export function TeacherMobileNav({ page, unreadMessages, onOpenPage, onOpenTool }: {
+export function TeacherMobileNav({ page, unreadMessages, onOpenPage, onOpenTool, menuOpen, onMenu }: {
   page: TeacherPageId;
   unreadMessages: number;
   onOpenPage: (page: TeacherPageId) => void;
   onOpenTool: (tool: ClassToolId) => void;
+  menuOpen: boolean;
+  onMenu: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const toolsRef = useRef<HTMLDivElement>(null);
@@ -56,8 +58,8 @@ export function TeacherMobileNav({ page, unreadMessages, onOpenPage, onOpenTool 
       <MessageSquare size={22} aria-hidden="true" /><span>Mesajlar</span>
       {unreadMessages > 0 && <span className={styles.mobileNavBadge} aria-hidden="true">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
     </button>
-    <button type="button" onClick={() => go('profile')} aria-current={page === 'profile' && !open ? 'page' : undefined}>
-      <User size={22} aria-hidden="true" /><span>Profilim</span>
+    <button type="button" onClick={() => { setOpen(false); onMenu(); }} aria-expanded={menuOpen} aria-controls="teacher-sidebar-nav">
+      <Menu size={22} aria-hidden="true" /><span>Menü</span>
     </button>
   </nav>;
 }

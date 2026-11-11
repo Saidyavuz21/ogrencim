@@ -60,6 +60,10 @@
 @media (min-width: 1200px) { .story h1 { white-space: nowrap; } .story > p { font-size: clamp(12px, .86vw, 14px); white-space: nowrap; } }
 .illustration { margin: 24px 0 0; }
 .illustration img { width: 100%; height: auto; object-fit: contain; display: block; mix-blend-mode: multiply; }
+@media (min-width: 1001px) {
+  .hero { grid-template-columns: minmax(0, 1fr) 480px; gap: 24px; }
+  .illustration { margin-top: 0; }
+}
 .features { display: flex; gap: 23px; flex-wrap: wrap; padding-top: 20px; }
 .features span { display: flex; gap: 7px; align-items: center; color: #465c4e; font-size: 12px; }
 .features svg { flex-shrink: 0; color: #25634b; }
@@ -123,4 +127,53 @@
   .login .roles button[aria-pressed=true] { color: #25634b; border-bottom-color: #25634b; font-weight: 700; }
   .login .roles button:hover:not([aria-pressed=true]) { background: #f0f5ef; }
 }
-@media (prefers-reduced-motion: no-preference) { .page button, .page a { transition: color 150ms ease, background-color 150ms ease; } }
+.navigationGroup { display: contents; }
+.slogan { margin-top: 32px; padding: 28px 32px; border: 1px solid #c5d9cc; border-radius: 16px; background: #edf4ee; text-align: center; }
+.slogan h1 { margin: 0; font-size: 26px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; text-wrap: balance; }
+.slogan h1 span { color: #25634b; }
+.slogan p { max-width: 90ch; margin: 12px auto 0; color: #58665f; font-size: 14px; line-height: 1.7; }
+.mobileEntryLinks { display: none; }
+
+/* Mobile entry is a focused sign-in screen; desktop keeps its existing layout. */
+@media (max-width: 760px) {
+  .slogan { max-width: 520px; margin: 24px auto 0; padding: 22px 20px; text-align: left; }
+  .slogan h1 { font-size: 20px; }
+  .slogan p { font-size: 13px; }
+  .header .headerInner { min-height: 76px; padding: 14px 20px; gap: 12px; }
+  .header .brand { margin-right: auto; }
+  .header .brand > .brandDescription { display: none; }
+  .navigationGroup { display: none; }
+  .navigationOpen { display: grid; width: 100%; gap: 16px; padding-top: 12px; border-top: 1px solid #eeece5; }
+  .navigationGroup .nav { display: grid; order: initial; gap: 4px; }
+  .navigationGroup .nav :is(a, button) { padding: 10px 12px; min-height: 44px; border: 0; border-radius: 10px; text-align: left; }
+  .navigationGroup .nav [aria-current] { background: #e6f1e9; }
+  .navigationGroup .headerActions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .navigationGroup .headerActions a { font-size: 13px; padding-inline: 8px; white-space: normal; }
+  .main { padding: 24px 16px 32px; }
+  .hero { align-items: center; gap: 0; }
+  .login { max-width: 520px; padding: 22px 20px; border-radius: 16px; }
+  .login > h2 { display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+  .login > .intro { display: block; margin: 6px 0 20px; font-size: 14px; line-height: 1.5; }
+  .login .roles { margin: 0 0 22px; padding: 4px; gap: 4px; background: #f4f2ec; border: 1px solid #dedad0; border-radius: 12px; }
+  .login .roles button { min-height: 44px; padding: 10px 8px; border: 0; border-radius: 8px; font-size: 14px; }
+  .login .roles button[aria-pressed=true] { background: #25634b; color: #fff; font-weight: 600; }
+  .login label { font-size: 14px; margin: 18px 0 8px; }
+  .login label:has(input[type='search']) { margin: 0; }
+  .login input { height: 52px; border-radius: 10px; }
+  .login input::placeholder { font-size: 14px; }
+  .login .pinInputs { gap: 12px; }
+  .login .pinInputs input { width: 52px; height: 56px; }
+  .pinGroup legend { font-size: 14px; }
+  .help { font-size: 12px; line-height: 1.6; margin: 12px 0 20px; }
+  .submit { min-height: 52px; border-radius: 10px; font-size: 15px; }
+  .login .register { display: none; }
+  .mobileEntryLinks { display: grid; gap: 4px; margin-top: 22px; padding-top: 14px; border-top: 1px solid #eeece5; }
+  .mobileEntryLinks a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; color: #25634b; font-size: 13px; font-weight: 600; text-align: center; }
+  .mobileEntryLinks a:last-child { color: #58665f; font-weight: 400; }
+  .footer > div { align-items: center; text-align: center; padding: 18px 20px calc(18px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .page button, .page a { transition: color 150ms ease, background-color 150ms ease; }
+  .navigationOpen { animation: homeMenuEnter 180ms ease-out; }
+  @keyframes homeMenuEnter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+}

@@ -783,6 +783,42 @@
 }
 
 /* Kırılımlar: tablet 3 sütun, mobil 2 sütun */
+.navigationGroup { display: contents; }
+.mobileMenuToggle,
+.mobileFilterToggle { display: none; }
+
+@media (max-width: 1023px) {
+  .headerInner { flex-wrap: wrap; gap: 12px; min-height: 76px; padding: 14px 20px; }
+  .headerInner > .brand { margin-right: auto; }
+  .brand img { width: 116px; height: auto; }
+  .brandDescription { display: none; }
+  .mobileMenuToggle { display: inline-flex; }
+  .navigationGroup { display: none; }
+  .navigationOpen { display: grid; width: 100%; gap: 16px; padding-top: 12px; border-top: 1px solid #eeece5; animation: publicMenuEnter 180ms ease-out; }
+  .navigationGroup .nav { display: grid; width: 100%; order: initial; gap: 4px; }
+  .navigationGroup .nav :is(a, button) { padding: 10px 12px; min-height: 44px; border: 0; border-radius: 10px; font-size: 14px; }
+  .navigationGroup .nav [aria-current] { background: #e6f1e9; }
+  .navigationGroup .headerActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .navigationGroup .headerActions > :only-child { grid-column: 1 / -1; }
+  .headerActions :is(.btnPrimary, .btnSecondary) { padding-inline: 8px; font-size: 13px; white-space: normal; }
+  .mobileFilterToggle { display: flex; justify-content: space-between; width: 100%; }
+  .mobileFilterToggle[aria-expanded='true'] > svg { transform: rotate(180deg); }
+  .selectsRow { display: none; }
+  .selectsRow.filtersOpen { display: grid; grid-template-columns: minmax(0, 1fr); animation: publicMenuEnter 180ms ease-out; }
+  .searchInputLabel { min-width: 0; flex-basis: 100%; }
+  .kindTabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .kindTabBtn { min-height: 44px; }
+}
+
+@keyframes publicMenuEnter {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigationOpen,
+  .selectsRow.filtersOpen { animation: none; }
+}
+
 @media (max-width: 1100px) {
   .galleryGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -841,7 +877,7 @@
   }
 
   .galleryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
 

@@ -1,18 +1,23 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, LogIn, MessageSquare, UserPlus } from 'lucide-react';
 import { restoreSession, signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
 import styles from './HomePage.module.css';
 import { BrandLogo } from '../BrandLogo';
+import { Menu, X } from '../icons';
 import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
 import { InstallAppBanner } from '../InstallAppBanner';
 import { useCaptcha, CAPTCHA_MISSING_MESSAGE } from '../auth/Captcha';
+import { SiteFooter } from '../site/SiteFooter';
+import { SITE_NAV } from '../site/siteLinks';
 
 export default function HomePage() {
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
   // Açık oturum varsa (sekme/tarayıcı yeniden açıldığında) doğrudan panele geç
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +39,6 @@ export default function HomePage() {
   }, []);
   const [visible, setVisible] = useState(false);
   const [notice, setNotice] = useState('');
-  const [section, setSection] = useState('Ana Sayfa');
   const [pin, setPin] = useState(['', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
@@ -81,9 +85,10 @@ export default function HomePage() {
             <BrandLogo height={52} priority />
             <span className={styles.brandDescription}>Okulunla aynı yerde.</span>
           </Link>
+          <button className={styles.menuToggle} type="button" aria-label={menuOpen ? 'Menüyü kapat' : 'Menüyü aç'} aria-expanded={menuOpen} aria-controls={menuId} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={22} /> : <Menu size={22} />}</button>
+          <div id={menuId} className={`${styles.navigationGroup} ${menuOpen ? styles.navigationOpen : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); (event.currentTarget.previousElementSibling as HTMLButtonElement)?.focus(); } }}>
           <nav className={styles.nav} aria-label="Ana menü">
-            {['Ana Sayfa', 'Sistem Hakkında', 'İletişim'].map(item => <button key={item} type="button" aria-current={section === item ? 'page' : undefined} onClick={() => setSection(item)}>{item}</button>)}
-            <Link href="/topluluk">Topluluk</Link>
+            {SITE_NAV.map(item => <Link key={item.href} href={item.href}>{item.label}</Link>)}
           </nav>
           <div className={styles.headerActions}>
             <Link className={styles.btnSecondary} href="/giris">
@@ -95,14 +100,13 @@ export default function HomePage() {
               <span>Ücretsiz kayıt ol</span>
             </Link>
           </div>
+          </div>
         </div>
       </header>
 
       <main className={styles.main}>
-        {section === 'Ana Sayfa' ? <div className={styles.hero}>
-          <section className={styles.story} aria-labelledby="welcome-title">
-            <h1 id="welcome-title">Okulda başlayan bağ, <span>burada devam eder.</span></h1>
-            <p>Öğretmen ve öğrenci aynı yerde; aileler de çocuklarının hesabından takip eder. Ödevleri takip edin, gelişimi birlikte destekleyin.</p>
+        <div className={styles.hero}>
+          <section className={styles.story} aria-label="Okul topluluğu">
             <div className={styles.illustration}>
               {/* This is an authored illustration, not a photograph or interface screenshot. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -145,16 +149,20 @@ export default function HomePage() {
               </fieldset>
               {notice && <p className={styles.notice} role="alert">{notice}</p>}
             </form>
+            <div className={styles.mobileEntryLinks}>
+              <Link href="/giris#kayit">Öğretmen hesabı oluştur <ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link href="/topluluk">Öğretmen topluluğunu keşfet</Link>
+            </div>
             {role === 'Öğretmen' && <div className={styles.register}><Link href="/giris#kayit">Kayıt ol <ArrowRight size={16} /></Link></div>}
           </section>
-        </div> : <section className={styles.info}>
-          <h1>{section}</h1>
-          {section === 'Sistem Hakkında' ? <><p>tofutr.com; öğretmen, öğrenci ve veliyi ödev takibi, öğrenci gelişimi ve okul–aile iletişimi etrafında bir araya getiren bir okul portalıdır.</p><p>Öğrenciler okul numarası ve PIN ile, öğretmenler kendi hesaplarıyla giriş yapar.</p></> : <><p>Giriş bilgileriniz ve okulunuza ilişkin sorularınız için sınıf öğretmeninizle iletişime geçebilirsiniz.</p><p>Hesabınızla ilgili sorunlarda okul yönetiminize başvurabilirsiniz.</p></>}
-          <button type="button" className={styles.back} onClick={() => setSection('Ana Sayfa')}>Ana sayfaya dön <ArrowRight size={17} /></button>
-        </section>}
+        </div>
+        <section className={styles.slogan} aria-labelledby="welcome-title">
+          <h1 id="welcome-title">Okulda başlayan bağ, <span>burada devam eder.</span></h1>
+          <p>Öğretmen ve öğrenci aynı yerde; aileler de çocuklarının hesabından takip eder. Ödevleri takip edin, gelişimi birlikte destekleyin.</p>
+        </section>
       </main>
 
-      <footer className={styles.footer}><div><span>tofutr.com · Birlikte öğrenir, birlikte gelişiriz.</span><Link href="/aydinlatma">KVKK aydınlatma metni</Link></div></footer>
+      <SiteFooter />
     </div>
   );
 }

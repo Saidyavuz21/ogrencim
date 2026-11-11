@@ -1869,6 +1869,7 @@
     display: flex;
     justify-content: flex-end;
     background: rgba(20, 32, 27, 0.48);
+    animation: communityBackdropEnter 220ms ease-out both;
   }
 
   .mobileDrawerPanel {
@@ -1880,6 +1881,7 @@
     border-left: 1px solid var(--teacher-border, #dedad0);
     box-shadow: -12px 0 32px rgba(20, 32, 27, 0.18);
     overflow: hidden;
+    animation: communityDrawerEnter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .mobileDrawerHead {
@@ -1907,6 +1909,21 @@
     gap: 14px;
     padding: 14px;
   }
+
+  @keyframes communityBackdropEnter {
+    from { background: rgba(20, 32, 27, 0); }
+    to { background: rgba(20, 32, 27, 0.48); }
+  }
+
+  @keyframes communityDrawerEnter {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+  .mobileDrawerBackdrop,
+  .mobileDrawerPanel { animation: none; }
 }
 
 @media (max-width: 767px) {

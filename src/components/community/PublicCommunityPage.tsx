@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Award,
   CheckCircle2,
+  ChevronDown,
   Copy,
   Globe,
   HeartHandshake,
@@ -29,12 +30,15 @@ import {
   Layers,
   LogIn,
   MessageSquare,
+  Menu,
   Search,
   Star,
   UserPlus,
   X,
 } from '../icons';
 import { Notice, type NoticeState } from '../teacher/TeacherUi';
+import { SiteFooter } from '../site/SiteFooter';
+import { SITE_NAV } from '../site/siteLinks';
 import { TeacherAvatar } from './TeacherAvatar';
 import s from './PublicCommunity.module.css';
 
@@ -69,10 +73,13 @@ export function PublicCommunityPage() {
   const subjectSelectId = useId();
   const gradeSelectId = useId();
   const sortSelectId = useId();
+  const navigationId = useId();
+  const filtersId = useId();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Oturum kontrolü: yalnızca giriş yapmış öğretmene "Topluluğa git" düğmesi göstermek için
   const [hasTeacherSession, setHasTeacherSession] = useState(false);
-  const [section, setSection] = useState<'Topluluk' | 'Sistem Hakkında' | 'İletişim'>('Topluluk');
 
   useEffect(() => {
     let alive = true;
@@ -253,17 +260,16 @@ export function PublicCommunityPage() {
             <span className={s.brandDescription}>Okulunla aynı yerde.</span>
           </Link>
 
+          <button type="button" className={`${s.btnSecondary} ${s.mobileMenuToggle}`} aria-expanded={menuOpen} aria-controls={navigationId} onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+            <span>{menuOpen ? 'Kapat' : 'Menü'}</span>
+          </button>
+          <div id={navigationId} className={`${s.navigationGroup} ${menuOpen ? s.navigationOpen : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); (event.currentTarget.previousElementSibling as HTMLButtonElement)?.focus(); } }}>
           <nav className={s.nav} aria-label="Ana menü">
-            <Link href="/">Ana Sayfa</Link>
-            {(['Sistem Hakkında', 'İletişim', 'Topluluk'] as const).map((item) => (
-              <button
-                key={item}
-                type="button"
-                aria-current={section === item ? 'page' : undefined}
-                onClick={() => setSection(item)}
-              >
-                {item}
-              </button>
+            {SITE_NAV.map((item) => (
+              <Link key={item.href} href={item.href} aria-current={item.href === '/topluluk' ? 'page' : undefined}>
+                {item.label}
+              </Link>
             ))}
           </nav>
 
@@ -287,48 +293,11 @@ export function PublicCommunityPage() {
               </>
             )}
           </div>
+          </div>
         </div>
       </header>
 
       <main className={s.main}>
-        {section !== 'Topluluk' ? (
-          <section className={s.emptyBox}>
-            <h2>{section}</h2>
-            {section === 'Sistem Hakkında' ? (
-              <>
-                <p>
-                  tofutr.com; öğretmen, öğrenci ve veliyi ödev takibi, öğrenci gelişimi ve
-                  okul–aile iletişimi etrafında bir araya getiren bir okul portalıdır.
-                </p>
-                <p>
-                  Öğrenciler okul numarası ve PIN ile, öğretmenler kendi hesaplarıyla giriş
-                  yapar.
-                </p>
-              </>
-            ) : (
-              <>
-                <p>
-                  Giriş bilgileriniz ve okulunuza ilişkin sorularınız için sınıf
-                  öğretmeninizle iletişime geçebilirsiniz.
-                </p>
-                <p>
-                  Hesabınızla ilgili sorunlarda okul yönetiminize başvurabilirsiniz.
-                </p>
-              </>
-            )}
-            <div className={s.emptyActions}>
-              <button
-                type="button"
-                className={s.btnPrimary}
-                onClick={() => setSection('Topluluk')}
-              >
-                <span>Topluluğa dön</span>
-                <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            </div>
-          </section>
-        ) : (
-          <>
         <div className={s.introRow}>
           <div>
             <h1 className={s.pageTitle}>Öğretmen Topluluğu</h1>
@@ -385,7 +354,11 @@ export function PublicCommunityPage() {
             )}
           </div>
 
-          <div className={s.selectsRow}>
+          <button type="button" className={`${s.btnSecondary} ${s.mobileFilterToggle}`} aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(!filtersOpen)}>
+            <span>Filtreler ve sıralama{subject || grade || sort !== 'popular' ? ' · Seçili' : ''}</span>
+            <ChevronDown size={18} aria-hidden="true" />
+          </button>
+          <div id={filtersId} className={`${s.selectsRow} ${filtersOpen ? s.filtersOpen : ''}`}>
             <div className={s.field}>
               <label htmlFor={subjectSelectId} className={s.fieldLabel}>
                 Ders
@@ -642,8 +615,6 @@ export function PublicCommunityPage() {
             )}
           </>
         )}
-          </>
-        )}
       </main>
 
       {/* Önizleme Modalı */}
@@ -821,12 +792,7 @@ export function PublicCommunityPage() {
         </div>
       )}
 
-      <footer className={s.footer}>
-        <div className={s.footerInner}>
-          <span>tofutr.com · Öğretmen Topluluğu</span>
-          <Link href="/aydinlatma">KVKK aydınlatma metni</Link>
-        </div>
-      </footer>
+      <SiteFooter tagline="Öğretmen Topluluğu" />
     </div>
   );
 }

@@ -182,8 +182,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         user={currentUser}
         unreadCount={unreadCount}
         isProfile={page === 'profile'}
-        menuOpen={menuOpen}
-        onMenu={() => setMenuOpen(true)}
         onHome={() => openPage('home')}
         onNotifications={() => { openPage('announcements'); onOpenNotifications?.(); }}
         onProfile={() => openPage('profile')}
@@ -196,6 +194,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         onCommunity={() => openPage('community')}
         isCommunity={page === 'community'}
         unreadCommunity={unreadCommunity}
+        onClassTools={() => openPage('class_tools')}
+        isClassTools={page === 'class_tools'}
+        onBoards={() => openPage('boards')}
+        isBoards={page === 'boards'}
       />
       <TeacherSidebar
         collapsed={sidebarCollapsed}
@@ -298,6 +300,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       )}
       </div>
       <TeacherMobileNav
+        menuOpen={menuOpen}
+        onMenu={() => setMenuOpen(true)}
         key={page}
         page={page}
         unreadMessages={unreadMessages}

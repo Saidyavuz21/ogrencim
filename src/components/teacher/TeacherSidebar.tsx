@@ -107,7 +107,7 @@ export function TeacherSidebar({ collapsed, onToggleCollapsed, open, currentPage
               {visibleTeacherPages(isSchoolAdmin).filter((p) => p.group === group).map((p) => {
                 const badge = badges[p.id] || 0;
                 return (
-                  <a key={p.id} href={teacherPageHref(p.id)} className={`${styles.sidebarItem} ${p.id === 'messages' || p.id === 'community' ? styles.sidebarMobileMessage : ''}`} data-sidebar-tooltip={p.title} title={wide && collapsed ? undefined : p.title} aria-label={badge > 0 ? `${p.title}, ${badge} bekleyen` : p.title} aria-current={currentPage === p.id ? 'page' : undefined} onClick={go(p.id)}>
+                  <a key={p.id} href={teacherPageHref(p.id)} className={`${styles.sidebarItem} ${p.id === 'messages' ? styles.sidebarMobileMessage : ''}`} data-sidebar-tooltip={p.title} title={wide && collapsed ? undefined : p.title} aria-label={badge > 0 ? `${p.title}, ${badge} bekleyen` : p.title} aria-current={currentPage === p.id ? 'page' : undefined} onClick={go(p.id)}>
                     <p.icon size={20} aria-hidden="true" />
                     <span>{p.title}</span>
                     {badge > 0 && <span className={styles.sidebarBadge} aria-label={`${badge} bekleyen`}>{badge > 99 ? '99+' : badge}</span>}

@@ -23,9 +23,10 @@ Güncelleme: 9 Kasım 2026. Codex, Claude, Gemini ve diğer kodlama ajanları ye
 
 - Öğretmen sayfasını `TeacherDashboard.tsx` üzerinden bağla; sayfa kaydı ve menü başlığı `teacherPages.ts` içindedir. `visibleTeacherPages` ile rol sınırını koru.
 - Header, sidebar, alt menü ve ortak sınıf state'ini tekrar oluşturma.
+- Masaüstü üst çubuğunun tam ortasında Topluluk / Sınıf araçlarım / Tahtalarım sekme görünümünde bulunur; bu üç bağlantı sidebar içinde de kalır. Mobil gezinme korunur.
 - Masaüstü `TeacherTopBar`: marka/sınıf solda, mesaj/bildirim/profil sağda. Dış yüzey geniş kalır; öğeleri ortada dar bir kümeye toplama.
 - `TeacherSidebar`: açıkken ikon + yazı; daraltılmışken ikon ve hover/klavye odağında tooltip. Tooltip kaydırılan panelin içinde kesilmez.
-- Mobil üst menü açma ikonu logonun yanındadır. Alt menü **Ana sayfa / Sınıf araçları / Mesajlar / Profilim**. Araç menüsü seçici, kronometre, gruplama ve geri sayımı açar. Yeni "Dersler" sekmesi icat etme.
+- Mobil üst menü açma ikonu logonun yanındadır. Alt menü **Ana sayfa / Sınıf araçları / Mesajlar / Menü**. Araç menüsü seçici, kronometre, gruplama ve geri sayımı açar. Yeni "Dersler" sekmesi icat etme.
 - Masaüstünde üst menüden erişilen mesaj/duyuru/profili sidebar'da tekrarlama; mobil çekmecenin mevcut bağlantılarını koru.
 - Ortak sınıf, liste filtresi ve ödev formunun çoklu hedef sınıfları farklı kapsamlardır; bunları tekli seçime indirgeme.
 - Alt sayfa başlığı `TeacherPageHeader` ile küçük çerçevesiz H1 olur. Yeni sayfa kimliğini kompakt başlık düzenine ekle veya aynı işi ortak bileşenle sağla. Büyük başlık kutusu ve gereksiz geri bağlantısı ekleme.

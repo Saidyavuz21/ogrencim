@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p .",
     "test:rls": "bash scripts/test-rls.sh",
     "test:e2e": "playwright test",
-    "gen:types": "npx supabase gen types typescript --project-id pvxkyazarymowhbbhzgo --schema public > src/lib/database.types.ts"
+    "gen:types": "bash scripts/sunucu/veritabani-guncelle.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

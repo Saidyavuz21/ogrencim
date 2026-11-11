@@ -62,7 +62,14 @@ next-env.d.ts
 # Bu projeye ait olmayan yerel notlar
 /eduboard_roadmap.md
 
+# Sunucu adresi ve altyapı ayrıntıları içerir; depo herkese açık olduğu için gönderilmez
+/docs/DEVIR_NOTU.md
+/debug.log
+
 # playwright
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Sunucu adresi (scripts/sunucu betikleri okur); depo herkese açık olduğu için gönderilmez
+/.sunucu.env

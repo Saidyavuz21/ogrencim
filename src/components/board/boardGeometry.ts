@@ -19,6 +19,39 @@ export function pointsToSvg(points: number[]): string {
 
 export const isShape = (el: BoardEl): el is ShapeEl => el.type === 'line' || el.type === 'arrow' || el.type === 'rect' || el.type === 'ellipse';
 
+/** Sürükleyerek çizilen hazır çokgenler; tahtaya 'poly' öğesi olarak kaydedilir */
+export type PolyShape = 'triangle' | 'diamond' | 'hexagon' | 'star';
+export const POLY_SHAPES: PolyShape[] = ['triangle', 'diamond', 'hexagon', 'star'];
+export const isPolyShape = (t: string): t is PolyShape => (POLY_SHAPES as string[]).includes(t);
+
+/** Birim karede (0–1) köşe koordinatları: [x1, y1, x2, y2, …] */
+const UNIT_POLY: Record<PolyShape, number[]> = {
+  triangle: [0.5, 0, 1, 1, 0, 1],
+  diamond: [0.5, 0, 1, 0.5, 0.5, 1, 0, 0.5],
+  hexagon: [0.25, 0, 0.75, 0, 1, 0.5, 0.75, 1, 0.25, 1, 0, 0.5],
+  star: (() => {
+    // Beş köşeli yıldız: dış ve iç köşeler sırayla; kendi sınır kutusuna oturtulur
+    const raw: [number, number][] = [];
+    for (let i = 0; i < 10; i++) {
+      const a = (-90 + i * 36) * Math.PI / 180;
+      const r = i % 2 ? 0.382 : 1;
+      raw.push([Math.cos(a) * r, Math.sin(a) * r]);
+    }
+    const xs = raw.map((p) => p[0]);
+    const ys = raw.map((p) => p[1]);
+    const minX = Math.min(...xs), minY = Math.min(...ys);
+    const w = Math.max(...xs) - minX, h = Math.max(...ys) - minY;
+    return raw.flatMap(([x, y]) => [(x - minX) / w, (y - minY) / h]);
+  })(),
+};
+
+/** Sürüklenen kutuya (iki köşe) oturan çokgenin köşeleri; şekil her zaman dik durur */
+export function polyShapePoints(shape: PolyShape, x1: number, y1: number, x2: number, y2: number): number[] {
+  const x = Math.min(x1, x2), y = Math.min(y1, y2);
+  const w = Math.abs(x2 - x1), h = Math.abs(y2 - y1);
+  return UNIT_POLY[shape].map((v, i) => Math.round(i % 2 ? y + v * h : x + v * w));
+}
+
 export const measuredHtmlHeights = new Map<string, number>();
 export const measuredMathHeights = measuredHtmlHeights;
 
@@ -71,6 +104,45 @@ export function boxContains(outer: Box, inner: Box): boolean {
     inner.x + inner.w <= outer.x + outer.w &&
     inner.y + inner.h <= outer.y + outer.h
   );
+}
+
+const boxesOverlap = (a: Box, b: Box) => a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h;
+const inBox = (m: Box, x: number, y: number) => x >= m.x && x <= m.x + m.w && y >= m.y && y <= m.y + m.h;
+
+/**
+ * Sürükleyerek seçim: çerçeve öğeye dokunuyorsa seçilir (tamamen içine alması gerekmez).
+ * İçi boş şekillerde çerçeve yalnızca şeklin iç boşluğunda kalıyorsa seçilmez; böylece büyük bir
+ * dairenin içindeki yazıları seçerken daire de seçilmez.
+ */
+export function marqueeHits(m: Box, el: BoardEl): boolean {
+  const b = bbox(el);
+  if (!boxesOverlap(m, b)) return false;
+  if (boxContains(m, b)) return true;
+  if (el.type === 'stroke') {
+    for (let i = 0; i < el.points.length; i += 2) if (inBox(m, el.points[i], el.points[i + 1])) return true;
+    return false;
+  }
+  if (el.type === 'line' || el.type === 'arrow') {
+    // Doğru parçası üzerinde sık aralıklarla nokta denenir
+    const steps = Math.max(8, Math.ceil(Math.hypot(el.x2 - el.x1, el.y2 - el.y1) / 12));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      if (inBox(m, el.x1 + (el.x2 - el.x1) * t, el.y1 + (el.y2 - el.y1) * t)) return true;
+    }
+    return false;
+  }
+  const corners: [number, number][] = [[m.x, m.y], [m.x + m.w, m.y], [m.x, m.y + m.h], [m.x + m.w, m.y + m.h]];
+  if (el.type === 'ellipse' && !el.fill) {
+    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    const rx = Math.max(1, b.w / 2 - el.width), ry = Math.max(1, b.h / 2 - el.width);
+    // Çerçevenin dört köşesi de elipsin içindeyse çerçeve iç boşlukta kalıyor demektir
+    return !corners.every(([x, y]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1);
+  }
+  if (el.type === 'rect' && !el.fill) {
+    const inner: Box = { x: b.x + el.width, y: b.y + el.width, w: b.w - el.width * 2, h: b.h - el.width * 2 };
+    return !(inner.w > 0 && inner.h > 0 && boxContains(inner, m));
+  }
+  return true;
 }
 
 const distToSegment = (px: number, py: number, x1: number, y1: number, x2: number, y2: number) => {

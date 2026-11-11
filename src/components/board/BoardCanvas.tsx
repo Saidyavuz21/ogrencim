@@ -2,7 +2,7 @@
 
 import React, { useEffect, useId, useRef, useState } from 'react';
 import {
-  Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, scaleElements, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
+  Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, PolyEl, scaleElements, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
 import { RichText } from '../math/RichText';
 import { hasMath } from '../../lib/math/parseMath';
@@ -13,6 +13,7 @@ import {
   computeTextHeight,
   getFontFamily,
   lineHeightOf,
+  textEditWidth,
   textPad,
   wrapLines,
   wrapTextLines,
@@ -21,8 +22,9 @@ import styles from './Board.module.css';
 import {
   bbox, boxContains, combinedBbox, FONT_SIZES, getFontSizeOptions, hitTest, isShape, measuredHtmlHeights,
   measuredMathHeights, pointsToSvg, translate, type Box,
+  isPolyShape, marqueeHits, polyShapePoints, type PolyShape,
 } from './boardGeometry';
-import { applyTagToSelection, FormatBar, MultiSelectBar } from './BoardFormatBars';
+import { applyTagOrElement, FormatBar, MultiSelectBar } from './BoardFormatBars';
 
 export { getFontFamily, wrapLines, wrapTextLines };
 export {
@@ -30,8 +32,15 @@ export {
   measuredMathHeights, pointsToSvg, translate,
 };
 
-export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'note' | 'text';
+export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | PolyShape | 'note' | 'text';
 export const DRAW_TOOLS: Tool[] = ['pen', 'highlighter', 'eraser'];
+/** Şekiller menüsündeki araçlar (çizgi, ok, dikdörtgen, daire ve hazır çokgenler) */
+export const SHAPE_TOOLS: Tool[] = ['line', 'arrow', 'rect', 'ellipse', 'triangle', 'diamond', 'hexagon', 'star'];
+
+/** Sürüklenen kutudan hazır çokgen öğesi (üçgen, eşkenar dörtgen, altıgen, yıldız) */
+const polyFromBox = (el: ShapeEl, shape: PolyShape): PolyEl => ({
+  id: el.id, type: 'poly', points: polyShapePoints(shape, el.x1, el.y1, el.x2, el.y2), color: el.color, width: el.width,
+});
 
 const FONT_FACES: Record<string, string[]> = {
   hand: ["400 42px 'Patrick Hand'"],
@@ -310,7 +319,7 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
 // --------------------------------------------------------
 type Draft =
   | { kind: 'stroke'; el: StrokeEl }
-  | { kind: 'shape'; el: ShapeEl }
+  | { kind: 'shape'; el: ShapeEl; /** Hazır çokgen çiziliyorsa türü; el sürüklenen kutuyu tutar */ poly?: PolyShape }
   | { kind: 'erase'; removed: Set<string> }
   | { kind: 'move'; ids: string[]; sx: number; sy: number; origs: BoardEl[]; clickHitId?: string; dragged?: boolean }
   | { kind: 'resize'; id: string; sx: number; sy: number; orig: BoardEl }
@@ -353,6 +362,8 @@ export interface BoardCanvasProps {
   widgetsControlsOnly?: boolean;
   onDropMedia?: (payload: string, x: number, y: number) => void;
   onDropShape?: (id: string, x: number, y: number) => void;
+  /** Sağ tık: tıklanan öğe(ler) seçilir ve menü istenir; boş alanda ids boştur. Koordinatlar ekran pikseli */
+  onElementMenu?: (ids: string[], clientX: number, clientY: number) => void;
   /** Dışa aktarma için SVG öğesi */
   svgRef?: (node: SVGSVGElement | null) => void;
   /** Etkileşimsiz küçük önizleme */
@@ -410,6 +421,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     widgetsControlsOnly,
     onDropMedia,
     onDropShape,
+    onElementMenu,
     svgRef,
     thumbnail,
     ariaLabel,
@@ -510,6 +522,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
     } else if (t === 'line' || t === 'arrow' || t === 'rect' || t === 'ellipse') {
       draft.current = { kind: 'shape', el: { id: newId(), type: t, x1: x, y1: y, x2: x, y2: y, color, width } };
       setPreview({ el: draft.current.el });
+    } else if (isPolyShape(t)) {
+      const box: ShapeEl = { id: newId(), type: 'rect', x1: x, y1: y, x2: x, y2: y, color, width };
+      draft.current = { kind: 'shape', el: box, poly: t };
+      setPreview({ el: polyFromBox(box, t) });
     } else if (t === 'note') {
       const note: NoteEl = { id: newId(), type: 'note', x: Math.round(Math.min(x, BOARD_W - 420)), y: Math.round(Math.min(y, BOARD_H - 240)), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 32 };
       // Tarayıcının bu tıklamadaki varsayılan odak değişimi yeni açılan yazma kutusunun odağını
@@ -534,6 +550,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
         color: 'transparent',
         textColor: color,
         fontSize: 42,
+        // Yazı bitince kutu yazının genişliğine oturur
+        autoW: true,
       };
       e.preventDefault(); // bkz. Not: yazma kutusunun odağı korunur
       onCommit?.([...elements, textEl]);
@@ -628,6 +646,26 @@ export function BoardCanvas(props: BoardCanvasProps) {
     localSvg.current?.setPointerCapture(e.pointerId);
   };
 
+  // Sağ tık menüsü: tarayıcının menüsü yerine tahtanın kendi işlemleri (yazı alanlarında tarayıcı menüsü kalır)
+  const onContextMenu = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!interactive || !editable || !onElementMenu || drawingOnLayer || editingNoteId) return;
+    if ((e.target as Element).closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    e.preventDefault();
+    const { x, y } = toPoint(e.clientX, e.clientY);
+    const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
+    let ids: string[] = [];
+    if (hit) {
+      if (selectedIds.includes(hit.id)) {
+        ids = selectedIds;
+      } else {
+        const inEnteredGroup = !!activeGroupId && hit.groupId === activeGroupId;
+        ids = hit.groupId && !inEnteredGroup ? elements.filter((el) => el.groupId === hit.groupId).map((el) => el.id) : [hit.id];
+        onSelect?.(ids);
+      }
+    }
+    onElementMenu(ids, e.clientX, e.clientY);
+  };
+
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement | SVGRectElement>) => {
     const d = draft.current;
     if (!d) return;
@@ -653,7 +691,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
         }
       }
       d.el = { ...d.el, x2, y2 };
-      setPreview({ el: d.el });
+      setPreview({ el: d.poly ? polyFromBox(d.el, d.poly) : d.el });
     } else if (d.kind === 'move') {
       const dx = x - d.sx;
       const dy = y - d.sy;
@@ -709,7 +747,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
     } else if (d.kind === 'shape') {
       const el = { ...d.el, x1: Math.round(d.el.x1), y1: Math.round(d.el.y1), x2: Math.round(d.el.x2), y2: Math.round(d.el.y2) };
       if (Math.hypot(el.x2 - el.x1, el.y2 - el.y1) < 6) return;
-      onCommit?.([...elements, el]);
+      // Hazır çokgen: tek yönde sürüklenmiş (alanı olmayan) kutu şekil vermez
+      if (d.poly && (Math.abs(el.x2 - el.x1) < 6 || Math.abs(el.y2 - el.y1) < 6)) return;
+      onCommit?.([...elements, d.poly ? polyFromBox(el, d.poly) : el]);
       onSelect?.([el.id]);
       onToolChange?.('select');
     } else if (d.kind === 'move') {
@@ -725,9 +765,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
         onCommit?.(elements.map((el) => idMap.get(el.id) || el));
       }
     } else if (d.kind === 'resize' && p?.el) {
-      const moved = p.el;
-      const b0 = bbox(d.orig), b1 = bbox(moved);
+      const b0 = bbox(d.orig), b1 = bbox(p.el);
       if (b0.x === b1.x && b0.y === b1.y && b0.w === b1.w && b0.h === b1.h) return;
+      // Metin kutusu elle boyutlandırıldı: genişlik artık yazıya göre ayarlanmaz
+      const moved = p.el.type === 'note' && p.el.autoW ? { ...p.el, autoW: false } : p.el;
       onCommit?.(elements.map((el) => (el.id === d.id ? moved : el)));
     } else if (d.kind === 'marquee') {
       const mbox = {
@@ -739,14 +780,15 @@ export function BoardCanvas(props: BoardCanvasProps) {
       if (mbox.w < 4 && mbox.h < 4) {
         if (!d.additive) onSelect?.([]);
       } else {
-        const insideElements = elements.filter((el) => boxContains(mbox, bbox(el)));
+        // Çerçevenin dokunduğu öğeler seçilir (tamamen içinde olması gerekmez)
+        const insideElements = elements.filter((el) => marqueeHits(mbox, el));
         let finalInsideIds: string[];
         if (activeGroupId) {
           finalInsideIds = insideElements.filter((el) => el.groupId === activeGroupId).map((el) => el.id);
         } else {
           const groupIds = new Set(insideElements.map((el) => el.groupId).filter(Boolean));
           finalInsideIds = elements
-            .filter((el) => boxContains(mbox, bbox(el)) || (el.groupId && groupIds.has(el.groupId)))
+            .filter((el) => marqueeHits(mbox, el) || (el.groupId && groupIds.has(el.groupId)))
             .map((el) => el.id);
         }
         const finalIds = d.additive ? Array.from(new Set([...d.base, ...finalInsideIds])) : finalInsideIds;
@@ -852,6 +894,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
         aria-label={ariaLabel || 'Tahta sayfası'}
         style={{ cursor, touchAction: interactive ? 'none' : 'auto' }}
         onPointerDown={onPointerDown}
+        onContextMenu={onContextMenu}
         onPointerMove={onPointerMove}
         onPointerUp={finish}
         onPointerCancel={finish}
@@ -1060,7 +1103,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
           style={{
             left: `${(editingNote.x / BOARD_W) * 100}%`,
             top: `${(editingNote.y / BOARD_H) * 100}%`,
-            width: `${(editingNote.w / BOARD_W) * 100}%`,
+            width: `${(textEditWidth(editingNote) / BOARD_W) * 100}%`,
             height: `${(currentEditingHeight / BOARD_H) * 100}%`,
             background: editingNote.variant === 'text' ? (editingNote.boxFill || 'transparent') : editingNote.color,
             color: editingNote.textColor || '#1f2a24',
@@ -1082,7 +1125,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
             const val = (e.target as HTMLTextAreaElement).value;
             setEditingTextOverride({ id: editingNote.id, text: val });
             if (editingNote.variant === 'text') {
-              const autoH = computeTextHeight(editingNote, val);
+              const autoH = computeTextHeight({ ...editingNote, w: textEditWidth(editingNote) }, val);
               setEditingHeight({ id: editingNote.id, h: autoH });
             }
           }}
@@ -1131,10 +1174,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
               e.preventDefault();
               const ta = textareaRef.current;
               if (ta && ta.selectionStart < ta.selectionEnd) {
-                applyTagToSelection(ta, 'b', (next) => {
+                applyTagOrElement(ta, 'b', (next) => {
                   setEditingTextOverride({ id: editingNote.id, text: next });
                   onNoteText?.(editingNote.id, next);
-                });
+                }, () => onPatchElement?.(editingNote.id, { fontWeight: editingNote.fontWeight === 700 ? 400 : 700 }));
               } else {
                 const newWeight = editingNote.fontWeight === 700 ? 400 : 700;
                 if (onPatchElement) onPatchElement(editingNote.id, { fontWeight: newWeight });
@@ -1143,10 +1186,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
               e.preventDefault();
               const ta = textareaRef.current;
               if (ta && ta.selectionStart < ta.selectionEnd) {
-                applyTagToSelection(ta, 'i', (next) => {
+                applyTagOrElement(ta, 'i', (next) => {
                   setEditingTextOverride({ id: editingNote.id, text: next });
                   onNoteText?.(editingNote.id, next);
-                });
+                }, () => onPatchElement?.(editingNote.id, { italic: !editingNote.italic }));
               } else {
                 const newItalic = !editingNote.italic;
                 if (onPatchElement) onPatchElement(editingNote.id, { italic: newItalic });
@@ -1155,10 +1198,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
               e.preventDefault();
               const ta = textareaRef.current;
               if (ta && ta.selectionStart < ta.selectionEnd) {
-                applyTagToSelection(ta, 'u', (next) => {
+                applyTagOrElement(ta, 'u', (next) => {
                   setEditingTextOverride({ id: editingNote.id, text: next });
                   onNoteText?.(editingNote.id, next);
-                });
+                }, () => onPatchElement?.(editingNote.id, { underline: !editingNote.underline }));
               } else {
                 const newUnderline = !editingNote.underline;
                 if (onPatchElement) onPatchElement(editingNote.id, { underline: newUnderline });

@@ -1,23 +1,22 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, BookOpen, Eye, EyeOff, GraduationCap, LogIn, MessageSquare, UserPlus } from 'lucide-react';
+import { ArrowRight, BookOpen, Eye, EyeOff, Layers } from 'lucide-react';
 import { restoreSession, signInStaff, signInStudent, SchoolRecord } from '../../lib/supabaseClient';
 import styles from './HomePage.module.css';
-import { BrandLogo } from '../BrandLogo';
-import { Menu, X } from '../icons';
-import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
-import { InstallAppBanner } from '../InstallAppBanner';
-import { useCaptcha, CAPTCHA_MISSING_MESSAGE } from '../auth/Captcha';
+import { SiteHeader } from '../site/SiteHeader';
 import { SiteFooter } from '../site/SiteFooter';
-import { SITE_NAV } from '../site/siteLinks';
+
+import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
+import { useCaptcha, CAPTCHA_MISSING_MESSAGE } from '../auth/Captcha';
+import { getPublicGallery, thumbUrl, type PublicItem } from '../../lib/communitySocialData';
 
 export default function HomePage() {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuId = useId();
+
+
   // Açık oturum varsa (sekme/tarayıcı yeniden açıldığında) doğrudan panele geç
   useEffect(() => {
     let cancelled = false;
@@ -43,6 +42,20 @@ export default function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
   const captcha = useCaptcha();
+  const [materials, setMaterials] = useState<PublicItem[]>([]);
+  const [materialsState, setMaterialsState] = useState<'loading' | 'ready' | 'error'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    getPublicGallery({ limit: 3 }).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        setMaterials(result.data ?? []);
+        setMaterialsState('ready');
+      } else setMaterialsState('error');
+    }).catch(() => { if (!cancelled) setMaterialsState('error'); });
+    return () => { cancelled = true; };
+  }, []);
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,31 +91,7 @@ export default function HomePage() {
 
   return (
     <div className={styles.page}>
-      <InstallAppBanner />
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <Link className={styles.brand} href="/" aria-label="tofutr.com ana sayfa">
-            <BrandLogo height={52} priority />
-            <span className={styles.brandDescription}>Okulunla aynı yerde.</span>
-          </Link>
-          <button className={styles.menuToggle} type="button" aria-label={menuOpen ? 'Menüyü kapat' : 'Menüyü aç'} aria-expanded={menuOpen} aria-controls={menuId} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={22} /> : <Menu size={22} />}</button>
-          <div id={menuId} className={`${styles.navigationGroup} ${menuOpen ? styles.navigationOpen : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); (event.currentTarget.previousElementSibling as HTMLButtonElement)?.focus(); } }}>
-          <nav className={styles.nav} aria-label="Ana menü">
-            {SITE_NAV.map(item => <Link key={item.href} href={item.href}>{item.label}</Link>)}
-          </nav>
-          <div className={styles.headerActions}>
-            <Link className={styles.btnSecondary} href="/giris">
-              <LogIn size={17} aria-hidden="true" />
-              <span>Giriş yap</span>
-            </Link>
-            <Link className={styles.btnPrimary} href="/giris#kayit">
-              <UserPlus size={17} aria-hidden="true" />
-              <span>Ücretsiz kayıt ol</span>
-            </Link>
-          </div>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className={styles.main}>
         <div className={styles.hero}>
@@ -110,14 +99,17 @@ export default function HomePage() {
             <div className={styles.illustration}>
               {/* This is an authored illustration, not a photograph or interface screenshot. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/okul-bagi.png" width="960" height="640" alt="Bir okulun çevresinde bağlantı kuran öğretmen, öğrenci ve veli illüstrasyonu" />
+              <img src="/images/okul-bahcesi.png" width="1254" height="1254" alt="Okul girişinde bir kitabı birlikte inceleyen öğretmen, öğrenci ve veli" />
             </div>
-            <div className={styles.features}><span><BookOpen size={17} /> Ödev takibi</span><span><GraduationCap size={19} /> Öğrenci gelişimi</span><span><MessageSquare size={17} /> Okul–aile iletişimi</span></div>
+            <div className={styles.features}>
+              <Link href="/topluluk"><Layers size={20} aria-hidden="true" /> Ders tahtaları <ArrowRight size={17} aria-hidden="true" /></Link>
+              <Link href="/topluluk"><BookOpen size={20} aria-hidden="true" /> Soru setleri <ArrowRight size={17} aria-hidden="true" /></Link>
+            </div>
           </section>
 
           <section className={styles.login} aria-labelledby="login-title">
             <h2 id="login-title">Hoş geldiniz</h2>
-            <p className={styles.intro}>Okulunuza açılan kapıdan giriş yapın.</p>
+            <p className={styles.intro}>Devam etmek için hesabınıza giriş yapın.</p>
             <div className={styles.roles} aria-label="Giriş yapacağınız rol">
               {['Öğrenci', 'Öğretmen'].map(item => <button key={item} type="button" disabled={isSubmitting} aria-pressed={role === item} onClick={() => { setRole(item); setNotice(''); setPin(['', '', '', '']); }}>{item}</button>)}
             </div>
@@ -149,16 +141,33 @@ export default function HomePage() {
               </fieldset>
               {notice && <p className={styles.notice} role="alert">{notice}</p>}
             </form>
-            <div className={styles.mobileEntryLinks}>
-              <Link href="/giris#kayit">Öğretmen hesabı oluştur <ArrowRight size={16} aria-hidden="true" /></Link>
-              <Link href="/topluluk">Öğretmen topluluğunu keşfet</Link>
-            </div>
-            {role === 'Öğretmen' && <div className={styles.register}><Link href="/giris#kayit">Kayıt ol <ArrowRight size={16} /></Link></div>}
+            <div className={styles.register}>Hesabınız yok mu? <Link href="/giris#kayit">Ücretsiz kayıt ol</Link></div>
           </section>
         </div>
-        <section className={styles.slogan} aria-labelledby="welcome-title">
-          <h1 id="welcome-title">Okulda başlayan bağ, <span>burada devam eder.</span></h1>
-          <p>Öğretmen ve öğrenci aynı yerde; aileler de çocuklarının hesabından takip eder. Ödevleri takip edin, gelişimi birlikte destekleyin.</p>
+        <section className={styles.welcomeCard} aria-labelledby="home-welcome-title">
+          <h1 id="home-welcome-title">Sınıfın için her şey bir arada.</h1>
+          <p>Ödevleri paylaşın, gelişimi takip edin, derslerinize birlikte hayat verin.</p>
+        </section>
+        <Link className={styles.mobileCommunityLink} href="/topluluk">Topluluğu keşfet <ArrowRight size={18} aria-hidden="true" /></Link>
+        <section className={styles.community} aria-labelledby="community-title">
+          <div className={styles.communityHeading}>
+            <h2 id="community-title">Öğretmenlerden ilham alın</h2>
+            <Link href="/topluluk">Topluluğu keşfet <ArrowRight size={18} aria-hidden="true" /></Link>
+          </div>
+          <div className={styles.materials} aria-busy={materialsState === 'loading'}>
+            {materials.map(item => <Link className={styles.material} key={item.id} href={`/topluluk?materyal=${encodeURIComponent(item.id)}`}>
+              <div className={styles.materialThumb}>
+                {thumbUrl(item.thumb_path) ? (
+                  // Public thumbnails are served by the existing community storage URL.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={thumbUrl(item.thumb_path)!} alt="" loading="lazy" />
+                ) : <BookOpen size={36} aria-hidden="true" />}
+              </div>
+              <div className={styles.materialInfo}><span>{item.kind === 'board' ? 'Ders tahtası' : 'Soru seti'}{item.subject ? ` · ${item.subject}` : ''}</span><h3>{item.title}</h3></div>
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>)}
+            {materials.length === 0 && <p className={styles.materialEmpty} role="status">{materialsState === 'loading' ? 'Topluluktaki materyaller yükleniyor…' : materialsState === 'error' ? 'Materyaller şu anda yüklenemedi. Topluluk sayfasını ziyaret edebilirsiniz.' : 'Paylaşılan ders tahtalarını ve soru setlerini toplulukta keşfedin.'}</p>}
+          </div>
         </section>
       </main>
 

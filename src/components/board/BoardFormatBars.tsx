@@ -10,6 +10,7 @@ import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { applyEditToElement, toggleList, toggleTextList, wrapSelection } from '../math/richEditing';
 import { bbox, combinedBbox, getFontSizeOptions } from './boardGeometry';
 import styles from './Board.module.css';
+import { BOX_BORDERS, BOX_FILLS, isDarkFill } from './textLayout';
 
 export function applyTagToSelection(
   textarea: HTMLTextAreaElement,
@@ -19,6 +20,64 @@ export function applyTagToSelection(
   const res = wrapSelection(textarea.value, textarea.selectionStart, textarea.selectionEnd, tag);
   applyEditToElement(textarea, res, onChange);
   return true;
+}
+
+/** Yazının tamamı tek bir [b]/[i]/[u] çiftiyle sarılıysa içini döndürür; değilse null */
+function wholeTagInner(value: string, tag: 'b' | 'i' | 'u'): string | null {
+  const open = `[${tag}]`;
+  const close = `[/${tag}]`;
+  if (!value.startsWith(open) || !value.endsWith(close) || value.length < open.length + close.length) return null;
+  const inner = value.slice(open.length, value.length - close.length);
+  return inner.includes(open) || inner.includes(close) ? null : inner;
+}
+
+/**
+ * Kalın / italik / altı çizili: yazının bir kısmı seçiliyse [b] gibi işaretlerle sarılır. Yazının tamamı
+ * seçiliyse işaret eklenmez, kutunun kendi biçimi değiştirilir (yazma alanında [b]…[/b] görünmesin diye).
+ * Yazının tamamı zaten tek bir işaretle sarılıysa işaret kaldırılır.
+ */
+export function applyTagOrElement(
+  textarea: HTMLTextAreaElement,
+  tag: 'b' | 'i' | 'u',
+  onChange: (nextText: string) => void,
+  toggleElement: () => void
+) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const inner = wholeTagInner(value, tag);
+  const open = `[${tag}]`;
+  if (inner !== null && ((start === 0 && end === value.length) || (start === open.length && end === open.length + inner.length))) {
+    applyEditToElement(textarea, { value: inner, selStart: 0, selEnd: inner.length }, onChange);
+    return;
+  }
+  if (start === 0 && end === value.length && !value.includes(open)) {
+    toggleElement();
+    return;
+  }
+  applyTagToSelection(textarea, tag, onChange);
+}
+
+/**
+ * Yazının tamamını saran [b]/[i]/[u] işaretlerini kutunun kendi biçimine çevirir:
+ * "[b]KESİRLER[/b]" → yazı "KESİRLER", kutu kalın. Değişiklik yoksa null döner.
+ */
+export function normalizeWholeTags(text: string): { text: string; patch: Partial<NoteEl> } | null {
+  let t = text;
+  const patch: Partial<NoteEl> = {};
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const tag of ['b', 'i', 'u'] as const) {
+      const inner = wholeTagInner(t, tag);
+      if (inner === null || !inner.trim()) continue;
+      t = inner;
+      if (tag === 'b') patch.fontWeight = 700;
+      else if (tag === 'i') patch.italic = true;
+      else patch.underline = true;
+      changed = true;
+    }
+  }
+  return t === text ? null : { text: t, patch };
 }
 
 export function applyColorToSelection(
@@ -127,7 +186,7 @@ export function FormatBar({
         onClick={() => {
           const ta = textareaRef?.current;
           if (ta && ta.selectionStart < ta.selectionEnd) {
-            applyTagToSelection(ta, 'b', (nextText) => onPatch({ text: nextText }));
+            applyTagOrElement(ta, 'b', (nextText) => onPatch({ text: nextText }), () => onPatch({ fontWeight: el.fontWeight === 700 ? 400 : 700 }));
           } else {
             onPatch({ fontWeight: el.fontWeight === 700 ? 400 : 700 });
           }
@@ -147,7 +206,7 @@ export function FormatBar({
         onClick={() => {
           const ta = textareaRef?.current;
           if (ta && ta.selectionStart < ta.selectionEnd) {
-            applyTagToSelection(ta, 'i', (nextText) => onPatch({ text: nextText }));
+            applyTagOrElement(ta, 'i', (nextText) => onPatch({ text: nextText }), () => onPatch({ italic: !el.italic }));
           } else {
             onPatch({ italic: !el.italic });
           }
@@ -167,7 +226,7 @@ export function FormatBar({
         onClick={() => {
           const ta = textareaRef?.current;
           if (ta && ta.selectionStart < ta.selectionEnd) {
-            applyTagToSelection(ta, 'u', (nextText) => onPatch({ text: nextText }));
+            applyTagOrElement(ta, 'u', (nextText) => onPatch({ text: nextText }), () => onPatch({ underline: !el.underline }));
           } else {
             onPatch({ underline: !el.underline });
           }
@@ -243,7 +302,10 @@ export function FormatBar({
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   const ta = textareaRef?.current;
-                  if (ta && ta.selectionStart < ta.selectionEnd) {
+                  // Yazının tamamı seçiliyse renk işareti eklenmez, kutunun yazı rengi değişir
+                  if (ta && ta.selectionStart === 0 && ta.selectionEnd === ta.value.length && ta.value.length > 0 && !ta.value.includes('[c=')) {
+                    onPatch({ textColor: c });
+                  } else if (ta && ta.selectionStart < ta.selectionEnd) {
                     applyColorToSelection(ta, c, (nextText) => onPatch({ text: nextText }));
                   } else {
                     onPatch({ textColor: c });
@@ -404,6 +466,7 @@ export function FormatBar({
             className={styles.formatColorPopover}
             style={{
               minWidth: 220,
+              width: 252,
               padding: '10px',
               display: 'flex',
               flexDirection: 'column',
@@ -436,14 +499,7 @@ export function FormatBar({
                 >
                   Yok
                 </button>
-                {[
-                  { c: '#fff3bf', label: 'Sarı' },
-                  { c: '#d3f9d8', label: 'Yeşil' },
-                  { c: '#d0ebff', label: 'Mavi' },
-                  { c: '#ffdeeb', label: 'Pembe' },
-                  { c: '#f1f3f5', label: 'Gri' },
-                  { c: '#25634b', label: 'Koyu Yeşil' },
-                ].map(({ c, label }) => (
+                {BOX_FILLS.map(({ c, label, dark }) => (
                   <button
                     key={c}
                     type="button"
@@ -455,7 +511,7 @@ export function FormatBar({
                     }}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
-                      if (c === '#25634b') {
+                      if (dark) {
                         onPatch({ boxFill: c, textColor: '#ffffff' });
                       } else {
                         onPatch({ boxFill: c });
@@ -466,7 +522,7 @@ export function FormatBar({
                   />
                 ))}
               </div>
-              {el.boxFill === '#25634b' && (
+              {isDarkFill(el.boxFill) && el.textColor !== '#ffffff' && (
                 <button
                   type="button"
                   className={styles.formatBtn}
@@ -512,7 +568,7 @@ export function FormatBar({
                 >
                   Yok
                 </button>
-                {['#1f2a24', '#25634b', '#e03131', '#1971c2', '#f08c00'].map((c) => (
+                {BOX_BORDERS.map(({ c, label }) => (
                   <button
                     key={c}
                     type="button"
@@ -524,8 +580,8 @@ export function FormatBar({
                     }}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => onPatch({ boxBorder: c })}
-                    title={`Kenarlık ${c}`}
-                    aria-label={`Kenarlık ${c}`}
+                    title={label}
+                    aria-label={`Kenarlık ${label}`}
                   />
                 ))}
               </div>

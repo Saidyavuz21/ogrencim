@@ -919,6 +919,18 @@ export const Circle = createIcon('Circle', (
   <circle cx="12" cy="12" r="10" />
 ));
 
+export const Triangle = createIcon('Triangle', (
+  <path d="M12 3.5 21.5 20h-19z" />
+));
+
+export const Diamond = createIcon('Diamond', (
+  <path d="M12 2.5 21.5 12 12 21.5 2.5 12z" />
+));
+
+export const Hexagon = createIcon('Hexagon', (
+  <path d="M7 3.5h10L22 12l-5 8.5H7L2 12z" />
+));
+
 export const RotateCw = createIcon('RotateCw', (
   <>
     <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24L21 8" />

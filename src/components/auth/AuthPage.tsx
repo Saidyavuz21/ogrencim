@@ -8,10 +8,12 @@ import { BrandLogo } from '../BrandLogo';
 import { UserAccount, TURKEY_CITIES, TEACHER_BRANCH_OPTIONS, composeClassName } from '../../data/portalData';
 import { ClassLevelSelects } from '../ClassLevelSelects';
 import { SchoolPicker, NEW_SCHOOL } from '../SchoolPicker';
+import { StudentSchoolSelect, loadRememberedSchool, rememberSchool } from '../StudentSchoolSelect';
 import { CustomSelect } from '../CustomSelect';
-import { signInStaff, signUpTeacher, teacherDocumentError } from '../../lib/supabaseClient';
+import { signInStaff, signInStudent, signUpTeacher, teacherDocumentError, SchoolRecord } from '../../lib/supabaseClient';
 import { useCaptcha, CAPTCHA_MISSING_MESSAGE } from './Captcha';
 
+type AuthRole = 'Öğretmen' | 'Öğrenci';
 type TeacherMode = 'login' | 'register';
 
 interface AuthPageProps {
@@ -25,6 +27,19 @@ interface AuthPageProps {
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'public' }) => {
   const isAdminPage = variant === 'admin';
+
+  // Öğretmen / Öğrenci rolü (ana sayfadaki gibi tab)
+  const [authRole, setAuthRole] = useState<AuthRole>('Öğretmen');
+
+  // Öğrenci girişi için alanlar
+  const [studentSchool, setStudentSchool] = useState<SchoolRecord | null>(null);
+  const [studentNumber, setStudentNumber] = useState('');
+  const [studentPin, setStudentPin] = useState(['', '', '', '']);
+
+  useEffect(() => {
+    const saved = loadRememberedSchool();
+    if (saved) queueMicrotask(() => setStudentSchool((curr) => curr ?? saved));
+  }, []);
 
   // Önce giriş formu; "Kayıt olun" ya da /giris#kayit bağlantısı kayıt formunu açar
   const [teacherMode, setTeacherMode] = useState<TeacherMode>('login');
@@ -77,12 +92,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
 
   // "Ücretsiz kayıt ol" bağlantıları /giris#kayit adresine gelir
   useEffect(() => {
-    const syncFromHash = () => {
-      if (window.location.hash === '#kayit') setTeacherMode('register');
+    const syncFromUrl = () => {
+      if (window.location.hash === '#kayit') {
+        setAuthRole('Öğretmen');
+        setTeacherMode('register');
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('rol') === 'ogretmen') {
+          setAuthRole('Öğretmen');
+        } else if (params.get('rol') === 'ogrenci') {
+          setAuthRole('Öğrenci');
+        }
+      }
     };
-    syncFromHash();
-    window.addEventListener('hashchange', syncFromHash);
-    return () => window.removeEventListener('hashchange', syncFromHash);
+    syncFromUrl();
+    window.addEventListener('hashchange', syncFromUrl);
+    return () => window.removeEventListener('hashchange', syncFromUrl);
   }, []);
 
   const resetSchool = () => {
@@ -115,6 +140,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
 
     setPassword('');
     setSuccessMsg(isAdminPage ? 'Giriş başarılı. Yönetim paneli açılıyor…' : `Hoş geldiniz, ${res.user.name}.`);
+    setTimeout(() => onLoginSuccess(res.user), 400);
+  };
+
+  const handleStudentLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    clearFeedback();
+
+    if (!studentSchool) return setErrorMsg('Lütfen önce okulunuzu seçiniz.');
+    if (!studentNumber.trim()) return setErrorMsg('Lütfen okul numaranızı giriniz.');
+    if (!/^\d{4}$/.test(studentPin.join(''))) return setErrorMsg('Lütfen 4 haneli PIN kodunuzu eksiksiz giriniz.');
+    if (captcha.missing) return setErrorMsg(CAPTCHA_MISSING_MESSAGE);
+
+    setIsSubmitting(true);
+    const res = await signInStudent(studentSchool.id, studentNumber.trim(), studentPin.join(''), captcha.token);
+    setIsSubmitting(false);
+    captcha.reset();
+
+    if (!res.ok) return setErrorMsg(res.error);
+
+    rememberSchool(studentSchool);
+    setSuccessMsg(`Hoş geldin, ${res.user.name}.`);
     setTimeout(() => onLoginSuccess(res.user), 400);
   };
 
@@ -238,6 +285,74 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
     </form>
   );
 
+  const studentLoginForm = (
+    <form className={styles.form} onSubmit={handleStudentLogin} aria-busy={isSubmitting}>
+      <fieldset disabled={isSubmitting}>
+        <StudentSchoolSelect value={studentSchool} onChange={setStudentSchool} disabled={isSubmitting} />
+
+        <AuthField label="Öğrenci okul numarası" id="student-number">
+          <input
+            id="student-number"
+            name="studentNumber"
+            type="text"
+            inputMode="numeric"
+            autoComplete="username"
+            placeholder="Okul numaranızı yazın"
+            value={studentNumber}
+            onChange={(e) => setStudentNumber(e.target.value)}
+            required
+          />
+        </AuthField>
+
+        <div className={styles.field}>
+          <span className={styles.fieldLabel} id="student-pin-label">4 haneli PIN kodu</span>
+          <div className={styles.pinInputs} role="group" aria-labelledby="student-pin-label">
+            {studentPin.map((digit, index) => (
+              <input
+                key={index}
+                id={`student-pin-${index}`}
+                aria-label={`PIN ${index + 1}. hane`}
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]"
+                maxLength={1}
+                value={digit}
+                required
+                onChange={(event) => {
+                  const val = event.target.value.replace(/\D/g, '').slice(-1);
+                  setStudentPin((prev) => prev.map((item, pos) => (pos === index ? val : item)));
+                  if (val && index < 3) document.getElementById(`student-pin-${index + 1}`)?.focus();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Backspace' && !digit && index > 0) {
+                    document.getElementById(`student-pin-${index - 1}`)?.focus();
+                  }
+                }}
+                onPaste={(event) => {
+                  const digits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4 - index);
+                  if (!digits) return;
+                  event.preventDefault();
+                  setStudentPin((prev) =>
+                    prev.map((item, pos) =>
+                      pos >= index && pos < index + digits.length ? digits[pos - index] : item
+                    )
+                  );
+                  document.getElementById(`student-pin-${Math.min(index + digits.length, 3)}`)?.focus();
+                }}
+              />
+            ))}
+          </div>
+          <p className={styles.hint}>Okul numaranızı ve PIN kodunuzu öğretmeninizden alabilirsiniz.</p>
+        </div>
+      </fieldset>
+      {captcha.widget}
+      <button className={styles.submit} type="submit" disabled={isSubmitting}>
+        <span>{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}</span>
+        {!isSubmitting && <ArrowRight size={20} aria-hidden="true" />}
+      </button>
+    </form>
+  );
+
   // ================= YÖNETİM (SÜPER ADMIN) SAYFASI =================
   if (isAdminPage) {
     return (
@@ -257,9 +372,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
             {feedback}
             {staffLoginForm}
           </section>
-          <footer className={styles.footer}>
+          <div className={styles.footer}>
             <Link className={styles.textButton} href="/">Öğrenci veya öğretmen girişine dön</Link>
-          </footer>
+          </div>
         </div>
       </main>
     );
@@ -279,18 +394,50 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
         </header>
 
         <div className={styles.intro}>
-          <h1>{isRegister ? 'Öğretmen hesabı oluştur' : 'Öğretmen girişi'}</h1>
-          <p>{isRegister
-            ? 'Hesabınız okul yönetiminin onayından sonra açılır.'
-            : 'Ödevler, gelişim ve okuldan haberler. Hepsi bir arada.'}</p>
+          <h1>
+            {isRegister
+              ? 'Öğretmen hesabı oluştur'
+              : authRole === 'Öğrenci'
+              ? 'Öğrenci girişi'
+              : 'Öğretmen girişi'}
+          </h1>
+          <p>
+            {isRegister
+              ? 'Hesabınız okul yönetiminin onayından sonra açılır.'
+              : authRole === 'Öğrenci'
+              ? 'Ödevlerini ve puanlarını takip et. Hepsi bir arada.'
+              : 'Ödevler, gelişim ve okuldan haberler. Hepsi bir arada.'}
+          </p>
         </div>
 
         <section className={styles.panel} aria-label="Hesap işlemleri">
-              {feedback}
+          {!isRegister && (
+            <div className={styles.roles} aria-label="Giriş yapacağınız rol">
+              {(['Öğrenci', 'Öğretmen'] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  disabled={isSubmitting}
+                  aria-pressed={authRole === item}
+                  onClick={() => {
+                    setAuthRole(item);
+                    clearFeedback();
+                    setStudentPin(['', '', '', '']);
+                  }}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          )}
 
-              {teacherMode === 'login' ? (
-                staffLoginForm
-              ) : (
+          {feedback}
+
+          {authRole === 'Öğrenci' && !isRegister ? (
+            studentLoginForm
+          ) : teacherMode === 'login' ? (
+            staffLoginForm
+          ) : (
                 <form className={styles.form} onSubmit={handleTeacherRegister} aria-busy={isSubmitting} noValidate>
                   {/* Kayıt adımları (sekmeli) */}
                   <div className={styles.stepTabs} role="tablist" aria-label="Kayıt adımları">
@@ -462,14 +609,35 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, variant = 'p
                   )}
                 </form>
               )}
-          <p className={styles.accountPrompt}>
-            {isRegister ? 'Zaten hesabınız var mı?' : 'Hesabınız yok mu?'}{' '}
-            <button className={styles.textButton} type="button" disabled={isSubmitting} onClick={() => switchTeacherMode(isRegister ? 'login' : 'register')}>
-              {isRegister ? 'Giriş yap' : 'Kayıt olun'}
-            </button>
-          </p>
+          {!isRegister && authRole === 'Öğrenci' ? (
+            <p className={styles.accountPrompt}>
+              Öğretmen misiniz?{' '}
+              <button
+                className={styles.textButton}
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => {
+                  setAuthRole('Öğretmen');
+                  switchTeacherMode('register');
+                }}
+              >
+                Öğretmen hesabı oluşturun
+              </button>
+            </p>
+          ) : (
+            <p className={styles.accountPrompt}>
+              {isRegister ? 'Zaten hesabınız var mı?' : 'Hesabınız yok mu?'}{' '}
+              <button
+                className={styles.textButton}
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => switchTeacherMode(isRegister ? 'login' : 'register')}
+              >
+                {isRegister ? 'Giriş yap' : 'Kayıt olun'}
+              </button>
+            </p>
+          )}
         </section>
-        <footer className={styles.footer}>e-Okul Öğrenci Bilgi Portalı</footer>
       </div>
     </main>
   );

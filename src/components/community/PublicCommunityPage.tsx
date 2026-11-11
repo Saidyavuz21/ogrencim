@@ -13,9 +13,8 @@ import {
   type TeacherProfile,
 } from '../../lib/communitySocialData';
 import { restoreSession } from '../../lib/supabaseClient';
-import { BrandLogo } from '../BrandLogo';
+import { SiteHeader } from '../site/SiteHeader';
 import { CustomSelect } from '../CustomSelect';
-import { InstallAppBanner } from '../InstallAppBanner';
 import { Spinner } from '../Spinner';
 import {
   ArrowLeft,
@@ -30,7 +29,7 @@ import {
   Layers,
   LogIn,
   MessageSquare,
-  Menu,
+
   Search,
   Star,
   UserPlus,
@@ -38,7 +37,7 @@ import {
 } from '../icons';
 import { Notice, type NoticeState } from '../teacher/TeacherUi';
 import { SiteFooter } from '../site/SiteFooter';
-import { SITE_NAV } from '../site/siteLinks';
+
 import { TeacherAvatar } from './TeacherAvatar';
 import s from './PublicCommunity.module.css';
 
@@ -73,9 +72,9 @@ export function PublicCommunityPage() {
   const subjectSelectId = useId();
   const gradeSelectId = useId();
   const sortSelectId = useId();
-  const navigationId = useId();
+
   const filtersId = useId();
-  const [menuOpen, setMenuOpen] = useState(false);
+
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Oturum kontrolü: yalnızca giriş yapmış öğretmene "Topluluğa git" düğmesi göstermek için
@@ -139,6 +138,16 @@ export function PublicCommunityPage() {
   // Önizleme Modalı
   const [previewItem, setPreviewItem] = useState<PublicItem | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    const itemId = new URLSearchParams(window.location.search).get('materyal');
+    if (!itemId) return;
+    let cancelled = false;
+    getPublicItem(itemId).then((result) => {
+      if (!cancelled && result.ok && result.data) setPreviewItem(result.data);
+    }).catch(() => { /* The gallery remains available if the shared item is unavailable. */ });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebounced(query.trim()), 350);
@@ -252,50 +261,13 @@ export function PublicCommunityPage() {
 
   return (
     <div className={s.page}>
-      <InstallAppBanner />
-      <header className={s.header}>
-        <div className={s.headerInner}>
-          <Link className={s.brand} href="/" aria-label="tofutr.com ana sayfa">
-            <BrandLogo height={52} priority />
-            <span className={s.brandDescription}>Okulunla aynı yerde.</span>
-          </Link>
-
-          <button type="button" className={`${s.btnSecondary} ${s.mobileMenuToggle}`} aria-expanded={menuOpen} aria-controls={navigationId} onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
-            <span>{menuOpen ? 'Kapat' : 'Menü'}</span>
-          </button>
-          <div id={navigationId} className={`${s.navigationGroup} ${menuOpen ? s.navigationOpen : ''}`} onKeyDown={(event) => { if (event.key === 'Escape') { setMenuOpen(false); (event.currentTarget.previousElementSibling as HTMLButtonElement)?.focus(); } }}>
-          <nav className={s.nav} aria-label="Ana menü">
-            {SITE_NAV.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={item.href === '/topluluk' ? 'page' : undefined}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className={s.headerActions}>
-            {hasTeacherSession ? (
-              <Link className={s.btnPrimary} href="/giris?sayfa=topluluk">
-                <Globe size={17} aria-hidden="true" />
-                <span>Topluluğa git</span>
-                <ArrowRight size={16} aria-hidden="true" />
-              </Link>
-            ) : (
-              <>
-                <Link className={s.btnSecondary} href="/giris">
-                  <LogIn size={17} aria-hidden="true" />
-                  <span>Giriş yap</span>
-                </Link>
-                <Link className={s.btnPrimary} href="/giris#kayit">
-                  <UserPlus size={17} aria-hidden="true" />
-                  <span>Ücretsiz kayıt ol</span>
-                </Link>
-              </>
-            )}
-          </div>
-          </div>
-        </div>
-      </header>
+      <SiteHeader action={hasTeacherSession ? (
+        <Link className={s.btnPrimary} href="/giris?sayfa=topluluk">
+          <Globe size={17} aria-hidden="true" />
+          <span>Topluluğa git</span>
+          <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      ) : undefined} />
 
       <main className={s.main}>
         <div className={s.introRow}>
@@ -750,19 +722,19 @@ export function PublicCommunityPage() {
               )}
 
               <div className={s.modalQuickActions}>
-                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk">
+                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk" aria-label="Teşekkürler" title="Teşekkürler">
                   <HeartHandshake size={15} aria-hidden="true" />
                   <span>Teşekkürler</span>
                 </Link>
-                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk">
+                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk" aria-label="Derste kullandım" title="Derste kullandım">
                   <CheckCircle2 size={15} aria-hidden="true" />
                   <span>Derste kullandım</span>
                 </Link>
-                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk">
+                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk" aria-label="Yorum yap" title="Yorum yap">
                   <MessageSquare size={15} aria-hidden="true" />
                   <span>Yorum yap</span>
                 </Link>
-                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk">
+                <Link className={s.btnSecondary} href="/giris?sayfa=topluluk" aria-label="Kopyala" title="Kopyala">
                   <Copy size={15} aria-hidden="true" />
                   <span>Kopyala</span>
                 </Link>
@@ -780,7 +752,8 @@ export function PublicCommunityPage() {
                   href="/giris?sayfa=topluluk"
                 >
                   <LogIn size={17} aria-hidden="true" />
-                  <span>Kullanmak için giriş yap</span>
+                  <span className={s.ctaDesktopLabel}>Kullanmak için giriş yap</span>
+                  <span className={s.ctaMobileLabel}>Giriş yap</span>
                 </Link>
                 <Link className={s.btnSecondary} href="/giris#kayit">
                   <UserPlus size={17} aria-hidden="true" />

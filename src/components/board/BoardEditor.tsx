@@ -2,8 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Download, Eraser, Eye, EyeOff, Highlighter, History, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Shapes, Shuffle, Sliders, Square, StickyNote, Trash2, Type,
+  Copy, Diamond, Download, Eraser, Eye, EyeOff, Hexagon, Highlighter, History, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
+  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -14,9 +14,11 @@ import {
   StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { listQuestions, QuestionRow } from '../../lib/quizData';
+import { listMyFiles, signedFileUrl, uploadTeacherFiles } from '../../lib/filesData';
 import { fileSlug } from '../../lib/reportData';
-import { BoardCanvas, Tool, wrapTextLines } from './BoardCanvas';
-import { computeTextHeight } from './textLayout';
+import { BoardCanvas, SHAPE_TOOLS, Tool, wrapTextLines } from './BoardCanvas';
+import { computeTextHeight, fitTextWidth } from './textLayout';
+import { normalizeWholeTags } from './BoardFormatBars';
 import { WidgetContext, WidgetView } from './Widgets';
 import {
   getLastUsedParams, getElementsBbox, instantiateItem, LIBRARY_ITEMS, LibraryCategory, LibraryItem, listMyLibraryItems,
@@ -30,6 +32,20 @@ import { LiveTeacherSession } from '../live/LiveTeacherSession';
 
 import styles from './Board.module.css';
 import { COLORS, MediaDrawer, MultiSelectionPanel, SelectionPanel } from './BoardEditorPanels';
+
+/** Depo yolundan dosyanın adı: "kullanıcı/zamanDamgası-ad.uzantı" → "ad.uzantı" (Dosyalarım ile tahta kopyası aynı adı taşır) */
+const storedFileKey = (path: string) => (path.split('/').pop() || '').replace(/^[0-9a-z]{6,12}-/, '').toLowerCase();
+
+/** Parça henüz kurulmamış mı? (ayarları yalnızca panelde olduğu için seçilince panel açılır) */
+function widgetNeedsSetup(el: WidgetEl): boolean {
+  const d = el.data;
+  if (el.kind === 'minitest') return !d.questionId && !d.itemId;
+  if (el.kind === 'reveal') return !d.targetId;
+  if (el.kind === 'steps') return !(d.steps || []).some((x) => x.trim());
+  if (el.kind === 'match') return !(d.pairs || []).some((x) => x.a.trim() || x.b.trim());
+  if (el.kind === 'audio') return !d.audio;
+  return false;
+}
 
 let boardClipboard: BoardEl[] | null = null;
 let boardClipboardPageId: string | null = null;
@@ -70,10 +86,41 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Dosyalarım'daki dosyaların adları: tahtadaki resim zaten oradaysa "Dosyalarıma kaydet" gösterilmez
+  const [myFileKeys, setMyFileKeys] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    let alive = true;
+    listMyFiles().then((r) => { if (alive && r.ok) setMyFileKeys(new Set(r.data.map((f) => storedFileKey(f.path)))); });
+    return () => { alive = false; };
+  }, []);
+  const imageInMyFiles = (el: ImageEl) => myFileKeys.has(storedFileKey(el.path));
+  // Sağ tık menüsü: konum (ekran pikseli) ve ilgili öğeler (boş alanda ids boş)
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; ids: string[] } | null>(null);
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const close = () => setCtxMenu(null);
+    const onDown = (e: PointerEvent) => { if (!(e.target as Element).closest?.('[data-board-ctx]')) close(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    document.addEventListener('pointerdown', onDown, true);
+    document.addEventListener('keydown', onKey, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('blur', close);
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('blur', close);
+    };
+  }, [ctxMenu]);
   const [showVersions, setShowVersions] = useState(false);
   const [live, setLive] = useState(false);
   // Tam ekranda sağdan açılan panel (sayfalar, zemin, seçili öğe, medya)
   const [panelOpen, setPanelOpen] = useState(false);
+  // Panel seçimle kendiliğinden açıldıysa true: seçim bırakılınca yine kendiliğinden kapanır.
+  // Kullanıcı paneli kendi açtıysa ya da kapattıysa false; o zaman dokunulmaz.
+  const [panelAuto, setPanelAuto] = useState(false);
+  /** Paneli kullanıcı açtı: seçim bırakılınca kendiliğinden kapanmaz */
+  const openPanelManually = () => { setPanelAuto(false); setPanelOpen(true); };
   // Tam ekranda araç çubuğu tahtanın üstünde yüzer; gizlenebilir
   const [toolsHidden, setToolsHidden] = useState(false);
   // Sayfa silme onayı tahtanın içinde açılır (tarayıcı tam ekrandayken dışarıdaki pencereler görünmez)
@@ -142,20 +189,39 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     });
   }, []);
 
+  // Dosya seçme penceresi açılınca tarayıcı tam ekrandan kendiliğinden çıkar. Geri dönmek kullanıcı
+  // hareketi ister: önce hemen denenir, tarayıcı reddederse tahtaya ilk dokunuşta yeniden girilir.
+  const fullRef = useRef(full);
+  useEffect(() => { fullRef.current = full; }, [full]);
+  const fsRetryRef = useRef<(() => void) | null>(null);
+  const reenterFullscreen = () => {
+    isUploadingRef.current = false;
+    const el = rootRef.current;
+    if (!fullRef.current || !el?.requestFullscreen || document.fullscreenElement || fsRetryRef.current) return;
+    el.requestFullscreen().catch(() => {
+      if (fsRetryRef.current) return;
+      const once = () => {
+        document.removeEventListener('pointerdown', once, true);
+        fsRetryRef.current = null;
+        if (fullRef.current && !document.fullscreenElement) rootRef.current?.requestFullscreen?.().catch(() => {});
+      };
+      fsRetryRef.current = once;
+      document.addEventListener('pointerdown', once, true);
+    });
+  };
+  const reenterFullscreenRef = useRef(reenterFullscreen);
+  useEffect(() => { reenterFullscreenRef.current = reenterFullscreen; });
+  useEffect(() => () => {
+    if (fsRetryRef.current) document.removeEventListener('pointerdown', fsRetryRef.current, true);
+  }, []);
+
   useEffect(() => {
     const onFocus = () => {
-      if (isUploadingRef.current) {
-        window.setTimeout(() => {
-          isUploadingRef.current = false;
-          if (full && !document.fullscreenElement) {
-            rootRef.current?.requestFullscreen?.().catch(() => {});
-          }
-        }, 500);
-      }
+      if (isUploadingRef.current) window.setTimeout(() => reenterFullscreenRef.current(), 500);
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
-  }, [full]);
+  }, []);
 
   useEffect(() => {
     if (!activePopover) return;
@@ -223,6 +289,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       if (e.id !== id) return e;
       let next = { ...e, ...patch } as BoardEl;
       if (next.type === 'note' && next.variant === 'text') {
+        // Yazıya oturan kutu: yazma sürmüyorken biçim değişince (boyut, kalınlık…) genişlik yeniden hesaplanır
+        if (next.autoW !== false && id !== editingNoteId && !('w' in patch)) {
+          const fitted = fitTextWidth(next);
+          if (fitted != null) next = { ...next, w: fitted, autoW: true };
+        }
         const autoH = computeTextHeight(next);
         next = { ...next, h: autoH };
       }
@@ -245,6 +316,23 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setSelectedIds([]);
     setSaveState('dirty');
   };
+
+  // Bu özellikten önce eklenmiş, yazısından uzun metin kutusu seçilince bir kez yazıya oturtulur.
+  // Her kutu oturumda yalnızca bir kez denenir; böylece geri al (Ctrl+Z) bu düzeltmeye takılıp kalmaz.
+  // Seçim anında değil, bir sonraki çizimden sonra çağrılır (ref güncel sayfayı görür); aynı tıklamada
+  // yapılmış başka bir kaydın (ör. düzenlenen yazının) üzerine eski sayfayla yazılmaz.
+  const fittedOnceRef = useRef(new Set<string>());
+  const fitLegacyText = (id: string) => {
+    if (!page || editingNoteId) return;
+    const el = page.elements.find((e) => e.id === id);
+    if (!el || el.type !== 'note' || el.variant !== 'text' || el.autoW !== undefined) return;
+    if (fittedOnceRef.current.has(el.id)) return;
+    fittedOnceRef.current.add(el.id);
+    const fitted = fitTextWidth(el);
+    if (fitted != null && fitted < el.w) patchElement(el.id, { w: fitted, autoW: true } as Partial<BoardEl>);
+  };
+  const fitLegacyTextRef = useRef(fitLegacyText);
+  useEffect(() => { fitLegacyTextRef.current = fitLegacyText; });
 
   const deleteSelected = (idsToDelete?: string[]) => {
     const targetIds = idsToDelete || selectedIds;
@@ -470,6 +558,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           return;
         }
         if (panelOpen) {
+          setPanelAuto(false);
           setPanelOpen(false);
           return;
         }
@@ -587,6 +676,27 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!res.ok) { setNotice(res.error); return; }
     placeImage(res.data);
   };
+  /** Tahtadaki resmi Dosyalarım'a kopyalar: dosya indirilir ve olağan yükleme yolundan (tür, boyut, kota denetimi) geçer */
+  const saveImageToFiles = async (el: ImageEl) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const signed = await signedFileUrl(el.bucket, el.path);
+      if (!signed.ok) { setNotice(`Resim kaydedilemedi: ${signed.error}`); return; }
+      const res = await fetch(signed.data);
+      if (!res.ok) { setNotice('Resim kaydedilemedi: dosya okunamadı.'); return; }
+      const blob = await res.blob();
+      // Depodaki ad "zamanDamgası-ad.uzantı" biçimindedir; Dosyalarım'da okunaklı görünsün diye damga atılır
+      const name = (el.path.split('/').pop() || 'resim').replace(/^[0-9a-z]{6,12}-/, '') || 'resim';
+      const { uploaded, errors } = await uploadTeacherFiles([new File([blob], name, { type: blob.type })], null, {}, 0);
+      if (uploaded.length) setMyFileKeys((prev) => new Set(prev).add(storedFileKey(el.path)));
+      setNotice(uploaded.length ? 'Resim Dosyalarım’a kaydedildi.' : `Resim kaydedilemedi: ${errors[0] || 'bilinmeyen hata'}`);
+    } catch {
+      setNotice('Resim kaydedilemedi: bağlantı hatası.');
+    } finally {
+      setBusy(false);
+    }
+  };
   const insertMedia = async (m: { bucket: string; path: string; name: string }, x?: number, y?: number) => {
     setBusy(true);
     const res = await copyImageToBoard(m.bucket, m.path, m.name);
@@ -633,14 +743,13 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     }
   };
 
+  /** Resimler ve Mini Test / Cevabı Göster parçaları kütüphaneye kaydedilemez; seçimde varsa düğme gösterilmez */
+  const canSaveToLibrary = (els: BoardEl[]) => els.length > 0 && !els.some((el) => (
+    el.type === 'image' || (el.type === 'widget' && (el.kind === 'minitest' || el.kind === 'reveal'))
+  ));
   const handleOpenSaveModal = (elementsToSave: BoardEl[]) => {
     if (!elementsToSave.length) return;
-    const hasInvalid = elementsToSave.some((el) => {
-      if (el.type === 'image') return true;
-      if (el.type === 'widget' && (el.kind === 'minitest' || el.kind === 'reveal')) return true;
-      return false;
-    });
-    if (hasInvalid) {
+    if (!canSaveToLibrary(elementsToSave)) {
       setNotice('Resimler ve Mini Test/Cevabı Göster parçaları kütüphaneye kaydedilemez.');
       return;
     }
@@ -822,6 +931,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     commitElements([...page.elements, el]);
     setTool('select');
     setSelectedIds([el.id]);
+    // Yeni parçanın ayarları panelde yapılır
+    if (widgetNeedsSetup(el)) { if (!panelOpen) setPanelAuto(true); setPanelOpen(true); }
   };
 
   // ---- Dışa aktarma ----
@@ -892,20 +1003,23 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           <button type="button" className={styles.tool} onClick={() => setShowVersions(true)} title="Sürüm geçmişi" aria-label="Sürüm geçmişi">
             <History size={20} aria-hidden="true" />
           </button>
-          <button type="button" className={styles.presentButton} onClick={startPresent} title="Derste göster: düzenleme yok, kalemle yazılanlar kaydedilmez">
-            <Play size={20} aria-hidden="true" />Sun
+          <div className={styles.previewActions}>
+          <button type="button" className={styles.presentButton} onClick={startPresent} aria-label="Sun" title="Derste göster: düzenleme yok, kalemle yazılanlar kaydedilmez">
+            <Play size={20} aria-hidden="true" /><span>Sun</span>
           </button>
           <button
             type="button"
             className={styles.presentButton}
+            aria-label="Canlı ders"
             onClick={() => { if (saveState !== 'saved') { setNotice('Canlı dersten önce değişikliklerin kaydedilmesini bekleyin.'); return; } setLive(true); }}
             title="Sınıfla canlı ders: öğrenciler tahtayı kendi ekranında izler, soruları cevaplar, sırası gelince yazar"
           >
-            <Radio size={20} aria-hidden="true" />Canlı ders
+            <Radio size={20} aria-hidden="true" /><span>Canlı ders</span>
           </button>
-          <button type="button" className={styles.openButton} onClick={toggleFull}>
-            <Maximize size={22} aria-hidden="true" />Tam ekranda düzenle
+          <button type="button" className={styles.openButton} onClick={toggleFull} aria-label="Tam ekranda düzenle" title="Tam ekranda düzenle">
+            <Maximize size={22} aria-hidden="true" /><span>Tam ekranda düzenle</span>
           </button>
+          </div>
         </div>
         <div className={styles.previewBody}>
           <nav aria-label="Sayfalar (sırayı değiştirmek için sürükleyin)" className={styles.pages}>
@@ -1261,13 +1375,19 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                       { id: 'arrow', label: 'Ok', icon: <ArrowRight size={22} /> },
                       { id: 'rect', label: 'Dikdörtgen', icon: <Square size={22} /> },
                       { id: 'ellipse', label: 'Daire', icon: <Circle size={22} /> },
+                      { id: 'triangle', label: 'Üçgen', icon: <Triangle size={22} /> },
+                      { id: 'diamond', label: 'Eşkenar', icon: <Diamond size={22} /> },
+                      { id: 'hexagon', label: 'Altıgen', icon: <Hexagon size={22} /> },
+                      { id: 'star', label: 'Yıldız', icon: <Star size={22} /> },
                     ].map((s) => (
                       <button
                         key={s.id}
                         type="button"
                         className={`${styles.shapeBtn} ${tool === s.id ? styles.shapeBtnActive : ''}`}
                         onClick={() => setTool(s.id as Tool)}
-                        title={s.label}
+                        aria-pressed={tool === s.id}
+                        title={s.id === 'diamond' ? 'Eşkenar dörtgen' : s.label}
+                        aria-label={s.id === 'diamond' ? 'Eşkenar dörtgen' : undefined}
                       >
                         {s.icon}
                         <span>{s.label}</span>
@@ -1434,21 +1554,25 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               {/* Şekiller */}
               <button
                 type="button"
-                className={`${styles.toolIconBtn} ${['line', 'arrow', 'rect', 'ellipse'].includes(tool) ? styles.toolActive : ''}`}
-                aria-pressed={['line', 'arrow', 'rect', 'ellipse'].includes(tool)}
+                className={`${styles.toolIconBtn} ${SHAPE_TOOLS.includes(tool) ? styles.toolActive : ''}`}
+                aria-pressed={SHAPE_TOOLS.includes(tool)}
                 onClick={() => {
-                  if (!['line', 'arrow', 'rect', 'ellipse'].includes(tool)) {
+                  if (!SHAPE_TOOLS.includes(tool)) {
                     setTool('rect');
                   }
                   setActivePopover((cur) => (cur === 'shapes' ? null : 'shapes'));
                 }}
-                title="Şekiller (Dikdörtgen, Daire, Çizgi, Ok)"
+                title="Şekiller (Çizgi, Ok, Dikdörtgen, Daire, Üçgen, Eşkenar dörtgen, Altıgen, Yıldız)"
                 aria-label="Şekiller"
               >
                 {tool === 'line' ? <Minus size={19} aria-hidden="true" /> :
                  tool === 'arrow' ? <ArrowRight size={19} aria-hidden="true" /> :
                  tool === 'rect' ? <Square size={19} aria-hidden="true" /> :
                  tool === 'ellipse' ? <Circle size={19} aria-hidden="true" /> :
+                 tool === 'triangle' ? <Triangle size={19} aria-hidden="true" /> :
+                 tool === 'diamond' ? <Diamond size={19} aria-hidden="true" /> :
+                 tool === 'hexagon' ? <Hexagon size={19} aria-hidden="true" /> :
+                 tool === 'star' ? <Star size={19} aria-hidden="true" /> :
                  <Shapes size={19} aria-hidden="true" />}
               </button>
 
@@ -1490,12 +1614,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 hidden
                 onChange={(e) => {
                   upload(e.target.files?.[0]);
-                  window.setTimeout(() => {
-                    isUploadingRef.current = false;
-                    if (full && !document.fullscreenElement) {
-                      rootRef.current?.requestFullscreen?.().catch(() => {});
-                    }
-                  }, 400);
+                  window.setTimeout(() => reenterFullscreenRef.current(), 400);
                 }}
               />
               <button
@@ -1504,6 +1623,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 onClick={() => {
                   setActivePopover(null);
                   setSelectedIds([]);
+                  setPanelAuto(false);
                   setPanelOpen((v) => !(v && !selectedIds.length));
                 }}
                 title="Görseller & Kütüphane paneli"
@@ -1616,6 +1736,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 aria-controls="board-drawer"
                 onClick={() => {
                   setActivePopover(null);
+                  setPanelAuto(false);
                   setPanelOpen((v) => !v);
                 }}
                 title="Sayfalar, Zemin, Medya ve Ayarlar Paneli"
@@ -1693,14 +1814,22 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           width={width}
           onCommit={commitElements}
           selectedIds={selectedIds}
+          onElementMenu={(ids, x, y) => { setActivePopover(null); setCtxMenu({ ids, x, y }); }}
           onSelect={(ids) => {
             setSelectedIds(ids);
-            // Not ve parçaların ayarları panelde: seçilince panel açılır
+            // Panel kuralı: başka bir öğe (ya da öğeler) seçilince açılır. "Kapat"a basılınca seçim durur ama
+            // panel, seçim değişene kadar kapalı kalır (aynı öğeye yeniden tıklamak onSelect çağırmaz).
+            // Seçimle açılan panel, seçim bırakılınca kendiliğinden kapanır; elle açılan panel açık kalır.
+            if (ids.length) {
+              if (!panelOpen) setPanelAuto(true);
+              setPanelOpen(true);
+            } else if (panelAuto) {
+              setPanelAuto(false);
+              setPanelOpen(false);
+            }
             if (ids.length === 1) {
               const el = page.elements.find((e) => e.id === ids[0]);
-              if (el && (el.type === 'widget' || el.type === 'note')) setPanelOpen(true);
-            } else if (ids.length > 1) {
-              setPanelOpen(true);
+              if (el && el.type === 'note') window.setTimeout(() => fitLegacyTextRef.current(ids[0]), 0);
             }
           }}
           onDuplicate={(ids) => duplicateElements(ids)}
@@ -1714,14 +1843,26 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           colors={COLORS}
           onPatchElement={patchElement}
           onDeleteElement={(id) => deleteSelected([id])}
-          onNoteText={(id, text) => {
+          onNoteText={(id, rawText) => {
             const el = page.elements.find((e) => e.id === id) as NoteEl | undefined;
             if (!el) return;
-            if (el.variant === 'text' && !text.trim()) {
+            if (el.variant === 'text' && !rawText.trim()) {
               deleteSelected([id]);
               return;
             }
-            if (el.text !== text) patchElement(id, { text });
+            // Yazının tamamını saran [b]/[i]/[u] işaretleri kutunun kendi biçimine çevrilir (yazıda işaret kalmaz)
+            const whole = el.variant === 'text' ? normalizeWholeTags(rawText) : null;
+            const text = whole ? whole.text : rawText;
+            if (whole) {
+              const styled = { ...el, ...whole.patch } as NoteEl;
+              const w = fitTextWidth(styled, text);
+              patchElement(id, { ...whole.patch, text, ...(w != null ? { w, autoW: true } : {}) } as Partial<BoardEl>);
+              return;
+            }
+            // Yazıya oturan metin kutusu: yazı bitince genişlik en uzun satıra göre ayarlanır
+            const fitted = fitTextWidth(el, text);
+            if (fitted != null && fitted !== el.w) patchElement(id, { text, w: fitted, autoW: true } as Partial<BoardEl>);
+            else if (el.text !== text) patchElement(id, { text });
           }}
           imageUrls={imageUrls}
           renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
@@ -1729,7 +1870,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onDropMedia={(payload, x, y) => { try { insertMedia(JSON.parse(payload), x, y); } catch { /* geçersiz */ } }}
           onDropShape={(id, x, y) => insertShape(id, x, y, getLastUsedParams(id))}
           onConfigureShape={canConfigureSelected ? handleOpenConfigureSelected : undefined}
-          onSaveToLibrary={(ids) => handleOpenSaveModal(page.elements.filter((el) => ids.includes(el.id)))}
+          onSaveToLibrary={canSaveToLibrary(page.elements.filter((el) => selectedIds.includes(el.id))) ? (ids) => handleOpenSaveModal(page.elements.filter((el) => ids.includes(el.id))) : undefined}
           svgRef={(node) => { svgRef.current = node; }}
           ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa`}
         />
@@ -1738,7 +1879,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       <aside id="board-drawer" className={`${styles.drawer} ${panelOpen ? styles.drawerOpen : ''}`} aria-label="Sayfalar ve ayarlar" aria-hidden={!panelOpen || undefined} inert={!panelOpen || undefined}>
         <div className={styles.drawerHead}>
           <strong>Panel</strong>
-          <button type="button" className={styles.tool} onClick={() => setPanelOpen(false)} aria-label="Paneli kapat">Kapat</button>
+          <button type="button" className={styles.tool} onClick={() => { setPanelAuto(false); setPanelOpen(false); }} aria-label="Paneli kapat">Kapat</button>
         </div>
         <section className={styles.panel}>
           <h3>Sayfa {pageIndex + 1} / {content.pages.length}</h3>
@@ -1764,7 +1905,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onDelete={() => deleteSelected([selected.id])}
             onOrder={(dir) => reorderElements(dir, [selected.id])}
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
-            onSaveToLibrary={() => handleOpenSaveModal([selected])}
+            onSaveToLibrary={canSaveToLibrary([selected]) ? () => handleOpenSaveModal([selected]) : undefined}
+            onSaveImage={selected.type === 'image' && !imageInMyFiles(selected) ? () => saveImageToFiles(selected) : undefined}
+            busy={busy}
           />
         ) : selectedIds.length > 1 ? (
           <MultiSelectionPanel
@@ -1775,7 +1918,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onGroup={() => groupSelected()}
             onUngroup={() => ungroupSelected()}
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
-            onSaveToLibrary={() => handleOpenSaveModal(page.elements.filter((el) => selectedIds.includes(el.id)))}
+            onSaveToLibrary={canSaveToLibrary(page.elements.filter((el) => selectedIds.includes(el.id))) ? () => handleOpenSaveModal(page.elements.filter((el) => selectedIds.includes(el.id))) : undefined}
           />
         ) : (
           <MediaDrawer
@@ -1795,11 +1938,66 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onDeleteItem={handleDeleteShape}
             onToggleSchoolShare={handleToggleSchoolShare}
             onCopySchoolItem={handleCopySchoolItem}
-            schoolSharingEnabled={true}
+            // Okul paylaşımı panelde kapalı (Okulum listesi kaldırıldı); altyapı duruyor, true yapınca geri gelir
+            schoolSharingEnabled={false}
           />
         )}
         <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
       </aside>
+      {ctxMenu && (() => {
+        const ids = ctxMenu.ids;
+        const els = page.elements.filter((el) => ids.includes(el.id));
+        const run = (fn: () => void) => () => { setCtxMenu(null); fn(); };
+        type Item = { label: string; key?: string; onClick: () => void; danger?: boolean; disabled?: boolean; sep?: boolean };
+        const items: Item[] = [];
+        if (els.length) {
+          const image = els.length === 1 && els[0].type === 'image' ? els[0] : null;
+          const oneGroup = els.length >= 2 && !!els[0].groupId && els.every((el) => el.groupId === els[0].groupId);
+          items.push({ label: 'Kopyala', key: 'Ctrl+C', onClick: run(() => copySelected()) });
+          items.push({ label: 'Çoğalt', key: 'Ctrl+D', onClick: run(() => duplicateElements(ids)) });
+          items.push({ label: 'Öne getir', onClick: run(() => reorderElements('front', ids)), sep: true });
+          items.push({ label: 'Arkaya gönder', onClick: run(() => reorderElements('back', ids)) });
+          items.push({ label: 'Ayarlar', onClick: run(openPanelManually), sep: true });
+          if (els.length >= 2 && !oneGroup) items.push({ label: 'Grupla', key: 'Ctrl+G', onClick: run(() => groupSelected(ids)), sep: true });
+          if (els.some((el) => !!el.groupId)) items.push({ label: 'Grubu çöz', key: 'Ctrl+Shift+G', onClick: run(() => ungroupSelected(ids)), sep: !(els.length >= 2 && !oneGroup) });
+          if (canSaveToLibrary(els)) items.push({ label: 'Kütüphaneye kaydet', onClick: run(() => handleOpenSaveModal(els)), sep: true });
+          if (image && !imageInMyFiles(image)) items.push({ label: 'Dosyalarıma kaydet', onClick: run(() => { void saveImageToFiles(image); }), disabled: busy, sep: true });
+          items.push({ label: 'Sil', key: 'Delete', onClick: run(() => deleteSelected(ids)), danger: true, sep: true });
+        } else {
+          items.push({ label: 'Yapıştır', key: 'Ctrl+V', onClick: run(() => pasteClipboard()), disabled: !boardClipboard || !boardClipboard.length });
+          items.push({ label: 'Tümünü seç', key: 'Ctrl+A', onClick: run(() => setSelectedIds(page.elements.map((el) => el.id))), disabled: !page.elements.length });
+        }
+        const height = items.length * 44 + items.filter((i) => i.sep).length * 9 + 14;
+        const left = Math.max(8, Math.min(ctxMenu.x, window.innerWidth - 236));
+        const top = Math.max(8, Math.min(ctxMenu.y, window.innerHeight - height - 8));
+        return (
+          <div
+            className={styles.ctxMenu}
+            style={{ left, top }}
+            role="menu"
+            aria-label={els.length ? 'Seçili öğe işlemleri' : 'Tahta işlemleri'}
+            data-board-ctx=""
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {items.map((it, i) => (
+              <React.Fragment key={it.label}>
+                {it.sep && i > 0 && <span className={styles.ctxSep} role="separator" />}
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${styles.ctxItem} ${it.danger ? styles.ctxDanger : ''}`}
+                  onClick={it.onClick}
+                  disabled={it.disabled}
+                  autoFocus={i === 0}
+                >
+                  <span>{it.label}</span>
+                  {it.key && <span className={styles.ctxKey} aria-hidden="true">{it.key}</span>}
+                </button>
+              </React.Fragment>
+            ))}
+          </div>
+        );
+      })()}
       {deleteConfirm}
       {printArea}
       {configModal && (
@@ -1824,7 +2022,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onSave={handleSaveShape}
           onClose={() => setSaveModal(null)}
           busy={saveBusy}
-          schoolSharingEnabled={true}
+          schoolSharingEnabled={false}
         />
       )}
       {editModal && (
@@ -1834,7 +2032,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onSave={handleUpdateShape}
           onClose={() => setEditModal(null)}
           busy={saveBusy}
-          schoolSharingEnabled={true}
+          schoolSharingEnabled={false}
         />
       )}
     </div>

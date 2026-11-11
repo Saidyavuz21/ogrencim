@@ -137,6 +137,16 @@
 .previewHead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
 .previewHead h2 { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
 .previewHead .spacer { flex: 1; }
+.previewActions { display: contents; }
+@media (max-width: 767px) {
+  .previewHead { gap: 8px; padding: 10px; }
+  .previewHead h2 { flex: 1; font-size: 16px; }
+  .previewHead .spacer { display: none; }
+  .previewHead .saveState { max-width: 110px; white-space: normal; overflow-wrap: anywhere; font-size: 12px; }
+  .previewActions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; }
+  .previewActions .presentButton, .previewActions .openButton { justify-content: center; min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 10px; }
+  .previewActions button span { display: none; }
+}
 .openButton { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border: 1px solid var(--teacher-primary, #25634b); border-radius: 14px; background: var(--teacher-primary, #25634b); color: #fff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
 .openButton:hover { background: var(--teacher-hover, #1d503d); }
 .presentButton { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 20px; border: 1px solid var(--teacher-primary, #25634b); border-radius: 14px; background: #fff; color: var(--teacher-primary, #25634b); font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
@@ -992,3 +1002,14 @@
 .audioPlay { display: grid; place-items: center; flex-shrink: 0; width: 4.4cqw; height: 4.4cqw; border: 0; border-radius: 50%; background: #25634b; color: #fff; cursor: pointer; }
 .audioPlay svg { width: 2cqw; height: 2cqw; }
 .audioSeek { flex: 1; min-width: 0; accent-color: #25634b; }
+
+/* Tahtada sağ tık menüsü (tam ekranda da görünür: düzenleyicinin kökünde, ekrana sabit) */
+.ctxMenu { position: fixed; z-index: 125; display: grid; width: 228px; padding: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; background: #fff; box-shadow: 0 8px 24px rgb(20 35 28 / 12%); }
+.ctxItem { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: #20352d; font: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+.ctxItem:hover:not(:disabled), .ctxItem:focus-visible { background: #f0f4ee; outline: none; }
+.ctxItem:focus-visible { box-shadow: inset 0 0 0 2px #25634b; }
+.ctxItem:disabled { opacity: 0.45; cursor: not-allowed; }
+.ctxDanger { color: #a33342; }
+.ctxDanger:hover:not(:disabled), .ctxDanger:focus-visible { background: #fcecef; }
+.ctxKey { flex-shrink: 0; font-size: 12px; font-weight: 400; color: var(--teacher-muted, #58665f); font-variant-numeric: tabular-nums; }
+.ctxSep { height: 1px; margin: 4px 6px; background: #eeece5; }

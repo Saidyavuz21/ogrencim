@@ -223,6 +223,8 @@ export function SaveShapeModal({
             </div>
           </div>
 
+          {/* Okul paylaşımı kapalıyken tek seçenek kalır; bölüm gösterilmez */}
+          {schoolSharingEnabled && (
           <div>
             <span style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
               Görünürlük
@@ -275,6 +277,7 @@ export function SaveShapeModal({
               )}
             </div>
           </div>
+          )}
 
           <div className={styles.confirmActions} style={{ marginTop: '4px' }}>
             <button

@@ -20,6 +20,7 @@ import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { MathText } from '../math/MathText';
 import { hasMath } from '../../lib/math/parseMath';
 import styles from './Board.module.css';
+import { BOX_BORDERS, BOX_FILLS, isDarkFill } from './textLayout';
 
 export const COLORS = ['#1f2a24', '#d03b3b', '#2a78d6', '#1e7a4c', '#eb6834', '#7a3fd0', '#e0a800', '#ffffff'];
 export const NOTE_COLORS = ['#fff3b0', '#dff3df', '#dbe8f8', '#fbe2ec', '#ffffff'];
@@ -28,7 +29,7 @@ export type MediaItem = { key: string; bucket: string; path: string; name: strin
 // --------------------------------------------------------
 // Seçili öğenin ayarları
 // --------------------------------------------------------
-export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onConfigure, onSaveToLibrary }: {
+export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onConfigure, onSaveToLibrary, onSaveImage, busy }: {
   el: BoardEl;
   questions: QuestionRow[];
   minitests: WidgetEl[];
@@ -37,6 +38,9 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
   onOrder: (dir: 'front' | 'back') => void;
   onConfigure?: () => void;
   onSaveToLibrary?: () => void;
+  /** Seçili resmi öğretmenin Dosyalarım alanına kopyalar */
+  onSaveImage?: () => void;
+  busy?: boolean;
 }) {
   const [mathStepIdx, setMathStepIdx] = useState<number | null>(null);
   const stepTextareaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
@@ -195,14 +199,7 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
                   >
                     ✕
                   </button>
-                  {[
-                    { c: '#fff3bf', label: 'Sarı' },
-                    { c: '#d3f9d8', label: 'Yeşil' },
-                    { c: '#d0ebff', label: 'Mavi' },
-                    { c: '#ffdeeb', label: 'Pembe' },
-                    { c: '#f1f3f5', label: 'Gri' },
-                    { c: '#25634b', label: 'Koyu Yeşil' },
-                  ].map(({ c, label }) => (
+                  {BOX_FILLS.map(({ c, label, dark }) => (
                     <button
                       key={c}
                       type="button"
@@ -210,7 +207,7 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
                       style={{ background: c, outline: el.boxFill === c ? '2px solid #25634b' : undefined }}
                       aria-pressed={el.boxFill === c}
                       onClick={() => {
-                        if (c === '#25634b') {
+                        if (dark) {
                           onPatch({ boxFill: c, textColor: '#ffffff' });
                         } else {
                           onPatch({ boxFill: c });
@@ -220,8 +217,16 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
                       aria-label={`Kutu zemini ${label}`}
                     />
                   ))}
+                  <input
+                    type="color"
+                    value={/^#[0-9a-f]{6}$/i.test(el.boxFill || '') ? (el.boxFill as string) : '#ffffff'}
+                    onChange={(e) => onPatch({ boxFill: e.target.value })}
+                    title="Başka bir zemin rengi seç"
+                    aria-label="Kutu zemini için başka renk"
+                    style={{ width: 28, height: 28, padding: 0, border: '1px solid #c9c5b8', borderRadius: 6, background: '#fff', cursor: 'pointer' }}
+                  />
                 </div>
-                {el.boxFill === '#25634b' && (
+                {isDarkFill(el.boxFill) && el.textColor !== '#ffffff' && (
                   <button
                     type="button"
                     style={{ marginTop: 6, fontSize: 11, padding: '2px 8px', borderRadius: 4, border: '1px solid #25634b', background: '#e4f0ea', color: '#25634b', cursor: 'pointer' }}
@@ -244,7 +249,7 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
                   >
                     ✕
                   </button>
-                  {['#1f2a24', '#25634b', '#e03131', '#1971c2', '#f08c00'].map((c) => (
+                  {BOX_BORDERS.map(({ c, label }) => (
                     <button
                       key={c}
                       type="button"
@@ -252,10 +257,18 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
                       style={{ background: c, outline: el.boxBorder === c ? '2px solid #25634b' : undefined }}
                       aria-pressed={el.boxBorder === c}
                       onClick={() => onPatch({ boxBorder: c })}
-                      title={`Kenarlık ${c}`}
-                      aria-label={`Kutu kenarlığı ${c}`}
+                      title={label}
+                      aria-label={`Kutu kenarlığı ${label}`}
                     />
                   ))}
+                  <input
+                    type="color"
+                    value={/^#[0-9a-f]{6}$/i.test(el.boxBorder || '') ? (el.boxBorder as string) : '#1f2a24'}
+                    onChange={(e) => onPatch({ boxBorder: e.target.value })}
+                    title="Başka bir kenarlık rengi seç"
+                    aria-label="Kutu kenarlığı için başka renk"
+                    style={{ width: 28, height: 28, padding: 0, border: '1px solid #c9c5b8', borderRadius: 6, background: '#fff', cursor: 'pointer' }}
+                  />
                 </div>
               </label>
 
@@ -318,9 +331,48 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
         </>
       )}
       {(el.type === 'rect' || el.type === 'ellipse' || el.type === 'poly') && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input type="checkbox" checked={!!el.fill} onChange={(e) => onPatch({ fill: e.target.checked ? `${el.color}33` : null })} /> İçi dolu
-        </label>
+        <>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="checkbox" checked={!!el.fill} onChange={(e) => onPatch({ fill: e.target.checked ? `${el.color}33` : null })} /> İçi dolu
+          </label>
+          {el.fill && (
+            <div role="group" aria-label="Dolgu rengi">
+              <span style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: 600 }}>Dolgu rengi</span>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                {/* Kenar renginin soluk tonu: "İçi dolu" işaretlenince gelen varsayılan */}
+                <button
+                  type="button"
+                  className={styles.swatch}
+                  style={{ background: `${el.color}33`, outline: el.fill === `${el.color}33` ? '2px solid #25634b' : undefined }}
+                  aria-pressed={el.fill === `${el.color}33`}
+                  onClick={() => onPatch({ fill: `${el.color}33` })}
+                  title="Kenar renginin açık tonu"
+                  aria-label="Dolgu: kenar renginin açık tonu"
+                />
+                {BOX_FILLS.map(({ c, label }) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={styles.swatch}
+                    style={{ background: c, outline: el.fill === c ? '2px solid #25634b' : undefined }}
+                    aria-pressed={el.fill === c}
+                    onClick={() => onPatch({ fill: c })}
+                    title={label}
+                    aria-label={`Dolgu ${label}`}
+                  />
+                ))}
+                <input
+                  type="color"
+                  value={/^#[0-9a-f]{6}/i.test(el.fill) ? el.fill.slice(0, 7) : '#ffffff'}
+                  onChange={(e) => onPatch({ fill: e.target.value })}
+                  title="Başka bir dolgu rengi seç"
+                  aria-label="Dolgu için başka renk"
+                  style={{ width: 28, height: 28, padding: 0, border: '1px solid #c9c5b8', borderRadius: 6, background: '#fff', cursor: 'pointer' }}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
       {el.type === 'widget' && el.kind === 'minitest' && (
         <label>Soru (soru bankasından)
@@ -564,6 +616,11 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
             <Bookmark size={18} aria-hidden="true" /> Kütüphaneye kaydet
           </button>
         )}
+        {el.type === 'image' && onSaveImage && (
+          <button type="button" className={styles.tool} onClick={onSaveImage} disabled={busy} title="Bu resmi Dosyalarım'a kaydet; diğer tahtalarda da kullanılabilir">
+            <Bookmark size={18} aria-hidden="true" /> Dosyalarıma kaydet
+          </button>
+        )}
         <button type="button" className={styles.tool} onClick={() => onOrder('front')}>Öne getir</button>
         <button type="button" className={styles.tool} onClick={() => onOrder('back')}>Arkaya gönder</button>
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }}><Trash2 size={18} aria-hidden="true" /> Sil</button>
@@ -681,13 +738,15 @@ export function MediaDrawer({
   onCopySchoolItem?: (item: LibraryItem) => void;
   schoolSharingEnabled?: boolean;
 }) {
+  // Kaynak: resimler (Dosyalarım, Kütüphane) ya da şekiller (kaydedilenler üstte, hazır şekiller altta)
   const [source, setSource] = useState<'mine' | 'library' | 'shapes'>('mine');
+  const isShapeSource = source === 'shapes';
   const [items, setItems] = useState<Record<string, MediaItem[] | null>>({ mine: null, library: null });
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const list = source === 'shapes' ? null : items[source];
+  const list = isShapeSource ? null : items[source];
 
   useEffect(() => {
-    if (source === 'shapes' || items[source]) return;
+    if (isShapeSource || items[source]) return;
     let alive = true;
     (async () => {
       let out: MediaItem[] = [];
@@ -699,12 +758,15 @@ export function MediaDrawer({
         if (r.ok) out = r.data.filter((f) => BOARD_IMAGE_TYPES.includes(f.mime)).map((f) => ({ key: f.id, bucket: LIBRARY_BUCKET, path: f.path, name: libraryFileName(f) }));
       }
       if (!alive) return;
-      setItems((prev) => ({ ...prev, [source]: out }));
+      // Adresler listeden önce alınır: liste yazılınca bu etki yeniden çalışır ve "alive" kapanır;
+      // adresler sonradan gelseydi atılır, küçük resimler boş kalırdı.
       const u = await boardImageUrls(out.slice(0, 60));
-      if (alive) setUrls((prev) => ({ ...prev, ...u }));
+      if (!alive) return;
+      setUrls((prev) => ({ ...prev, ...u }));
+      setItems((prev) => ({ ...prev, [source]: out }));
     })();
     return () => { alive = false; };
-  }, [source, items]);
+  }, [source, items, isShapeSource]);
 
   return (
     <section className={styles.panel} aria-label="Medya çekmecesi">
@@ -713,13 +775,13 @@ export function MediaDrawer({
         <button type="button" className={styles.tool} aria-pressed={source === 'mine'} onClick={() => setSource('mine')}>Dosyalarım</button>
         <button type="button" className={styles.tool} aria-pressed={source === 'library'} onClick={() => setSource('library')}>Kütüphane</button>
         <button type="button" className={styles.tool} aria-pressed={source === 'shapes'} onClick={() => setSource('shapes')}>Şekiller</button>
-        {source !== 'shapes' && onUpload && (
+        {!isShapeSource && onUpload && (
           <button type="button" className={styles.tool} onClick={onUpload} disabled={busy} title="Bilgisayardan yeni görsel yükle">
             <Upload size={16} aria-hidden="true" /> Yükle
           </button>
         )}
       </div>
-      {source === 'shapes' ? (
+      {isShapeSource ? (
         <ShapeLibraryPanel
           onInsert={(shapeId) => onInsertShape?.(shapeId)}
           userItems={userItems}

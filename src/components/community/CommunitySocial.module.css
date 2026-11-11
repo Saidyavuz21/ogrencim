@@ -1346,9 +1346,11 @@
 .reactBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  width: 44px;
   min-height: 44px;
-  padding: 0 14px;
+  padding: 0;
   border: 1px solid var(--teacher-border, #dedad0);
   border-radius: 999px;
   background: #fff;
@@ -1357,6 +1359,10 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.reactBtn span {
+  display: none;
 }
 
 .reactBtn:hover:not(:disabled) {
@@ -2009,7 +2015,6 @@
   }
 
   .reactBtn {
-    padding: 0 11px;
     font-size: 12.5px;
   }
 }

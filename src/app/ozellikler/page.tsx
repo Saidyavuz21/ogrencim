@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { FC } from 'react';
 import Link from 'next/link';
 import { SitePage } from '../../components/site/SitePage';
+import { FeatureTabs } from '../../components/site/FeatureTabs';
 import styles from '../../components/site/Site.module.css';
 import type { IconProps } from '../../components/icons';
 import {
@@ -86,14 +87,10 @@ export default function OzelliklerPage() {
       title="Özellikler"
       lead="tofutr.com; ödevi, dersi, puanı, notu ve iletişimi öğretmenle öğrenci için aynı yerde toplar. Telefonda ve bilgisayarda tarayıcıdan çalışır, telefonun ana ekranına eklenebilir."
     >
-      <ul className={styles.jump} aria-label="Bölümler">
-        {GROUPS.map((group) => (
-          <li key={group.id}><a href={`#${group.id}`}>{group.title}</a></li>
-        ))}
-      </ul>
-
-      {GROUPS.map((group) => (
-        <section key={group.id} id={group.id} className={`${styles.panel} ${styles.anchor}`} aria-labelledby={`${group.id}-baslik`}>
+      <FeatureTabs tabs={GROUPS.map(group => ({
+        id: group.id,
+        label: group.title,
+        content: <section className={styles.panel} aria-labelledby={`${group.id}-baslik`}>
           <h2 id={`${group.id}-baslik`}>{group.title}</h2>
           <p className={styles.panelLead}>{group.lead}</p>
           <ul className={`${styles.rows} ${styles.twoColumns}`}>
@@ -107,8 +104,8 @@ export default function OzelliklerPage() {
               </li>
             ))}
           </ul>
-        </section>
-      ))}
+        </section>,
+      }))} />
 
       <div className={styles.actions}>
         <Link className={styles.btnPrimary} href="/giris#kayit">Öğretmen hesabı oluştur</Link>

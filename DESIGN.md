@@ -113,7 +113,9 @@ Masaüstü öğretmen üst çubuğunun tam ortasında Topluluk / Sınıf araçla
 
 Giriş/kayıt istisnası: tek sütun, en fazla 520 px içerik; mobilde 20 px, 540 px üstünde 32 px panel dolgusu. Alanlar ve ana düğme 52 px; PIN kutuları 52 × 56 px. Bu genişlik öğretmen dashboard'una taşınmaz.
 
-Herkese açık ana sayfanın 760 px ve altındaki görünümü girişe odaklanır: kompakt logo/menü başlığı, görünür karşılama metni, yeşil seçili öğrenci/öğretmen seçimi ve tek giriş formu. Site bağlantıları açılır menüdedir; kayıt ve topluluk bağlantıları formun altında kalır. Masaüstü tanıtım/giriş yerleşimi ve kimlik doğrulama akışı korunur.
+Herkese açık ana sayfa (`HomePage`) masaüstünde en fazla 1360 px ana içerik ve 40 px yatay dolgu kullanır. Solda büyütülmüş mevcut `/images/okul-bahcesi.png` illüstrasyonu, sağda en fazla 520 px giriş kartı bulunur. Tanıtım başlığı ve açıklama bu iki alanın hemen altında tam genişlikte, beyaz bir kartta yer alır: 26–36 px başlık, 600 ağırlık, 1.3 satır yüksekliği; 26 × 32 px dolgu ve 16 px köşe. Mobilde bu tanıtım kartı gizlidir. Giriş kartı 16 px köşeli ve 32 px dolguludur. 761–1050 px arasında yatay içerik ve kart dolgusu 24 px olur.
+
+**The Giriş Önceliği Rule.** Herkese açık ana sayfada 760 px ve altında tanıtım başlığı, açıklaması, illüstrasyonu ve materyal listesi gizlenir. Kompakt logo/menü başlığı, giriş kartındaki görünür “Hoş geldiniz” ve açıklaması, rol seçimi ve tek giriş formu kalır. Kart dolgusu dikey 24 px / yatay 20 px, dış yatay boşluk 16 px olur. Site bağlantıları açılır menüdedir; kayıt bağlantısı kartın, topluluk bağlantısı kartın altındadır. Bu kırılım öğretmen/öğrenci paneline veya ayrı giriş/kayıt sayfasına genellenmez.
 
 ## Elevation & Depth
 
@@ -124,6 +126,15 @@ Herkese açık ana sayfanın 760 px ve altındaki görünümü girişe odaklanı
 Kontroller 8–12 px, ana paneller masaüstünde 18 px / mobilde 16 px köşelidir. Yuvarlak avatar ve küçük pastel araç ikonları mevcut sistemin parçasıdır. Giriş ekranına ait şekil kısıtları bütün öğretmen paneline genellenmez.
 
 ## Components
+
+### Herkese açık ana sayfa
+
+- Rol seçimi iki eşit parçalıdır; seçili öğrenci/öğretmen açık yeşil yüzey, ince yeşil sınır ve koyu yeşil metinle gösterilir. Varsayılan rol öğrencidir. Mevcut `StudentSchoolSelect`, okul numarası ve dört haneli PIN akışı korunur; öğretmende e-posta/şifre ve şifre görünürlüğü bulunur. Yeni bir “Şifremi unuttum” akışı uydurulmaz.
+- Metin alanları ve ana giriş düğmesi 52 px; PIN kutuları 52 × 56 px ve araları 12 px kalır. Gönderim kilidi, PIN odak/yapıştırma, CAPTCHA ve gerçek hata durumları görsel düzenlemeyle değiştirilmez.
+- Masaüstü topluluk bölümü mevcut herkese açık galeriden en fazla üç gerçek materyal gösterir. Yükleme, boş sonuç ve hata birbirinden ayrılır; örnek materyal veya başarı iddiası eklenmez. Mobilde bunun yerine tek topluluk bağlantısı vardır.
+- Herkese açık sayfalar ortak `SiteFooter` kullanır: beyaz zemin, ince üst çizgi, solda mevcut logo ve kısa metin; sağda Platform / Destek / Kurallar ve gizlilik bağlantıları. İçerik 1360 px ile sınırlıdır; masaüstünde 36 × 40 px üst/yatay dolgu vardır. 760 px altında marka üstte, Platform ve Destek iki sütunda; hukuk grubu altta iki sütun bağlantıyla gösterilir. Bütün bağlantılar görünür ve en az 44 px dokunma yüksekliğindedir.
+
+Kayıt dayanağı (11 Kasım 2026): `src/components/home/HomePage.tsx`, `HomePage.module.css`; `.impeccable/review/home-desktop.png`, `home-desktop-teacher.png`, `home-mobile-360.png`, `home-mobile-390.png`, `home-mobile-430.png`. Görseller masaüstünde iki rolü ve mobilde öğretmen görünümünü gösterir; başarılı canlı giriş veya galeride dolu sonuç doğrulaması değildir.
 
 Profilim/Hesabım masaüstü yerleşimi: `TeacherProfile.module.css` ortak sayfa kabuğunun bütün içerik genişliğini kullanır; içeride ayrı bir 1120 px sınırı yoktur. Solda 280 px genişliğinde, fotoğraf kontrolleri ve bölüm menüsünü içeren kalıcı bir panel; sağda kalan genişliği kullanan içerik bulunur. Hesap bilgileri, Topluluk profili ve Güvenlik arasında geçişte profil resmi yerinde kalır. Hesap alanları uygun genişlikte iki sütuna çıkar. Topluluk ayarları fotoğraf kontrollerini tekrar etmez. Diğer kullanım yerleri ve 1024 px altındaki mobil yerleşim korunur.
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bookmark, MoreHorizontal, Sliders, Trash2 } from '../icons';
+import { MoreHorizontal, Sliders, Trash2 } from '../icons';
 import { LibraryPreview } from './LibraryPreview';
 import {
   LIBRARY_CATEGORY_LABEL,
@@ -24,7 +24,11 @@ function normalizeSearch(text: string): string {
 
 export type ShapeFilterTab = 'mine' | 'school' | 'all' | LibraryCategory;
 
+/** Hangi liste: hazır şekiller (konu filtreli), öğretmenin kaydettikleri ya da okulda paylaşılanlar */
+export type ShapeScope = 'builtin' | 'mine' | 'school';
+
 export interface ShapeLibraryPanelProps {
+  scope?: ShapeScope;
   onInsert: (shapeId: string) => void;
   userItems?: LibraryItem[];
   schoolItems?: LibraryItem[];
@@ -39,6 +43,7 @@ export interface ShapeLibraryPanelProps {
 }
 
 export function ShapeLibraryPanel({
+  scope = 'builtin',
   onInsert,
   userItems = [],
   schoolItems = [],
@@ -52,7 +57,10 @@ export function ShapeLibraryPanel({
   schoolSharingEnabled = false,
 }: ShapeLibraryPanelProps) {
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<ShapeFilterTab>('all');
+  // Varsayılan görünüm (builtin): kaydedilen şekiller üstte, hazır şekiller altta; konu filtresi ikisine de uygulanır.
+  // 'mine' ve 'school' kapsamları ayrı liste olarak da kullanılabilir (şu an panelde sekmesi yok).
+  const [category, setCategory] = useState<'all' | LibraryCategory>('all');
+  const activeTab: ShapeFilterTab = scope === 'builtin' ? category : scope;
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<LibraryItem | null>(null);
 
@@ -72,11 +80,6 @@ export function ShapeLibraryPanel({
 
   const categories: LibraryCategory[] = ['matematik', 'fen', 'genel', 'diger'];
 
-  // Tüm liste: önce kullanıcının kendi kayıtları, sonra okul kayıtları (varsa), sonra hazır parçalar
-  const allItems = useMemo(() => {
-    return [...userItems, ...schoolItems, ...LIBRARY_ITEMS];
-  }, [userItems, schoolItems]);
-
   const filteredItems = useMemo(() => {
     const query = normalizeSearch(search.trim());
 
@@ -86,9 +89,10 @@ export function ShapeLibraryPanel({
     } else if (activeTab === 'school') {
       base = schoolItems;
     } else if (activeTab === 'all') {
-      base = allItems;
+      // Önce öğretmenin kaydettikleri ("Kaydettiklerim" başlığı altında), sonra hazır şekiller
+      base = [...userItems, ...LIBRARY_ITEMS];
     } else {
-      base = allItems.filter((it) => it.category === activeTab);
+      base = [...userItems, ...LIBRARY_ITEMS].filter((it) => it.category === activeTab);
     }
 
     if (!query) return base;
@@ -101,7 +105,7 @@ export function ShapeLibraryPanel({
       }
       return false;
     });
-  }, [search, activeTab, userItems, schoolItems, allItems]);
+  }, [search, activeTab, userItems, schoolItems]);
 
   return (
     <div className={styles.shapeLibraryPanel}>
@@ -123,67 +127,49 @@ export function ShapeLibraryPanel({
         />
       </div>
 
-      {/* Kategori ve alan filtre çipleri */}
-      <div
-        className={styles.pageTools}
-        style={{ flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}
-        role="group"
-        aria-label="Kategori filtresi"
-      >
-        <button
-          type="button"
-          className={styles.tool}
-          aria-pressed={activeTab === 'mine'}
-          onClick={() => setActiveTab('mine')}
-          style={{
-            minHeight: '32px',
-            fontSize: '13px',
-            fontWeight: activeTab === 'mine' ? 700 : 500,
-          }}
+      {/* Konu filtresi: yalnızca hazır şekillerde */}
+      {scope === 'builtin' && (
+        <div
+          className={styles.pageTools}
+          style={{ flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}
+          role="group"
+          aria-label="Konu filtresi"
         >
-          <Bookmark size={13} aria-hidden="true" style={{ marginRight: 2 }} />
-          Kütüphanem
-        </button>
-
-        {schoolSharingEnabled && (
           <button
             type="button"
             className={styles.tool}
-            aria-pressed={activeTab === 'school'}
-            onClick={() => setActiveTab('school')}
-            style={{
-              minHeight: '32px',
-              fontSize: '13px',
-              fontWeight: activeTab === 'school' ? 700 : 500,
-            }}
-          >
-            Okulum
-          </button>
-        )}
-
-        <button
-          type="button"
-          className={styles.tool}
-          aria-pressed={activeTab === 'all'}
-          onClick={() => setActiveTab('all')}
-          style={{ minHeight: '32px', fontSize: '13px' }}
-        >
-          Tümü
-        </button>
-
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            className={styles.tool}
-            aria-pressed={activeTab === cat}
-            onClick={() => setActiveTab(cat)}
+            aria-pressed={category === 'all'}
+            onClick={() => setCategory('all')}
             style={{ minHeight: '32px', fontSize: '13px' }}
           >
-            {LIBRARY_CATEGORY_LABEL[cat]}
+            Tümü
           </button>
-        ))}
-      </div>
+
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={styles.tool}
+              aria-pressed={category === cat}
+              onClick={() => setCategory(cat)}
+              style={{ minHeight: '32px', fontSize: '13px' }}
+            >
+              {LIBRARY_CATEGORY_LABEL[cat]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {scope === 'builtin' && userItemsError && !isLoadingUserItems && (
+        <p style={{ margin: '0 0 8px', fontSize: '13px', lineHeight: 1.5, color: '#a3283a' }}>
+          Kaydettiğiniz şekiller yüklenemedi.{' '}
+          {onReloadUserItems && (
+            <button type="button" onClick={onReloadUserItems} style={{ padding: 0, border: 0, background: 'none', color: 'inherit', font: 'inherit', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
+              Tekrar dene
+            </button>
+          )}
+        </p>
+      )}
 
       {/* Yüklenme durumu */}
       {isLoadingUserItems && activeTab === 'mine' && (
@@ -221,7 +207,7 @@ export function ShapeLibraryPanel({
       )}
 
       {/* Boş durumlar */}
-      {!isLoadingUserItems && !userItemsError && filteredItems.length === 0 && (
+      {(scope === 'builtin' || (!isLoadingUserItems && !userItemsError)) && filteredItems.length === 0 && (
         <div style={{ margin: '24px 0', textAlign: 'center', color: '#6b7280', fontSize: '14px', padding: '0 12px' }}>
           {activeTab === 'mine' ? (
             <p style={{ margin: 0, lineHeight: 1.5 }}>
@@ -236,30 +222,48 @@ export function ShapeLibraryPanel({
               Aramanıza uygun şekil yok.
             </p>
           )}
+          {search.trim() && activeTab !== 'all' && (
+            <p style={{ margin: '6px 0 0', fontSize: '13px' }}>Arama kutusunu temizleyip yeniden deneyin.</p>
+          )}
         </div>
       )}
 
       {/* Şekil ızgarası */}
       {(!isLoadingUserItems || activeTab !== 'mine') && filteredItems.length > 0 && (
         <div className={styles.mediaGrid}>
-          {filteredItems.map((item) => {
+          {filteredItems.map((item, index) => {
             const isConfigurable = Boolean(item.params && item.params.length > 0);
             const isUserItem = item.source === 'mine';
             const isSchoolItem = item.source === 'school';
             const isMenuOpen = openMenuId === item.id;
             const elements = item.build();
+            // Birleşik listede bölüm başlıkları: yalnızca kaydedilmiş şekil varsa gösterilir
+            const sectioned = scope === 'builtin' && filteredItems[0]?.source === 'mine';
+            const heading = !sectioned ? null
+              : index === 0 ? 'Kaydettiklerim'
+              : !isUserItem && filteredItems[index - 1].source === 'mine' ? 'Hazır şekiller'
+              : null;
 
             return (
+              <React.Fragment key={item.id}>
+              {heading && (
+                <h4 style={{ gridColumn: '1 / -1', margin: index === 0 ? '0 0 2px' : '10px 0 2px', fontSize: '13px', fontWeight: 600, color: '#58665f' }}>
+                  {heading}
+                </h4>
+              )}
               <div
-                key={item.id}
                 className={styles.mediaItem}
                 style={{
                   position: 'relative',
                   minHeight: '104px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  // Sabit satırlı ızgara: önizleme 80 px, altında ad. Esnek kutuda kareye yakın önizlemeler
+                  // bazı tarayıcılarda kartı doldurup adı sıfır yüksekliğe sıkıştırıyordu.
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1fr)',
+                  gridTemplateRows: '80px auto',
+                  justifyItems: 'center',
+                  alignContent: 'center',
+                  gap: 0,
                   padding: '8px',
                   background: '#ffffff',
                   border: isUserItem ? '1px solid #c8d9cc' : '1px solid #e5e3dc',
@@ -489,8 +493,8 @@ export function ShapeLibraryPanel({
                 )}
 
                 {/* Önizleme alanı */}
-                <div style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {elements.length > 0 && <LibraryPreview elements={elements} />}
+                <div style={{ width: '100%', height: '80px', minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {elements.length > 0 && <LibraryPreview elements={elements} style={{ height: 80, minWidth: 0, flex: '0 1 100%' }} />}
                 </div>
 
                 {/* Şekil adı */}
@@ -503,6 +507,7 @@ export function ShapeLibraryPanel({
                     textAlign: 'center',
                     lineHeight: '1.2',
                     maxWidth: '100%',
+                    minWidth: 0,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -516,6 +521,7 @@ export function ShapeLibraryPanel({
                   )}
                 </span>
               </div>
+              </React.Fragment>
             );
           })}
         </div>

@@ -1,25 +1,33 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BrandLogo } from '../BrandLogo';
-import { LogIn, Menu, UserPlus, X } from '../icons';
-import { SITE_NAV } from './siteLinks';
-import styles from './Site.module.css';
+import { InstallAppBanner } from '../InstallAppBanner';
+import { LogIn, Menu, X } from '../icons';
+import styles from './SiteHeader.module.css';
+
+const HEADER_LINKS = [
+  { href: '/', label: 'Ana sayfa' },
+  { href: '/topluluk', label: 'Topluluk' },
+  { href: '/ozellikler', label: 'Nasıl çalışır?' },
+  { href: '/yardim', label: 'Yardım' },
+];
 
 /** Bilgi sayfalarının ortak üst menüsü. */
-export function SiteHeader() {
+export function SiteHeader({ action }: { action?: ReactNode }) {
   const pathname = usePathname();
   const menuId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
+    <>
+    <InstallAppBanner />
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link className={styles.brand} href="/" aria-label="tofutr.com ana sayfa">
           <BrandLogo height={52} priority />
-          <span className={styles.brandDescription}>Okulunla aynı yerde.</span>
         </Link>
         <button
           className={styles.menuToggle}
@@ -41,7 +49,7 @@ export function SiteHeader() {
           }}
         >
           <nav className={styles.nav} aria-label="Ana menü">
-            {SITE_NAV.map((item) => (
+            {HEADER_LINKS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -53,17 +61,16 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className={styles.headerActions}>
+            {action ?? (
             <Link className={styles.btnSecondary} href="/giris">
               <LogIn size={17} aria-hidden="true" />
               <span>Giriş yap</span>
             </Link>
-            <Link className={styles.btnPrimary} href="/giris#kayit">
-              <UserPlus size={17} aria-hidden="true" />
-              <span>Ücretsiz kayıt ol</span>
-            </Link>
+            )}
           </div>
         </div>
       </div>
     </header>
+    </>
   );
 }

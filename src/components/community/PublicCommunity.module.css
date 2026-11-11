@@ -753,6 +753,10 @@
   min-height: 48px;
 }
 
+.ctaMobileLabel {
+  display: none;
+}
+
 /* Alt bilgi */
 .footer {
   border-top: 1px solid #dedad0;
@@ -862,6 +866,47 @@
 
   .pageTitle {
     font-size: 20px;
+  }
+
+  .pageSubtitle {
+    display: none;
+  }
+
+  .ctaButtons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .ctaButtons .btnPrimary,
+  .ctaButtons .btnSecondary {
+    min-width: 0;
+    min-height: 48px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .ctaDesktopLabel {
+    display: none;
+  }
+
+  .ctaMobileLabel {
+    display: inline;
+  }
+
+  .modalQuickActions .btnSecondary {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .modalQuickActions .btnSecondary span {
+    display: none;
+  }
+
+  .modalQuickActions .btnSecondary svg {
+    width: 18px;
+    height: 18px;
   }
 
   .filterPanel,

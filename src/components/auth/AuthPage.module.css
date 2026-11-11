@@ -37,6 +37,10 @@
 .intro h1 { margin: 0 0 10px; font-size: clamp(28px, 5vw, 34px); line-height: 1.2; font-weight: 700; letter-spacing: -.03em; }
 .intro p { margin: 0; max-width: 44ch; color: var(--auth-muted); font-size: 16px; line-height: 1.65; }
 .panel { background: var(--auth-surface); border: 1px solid var(--auth-border); border-radius: 16px; padding: 20px; }
+.roles { display: flex; padding: 3px; gap: 4px; border: 1px solid #c5ccbf; border-radius: 10px; background: #fff; margin-bottom: 24px; }
+.roles button { flex: 1; min-height: 44px; padding: 8px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #46564d; font-size: 15px; font-weight: 500; transition: background 150ms, color 150ms; }
+.roles button[aria-pressed=true] { background: #e6f1e9; border-color: #b6cbb8; color: #20563f; font-weight: 600; }
+.roles button:hover:not(:disabled):not([aria-pressed=true]) { background: #f4f5f1; }
 .modeSwitch { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; gap: 4px; background: #f0eee7; border-radius: 12px; margin-bottom: 28px; }
 .modeSwitch button { min-height: 48px; border: 0; border-radius: 9px; background: transparent; color: var(--auth-muted); font-size: 14px; font-weight: 600; transition: background 150ms, color 150ms; }
 .modeSwitch button[aria-selected='true'] { background: var(--auth-primary); color: white; }
@@ -61,18 +65,6 @@
 .secondary { min-height: 52px; padding: 14px 20px; border: 1px solid var(--auth-border); border-radius: 10px; background: white; color: var(--auth-text); font-size: 16px; font-weight: 600; transition: background 150ms, border-color 150ms; }
 .secondary:hover:not(:disabled) { border-color: var(--auth-primary); background: #f7faf7; }
 
-.roleGroup { padding: 0; margin: 0 0 28px; border: 0; min-width: 0; }
-.roleGroup legend { font-size: 14px; font-weight: 600; padding: 0; margin-bottom: 12px; }
-.roles { display: grid; gap: 10px; }
-.role { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px; border: 1px solid var(--auth-border); border-radius: 10px; background: white; color: var(--auth-text); transition: background 150ms, border-color 150ms; }
-.role:hover:not(:disabled) { background: #f7faf7; border-color: var(--auth-primary); }
-.role[aria-pressed='true'] { background: var(--auth-selected); border-color: var(--auth-primary); }
-.roleIcon { display: grid; place-items: center; width: 24px; color: var(--auth-primary); flex-shrink: 0; }
-.roleText { flex: 1; min-width: 0; }
-.roleText strong { display: block; font-size: 15px; font-weight: 600; }
-.roleText small { display: block; font-size: 13px; color: var(--auth-muted); line-height: 1.5; margin-top: 3px; }
-.roleCheck { width: 20px; height: 20px; border: 1px solid #a4b1a6; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
-.role[aria-pressed='true'] .roleCheck { background: var(--auth-primary); border-color: var(--auth-primary); color: white; }
 .form { display: grid; gap: 24px; }
 .form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 20px; }
 .form legend { font-size: 18px; font-weight: 600; margin-bottom: 20px; padding: 0; }

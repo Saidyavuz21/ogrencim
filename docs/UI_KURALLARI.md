@@ -69,6 +69,17 @@ Güncelleme: 9 Kasım 2026. Codex, Claude, Gemini ve diğer kodlama ajanları ye
 - `aria-current`, `aria-pressed`, `aria-expanded` gerçek durumla eşleşir. Tab/radyo/checkbox semantiği, görünür odak ve klavye erişimi gerekir.
 - Uzun metin, 200% yakınlaştırma, `prefers-reduced-motion`, boş/hata/yükleme durumlarını dikkate al.
 
+## Herkese açık ana sayfa
+
+Bu bölüm yalnızca `src/components/home/HomePage.tsx` ve `HomePage.module.css` kapsamındadır (11 Kasım 2026, uygulanan ve ekran görüntüleriyle incelenen düzen).
+
+- Masaüstü ana içerik en fazla 1360 px, yatay dolgu 40 px; solda büyütülmüş mevcut `/images/okul-bahcesi.png`, sağda en fazla 520 px giriş kartı bulunur. Başlık ve açıklama iki alanın hemen altında tam genişlikte beyaz bir kartta yer alır; mobilde bu kart gizlenir. Kart radius 16 px ve padding 32 px; 761–1050 px aralığında içerik/kart dolgusu 24 px olur.
+- 760 px ve altında tanıtım metni, illüstrasyon ve materyal listesi gizlenir. Giriş kartındaki “Hoş geldiniz” ve açıklaması görünür kalır. Kart padding 24 px dikey / 20 px yatay, dış yatay boşluk 16 px olur. Kompakt logo ve açılır menü, tek giriş formu, kayıt bağlantısı ve kartın altındaki topluluk bağlantısı korunur.
+- Rol seçimi iki eşit parça ve açık yeşil seçili durum kullanır. Varsayılan öğrenci rolü, mevcut okul seçimi + okul numarası + dört haneli PIN; öğretmenin e-posta/şifre alanları ve şifre görünürlüğü korunur. “Şifremi unuttum” gibi mevcut olmayan işlev ekleme.
+- Metin alanları ve ana düğme 52 px; PIN kutuları 52 × 56 px ve aralıkları 12 px kalır. CAPTCHA, PIN odak/yapıştırma, gönderim sırasında kilitleme ve gerçek hata mesajları korunur.
+- Masaüstü topluluk alanında mevcut herkese açık galeriden en fazla üç gerçek materyal göster. Yükleniyor, boş ve hata durumlarını ayrı ve doğru metinlerle sun; örnek materyal uydurma. Mobilde yalnızca topluluk bağlantısı bulunur.
+- Ana sayfa, topluluk, bilgi ve hukuk sayfalarında ortak `SiteFooter` kullan. Platform / Destek / Kurallar ve gizlilik altındaki bütün mevcut bağlantıları koru; ana sayfaya ayrı kısa footer yazma. Masaüstünde marka + üç bağlantı grubu, 760 px altında marka üstte ve kompakt iki sütun düzeni kullanılır. Bağlantılar en az 44 px yüksekliğindedir; giriş/kayıt ekranının kendi yerleşimini değiştirme.
+
 ## Kaynak örnekler
 
 - Ortak kabuk: `src/components/teacher/TeacherDashboard.tsx`, `TeacherTopBar.tsx`, `TeacherSidebar.tsx`, `TeacherMobileNav.tsx`, `TeacherPageHeader.tsx`.

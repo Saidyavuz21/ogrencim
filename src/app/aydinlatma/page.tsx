@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SiteHeader } from '../../components/site/SiteHeader';
+import { SiteFooter } from '../../components/site/SiteFooter';
 import styles from './Aydinlatma.module.css';
 
 export const metadata: Metadata = {
@@ -15,6 +17,8 @@ const VERSION = 'v1-2026-11';
  */
 export default function AydinlatmaPage() {
   return (
+    <>
+    <SiteHeader />
     <main className={styles.page}>
       <div className={styles.inner}>
         <Link href="/" className={styles.back}>← Ana sayfaya dön</Link>
@@ -107,5 +111,7 @@ export default function AydinlatmaPage() {
         <p className={styles.version}>Metin sürümü: {VERSION}</p>
       </div>
     </main>
+    <SiteFooter />
+    </>
   );
 }

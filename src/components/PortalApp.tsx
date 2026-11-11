@@ -8,6 +8,8 @@ import { AdminDashboard } from './admin/AdminDashboard';
 import { StudentPortal } from './student/StudentPortal';
 import { AnnouncementsPage } from './AnnouncementsPage';
 import { AuthPage } from './auth/AuthPage';
+import { InstallAppBanner } from './InstallAppBanner';
+import { SiteFooter } from './site/SiteFooter';
 import { Spinner } from './Spinner';
 import { UserRole, UserAccount } from '../data/portalData';
 
@@ -143,7 +145,7 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
   }
 
   if (!isAuthenticated) {
-    return <AuthPage onLoginSuccess={handleLoginSuccess} variant={variant} />;
+    return <><InstallAppBanner /><AuthPage onLoginSuccess={handleLoginSuccess} variant={variant} /><SiteFooter /></>;
   }
 
   return (

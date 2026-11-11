@@ -281,7 +281,7 @@ function Shark() {
   );
 }
 
-/** 16 · Ejder (80+): kırmızı pullu gövde, altın dikenli sırt, uzun bıyıklar */
+/** 16 · Ejder (80–84): kırmızı pullu gövde, altın dikenli sırt, uzun bıyıklar */
 function Dragon() {
   return (
     <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
@@ -297,9 +297,85 @@ function Dragon() {
   );
 }
 
-const FORMS = [Fry, Orange, Striped, Blue, Angel, Spotted, Veil, Golden, Puffer, Sword, Lantern, Lion, Manta, Hammer, Shark, Dragon];
+/** 17 · Orka (85–89): siyah gövde, beyaz karın ve göz lekesi, yüksek sırt yüzgeci */
+function Orca() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M24 40 L4 22 Q12 34 14 40 Q12 46 4 58 Z" fill="#1d2733" />
+      <path d="M56 24 L62 0 Q68 12 74 24 Z" fill="#1d2733" />
+      <path d="M64 52 L54 70 L76 56 Z" fill="#1d2733" />
+      <path d="M18 40 Q38 20 72 22 Q100 24 112 40 Q102 56 72 58 Q38 58 18 40 Z" fill="#2b3745" />
+      <path d="M40 50 Q70 60 108 44 Q98 56 72 57 Q52 57 40 50 Z" fill="#f4f7f9" stroke="none" />
+      <ellipse cx={91} cy={31} rx={7} ry={3.2} fill="#f4f7f9" stroke="none" transform="rotate(-14 91 31)" />
+      <ellipse cx={50} cy={32} rx={7} ry={3} fill="#93a0ad" stroke="none" opacity={0.7} />
+      <Shine cx={70} cy={26.5} rx={14} ry={2.4} />
+      <Eye cx={98} cy={38} r={4.6} />
+      <path d="M100 47 Q105 49 109 44" fill="none" stroke="#f4f7f9" strokeWidth={1.6} strokeLinecap="round" />
+    </g>
+  );
+}
 
-export const FORM_NAMES = ['Yavru', 'Turuncu', 'Çizgili', 'Mavi', 'Melek', 'Benekli', 'Pelerin', 'Altın', 'Balon', 'Kılıç', 'Fener', 'Aslan', 'Vatoz', 'Çekiç', 'Köpekbalığı', 'Ejder'];
+/** 18 · Narval (90–94): açık gri benekli gövde, burmalı uzun diş */
+function Narwhal() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M26 42 L8 26 Q14 38 16 42 Q14 48 8 60 Z" fill="#8fa9bd" />
+      <path d="M62 52 L54 68 L74 56 Z" fill="#8fa9bd" />
+      <path d="M98 34 L123 22 L100 39 Z" fill="#fff3cf" />
+      <path d="M103.5 31.8 L105 35.4 M109.5 29 L110.8 31.3 M115.6 26 L116.3 26.9" fill="none" strokeWidth={1.1} strokeLinecap="round" />
+      <path d="M20 42 Q36 22 66 22 Q92 24 100 40 Q94 58 66 60 Q36 60 20 42 Z" fill="#b9cddc" />
+      <path d="M36 50 Q62 62 96 46 Q88 58 66 59 Q46 59 36 50 Z" fill="#f3f7fa" stroke="none" />
+      {[[46, 34, 2.5], [56, 28, 2], [64, 38, 2.5], [40, 42, 2], [74, 30, 2], [52, 44, 1.6]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#8fa9bd" stroke="none" />
+      ))}
+      <Shine cx={62} cy={27} rx={12} ry={2.6} />
+      <Eye cx={88} cy={39} r={4.5} />
+      <path d="M92 49 Q96 51 99 46" fill="none" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/** 19 · Balina (95–99): iri mavi gövde, oluklu açık karın, su fıskiyesi */
+function Whale() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M58 13 Q54 3 48 -1 M60 12 Q60 3 61 -3 M62 13 Q65 5 70 1" fill="none" stroke="#8fd3f4" strokeWidth={2.4} strokeLinecap="round" />
+      <path d="M22 40 Q8 30 2 16 Q14 24 18 34 Q16 40 18 46 Q14 56 2 64 Q8 50 22 40 Z" fill="#2f6f9f" />
+      <path d="M16 42 Q30 14 70 12 Q108 14 116 38 Q112 62 70 66 Q32 66 16 42 Z" fill="#3f8ac0" />
+      <path d="M34 54 Q70 70 112 46 Q106 62 70 65 Q46 65 34 54 Z" fill="#e6f1f8" stroke="none" />
+      <path d="M56 60.5 Q72 62.5 90 56.5 M64 64 Q78 64 98 57" fill="none" stroke="#9fc3dc" strokeWidth={1.4} strokeLinecap="round" />
+      <path d="M60 56 Q52 74 40 74 Q50 66 52 56 Z" fill="#2f6f9f" />
+      <Shine cx={66} cy={21} rx={16} ry={3.5} />
+      <Eye cx={98} cy={40} r={4.5} />
+      <path d="M100 51 Q108 53 114 45" fill="none" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/** 20 · Galaksi (100+): yıldızlı lacivert gövde, parlak turkuaz akan yüzgeçler */
+function Galaxy() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={2} strokeLinejoin="round">
+      <path d="M36 40 Q14 6 0 10 Q12 26 6 40 Q12 54 0 70 Q14 74 36 40 Z" fill="#35d0e6" />
+      <path d="M44 24 Q56 -2 88 20 Z" fill="#35d0e6" />
+      <path d="M52 56 Q56 78 82 58 Z" fill="#35d0e6" />
+      <path d="M12 20 Q24 32 28 40 M12 60 Q24 48 28 40" fill="none" opacity={0.5} />
+      <ellipse cx={68} cy={40} rx={37} ry={21} fill="#2a1f6b" />
+      <path d="M38 46 Q60 28 98 36 Q72 40 54 54 Q44 54 38 46 Z" fill="#7b3fd1" stroke="none" opacity={0.75} />
+      {[[50, 34, 1.6], [60, 50, 1.3], [74, 30, 1.7], [82, 47, 1.4], [44, 42, 1.1], [86, 31, 1.2], [70, 52, 1], [56, 27, 1.1]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#fff" stroke="none" />
+      ))}
+      <path d="M66 35 L67.6 39.4 L72 41 L67.6 42.6 L66 47 L64.4 42.6 L60 41 L64.4 39.4 Z" fill="#ffe66b" stroke="none" />
+      <Shine cx={66} cy={25.5} rx={13} ry={2.8} />
+      <Eye cx={92} cy={36} r={5.5} />
+      <path d="M102 45 Q99 47 96 45" fill="none" strokeLinecap="round" />
+    </g>
+  );
+}
+
+const FORMS = [Fry, Orange, Striped, Blue, Angel, Spotted, Veil, Golden, Puffer, Sword, Lantern, Lion, Manta, Hammer, Shark, Dragon, Orca, Narwhal, Whale, Galaxy];
+
+export const FORM_NAMES = ['Yavru', 'Turuncu', 'Çizgili', 'Mavi', 'Melek', 'Benekli', 'Pelerin', 'Altın', 'Balon', 'Kılıç', 'Fener', 'Aslan', 'Vatoz', 'Çekiç', 'Köpekbalığı', 'Ejder', 'Orka', 'Narval', 'Balina', 'Galaksi'];
 
 function Crown() {
   return (
@@ -317,6 +393,7 @@ function Crown() {
 const MOUTHS: [number, number][] = [
   [89, 46], [97, 45], [99, 45], [110, 44], [101, 43], [96, 47], [101, 44], [103, 45],
   [94, 47], [102, 41], [108, 47], [105, 45], [110, 42], [100, 48], [111, 44], [105, 43],
+  [110, 44], [100, 46], [114, 47], [104, 44],
 ];
 
 /**

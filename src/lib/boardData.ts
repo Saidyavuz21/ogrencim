@@ -55,6 +55,7 @@ export interface NoteEl {
   boxFill?: string | null;                     // yalnızca variant 'text': kutu zemini
   boxBorder?: string | null;                   // kutu kenarlığı rengi (2 px)
   boxRadius?: 0 | 12 | 999;                    // Keskin / Yuvarlak / Hap
+  autoW?: boolean;                             // yalnızca variant 'text': kutu yazının genişliğine oturur; elle boyutlandırılınca kapanır
   groupId?: string;
   lib?: ElementLib;
 }

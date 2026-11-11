@@ -1,0 +1,32 @@
+﻿.header { box-sizing: border-box; background: #fff; border-bottom: 1px solid #dedad0; color: #20352d; font-family: var(--font-geist-sans), Arial, sans-serif; }
+.header * { box-sizing: border-box; }
+.header :is(a, button):focus-visible { outline: 3px solid #25634b; outline-offset: 3px; }
+.headerInner { max-width: 1440px; min-height: 84px; margin: auto; padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.brand { display: inline-flex; align-items: center; flex-shrink: 0; }
+.brand img { display: block; width: 144px; height: auto; }
+.navigationGroup { display: contents; }
+.nav { display: flex; align-items: center; gap: 28px; }
+.header .nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 0; border-bottom: 2px solid transparent; color: #58665f; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+.header .nav a[aria-current] { color: #25634b; border-bottom-color: #25634b; font-weight: 600; }
+.header .nav a:hover { color: #25634b; }
+.headerActions { display: flex; align-items: center; gap: 10px; }
+.header .btnSecondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 1px solid #a4b1a6; border-radius: 10px; font-size: 14px; font-weight: 600; background: #fff; color: #20352d; text-decoration: none; white-space: nowrap; }
+.header .btnSecondary:hover { background: #e6f1e9; }
+.menuToggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: #25634b; border-radius: 10px; cursor: pointer; }
+@media (max-width: 1050px) and (min-width: 761px) {
+ .headerInner { padding-inline: 24px; gap: 20px; }
+ .nav { gap: 16px; }
+}
+@media (max-width: 760px) {
+ .headerInner { min-height: 76px; flex-wrap: wrap; gap: 12px; padding: 12px 20px; }
+ .brand img { width: 120px; }
+ .menuToggle { display: inline-flex; margin-left: auto; }
+ .navigationGroup { display: none; }
+ .navigationOpen { display: grid; width: 100%; gap: 12px; padding-top: 12px; border-top: 1px solid #eeece5; }
+ .nav { display: grid; gap: 4px; }
+ .header .nav a { border: 0; padding: 10px 12px; border-radius: 8px; }
+ .header .nav a[aria-current] { background: #e6f1e9; }
+ .headerActions { display: grid; }
+ .headerActions > a { width: 100%; }
+}
+@media print { .header { display: none; } }

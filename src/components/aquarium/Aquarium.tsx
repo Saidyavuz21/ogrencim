@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Maximize, Minimize, Sparkles } from '../icons';
+import { Maximize, Minimize } from '../icons';
 import { Volume2, VolumeX } from '../icons';
 import { useAquariumSound } from './useAquariumSound';
 import {
-  AquariumInput, CHASE_RATIO, CROWN_POINTS, SPARKLE_POINTS, SWALLOW_POINTS, canSwallow, eggCracks, fishForm, fishSize, isFish, seeded, shortNames,
+  AquariumInput, CHASE_RATIO, CROWN_POINTS, FORM_STEP, FORM_STEPS, SPARKLE_POINTS, canSwallow, eggCracks, fishForm, fishSize, foodPoints, isFish, seeded, shortNames,
 } from '../../lib/aquarium';
 import { EggArt, FishArt, FORM_NAMES } from './FishArt';
 import styles from './Aquarium.module.css';
@@ -41,6 +41,9 @@ const SWALLOW_CHASE_MS = 7000;
 const SWALLOW_FLEE_MS = 7000;
 const SWALLOW_COOLDOWN_MS = 4000;
 const SWALLOW_TOGGLE_KEY = 'akvaryum-yutma';
+/** Yem ayarı (varsayılan açık) ve şekil değişim aralığı: bu cihazda hatırlanır */
+const FOOD_TOGGLE_KEY = 'akvaryum-yem';
+const FORM_STEP_KEY = 'akvaryum-sekil-adim';
 
 /** Yutma kaydı: yutulan, mod kapanana kadar yutanın midesinde kalır; yutan geçici puanı taşır */
 interface Meal { eaterId: string; preyId: string; amount: number }
@@ -53,7 +56,7 @@ interface Feast {
   gulping: Record<string, true>;
   /** Yeni yutmuş balık: yutkunma şişmesi + "Hap!" rozeti (değer: rozet anahtarı) */
   gulp: Record<string, number>;
-  /** Yeni yem yemiş balık: "+4" rozeti (değer: rozet anahtarı) */
+  /** Yeni yem yemiş balık: "Ham!" rozeti (değer: rozet anahtarı) */
   snack: Record<string, number>;
 }
 const EMPTY_FEAST: Feast = { bonus: {}, eaten: {}, swallowing: {}, gulping: {}, gulp: {}, snack: {} };
@@ -63,8 +66,7 @@ const GULP_OPEN = 0.35;
 /** Yutma modunda kovalamaca: av gerçekten kaçar; avcı önce az geride kalır, sonra atak yapar */
 const FEAST_FLEE = 5;
 const SWALLOW_MIN_CHASE_MS = 2200;
-/** Yem (yalnızca yutma modunda): yalnızca küçük balıklar yer, her yem geçici +4 puan */
-const FOOD_POINTS = 4;
+/** Yem (yalnızca yutma modunda, ayardan kapatılabilir): yalnızca küçük balıklar yer; puanını foodPoints() verir */
 const FOOD_MAX = 24;
 const FOOD_SINK = 2.2; // cqw/sn
 const FOOD_BOTTOM_MS = 9000; // dipte bu kadar kalır, sonra kaybolur
@@ -168,6 +170,19 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
     try { return window.localStorage.getItem(SWALLOW_TOGGLE_KEY) === '1'; } catch { return false; }
   });
   const swallowRef = useRef(swallowOn);
+  // Yem: yutma modunda kendiliğinden düşer ve atılabilir; bu ayarla kapatılır
+  const [foodOn, setFoodOn] = useState(() => {
+    try { return window.localStorage.getItem(FOOD_TOGGLE_KEY) !== '0'; } catch { return true; }
+  });
+  const foodOnRef = useRef(foodOn);
+  // Balığın şekli kaç puanda bir değişsin
+  const [formStep, setFormStep] = useState<number>(() => {
+    try {
+      const saved = Number(window.localStorage.getItem(FORM_STEP_KEY));
+      return (FORM_STEPS as readonly number[]).includes(saved) ? saved : FORM_STEP;
+    } catch { return FORM_STEP; }
+  });
+  const formStepRef = useRef(formStep);
   const mealsRef = useRef<Meal[]>([]);
   const [feast, setFeast] = useState<Feast>(EMPTY_FEAST);
   // Yemler: konumları motor yazar; React yalnızca ekleme/çıkarmayı bilir
@@ -182,20 +197,27 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
     try { window.localStorage.setItem(SWALLOW_TOGGLE_KEY, next ? '1' : '0'); } catch { /* gizli sekme */ }
     if (!next) { foodRef.current = []; setFoods([]); }
   }, []);
+  const toggleFood = useCallback(() => {
+    const next = !foodOnRef.current;
+    foodOnRef.current = next;
+    setFoodOn(next);
+    try { window.localStorage.setItem(FOOD_TOGGLE_KEY, next ? '1' : '0'); } catch { /* gizli sekme */ }
+    if (!next) { foodRef.current = []; setFoods([]); }
+  }, []);
+  const chooseFormStep = useCallback((step: number) => {
+    formStepRef.current = step;
+    setFormStep(step);
+    try { window.localStorage.setItem(FORM_STEP_KEY, String(step)); } catch { /* gizli sekme */ }
+  }, []);
   const reducedMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
-  /** Yem bırak (x, y: cqw); yalnızca yutma modunda ve hareket açıkken */
+  /** Yem bırak (x, y: cqw); yalnızca yutma modunda, yem ayarı ve hareket açıkken */
   const dropFood = useCallback((x: number, y: number) => {
-    if (!swallowRef.current || reducedMotion || foodRef.current.length >= FOOD_MAX) return;
+    if (!swallowRef.current || !foodOnRef.current || reducedMotion || foodRef.current.length >= FOOD_MAX) return;
     foodSeq.current += 1;
     const f: Food = { id: foodSeq.current, x, y, sway: Math.random() * 6 };
     foodRef.current.push(f);
     setFoods((prev) => [...prev, { id: f.id, x, y }]);
   }, [reducedMotion]);
-  /** "Yem at" düğmesi: üstten birkaç yem */
-  const scatterFood = useCallback(() => {
-    const x0 = 15 + Math.random() * 70;
-    for (let i = 0; i < 3; i++) dropFood(Math.min(97, Math.max(3, x0 + (Math.random() - 0.5) * 14)), 1 + Math.random() * 2);
-  }, [dropFood]);
   const [nativeFull, setNativeFull] = useState(false);
   const [pseudoFull, setPseudoFull] = useState(false);
   const full = nativeFull || pseudoFull;
@@ -407,7 +429,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       // Her seferinde yakalayamaz: şekil farkı azsa av daha sık kurtulur
       big.miss = false;
       if (feasting) {
-        const tiers = fishForm(big.points) - fishForm(small.points);
+        const tiers = fishForm(big.points, formStepRef.current) - fishForm(small.points, formStepRef.current);
         big.miss = Math.random() < (tiers <= 1 ? 0.75 : tiers === 2 ? 0.65 : 0.55);
         if (big.miss) {
           // Avcı yetişemez, bir süre sonra pes eder; av biraz daha kaçıp sakinleşir
@@ -503,7 +525,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       setChase({});
       publish();
     };
-    /** 2. aşama: av midede. Yutan geçici 5 puan alır (bir şekil), yutkunup büyür */
+    /** 2. aşama: av midede. Yutan geçici olarak bir şekil aralığı kadar puan alır, yutkunup büyür */
     const finishSwallow = (smallId: string, small: Mover, now: number) => {
       const bigId = small.gulpBy!;
       small.gulpBy = undefined;
@@ -516,9 +538,9 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         return;
       }
       // Yutulanın midesindekiler yeni yutanın midesine geçer (görünmez kalırlar) ama puan getirmez:
-      // her yutuş yalnızca 5 puan
+      // her yutuş yalnızca bir şekil aralığı kadar puan
       mealsRef.current = mealsRef.current.map((x) => (x.eaterId === smallId ? { ...x, eaterId: bigId, amount: 0 } : x));
-      mealsRef.current.push({ eaterId: bigId, preyId: smallId, amount: SWALLOW_POINTS });
+      mealsRef.current.push({ eaterId: bigId, preyId: smallId, amount: formStepRef.current });
       regrow(smallId);
       regrow(bigId);
       gulps = { ...gulps, [bigId]: now };
@@ -593,7 +615,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
     };
     const eatFood = (id: string, f: Food, now: number) => {
       removeFood([f.id]);
-      mealsRef.current.push({ eaterId: id, preyId: `yem:${f.id}`, amount: FOOD_POINTS });
+      mealsRef.current.push({ eaterId: id, preyId: `yem:${f.id}`, amount: foodPoints(formStepRef.current) });
       regrow(id);
       snacks = { ...snacks, [id]: now };
       playNibble();
@@ -605,7 +627,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
     };
     let nextFoodAt = Date.now() + 1500;
     const autoFood = (now: number) => {
-      if (!swallowRef.current || now < nextFoodAt) return;
+      if (!swallowRef.current || !foodOnRef.current || now < nextFoodAt) return;
       nextFoodAt = now + FOOD_AUTO_MIN_MS + Math.random() * (FOOD_AUTO_MAX_MS - FOOD_AUTO_MIN_MS);
       const n = 2 + Math.floor(Math.random() * 3);
       const x0 = 10 + Math.random() * 80;
@@ -620,7 +642,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
         if (big.hidden || big.gulpBy || big.wrapDir || (busyUntil.get(bigId) || 0) > now) continue;
         for (const [smallId, small] of movers) {
           if (smallId === bigId || small.hidden || small.gulpBy || small.wrapDir || (busyUntil.get(smallId) || 0) > now) continue;
-          if (feasting ? !canSwallow(big.points, small.points) : big.points < CHASE_RATIO * small.points) continue;
+          if (feasting ? !canSwallow(big.points, small.points, formStepRef.current) : big.points < CHASE_RATIO * small.points) continue;
           const dx = (small.x + small.size / 2) - (big.x + big.size / 2);
           const dy = (small.y + small.h / 2) - (big.y + big.h / 2);
           const gap = Math.abs(dx) - (big.size + small.size) / 2;
@@ -749,7 +771,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
               const toRight = cx(prey) >= cx(m);
               m.tx = clamp(cx(prey) - m.size * (toRight ? MOUTH_AT : 1 - MOUTH_AT), b.minX, b.maxX);
               m.ty = clamp(prey.y + prey.h / 2 - m.h * 0.55, b.minY, b.maxY);
-              if (canSwallow(m.points, prey.points)
+              if (canSwallow(m.points, prey.points, formStepRef.current)
                   && !m.miss
                   && now - (m.chaseAt || 0) > SWALLOW_MIN_CHASE_MS
                   && Math.abs(cx(prey) - mouthX(m)) < Math.max(prey.size * 0.6, m.size * 0.18)
@@ -844,7 +866,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
 
   const fishCount = fish.length;
   const summary = `${title}: ${fishCount} balık, ${eggs.length} yumurta`;
-  const canFeed = swallowOn && !reducedMotion;
+  const canFeed = swallowOn && foodOn && !reducedMotion;
+  const snackPoints = foodPoints(formStep);
   /** Akvaryuma dokununca o noktaya yem düşer (düğmeler hariç) */
   const onTankPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!canFeed || (e.target as HTMLElement).closest('button')) return;
@@ -919,7 +942,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           const h = size * FISH_RATIO;
           const me = s.id === highlightId;
           const born = newlyHatched.has(s.id);
-          const form = fishForm(shown);
+          const form = fishForm(shown, formStep);
           const role = chase[s.id];
           const eaten = !!feast.eaten[s.id];
           const swallowing = !!feast.swallowing[s.id];
@@ -955,8 +978,8 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
                   <span className={styles.labelPts}>{shown}</span>
                 </span>
                 {born && <span className={styles.bornBadge}>Yumurtadan çıktı!</span>}
-                {feast.gulp[s.id] && <span key={feast.gulp[s.id]} className={styles.gulpBadge} aria-hidden="true">Hap! +{extra}</span>}
-                {!feast.gulp[s.id] && feast.snack[s.id] && <span key={`y${feast.snack[s.id]}`} className={`${styles.gulpBadge} ${styles.snackBadge}`} aria-hidden="true">Ham! +{FOOD_POINTS}</span>}
+                {feast.gulp[s.id] && <span key={feast.gulp[s.id]} className={styles.gulpBadge} aria-hidden="true">Hap! +{formStep}</span>}
+                {!feast.gulp[s.id] && feast.snack[s.id] && <span key={`y${feast.snack[s.id]}`} className={`${styles.gulpBadge} ${styles.snackBadge}`} aria-hidden="true">Ham! +{snackPoints}</span>}
               </div>
             </div>
           );
@@ -1018,18 +1041,41 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
           <span className={styles.switchTrack} aria-hidden="true"><span className={styles.switchThumb} /></span>
           Balıklar birbirini yutsun
         </button>
-        {canFeed && (
-          <button type="button" className={styles.feedButton} onClick={scatterFood}>
-            <Sparkles size={16} aria-hidden="true" />
-            <span>Yem at</span>
+        {swallowOn && !reducedMotion && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={foodOn}
+            className={`${styles.switch} ${foodOn ? styles.switchOn : ''}`}
+            onClick={toggleFood}
+          >
+            <span className={styles.switchTrack} aria-hidden="true"><span className={styles.switchThumb} /></span>
+            Yem
           </button>
         )}
+        <div className={styles.stepGroup} role="group" aria-labelledby="akvaryum-sekil-adim">
+          <span id="akvaryum-sekil-adim" className={styles.stepLabel}>Şekil kaç puanda bir değişsin</span>
+          <span className={styles.stepOptions}>
+            {FORM_STEPS.map((step) => (
+              <button
+                key={step}
+                type="button"
+                aria-pressed={formStep === step}
+                aria-label={`${step} puanda bir`}
+                className={`${styles.stepOption} ${formStep === step ? styles.stepOptionOn : ''}`}
+                onClick={() => chooseFormStep(step)}
+              >
+                {step}
+              </button>
+            ))}
+          </span>
+        </div>
         <p className={styles.toolbarHint}>
           {!swallowOn
             ? 'Kapalı: büyük balık küçüğü kovalar, küçük kaçar.'
             : reducedMotion
               ? 'Bu cihazda hareket azaltma açık olduğu için balıklar yüzmüyor.'
-              : 'Açık: balık, kendinden küçük şekildeki balığı yutar ve 5 puan alıp bir şekil büyür. En büyük şekilde (Ejder) puanı fazla olan diğerini yutar. Küçük balık bazen kaçıp kurtulur. Yemi yalnızca küçük balıklar yer (+4); akvaryuma dokunarak da yem atabilirsin. Yutulan balıklar bu ayar kapatılınca geri gelir. Gerçek puanlar değişmez.'}
+              : `Açık: balık, kendinden küçük şekildeki balığı yutar ve ${formStep} puan alıp bir şekil büyür. En büyük şekilde (${FORM_NAMES[FORM_NAMES.length - 1]}) puanı fazla olan diğerini yutar. Küçük balık bazen kaçıp kurtulur. ${foodOn ? `Yemi yalnızca küçük balıklar yer (+${snackPoints}); akvaryuma dokunarak da yem atabilirsin.` : 'Yem kapalı.'} Yutulan balıklar bu ayar kapatılınca geri gelir. Gerçek puanlar değişmez.`}
         </p>
       </div>
 
@@ -1037,7 +1083,7 @@ function AquariumView({ students, highlightId, scopeKey, title = 'Sınıf akvary
       <ul className={styles.srOnly}>
         {students.map((s) => (
           <li key={s.id}>
-            {s.name}: {s.points} puan, {isFish(s) ? `${FORM_NAMES[fishForm(s.points) - 1]} balık` : `yumurta (${eggCracks(s.points)} çatlak)`}
+            {s.name}: {s.points} puan, {isFish(s) ? `${FORM_NAMES[fishForm(s.points, formStep) - 1]} balık` : `yumurta (${eggCracks(s.points)} çatlak)`}
           </li>
         ))}
       </ul>

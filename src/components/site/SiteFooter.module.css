@@ -1,18 +1,35 @@
-/* Kendi başına çalışır: ana sayfa ve topluluk sayfasında da kullanılır. */
-.footer { border-top: 1px solid #dedad0; background: #f7f6f2; color: #58665f; font-family: var(--font-geist-sans), Arial, sans-serif; }
+﻿.footer { border-top: 1px solid #dedad0; background: #fff; color: #58665f; font-family: var(--font-geist-sans), Arial, sans-serif; }
 .footer * { box-sizing: border-box; }
-.inner { max-width: 1440px; margin: 0 auto; padding: 28px 32px calc(24px + env(safe-area-inset-bottom, 0px)); }
-.groups { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 24px 48px; }
-.group h2 { margin: 0 0 6px; color: #20352d; font-size: 13px; font-weight: 600; line-height: 1.5; }
+.inner { max-width: 1360px; margin: 0 auto; padding: 36px 40px calc(32px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: minmax(180px, .9fr) minmax(0, 3fr); gap: 48px; }
+.brand { display: inline-flex; align-items: center; min-height: 44px; }
+.brand img { display: block; width: 112px; height: auto; }
+.identity p { max-width: 24ch; margin: 12px 0 0; color: #58665f; font-size: 13px; line-height: 1.65; }
+.groups { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 32px; }
+.group { min-width: 0; }
+.identity { border-right: 1px solid #eeece5; padding-right: 24px; }
+.group + .group { border-left: 1px solid #eeece5; padding-left: 24px; }
+.group h2 { margin: 0 0 10px; color: #20352d; font-size: 14px; font-weight: 600; line-height: 1.5; }
 .group ul { margin: 0; padding: 0; list-style: none; }
-.group a { display: inline-flex; align-items: center; min-height: 32px; color: #58665f; font-size: 13px; line-height: 1.5; text-decoration: none; text-underline-offset: 4px; }
-.group a:hover { color: #25634b; text-decoration: underline; }
-.group a:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; border-radius: 4px; }
-.note { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid #eeece5; font-size: 12px; line-height: 1.6; }
-
+.footer .group a { display: inline-flex; align-items: center; min-height: 44px; color: #58665f; font-size: 13px; line-height: 1.5; text-decoration: none; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.footer .group a:hover { color: #25634b; text-decoration: underline; }
+.footer a:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; border-radius: 4px; }
+@media (max-width: 1000px) {
+ .inner { gap: 24px; padding-inline: 24px; grid-template-columns: minmax(150px, .8fr) minmax(0, 3fr); }
+ .groups { gap: 20px; }
+}
 @media (max-width: 760px) {
-  .inner { padding: 24px 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
-  .groups { grid-template-columns: 1fr; gap: 18px; }
-  .group a { min-height: 44px; font-size: 14px; }
+ .inner { padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px)); grid-template-columns: minmax(0, 1fr); gap: 22px; }
+ .identity { display: flex; align-items: center; gap: 20px; }
+ .identity { border-right: 0; padding-right: 0; }
+ .group + .group { padding-left: 16px; }
+ .identity p { margin: 0; max-width: 23ch; font-size: 12px; }
+ .brand { flex-shrink: 0; }
+ .brand img { width: 100px; }
+ .groups { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; padding-top: 20px; border-top: 1px solid #eeece5; }
+ .group h2 { margin-bottom: 4px; }
+ .footer .group a { font-size: 13px; }
+ .group:last-child { grid-column: 1 / -1; padding-top: 16px; border-top: 1px solid #eeece5; }
+ .group:last-child { border-left: 0; padding-left: 0; }
+ .group:last-child ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
 }
 @media print { .footer { display: none; } }

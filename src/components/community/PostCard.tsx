@@ -796,6 +796,7 @@ export function PostCard({
           type="button"
           className={s.reactBtn}
           aria-pressed={post.my_thanks}
+          aria-label={`Teşekkürler (${post.thanks_count})`}
           disabled={post.is_mine || reactBusy}
           title={post.is_mine ? 'Kendi gönderinize tepki veremezsiniz' : undefined}
           onClick={() => handleReact('thanks')}
@@ -808,6 +809,7 @@ export function PostCard({
           type="button"
           className={s.reactBtn}
           aria-pressed={post.my_used}
+          aria-label={`Derste kullandım (${post.used_count})`}
           disabled={post.is_mine || reactBusy}
           title={post.is_mine ? 'Kendi gönderinize tepki veremezsiniz' : undefined}
           onClick={() => handleReact('used')}
@@ -820,6 +822,7 @@ export function PostCard({
           type="button"
           className={s.reactBtn}
           aria-expanded={commentsOpen}
+          aria-label={`Yorumlar (${post.comment_count})`}
           aria-pressed={commentsOpen}
           onClick={() => setCommentsOpen((v) => !v)}
         >

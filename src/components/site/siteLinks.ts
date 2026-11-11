@@ -15,7 +15,7 @@ export const SITE_NAV: SiteLink[] = [
 
 export const SITE_FOOTER_GROUPS: { title: string; links: SiteLink[] }[] = [
   {
-    title: 'tofutr.com',
+    title: 'Platform',
     links: [
       { href: '/ozellikler', label: 'Özellikler' },
       { href: '/hakkinda', label: 'Sistem hakkında' },

@@ -160,7 +160,8 @@
 .shareList li span { font-size: 13px; color: var(--teacher-muted, #58665f); overflow-wrap: anywhere; }
 
 /* Setler */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+/* Set kartı: dört işlem düğmesi (Dosyalar, Paylaş, düzenle, sil) tek satıra sığacak genişlikte */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 12px; }
 .card { display: grid; align-content: start; gap: 10px; padding: 16px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 16px; background: #fff; min-width: 0; }
 .cardHead { display: flex; align-items: flex-start; gap: 12px; }
 .cardHead > div { flex: 1; min-width: 0; display: grid; gap: 2px; }

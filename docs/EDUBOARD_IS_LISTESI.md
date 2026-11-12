@@ -23,12 +23,13 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 6 | Sınıf ve okul yapısı | 6 / 6 ✅ |
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
+| 7c | Tahta: derste kullanım | 7 / 7 ✅ |
 | 8 | Güvenlik ve KVKK | 9 / 13 |
 | 9 | Kalite: test, CI, izleme | 6 / 7 |
 | 10 | Canlı ders | 7 / 7 ✅ |
 | 11 | Topluluk / Keşfet | 9 / 9 ✅ |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **111 / 121** |
+| | **Toplam** | **118 / 128** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -159,6 +160,18 @@ Ortak kararlar:
 - [x] **Metinde kelime bazında biçim (kalın/italik/altı çizili/renk/vurgu) ve listeler** · 8 Kasım 2026 · `575eca5`
 - [x] **Metin kutusu (zemin/kenarlık/köşe), Okul yazı tipi (Andika), satır ve harf aralığı** · 8 Kasım 2026 · `f60c00c`
 
+## 7c. Tahta: derste kullanım (bizde ek)
+
+Akıllı tahtanın başında parmakla/kalemle kullanım. Görsel deneme gerçek akıllı tahtada henüz yapılmadı.
+
+- [x] **Akıcı çizim**: değişmeyen öğeler yeniden çizilmez, ara dokunuş noktaları alınır, ekran karesi başına tek çizim · 12 Kasım 2026 · `31a888d`
+- [x] **Avuç içi / ikinci dokunuş koruması**: çizim sürerken gelen başka dokunuş çizgiyi bozmaz · 12 Kasım 2026 · `31a888d`
+- [x] Sunumda **kalem kalınlığı** (ince / orta / kalın) · 12 Kasım 2026 · `31a888d`
+- [x] Sunumda **yazılanları sayfaya kaydet** (isteğe bağlı; basılmazsa eskisi gibi silinir) · 12 Kasım 2026 · `31a888d`
+- [x] Sunumda **boş sayfa ekle** · 12 Kasım 2026 · `31a888d`
+- [x] Sunum çubuğunda büyük dokunma alanları (48 px düğme, 36 px renk) · 12 Kasım 2026 · `31a888d`
+- [x] Düzenleyicide ok tuşlarıyla seçili öğeyi kaydırma (Shift ile hızlı); yanıltıcı silgi ipucu düzeltildi · 12 Kasım 2026 · `31a888d`
+
 ## 8. Güvenlik ve KVKK
 
 - [ ] Admin şifresini değiştir (eski şifre git geçmişinde açık) — *K-14*
@@ -253,3 +266,4 @@ Ortak kararlar:
 | 9 Kasım 2026 | Kalite: CI, yetki testleri, uçtan uca testler, yedekleme planı, hata kaydı, tahta dosyalarının bölünmesi, Supabase tipleri; öğretmen panelinde Silinenler ve erişim kaydı (Paket 9, 5/7; Paket 8, 9/13) | `6b2f029`, `989a384`, `4b382fc`, `9640876`, `ff9800e`, `3750d7c`, `e588234`, `ceef6cd`, `d2b8dd2` |
 | 10 Kasım 2026 | Canlı ders: anlık quiz, çözüm yansıtma, 30 sn kalem izni, ortak çalışma; tahtaya eşleştirme ve sesli not; tahta sürüm geçmişi. Veritabanı testi 41/41 (`supabase/tests/live_test.sql`); test kalem izni denetiminde bir açık yakaladı, düzeltildi (Paket 10, 7/7) | `6ca6d4f`, `f6ab4d9`, `b5276a3` |
 | 11 Kasım 2026 | Topluluk / Keşfet: tahta ve soru seti paylaşma, kişisel veri taraması, önizleme, kota ayırmalı kopyalama, atıf, yıldız, favori, kazanım koduyla arama, sıralamalar, editörün seçimi. Veritabanı testi 30/30 (`supabase/tests/community_test.sql`) (Paket 11, 9/9) | `e2420e5` |
+| 12 Kasım 2026 | Tahta derste kullanım: akıcı çizim, avuç içi koruması, sunumda kalınlık / sayfaya kaydet / boş sayfa, büyük düğmeler, ok tuşlarıyla kaydırma (Paket 7c, 7/7) | `31a888d` |

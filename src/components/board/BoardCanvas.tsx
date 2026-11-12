@@ -149,7 +149,7 @@ function strokePath(points: number[]) {
   return d;
 }
 
-export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; imageUrls: Record<string, string>; editingNote?: boolean }) {
+function ElementViewImpl({ el, imageUrls, editingNote }: { el: BoardEl; imageUrls: Record<string, string>; editingNote?: boolean }) {
   switch (el.type) {
     case 'stroke':
       return <path d={strokePath(el.points)} fill="none" stroke={el.color} strokeWidth={el.width} strokeLinecap="round" strokeLinejoin="round" opacity={el.highlighter ? 0.38 : 1} />;
@@ -314,6 +314,15 @@ export function ElementView({ el, imageUrls, editingNote }: { el: BoardEl; image
   }
 }
 
+/**
+ * Öğe değişmediyse yeniden çizilmez: kalemle yazarken her harekette sayfadaki bütün çizgilerin
+ * baştan hesaplanması akıllı tahtalarda çizimi geciktiriyordu. Notlar yazı tipi yüklenince ve
+ * ölçülen yükseklik değişince yeniden çizilmesi gerektiği için kapsam dışıdır.
+ */
+export const ElementView = React.memo(ElementViewImpl, (a, b) => (
+  a.el === b.el && a.imageUrls === b.imageUrls && a.editingNote === b.editingNote && a.el.type !== 'note'
+));
+
 // --------------------------------------------------------
 // Tuval
 // --------------------------------------------------------
@@ -430,6 +439,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const patternId = `bg-${uid}`;
   const localSvg = useRef<SVGSVGElement | null>(null);
   const draft = useRef<Draft | null>(null);
+  // Çizimi sürdüren parmak/kalem: ikinci bir dokunuş (avuç içi, başka parmak) süren çizimi bozmaz
+  const activePointer = useRef<number | null>(null);
+  const lastPointerAt = useRef(0);
+  const strokeRaf = useRef(0);
   const [preview, setPreview] = useState<{ el?: BoardEl; els?: BoardEl[]; erased?: Set<string>; marquee?: Box } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [editingHeight, setEditingHeight] = useState<{ id: string; h: number } | null>(null);
@@ -497,6 +510,14 @@ export function BoardCanvas(props: BoardCanvasProps) {
 
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!interactive || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (draft.current && activePointer.current !== null && activePointer.current !== e.pointerId) {
+      // Çizim sürerken gelen ikinci dokunuş yok sayılır. Bırakma olayı kaçmış, yarım kalmış bir
+      // çizim varsa (1 sn'dir hareket yok) önce o tamamlanır, yeni dokunuş olağan işlenir.
+      if (e.timeStamp - lastPointerAt.current < 1000) return;
+      finish();
+    }
+    activePointer.current = e.pointerId;
+    lastPointerAt.current = e.timeStamp;
     const { x, y } = toPoint(e.clientX, e.clientY);
     const t: Tool = drawingOnLayer && !DRAW_TOOLS.includes(tool) ? 'pen' : tool;
     if (editingNoteId) {
@@ -669,13 +690,32 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement | SVGRectElement>) => {
     const d = draft.current;
     if (!d) return;
+    if (activePointer.current !== null && e.pointerId !== activePointer.current) return;
+    lastPointerAt.current = e.timeStamp;
     const { x, y } = toPoint(e.clientX, e.clientY);
     if (d.kind === 'stroke') {
+      // Tarayıcının iki kare arasında biriktirdiği ara noktalar da alınır (hızlı yazıda köşeli çizgi olmasın)
+      const native = e.nativeEvent as PointerEvent;
+      const batch = typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
+      const pts = batch.length ? batch.map((ev) => toPoint(ev.clientX, ev.clientY)) : [{ x, y }];
       const p = d.el.points;
-      const lx = p[p.length - 2], ly = p[p.length - 1];
-      if (Math.hypot(x - lx, y - ly) < 1.5) return;
-      d.el = { ...d.el, points: [...p, x, y] };
-      setPreview({ el: d.el });
+      let added = false;
+      for (const pt of pts) {
+        if (Math.hypot(pt.x - p[p.length - 2], pt.y - p[p.length - 1]) < 1.5) continue;
+        p.push(pt.x, pt.y);
+        added = true;
+      }
+      if (!added) return;
+      // Ekran karesi başına en çok bir kez çizilir
+      if (!strokeRaf.current) {
+        strokeRaf.current = requestAnimationFrame(() => {
+          strokeRaf.current = 0;
+          const cur = draft.current;
+          if (cur?.kind !== 'stroke') return;
+          cur.el = { ...cur.el };
+          setPreview({ el: cur.el });
+        });
+      }
     } else if (d.kind === 'erase') {
       eraseAt(x, y, d);
     } else if (d.kind === 'shape') {
@@ -729,13 +769,17 @@ export function BoardCanvas(props: BoardCanvasProps) {
     }
   };
 
-  const finish = () => {
+  const finish = (e?: React.PointerEvent) => {
     const d = draft.current;
+    if (!d) return;
+    // Çizimi başlatmayan parmağın kalkması çizimi bitirmez
+    if (e && activePointer.current !== null && e.pointerId !== activePointer.current) return;
     draft.current = null;
+    activePointer.current = null;
+    if (strokeRaf.current) { cancelAnimationFrame(strokeRaf.current); strokeRaf.current = 0; }
     const p = preview;
     setPreview(null);
     setIsResizing(false);
-    if (!d) return;
     if (d.kind === 'stroke') {
       const el = { ...d.el, points: simplifyPoints(d.el.points) };
       if (drawingOnLayer) onLayerCommit?.([...layerStrokes, el]);
@@ -842,6 +886,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
     if (!handlePos) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
+    activePointer.current = e.pointerId;
+    lastPointerAt.current = e.timeStamp;
     const { x, y } = toPoint(e.clientX, e.clientY);
     if (handlePos.kind === 'multi') {
       const cb = combinedBbox(selectedElements.map(bbox));

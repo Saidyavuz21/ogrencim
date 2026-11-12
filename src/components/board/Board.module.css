@@ -155,6 +155,10 @@
 /* Sunum çubuğu: altta, ortada, küçük */
 .presentBar { position: absolute; bottom: 10px; left: 50%; z-index: 3; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; max-width: calc(100vw - 16px); padding: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 16px; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 28px rgb(0 0 0 / 18%); }
 .presentBar .sep { width: 1px; height: 28px; margin: 0 2px; background: var(--teacher-border, #dedad0); }
+/* Tahta başında parmakla kullanılır: dokunma alanları büyük */
+.presentBar .toolIconBtn { width: 48px; height: 48px; }
+.presentBar .toolIconBtn svg { width: 22px; height: 22px; }
+.presentBar .colorSwatch { width: 36px; height: 36px; min-width: 36px !important; min-height: 36px !important; max-width: 36px; max-height: 36px; margin: 0 4px; }
 .openButton:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
 .previewBody { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 16px; align-items: start; }
 .previewBody .pageTools { flex-wrap: nowrap; justify-content: space-between; }

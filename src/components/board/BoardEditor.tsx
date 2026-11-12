@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Diamond, Download, Eraser, Eye, EyeOff, Hexagon, Highlighter, History, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type,
+  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -18,6 +18,7 @@ import { listMyFiles, signedFileUrl, uploadTeacherFiles } from '../../lib/filesD
 import { fileSlug } from '../../lib/reportData';
 import { BoardCanvas, SHAPE_TOOLS, Tool, wrapTextLines } from './BoardCanvas';
 import { computeTextHeight, fitTextWidth } from './textLayout';
+import { translate } from './boardGeometry';
 import { normalizeWholeTags } from './BoardFormatBars';
 import { WidgetContext, WidgetView } from './Widgets';
 import {
@@ -51,6 +52,8 @@ let boardClipboard: BoardEl[] | null = null;
 let boardClipboardPageId: string | null = null;
 
 const WIDTHS = [3, 6, 12];
+/** Sunum kalemi kalınlıkları (düğme sırayla değiştirir) */
+const PRESENT_WIDTHS = [{ value: 3, label: 'İnce', dot: 5 }, { value: 5, label: 'Orta', dot: 9 }, { value: 10, label: 'Kalın', dot: 14 }];
 const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'select', label: 'Seç', key: 'v' }, { id: 'pen', label: 'Kalem', key: 'p' }, { id: 'highlighter', label: 'Vurgu', key: 'h' },
   { id: 'eraser', label: 'Silgi', key: 'e' }, { id: 'line', label: 'Çizgi', key: 'l' }, { id: 'arrow', label: 'Ok', key: 'a' },
@@ -81,6 +84,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [annotPast, setAnnotPast] = useState<Record<string, StrokeEl[]>[]>([]);
   const [presentTool, setPresentTool] = useState<Tool>('pen');
   const [presentColor, setPresentColor] = useState('#d03b3b');
+  const [presentWidth, setPresentWidth] = useState(5);
   const [printing, setPrinting] = useState(false);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -315,6 +319,41 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setFuture((f) => f.slice(1));
     setSelectedIds([]);
     setSaveState('dirty');
+  };
+
+  // Ok tuşlarıyla kaydırma: tuşa basılı tutulunca geçmiş tek adım olarak kalır (50 adımlık geri al dolmasın)
+  const nudgeRef = useRef<{ key: string; at: number } | null>(null);
+  const nudgeSelected = (dx: number, dy: number) => {
+    if (!content || !page || !selectedIds.length) return;
+    const idSet = new Set(selectedIds);
+    const next: BoardContent = {
+      ...content,
+      pages: content.pages.map((p) => (p.id === page.id ? { ...p, elements: p.elements.map((el) => (idSet.has(el.id) ? translate(el, dx, dy) : el)) } : p)),
+    };
+    const key = `${page.id}:${selectedIds.join(',')}`;
+    const now = Date.now();
+    const last = nudgeRef.current;
+    nudgeRef.current = { key, at: now };
+    if (last && last.key === key && now - last.at < 800) {
+      setContent(next);
+      setSaveState('dirty');
+    } else {
+      apply(next);
+    }
+  };
+
+  /** Sunumda bu sayfaya yazılanları tahtanın kendisine ekler (istenirse; yoksa sunum bitince silinir) */
+  const savePresentAnnotations = () => {
+    if (!content || !page) return;
+    const strokes = annot[page.id] || [];
+    if (!strokes.length) return;
+    const next: BoardContent = { ...content, pages: content.pages.map((p) => (p.id === page.id ? { ...p, elements: [...p.elements, ...strokes] } : p)) };
+    if (byteSize(next) > MAX_BOARD_BYTES) { setNotice('Tahta boyutu sınırına ulaşıldı, yazılanlar kaydedilemedi.'); return; }
+    apply(next);
+    setAnnot({ ...annot, [page.id]: [] });
+    // Kaydedilen çizgiler artık sayfanın parçası: sunum geri al'ı onları ikinci kez getirmesin
+    setAnnotPast([]);
+    setNotice('Yazılanlar bu sayfaya kaydedildi.');
   };
 
   // Bu özellikten önce eklenmiş, yazısından uzun metin kutusu seçilince bir kez yazıya oturtulur.
@@ -591,6 +630,13 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         }
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Seçili öğe varken ok tuşları öğeyi kaydırır (Shift ile büyük adım); seçim yokken sayfa değiştirir
+      if (selectedIds.length && e.key.startsWith('Arrow')) {
+        const step = e.shiftKey ? 20 : 2;
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+        const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+        if (dx || dy) { e.preventDefault(); nudgeSelected(dx, dy); return; }
+      }
       const t = TOOLS.find((x) => x.key === e.key.toLowerCase());
       if (t) setTool(t.id);
       if (e.key === 'ArrowRight' && full && content) setPageIndex((i) => Math.min(content.pages.length - 1, i + 1));
@@ -1104,13 +1150,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             page={page}
             tool={presentTool}
             color={presentColor}
-            width={presentTool === 'highlighter' ? 6 : 5}
+            width={presentWidth}
             layer={layer}
             onLayerCommit={(strokes) => { setAnnotPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), annot]); setAnnot({ ...annot, [page.id]: strokes }); }}
             imageUrls={imageUrls}
             renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
             ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (sunum)`}
           />
+          {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="status" onClick={() => setNotice(null)}>{notice}</p>}
         </div>
         <div className={styles.presentBar} role="toolbar" aria-label="Sunum araçları">
           <button
@@ -1155,6 +1202,21 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               aria-label={`Renk ${c}`}
             />
           ))}
+          {(() => {
+            const i = Math.max(0, PRESENT_WIDTHS.findIndex((w) => w.value === presentWidth));
+            const cur = PRESENT_WIDTHS[i];
+            return (
+              <button
+                type="button"
+                className={styles.toolIconBtn}
+                onClick={() => setPresentWidth(PRESENT_WIDTHS[(i + 1) % PRESENT_WIDTHS.length].value)}
+                title={`Kalınlık: ${cur.label} (değiştirmek için dokunun)`}
+                aria-label={`Kalem kalınlığı: ${cur.label}. Değiştir`}
+              >
+                <span aria-hidden="true" style={{ width: cur.dot, height: cur.dot, borderRadius: '50%', background: presentColor }} />
+              </button>
+            );
+          })()}
           <span className={styles.sep} aria-hidden="true" />
           <button
             type="button"
@@ -1175,6 +1237,16 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             aria-label="Temizle"
           >
             <Trash2 size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={styles.toolIconBtn}
+            onClick={savePresentAnnotations}
+            disabled={!layer.length}
+            title="Yazılanları bu sayfaya kaydet (kaydetmezseniz sunum bitince silinir)"
+            aria-label="Yazılanları sayfaya kaydet"
+          >
+            <Save size={18} aria-hidden="true" />
           </button>
           <span className={styles.sep} aria-hidden="true" />
           <button
@@ -1197,6 +1269,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             title="Sonraki sayfa"
           >
             <ChevronRight size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={styles.toolIconBtn}
+            onClick={addPage}
+            title="Bu sayfadan sonra boş sayfa ekle"
+            aria-label="Boş sayfa ekle"
+          >
+            <Plus size={18} aria-hidden="true" />
           </button>
           <span className={styles.sep} aria-hidden="true" />
           <button
@@ -1543,7 +1624,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                   setTool('eraser');
                   setActivePopover((cur) => (cur === 'draw' && tool === 'eraser' ? null : 'draw'));
                 }}
-                title="Silgi (E) · Boyut için tıklayın"
+                title="Silgi (E) · Dokunduğu çizgi ya da şeklin tamamını siler"
                 aria-label="Silgi"
               >
                 <Eraser size={19} aria-hidden="true" />
@@ -1942,7 +2023,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             schoolSharingEnabled={false}
           />
         )}
-        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
+        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ok tuşları seçili öğeyi kaydırır (Shift ile hızlı), seçim yokken ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
       </aside>
       {ctxMenu && (() => {
         const ids = ctxMenu.ids;

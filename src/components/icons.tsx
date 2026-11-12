@@ -1048,3 +1048,57 @@ export const Link2 = createIcon('Link2', (
     <line x1="8" x2="16" y1="12" y2="12" />
   </>
 ));
+
+export const Sprout = createIcon('Sprout', (
+  <>
+    <path d="M7 20h10" />
+    <path d="M10 20c5.5 0 8-4 8-8.5a4.5 4.5 0 0 0-8.5-2" />
+    <path d="M10 20c-5.5 0-8-4-8-8.5a4.5 4.5 0 0 1 8.5-2" />
+    <path d="M10 20V9.5" />
+  </>
+));
+
+export const Leaf = createIcon('Leaf', (
+  <>
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+  </>
+));
+
+export const Heart = createIcon('Heart', (
+  <>
+    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+  </>
+));
+
+export const Hand = createIcon('Hand', (
+  <>
+    <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
+    <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
+    <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+    <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+  </>
+));
+
+export const Droplet = createIcon('Droplet', (
+  <>
+    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
+  </>
+));
+
+export const Music = createIcon('Music', (
+  <>
+    <path d="M9 18V5l12-2v13" />
+    <circle cx="6" cy="18" r="3" />
+    <circle cx="18" cy="16" r="3" />
+  </>
+));
+
+export const Trees = createIcon('Trees', (
+  <>
+    <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z" />
+    <path d="M7 16v6" />
+    <path d="M13 19v3" />
+    <path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-4 4.3a1 1 0 0 0 .8 1.7H10l-3 3.3a1 1 0 0 0 .7 1.7H8l-3 3.3a1 1 0 0 0 .7 1.7H12" />
+  </>
+));

@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building, Layers, Globe, ShieldCheck, Trophy } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, Sprout, BookOpen, Folder, HelpCircle, BarChart3, Building, Layers, Globe, ShieldCheck, Trophy } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -21,6 +21,7 @@ export type TeacherPageId =
   | 'consent'
   | 'leaderboard'
   | 'aquarium'
+  | 'garden'
   | 'classes'
   | 'messages'
   | 'announcements'
@@ -48,6 +49,7 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'plus_minus', slug: 'puan-ver', title: 'Puan ver', description: 'Artı ve eksi puan ekle', icon: Star, group: 'Puan ve ödül' },
   { id: 'leaderboard', slug: 'siralama', title: 'Puan sıralaması', description: 'Sınıfın başarı sırası', icon: Award, group: 'Puan ve ödül' },
   { id: 'aquarium', slug: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balıklar, tam ekran', icon: Fish, group: 'Puan ve ödül' },
+  { id: 'garden', slug: 'bahce', title: 'Sınıf bahçesi', description: 'Puanla dikilen ve büyüyen ağaçlar', icon: Sprout, group: 'Puan ve ödül' },
   { id: 'class_tools', slug: 'sinif-araclari', title: 'Sınıf araçları', description: 'Rastgele seçici, grup, kronometre, geri sayım', icon: Shuffle, group: 'Ders ve değerlendirme' },
   { id: 'reading', slug: 'okuma-yarismasi', title: 'Okuma yarışması', description: '1 dakikada okunan kelime, sıralama, gelişim', icon: BookOpen, group: 'Ders ve değerlendirme' },
   { id: 'quiz_show', slug: 'bilgi-yarismasi', title: 'Bilgi yarışması', description: 'Takımlı yarışma: soru bankasından sorular, skor, sonuçlar', icon: Trophy, group: 'Ders ve değerlendirme' },

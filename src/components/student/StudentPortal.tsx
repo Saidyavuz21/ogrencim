@@ -8,6 +8,7 @@ import {
 } from '../../lib/studentData';
 import { studentConversationId } from '../../lib/teacherData';
 import { Aquarium } from '../aquarium/Aquarium';
+import { StudentGarden } from '../garden/StudentGarden';
 import { Notice } from '../teacher/TeacherUi';
 import { PortalSidebar, PortalTopBar, usePageRoute } from '../shell/PortalShell';
 import { STUDENT_PAGES, STUDENT_PAGE_GROUPS, StudentPageGroup, StudentPageId, getStudentPage, studentPageHref, studentPageIdFromSlug, studentPageSlug } from './studentRoutes';
@@ -194,6 +195,11 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
             {loaded
               ? <Aquarium students={ranking} highlightId={user.id} scopeKey={`ogrenci:${user.id}`} title={`${me?.class_name || 'Sınıf'} akvaryumu`} />
               : <Spinner center label="Akvaryum hazırlanıyor…" />}
+          </div>
+        )}
+        {page === 'bahce' && (
+          <div className={styles.pageBody}>
+            <StudentGarden />
           </div>
         )}
         {page === 'mesajlar' && (me

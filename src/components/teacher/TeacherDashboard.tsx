@@ -22,6 +22,7 @@ import { TeacherPointsPage } from './TeacherPointsPage';
 import { TeacherLeaderboardPage } from './TeacherLeaderboardPage';
 import { TeacherConsentPage } from './TeacherConsentPage';
 import { TeacherAquariumPage } from './TeacherAquariumPage';
+import { TeacherGardenPage } from '../garden/TeacherGardenPage';
 import { TeacherReadingPage } from '../reading/TeacherReadingPage';
 import { TeacherQuizShowPage } from '../quizshow/TeacherQuizShowPage';
 import { TeacherGradesPage } from './TeacherGradesPage';
@@ -294,6 +295,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           {page === 'leaderboard' && <TeacherLeaderboardPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'consent' && <TeacherConsentPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'aquarium' && <TeacherAquariumPage key={effectiveClass} selectedClass={effectiveClass} />}
+          {page === 'garden' && <TeacherGardenPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'reading' && <TeacherReadingPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'class_report' && <ClassReportPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'grade_entry' && <TeacherGradesPage key={effectiveClass} selectedClass={effectiveClass} defaultSubject={defaultSubject} />}

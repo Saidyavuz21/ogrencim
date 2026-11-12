@@ -1,0 +1,855 @@
+/* ===== Öğrenci Bahçesi Stilleri ===== */
+
+/* Rüzgar salınımı animasyonu */
+@keyframes treeSway {
+  0% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(1.8deg);
+  }
+  100% {
+    transform: rotate(-1.5deg);
+  }
+}
+
+.treeSway {
+  transform-origin: 50% 95%;
+  animation: treeSway 4.8s ease-in-out infinite;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .treeSway {
+    animation: none !important;
+  }
+}
+
+/* Sayfa ve Ana Yerleşim */
+.gardenWorkspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.gardenHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.gardenHeaderTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gardenHeaderTitle h1,
+.gardenHeaderTitle h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--teacher-text, #20352d);
+  margin: 0;
+}
+
+.gardenHeaderTitle p {
+  font-size: 14px;
+  color: var(--teacher-muted, #58665f);
+  margin: 0;
+}
+
+.gardenHeaderActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.gardenHeaderActions button {
+  min-height: 44px;
+}
+
+/* Öğrenci Listesi / Tablosu */
+.rosterCard {
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.rosterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #fafaf7;
+  border-bottom: 1px solid var(--teacher-border, #dedad0);
+}
+
+.rosterHeader h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teacher-text, #20352d);
+  margin: 0;
+}
+
+.rosterGroupHeader {
+  padding: 12px 20px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--teacher-muted, #58665f);
+  background: #f4f3ec;
+  border-top: 1px solid var(--teacher-border, #dedad0);
+  border-bottom: 1px solid var(--teacher-border, #dedad0);
+}
+
+.studentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #eeece5;
+  transition: background 0.12s ease;
+  position: relative;
+}
+
+.studentRow:last-child {
+  border-bottom: 0;
+}
+
+.studentRow:hover {
+  background: #fafbf9;
+}
+
+.studentInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 170px;
+}
+
+.studentAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e6f1e9;
+  color: var(--teacher-primary, #25634b);
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.studentNameGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.studentName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teacher-text, #20352d);
+  margin: 0;
+}
+
+.studentMeta {
+  font-size: 12px;
+  color: var(--teacher-muted, #58665f);
+  margin: 0;
+}
+
+/* Davranış İkon Düğmeleri Sırası */
+.behaviorButtonsRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-start;
+}
+
+.behaviorBtn {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 52px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.behaviorBtn:hover:not(:disabled) {
+  border-color: var(--teacher-primary, #25634b);
+  background: #f0f7f3;
+  color: var(--teacher-primary, #25634b);
+  transform: translateY(-1px);
+}
+
+.behaviorBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.behaviorBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary, #25634b);
+  outline-offset: 2px;
+}
+
+.behaviorBtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.behaviorBtnPlanted {
+  border-color: #badcc7;
+  background: #fbfdfb;
+}
+
+.btnIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.plantedBadge {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  color: #27ae60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnEarnedCount {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--teacher-muted, #58665f);
+}
+
+.behaviorBtnPlanted .btnEarnedCount {
+  color: var(--teacher-primary, #25634b);
+}
+
+/* +1 Sıçrama Animasyonu */
+@keyframes floatUpFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -16px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -32px) scale(1);
+  }
+}
+
+.floatPlusBadge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #25634b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  animation: floatUpFade 0.75s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floatPlusBadge {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Sağ Taraf: Bahçeyi Gör Butonu */
+.viewGardenBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.viewGardenBtn:hover {
+  background: #f4f3ed;
+  border-color: #c9c4b5;
+}
+
+.viewGardenBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary, #25634b);
+  outline-offset: 2px;
+}
+
+/* Geri Al (Undo) Çubuğu */
+.undoToast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  background: #20352d;
+  color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24);
+  z-index: 1000;
+  font-size: 14px;
+  min-width: 300px;
+  max-width: 90vw;
+}
+
+.undoText {
+  flex: 1;
+  font-weight: 500;
+}
+
+.undoBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #e6f1e9;
+  color: #25634b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.undoBtn:hover {
+  background: #cce3d3;
+}
+
+.undoClose {
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #a3b8ad;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.undoClose:hover {
+  color: #ffffff;
+}
+
+/* Bahçe Arsa Bileşeni (GardenPlot) */
+.gardenPlotContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 2px solid #5a8a64;
+  box-shadow: 0 4px 20px rgba(37, 99, 75, 0.08);
+  background: linear-gradient(180deg, #d8f3dc 0%, #b7e4c7 60%, #95d5b2 100%);
+  position: relative;
+}
+
+.plotSkyline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.plotTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1b4332;
+  margin: 0;
+}
+
+.plotGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px;
+  padding: 24px 20px 32px;
+  min-height: 220px;
+  align-items: end;
+}
+
+.plotGridLarge {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
+  padding: 32px 24px 40px;
+}
+
+.plotSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: center;
+  position: relative;
+  min-height: 150px;
+}
+
+.treeClickable {
+  cursor: pointer;
+  border-radius: 16px;
+  padding: 6px 8px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.treeClickable:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.treeClickable:focus-visible {
+  outline: 3px solid #25634b;
+  outline-offset: 4px;
+}
+
+.plotLabel {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1b4332;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(27, 67, 50, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plotEmptySlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 130px;
+  border: 2px dashed rgba(27, 67, 50, 0.25);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.25);
+  color: #40916c;
+  padding: 12px 8px;
+}
+
+.emptySoilMound {
+  width: 50px;
+  height: 14px;
+  border-radius: 50%;
+  background: #7a5438;
+  opacity: 0.35;
+}
+
+.plotEmptyText {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2d6a4f;
+  margin: 0;
+}
+
+.waterDropBadge {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+}
+
+/* Öğrenci Paneli Bahçe Görünümü */
+.studentGardenHero {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.waterRightsBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+}
+
+.waterRightsText {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.waterRightsCount {
+  background: #0284c7;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.studentTreeCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.studentTreeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardHeader h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--teacher-text, #20352d);
+  margin: 0;
+}
+
+.cardStageBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #25634b;
+  background: #e6f1e9;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.treeVisualBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  background: #f7faf7;
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+}
+
+.waterButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: #0284c7;
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+  transition: all 0.15s ease;
+}
+
+.waterButton:hover:not(:disabled) {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
+.waterButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.waterButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.waterButton:focus-visible {
+  outline: 3px solid #0284c7;
+  outline-offset: 2px;
+}
+
+.noWaterText {
+  font-size: 13px;
+  color: var(--teacher-muted, #58665f);
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+  padding: 8px 4px;
+}
+
+.treeProgressText {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0284c7;
+  text-align: center;
+  margin: 0;
+}
+
+/* Sulama Animasyonu */
+@keyframes waterPour {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.9);
+  }
+}
+
+.wateringAnimationOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  z-index: 5;
+}
+
+.waterDrops {
+  color: #0284c7;
+  animation: waterPour 0.85s ease-in-out infinite;
+}
+
+/* Kutlama / Aşama Atlama Bildirimi */
+.stageUpCelebration {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 14px;
+  color: #92400e;
+  font-weight: 600;
+  animation: floatUpFade 1.2s ease-out;
+}
+
+/* Davranışlar Ayar Penceresi (Modal) */
+.behaviorModalList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.behaviorModalItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 12px;
+  background: #ffffff;
+  gap: 12px;
+}
+
+.behaviorModalItemArchived {
+  opacity: 0.6;
+  background: #f7f6f2;
+}
+
+.behaviorItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.behaviorItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--teacher-text, #20352d);
+}
+
+.behaviorItemTree {
+  font-size: 12px;
+  color: var(--teacher-muted, #58665f);
+}
+
+.archivedBadge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #e5e4de;
+  color: #58665f;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+
+.behaviorItemActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.behaviorItemActions button {
+  min-height: 38px;
+}
+
+/* İkon ve Ağaç Seçicileri */
+.pickerGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pickerOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: all 0.12s ease;
+}
+
+.pickerOption:hover {
+  border-color: var(--teacher-primary, #25634b);
+  background: #f0f7f3;
+}
+
+.pickerOptionSelected {
+  border-color: var(--teacher-primary, #25634b);
+  background: var(--teacher-selected, #e6f1e9);
+  color: var(--teacher-primary, #25634b);
+  font-weight: 700;
+}
+
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+  .studentRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .studentInfo {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .behaviorButtonsRow {
+    width: 100%;
+  }
+
+  .behaviorBtn {
+    flex: 1 1 calc(25% - 8px);
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .viewGardenBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .plotGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pickerGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .behaviorBtn {
+    flex: 1 1 calc(33.333% - 8px);
+  }
+
+  .pickerGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+

@@ -1,8 +1,8 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { FileText, TrendingUp, Star, Award, Fish, MessageSquare, Bell, User, BookOpen, Folder, BarChart3, School } from '../icons';
+import { FileText, TrendingUp, Star, Award, Fish, Sprout, MessageSquare, Bell, User, BookOpen, Folder, BarChart3, School } from '../icons';
 
-export type StudentPageId = 'home' | 'odevler' | 'materyaller' | 'notlar' | 'okuma' | 'puanlar' | 'siralama' | 'akvaryum' | 'gelisim' | 'mesajlar' | 'duyurular' | 'gruplar' | 'hesap';
+export type StudentPageId = 'home' | 'odevler' | 'materyaller' | 'notlar' | 'okuma' | 'puanlar' | 'siralama' | 'akvaryum' | 'bahce' | 'gelisim' | 'mesajlar' | 'duyurular' | 'gruplar' | 'hesap';
 
 export type StudentPageGroup = 'Derslerim' | 'Puanlarım' | 'İletişim' | 'Hesap';
 
@@ -23,6 +23,7 @@ export const STUDENT_PAGES: StudentPageInfo[] = [
   { id: 'puanlar', title: 'Puanlarım', description: 'Artı ve eksi puan geçmişi', icon: Star, group: 'Puanlarım' },
   { id: 'siralama', title: 'Sınıf sıralaması', description: 'Sınıftaki puan sıran', icon: Award, group: 'Puanlarım' },
   { id: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balığın', icon: Fish, group: 'Puanlarım' },
+  { id: 'bahce', title: 'Bahçem', description: 'Sulayarak büyüttüğün ağaçların', icon: Sprout, group: 'Puanlarım' },
   { id: 'gelisim', title: 'Gelişimim', description: 'Puan ve notlarının zaman içindeki değişimi', icon: BarChart3, group: 'Puanlarım' },
   { id: 'mesajlar', title: 'Mesajlar', description: 'Öğretmenlerine yaz, sınıf grubunu oku', icon: MessageSquare, group: 'İletişim' },
   { id: 'duyurular', title: 'Duyurular', description: 'Okuldan gelen duyurular', icon: Bell, group: 'İletişim' },

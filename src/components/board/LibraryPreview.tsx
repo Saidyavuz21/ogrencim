@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { BoardEl } from '../../lib/boardData';
-import { getElementsBbox } from '../../lib/boardLibrary';
+import { BoardEl, imageKey } from '../../lib/boardData';
+import { getElementsBbox, LIBRARY_ITEMS } from '../../lib/boardLibrary';
 import { ElementView } from './BoardCanvas';
 
 export function LibraryPreview({
@@ -17,6 +17,15 @@ export function LibraryPreview({
   pad?: number;
 }) {
   const b = useMemo(() => getElementsBbox(elements), [elements]);
+  const imageUrls = useMemo(() => {
+    const urls: Record<string, string> = {};
+    for (const el of elements) {
+      if (el.type === 'image' && el.bucket === 'builtin-library' && LIBRARY_ITEMS.some((item) => item.imageSource === el.path)) {
+        urls[imageKey(el)] = el.path;
+      }
+    }
+    return urls;
+  }, [elements]);
   const viewBox = `${b.x - pad} ${b.y - pad} ${Math.max(1, b.w + pad * 2)} ${Math.max(1, b.h + pad * 2)}`;
 
   return (
@@ -27,7 +36,7 @@ export function LibraryPreview({
       aria-hidden="true"
     >
       {elements.map((el) => (
-        <ElementView key={el.id} el={el} imageUrls={{}} />
+        <ElementView key={el.id} el={el} imageUrls={imageUrls} />
       ))}
     </svg>
   );

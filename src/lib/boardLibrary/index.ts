@@ -28,6 +28,7 @@ import {
 } from './items';
 import { FEN_ITEMS } from './itemsFen';
 import { GENEL_ITEMS } from './itemsGenel';
+import { SCHOOL_ITEMS } from './itemsSchool';
 import { GEOMETRY_ITEMS } from './itemsGeometry';
 import { TURKISH_ITEMS } from './itemsTurkish';
 import { MEASUREMENT_ITEMS } from './itemsMeasurement';
@@ -109,6 +110,7 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
   ...EARTH_SKY_ITEMS.filter(item => item.category === 'fen'),
 
   // Genel
+  ...SCHOOL_ITEMS,
   speechBubbleItem,
   ...GENEL_ITEMS,
   ...TURKISH_ITEMS,

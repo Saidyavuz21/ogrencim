@@ -95,6 +95,7 @@ export function ShapeLibraryPanel({
       base = [...userItems, ...LIBRARY_ITEMS].filter((it) => it.category === activeTab);
     }
 
+    base = base.filter((item) => !item.imageSource);
     if (!query) return base;
 
     return base.filter((item) => {

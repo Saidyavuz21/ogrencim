@@ -18,7 +18,7 @@ import { listQuestions, QuestionRow } from '../../lib/quizData';
 import { listMyFiles, signedFileUrl, uploadTeacherFiles } from '../../lib/filesData';
 import { fileSlug } from '../../lib/reportData';
 import { BoardCanvas, DRAW_TOOLS, SHAPE_TOOLS, Tool, wrapTextLines } from './BoardCanvas';
-import { computeTextHeight, fitTextWidth } from './textLayout';
+import { computeTextHeight, fitTextWidth, isDarkFill } from './textLayout';
 import { translate } from './boardGeometry';
 import { normalizeWholeTags } from './BoardFormatBars';
 import { WidgetContext, WidgetView } from './Widgets';
@@ -61,6 +61,18 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'eraser', label: 'Silgi', key: 'e' }, { id: 'line', label: 'Çizgi', key: 'l' }, { id: 'arrow', label: 'Ok', key: 'a' },
   { id: 'rect', label: 'Dikdörtgen', key: 'r' }, { id: 'ellipse', label: 'Daire', key: 'o' }, { id: 'note', label: 'Not', key: 'n' },
   { id: 'text', label: 'Metin', key: 't' },
+];
+
+export const BOARD_BG_COLORS: { c: string; label: string; dark?: boolean }[] = [
+  { c: '#ffffff', label: 'Beyaz' },
+  { c: '#faf8f0', label: 'Krem' },
+  { c: '#f0f5fa', label: 'Buz Mavisi' },
+  { c: '#f2f7f2', label: 'Nane Yeşili' },
+  { c: '#fff9e6', label: 'Açık Sarı' },
+  { c: '#f3f4f6', label: 'Açık Gri' },
+  { c: '#1a3c2f', label: 'Yeşil Tahta', dark: true },
+  { c: '#1f2421', label: 'Kara Tahta', dark: true },
+  { c: '#182635', label: 'Gece Mavisi', dark: true },
 ];
 const TOOL_LABEL: Record<string, string> = {
   ...Object.fromEntries(TOOLS.map((t) => [t.id, t.label])),
@@ -288,6 +300,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   }, [boardId]);
 
   const page = content?.pages[Math.min(pageIndex, (content?.pages.length || 1) - 1)];
+  const libraryInsertState = useRef<{ content: BoardContent | null; pageId?: string } | null>(null);
+  const libraryImageRequest = useRef<AbortController | null>(null);
+  useEffect(() => {
+    libraryInsertState.current = { content, pageId: page?.id };
+  }, [content, page?.id]);
+  useEffect(() => () => {
+    libraryInsertState.current = null;
+    libraryImageRequest.current?.abort();
+  }, []);
   const questionMap = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const allWidgets = useMemo(() => new Map((content?.pages || []).flatMap((p) => p.elements.filter((e): e is WidgetEl => e.type === 'widget')).map((w) => [w.id, w])), [content]);
   const stepState = useMemo(() => ({
@@ -313,8 +334,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   }, [imageKeys, imageUrls]);
 
   // ---- Değişiklik + geçmiş (50 adım) ----
-  const apply = (next: BoardContent) => {
-    if (content) setPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), content]);
+  const apply = (next: BoardContent, previous = content) => {
+    if (previous) setPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), previous]);
     setFuture([]);
     setContent(next);
     setSaveState('dirty');
@@ -322,6 +343,28 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const updatePage = (patch: Partial<BoardPage>) => {
     if (!content || !page) return;
     apply({ ...content, pages: content.pages.map((p) => (p.id === page.id ? { ...p, ...patch } : p)) });
+  };
+  const handleBgColorChange = (newBg: string) => {
+    updatePage({ backgroundColor: newBg });
+    if (isDarkFill(newBg) && (color === '#1f2a24' || color === '#20352d')) {
+      setColor('#ffffff');
+    } else if (!isDarkFill(newBg) && color === '#ffffff') {
+      setColor('#1f2a24');
+    }
+  };
+  const applyBgToAllPages = () => {
+    if (!content || !page) return;
+    const bg = page.background;
+    const bgColor = page.backgroundColor || '#ffffff';
+    apply({
+      ...content,
+      pages: content.pages.map((p) => ({
+        ...p,
+        background: bg,
+        backgroundColor: bgColor,
+      })),
+    });
+    setNotice('Zemin tüm sayfalara uygulandı.');
   };
   const commitElements = (elements: BoardEl[]) => updatePage({ elements });
   const patchElement = (id: string, patch: Partial<BoardEl>) => {
@@ -697,7 +740,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!content) return;
     if (content.pages.length >= MAX_PAGES) { setNotice(`En fazla ${MAX_PAGES} sayfa olabilir.`); return; }
     const pages = [...content.pages];
-    pages.splice(pageIndex + 1, 0, newPage(page?.background || 'blank'));
+    pages.splice(pageIndex + 1, 0, newPage(page?.background || 'blank', page?.backgroundColor || '#ffffff'));
     apply({ ...content, pages });
     setPageIndex(pageIndex + 1);
   };
@@ -787,13 +830,51 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!res.ok) { setNotice(`Görsel eklenemedi: ${res.error}`); return; }
     placeImage(res.data, x, y);
   };
-  const insertShape = (shapeId: string, cx = BOARD_W / 2, cy = BOARD_H / 2, params?: Record<string, number>) => {
+  const insertShape = async (shapeId: string, cx = BOARD_W / 2, cy = BOARD_H / 2, params?: Record<string, number>) => {
     if (!page) return;
     const allItems = [...userLibraryItems, ...schoolLibraryItems, ...LIBRARY_ITEMS];
     const item = allItems.find((it) => it.id === shapeId);
     if (!item) return;
     const newElements = instantiateItem(item, { x: cx, y: cy }, params);
     if (!newElements.length) return;
+
+    if (item.imageSource) {
+      if (busy || libraryImageRequest.current) return;
+      const controller = new AbortController();
+      libraryImageRequest.current = controller;
+      setBusy(true);
+      try {
+        const response = await fetch(item.imageSource, { signal: controller.signal });
+        if (!response.ok) throw new Error('Görsel dosyası okunamadı.');
+        const blob = await response.blob();
+        if (controller.signal.aborted) return;
+        const filename = `${newId()}-${item.imageSource.split('/').pop() || 'okul-esyasi.png'}`;
+        const uploaded = await uploadBoardImage(new File([blob], filename, { type: blob.type }));
+        if (controller.signal.aborted) return;
+        if (!uploaded.ok) { setNotice(`Görsel eklenemedi: ${uploaded.error}`); return; }
+        const latest = libraryInsertState.current;
+        const targetPage = latest?.content?.pages.find((candidate) => candidate.id === page.id);
+        if (!latest?.content || !targetPage) return;
+        const images = newElements.map((element) => element.type === 'image'
+          ? { ...element, bucket: BOARD_IMAGE_BUCKET, path: uploaded.data.path }
+          : element);
+        const next = { ...latest.content, pages: latest.content.pages.map((candidate) => candidate.id === targetPage.id
+          ? { ...candidate, elements: [...candidate.elements, ...images] }
+          : candidate) };
+        if (byteSize(next) > MAX_BOARD_BYTES) { setNotice('Tahta boyutu sınırına ulaşıldı, görsel eklenemedi.'); return; }
+        apply(next, latest.content);
+        if (latest.pageId === targetPage.id) {
+          setSelectedIds(images.map((element) => element.id));
+          setTool('select');
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) setNotice(error instanceof Error ? `Görsel eklenemedi: ${error.message}` : 'Görsel eklenemedi. Yeniden deneyin.');
+      } finally {
+        libraryImageRequest.current = null;
+        if (libraryInsertState.current) setBusy(false);
+      }
+      return;
+    }
 
     const nextElements = [...page.elements, ...newElements];
     if (content) {
@@ -1281,7 +1362,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             <Eraser size={18} aria-hidden="true" />
           </button>
           <span className={styles.sep} aria-hidden="true" />
-          {['#d03b3b', '#2a78d6', '#1f2a24', '#1e7a4c', '#e0a800'].map((c) => (
+          {['#ffffff', '#d03b3b', '#2a78d6', '#1f2a24', '#1e7a4c', '#e0a800'].map((c) => (
             <button
               key={c}
               type="button"
@@ -1826,6 +1907,49 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             <label>Bu sayfanın zemini
               <CustomSelect value={page.background} onChange={(v) => updatePage({ background: v as Background })} options={(Object.keys(BACKGROUND_LABEL) as Background[]).map((b) => ({ value: b, label: BACKGROUND_LABEL[b] }))} />
             </label>
+
+            <div className={styles.bgSection}>
+              <span className={styles.bgSectionTitle}>Zemin rengi</span>
+              <div className={styles.bgSwatches}>
+                {BOARD_BG_COLORS.map(({ c, label }) => {
+                  const currentBg = (page.backgroundColor || '#ffffff').toLowerCase();
+                  const active = currentBg === c.toLowerCase();
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      className={styles.swatch}
+                      style={{
+                        background: c,
+                        boxShadow: active ? '0 0 0 3px #25634b' : '0 0 0 1px #c9c5b8',
+                      }}
+                      aria-pressed={active}
+                      onClick={() => handleBgColorChange(c)}
+                      title={label}
+                      aria-label={`Zemin rengi ${label}`}
+                    />
+                  );
+                })}
+                <input
+                  type="color"
+                  className={styles.bgColorInput}
+                  value={page.backgroundColor || '#ffffff'}
+                  onChange={(e) => handleBgColorChange(e.target.value)}
+                  title="Özel bir zemin rengi seçin"
+                  aria-label="Özel zemin rengi"
+                />
+              </div>
+            </div>
+
+            {content && content.pages.length > 1 && (
+              <button
+                type="button"
+                className={styles.bgApplyAllBtn}
+                onClick={applyBgToAllPages}
+              >
+                Bu zemini tüm sayfalara uygula
+              </button>
+            )}
           </section>
         )}
       </aside>

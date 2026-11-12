@@ -1,0 +1,114 @@
+[
+  {
+    "file": "school-bag.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Backpack/3D/backpack_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "pencil.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Pencil/3D/pencil_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "pen.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Pen/3D/pen_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "crayon.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Crayon/3D/crayon_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "ruler.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Straight%20ruler/3D/straight_ruler_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "set-square.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Triangular%20ruler/3D/triangular_ruler_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "notebook.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Notebook/3D/notebook_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "notepad.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Spiral%20notepad/3D/spiral_notepad_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "book.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Closed%20book/3D/closed_book_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "open-book.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Open%20book/3D/open_book_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "books.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Books/3D/books_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "scissors.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Scissors/3D/scissors_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "paperclip.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Paperclip/3D/paperclip_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  },
+  {
+    "file": "paintbrush.png",
+    "source": "https://raw.githubusercontent.com/microsoft/fluentui-emoji/1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/Paintbrush/3D/paintbrush_3d.png",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "width": 256,
+    "height": 256
+  }
+]

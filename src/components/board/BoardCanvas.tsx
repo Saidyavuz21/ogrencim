@@ -13,6 +13,7 @@ import {
   BOARD_FONT,
   computeTextHeight,
   getFontFamily,
+  isDarkFill,
   lineHeightOf,
   textEditWidth,
   textPad,
@@ -96,42 +97,49 @@ const clampPt = (v: number, max: number) => Math.max(0, Math.min(max, v));
 // --------------------------------------------------------
 // Çizim
 // --------------------------------------------------------
-function BackgroundDefs({ id, bg }: { id: string; bg: Background }) {
+function BackgroundDefs({ id, bg, isDark }: { id: string; bg: Background; isDark?: boolean }) {
+  const strokeColor = isDark ? 'rgba(255, 255, 255, 0.22)' : '#dce4ec';
+  const dotColor = isDark ? 'rgba(255, 255, 255, 0.32)' : '#c3ccd6';
+  const linesColor = isDark ? 'rgba(255, 255, 255, 0.22)' : '#cdd9e6';
+  const coordColor = isDark ? 'rgba(255, 255, 255, 0.18)' : '#e1e7ee';
+
   if (bg === 'grid') {
-    return <pattern id={id} width={48} height={48} patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#dce4ec" strokeWidth={1.5} /></pattern>;
+    return <pattern id={id} width={48} height={48} patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke={strokeColor} strokeWidth={1.5} /></pattern>;
   }
   if (bg === 'lines') {
-    return <pattern id={id} width={BOARD_W} height={60} patternUnits="userSpaceOnUse"><line x1={0} x2={BOARD_W} y1={59} y2={59} stroke="#cdd9e6" strokeWidth={2} /></pattern>;
+    return <pattern id={id} width={BOARD_W} height={60} patternUnits="userSpaceOnUse"><line x1={0} x2={BOARD_W} y1={59} y2={59} stroke={linesColor} strokeWidth={2} /></pattern>;
   }
   if (bg === 'dots') {
-    return <pattern id={id} width={40} height={40} patternUnits="userSpaceOnUse"><circle cx={20} cy={20} r={2.4} fill="#c3ccd6" /></pattern>;
+    return <pattern id={id} width={40} height={40} patternUnits="userSpaceOnUse"><circle cx={20} cy={20} r={2.4} fill={dotColor} /></pattern>;
   }
   if (bg === 'coord') {
-    return <pattern id={id} width={40} height={40} patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#e1e7ee" strokeWidth={1.2} /></pattern>;
+    return <pattern id={id} width={40} height={40} patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke={coordColor} strokeWidth={1.2} /></pattern>;
   }
   return null;
 }
 
-function CoordAxes() {
+function CoordAxes({ isDark }: { isDark?: boolean }) {
   const cx = BOARD_W / 2, cy = BOARD_H / 2;
+  const axisColor = isDark ? '#f0f4f8' : '#3c4b5a';
+  const tickColor = isDark ? '#d0dce8' : '#5b6b7a';
   const ticks: React.ReactNode[] = [];
   for (let i = -11; i <= 11; i++) {
     if (!i) continue;
     const x = cx + i * 80;
-    if (x > 20 && x < BOARD_W - 20) ticks.push(<g key={`x${i}`}><line x1={x} x2={x} y1={cy - 8} y2={cy + 8} stroke="#5b6b7a" strokeWidth={2} /><text x={x} y={cy + 30} textAnchor="middle" fontSize={20} fill="#5b6b7a">{i * 2}</text></g>);
+    if (x > 20 && x < BOARD_W - 20) ticks.push(<g key={`x${i}`}><line x1={x} x2={x} y1={cy - 8} y2={cy + 8} stroke={tickColor} strokeWidth={2} /><text x={x} y={cy + 30} textAnchor="middle" fontSize={20} fill={tickColor}>{i * 2}</text></g>);
   }
   for (let i = -6; i <= 6; i++) {
     if (!i) continue;
     const y = cy - i * 80;
-    if (y > 20 && y < BOARD_H - 20) ticks.push(<g key={`y${i}`}><line x1={cx - 8} x2={cx + 8} y1={y} y2={y} stroke="#5b6b7a" strokeWidth={2} /><text x={cx - 16} y={y + 7} textAnchor="end" fontSize={20} fill="#5b6b7a">{i * 2}</text></g>);
+    if (y > 20 && y < BOARD_H - 20) ticks.push(<g key={`y${i}`}><line x1={cx - 8} x2={cx + 8} y1={y} y2={y} stroke={tickColor} strokeWidth={2} /><text x={cx - 16} y={y + 7} textAnchor="end" fontSize={20} fill={tickColor}>{i * 2}</text></g>);
   }
   return (
     <g>
-      <line x1={0} x2={BOARD_W} y1={cy} y2={cy} stroke="#3c4b5a" strokeWidth={3} />
-      <line x1={cx} x2={cx} y1={0} y2={BOARD_H} stroke="#3c4b5a" strokeWidth={3} />
-      <path d={`M${BOARD_W - 4} ${cy}l-22 -10v20z M${cx} 4l-10 22h20z`} fill="#3c4b5a" />
-      <text x={BOARD_W - 30} y={cy - 18} fontSize={26} fontStyle="italic" fill="#3c4b5a">x</text>
-      <text x={cx + 18} y={34} fontSize={26} fontStyle="italic" fill="#3c4b5a">y</text>
+      <line x1={0} x2={BOARD_W} y1={cy} y2={cy} stroke={axisColor} strokeWidth={3} />
+      <line x1={cx} x2={cx} y1={0} y2={BOARD_H} stroke={axisColor} strokeWidth={3} />
+      <path d={`M${BOARD_W - 4} ${cy}l-22 -10v20z M${cx} 4l-10 22h20z`} fill={axisColor} />
+      <text x={BOARD_W - 30} y={cy - 18} fontSize={26} fontStyle="italic" fill={axisColor}>x</text>
+      <text x={cx + 18} y={34} fontSize={26} fontStyle="italic" fill={axisColor}>y</text>
       {ticks}
     </g>
   );
@@ -969,10 +977,18 @@ export function BoardCanvas(props: BoardCanvasProps) {
           }
         }}
       >
-        <defs><BackgroundDefs id={patternId} bg={page.background} /></defs>
-        <rect x={0} y={0} width={BOARD_W} height={BOARD_H} fill="#ffffff" />
-        {page.background !== 'blank' && <rect x={0} y={0} width={BOARD_W} height={BOARD_H} fill={`url(#${patternId})`} />}
-        {page.background === 'coord' && <CoordAxes />}
+        {(() => {
+          const bgColor = page.backgroundColor || '#ffffff';
+          const isDark = isDarkFill(bgColor);
+          return (
+            <>
+              <defs><BackgroundDefs id={patternId} bg={page.background} isDark={isDark} /></defs>
+              <rect x={0} y={0} width={BOARD_W} height={BOARD_H} fill={bgColor} />
+              {page.background !== 'blank' && <rect x={0} y={0} width={BOARD_W} height={BOARD_H} fill={`url(#${patternId})`} />}
+              {page.background === 'coord' && <CoordAxes isDark={isDark} />}
+            </>
+          );
+        })()}
         {shown.map((el) => {
           const isMuted = activeGroupId && el.groupId !== activeGroupId;
           return (

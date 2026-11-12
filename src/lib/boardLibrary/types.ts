@@ -19,6 +19,7 @@ export interface LibraryItem {
   name: string; // 'Sayı doğrusu'
   category: LibraryCategory;
   keywords?: string[]; // arama için: ['sayı', 'doğru', 'tam sayı']
+  imageSource?: string;
   params?: LibraryParam[];
   build: (params?: Record<string, number>) => BoardEl[]; // (0,0) başlangıçlı öğeler; id'ler önemsiz, eklerken yenilenir
   source?: 'mine' | 'school';

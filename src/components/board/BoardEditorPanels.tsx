@@ -16,6 +16,7 @@ import { CHOICE_LETTERS, QuestionRow } from '../../lib/quizData';
 import { getFontSizeOptions } from './BoardCanvas';
 import { ShapeLibraryPanel } from './ShapeLibraryPanel';
 import { LIBRARY_ITEMS, LibraryItem } from '../../lib/boardLibrary';
+import { SCHOOL_ITEMS } from '../../lib/boardLibrary/itemsSchool';
 import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { MathText } from '../math/MathText';
 import { hasMath } from '../../lib/math/parseMath';
@@ -24,7 +25,16 @@ import { BOX_BORDERS, BOX_FILLS, isDarkFill } from './textLayout';
 
 export const COLORS = ['#1f2a24', '#d03b3b', '#2a78d6', '#1e7a4c', '#eb6834', '#7a3fd0', '#e0a800', '#ffffff'];
 export const NOTE_COLORS = ['#fff3b0', '#dff3df', '#dbe8f8', '#fbe2ec', '#ffffff'];
-export type MediaItem = { key: string; bucket: string; path: string; name: string };
+export type MediaItem = { key: string; bucket: string; path: string; name: string; shapeId?: string; thumbnail?: string };
+
+const BUILTIN_IMAGES: MediaItem[] = SCHOOL_ITEMS.map((item) => ({
+  key: item.id,
+  bucket: 'builtin-library',
+  path: item.imageSource!,
+  name: item.name,
+  shapeId: item.id,
+  thumbnail: item.imageSource,
+}));
 
 // --------------------------------------------------------
 // Seçili öğenin ayarları
@@ -746,7 +756,9 @@ export function MediaDrawer({
   const isShapeSource = source === 'shapes';
   const [items, setItems] = useState<Record<string, MediaItem[] | null>>({ mine: null, library: null });
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const list = isShapeSource ? null : items[source];
+  const sharedImages = items.library || [];
+  const localImages = BUILTIN_IMAGES.filter((image) => !sharedImages.some((shared) => shared.name.replace(/\.png$/i, '') === image.name));
+  const list = isShapeSource ? null : source === 'library' ? [...localImages, ...sharedImages] : items[source];
 
   useEffect(() => {
     if (isShapeSource || items[source]) return;
@@ -809,13 +821,17 @@ export function MediaDrawer({
               className={styles.mediaItem}
               draggable
               disabled={busy}
-              onDragStart={(e) => { e.dataTransfer.setData('application/x-board-media', JSON.stringify({ bucket: m.bucket, path: m.path, name: m.name })); e.dataTransfer.effectAllowed = 'copy'; }}
-              onClick={() => onInsert(m)}
+              onDragStart={(e) => {
+                if (m.shapeId) e.dataTransfer.setData('application/x-board-shape', JSON.stringify({ id: m.shapeId }));
+                else e.dataTransfer.setData('application/x-board-media', JSON.stringify({ bucket: m.bucket, path: m.path, name: m.name }));
+                e.dataTransfer.effectAllowed = 'copy';
+              }}
+              onClick={() => m.shapeId ? onInsertShape?.(m.shapeId) : onInsert(m)}
               title={`${m.name} — tahtaya sürükleyin ya da basın`}
             >
-              {urls[`${m.bucket}/${m.path}`]
+              {m.thumbnail || urls[`${m.bucket}/${m.path}`]
                 // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
-                ? <img src={urls[`${m.bucket}/${m.path}`]} alt="" />
+                ? <img src={m.thumbnail || urls[`${m.bucket}/${m.path}`]} alt="" style={m.thumbnail ? { objectFit: 'contain' } : undefined} />
                 : <span style={{ aspectRatio: '4 / 3', display: 'block', background: '#f0eee7', borderRadius: 6 }} />}
               <span>{m.name}</span>
             </button>

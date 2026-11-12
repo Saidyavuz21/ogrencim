@@ -627,6 +627,12 @@
 .panel { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
 .panel h3 { margin: 0; font-size: 14px; }
 .panel label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+.bgSection { display: grid; gap: 8px; margin-top: 4px; }
+.bgSectionTitle { font-size: 13px; font-weight: 600; color: var(--teacher-text, #20352d); }
+.bgSwatches { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.bgColorInput { width: 32px; height: 32px; padding: 0; border: 1px solid var(--teacher-border, #dedad0); border-radius: 8px; background: #fff; cursor: pointer; }
+.bgApplyAllBtn { width: 100%; min-height: 38px; padding: 8px 12px; margin-top: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 9px; background: #faf9f6; color: var(--teacher-text, #20352d); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 150ms, border-color 150ms; }
+.bgApplyAllBtn:hover { background: #f0eee7; border-color: var(--teacher-primary, #25634b); }
 .panel textarea, .panel input[type='text'], .panel input[type='number'] { width: 100%; box-sizing: border-box; min-height: 40px; padding: 8px 10px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 10px; font: inherit; font-size: 14px; font-weight: 400; }
 .panel textarea { min-height: 90px; resize: vertical; }
 .mediaGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-height: 340px; overflow: auto; }
@@ -1024,7 +1030,7 @@
 .matchSlotReady { border-color: #2a78d6; background: #eef4fc; }
 .matchEmpty { color: #8a948f; font-size: 1.1cqw; }
 .matchCards { display: flex; flex-direction: column; gap: 0.5cqw; }
-.matchCard { min-height: 2.8cqw; padding: 0.4cqw 0.8cqw; border: 0.14cqw solid #d8d4c9; border-radius: 0.7cqw; background: #fffdf5; color: inherit; font: inherit; font-size: 1.3cqw; text-align: left; cursor: grab; touch-action: none; user-select: none; overflow-wrap: anywhere; box-shadow: 0 0.12cqw 0.3cqw rgb(20 35 28 / 10%); }
+.matchCard { min-height: 2.8cqw; padding: 0.4cqw 0.8cqw; border: 0.14cqw solid #d8d4c9; border-radius: 0.7cqw; background: #fffdf5; color: inherit; font: inherit; font-size: 1.3cqw; text-align: left; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; overflow-wrap: anywhere; box-shadow: 0 0.12cqw 0.3cqw rgb(20 35 28 / 10%); }
 .matchCardPicked { border-color: #2a78d6; background: #eef4fc; }
 .matchCardDragging { position: relative; z-index: 5; cursor: grabbing; box-shadow: 0 0.5cqw 1.2cqw rgb(20 35 28 / 22%); }
 

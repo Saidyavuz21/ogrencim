@@ -8,11 +8,12 @@ import { useDialog } from '../ConfirmDialog';
 import { Notice, NoticeState } from '../teacher/TeacherUi';
 import { formatBytes } from '../../lib/teacherData';
 import {
-  deleteLibraryItem, fileKind, KIND_LABEL, LIBRARY_BUCKET, libraryFileName, LibraryItemRow, listLibrary, TEACHER_FILE_ACCEPT, updateLibraryItem, uploadLibraryItems,
+  deleteLibraryItem, fileKind, KIND_LABEL, LIBRARY_BUCKET, libraryFileName, LibraryItemRow, listLibrary, signedFileUrl, TEACHER_FILE_ACCEPT, updateLibraryItem, uploadLibraryItems,
 } from '../../lib/filesData';
 import { DownloadButton, FilePreview, KindIcon, Modal, normalize, TagInput } from './FilesUi';
 import sharedStyles from './Files.module.css';
 import admin from '../admin/AdminDashboard.module.css';
+import layout from './LibraryPanel.module.css';
 const styles: Record<string, string> = {
  ...sharedStyles,
  page: `${sharedStyles.page} ${admin.libraryPage}`,
@@ -40,6 +41,9 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
   const [category, setCategory] = useState(ANY);
   const [previewing, setPreviewing] = useState<LibraryItemRow | null>(null);
   const [editing, setEditing] = useState<LibraryItemRow | null>(null);
+  const [view, setView] = useState<'gallery' | 'list'>('gallery');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   useEffect(() => {
     let alive = true;
@@ -57,6 +61,10 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
     return (items || []).filter((i) => (!category || i.category === category)
       && (!n || n.split(/\s+/).every((w) => normalize([i.title, i.category || '', ...i.tags].join(' ')).includes(w))));
   }, [items, q, category]);
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const displayed = manage ? visible.slice((currentPage - 1) * pageSize, currentPage * pageSize) : visible;
+  const gallery = manage && view === 'gallery';
 
   const remove = async (item: LibraryItemRow) => {
     const ok = await confirm({ title: 'Kütüphaneden sil', message: `"${item.title}" kütüphaneden kaldırılsın mı?\nÖdevlere eklenmiş kopyalar etkilenmez.`, confirmText: 'Sil', cancelText: 'Vazgeç', variant: 'danger' });
@@ -71,36 +79,46 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
   if (!items) return <Spinner center label="Kütüphane yükleniyor…" />;
 
   return (
-    <section className={styles.page} aria-label="Ortak kütüphane">
+    <section className={`${styles.page} ${manage ? layout.managed : ''}`} aria-label="Ortak kütüphane">
       {!manage && <p className={styles.muted}>Bütün öğretmenler için hazırlanmış görseller ve belgeler. Depolama alanınızdan yer kaplamaz; ödev gönderirken “Dosyalarımdan ekle” ile ödeve ekleyebilirsiniz.</p>}
+      <div className={manage ? layout.controls : layout.passThrough}>
       {manage && <LibraryUpload categories={Array.from(new Set([...CATEGORY_HINTS, ...categories]))} onUploaded={(rows, errors) => {
         if (rows.length) setItems((prev) => [...rows, ...(prev || [])]);
         setNotice(errors.length ? { kind: 'error', text: `${rows.length ? `${rows.length} dosya eklendi. ` : ''}Eklenemeyen: ${errors.join(' ')}` } : { kind: 'ok', text: `${rows.length} dosya kütüphaneye eklendi.` });
       }} />}
+      {items.length > 0 && <div className={manage ? `${sharedStyles.filters} ${layout.filters}` : styles.filters} style={manage ? undefined : { gridTemplateColumns: 'minmax(200px, 2fr) minmax(160px, 1fr)' }}>
+        <label className={styles.search}>
+          <span className={styles.srOnly}>Kütüphanede ara</span>
+          <Search size={18} aria-hidden="true" />
+          <input type="search" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Ad, kategori ya da etiketle ara" />
+        </label>
+        <CustomSelect value={category} onChange={(value) => { setCategory(value); setPage(1); }} options={[{ value: ANY, label: 'Bütün kategoriler' }, ...categories]} disabled={!categories.length} />
+      </div>}
+      </div>
+      <div className={manage ? layout.results : layout.passThrough}>
       <Notice notice={notice} onClose={() => setNotice(null)} />
 
       {items.length === 0 ? (
         <div className={styles.empty}>
           <Library size={32} aria-hidden="true" />
           <h3>Kütüphane henüz boş</h3>
-          <p>{manage ? 'Bütün öğretmenlerin kullanacağı haritaları, görselleri ve hazır belgeleri yukarıdan yükleyin.' : 'Yönetici hazır görseller ve belgeler ekledikçe burada görünecek.'}</p>
+          <p>{manage ? 'Bütün öğretmenlerin kullanacağı haritaları, görselleri ve hazır belgeleri yükleme alanından ekleyin.' : 'Yönetici hazır görseller ve belgeler ekledikçe burada görünecek.'}</p>
         </div>
       ) : (
         <>
-          <div className={styles.filters} style={manage ? undefined : { gridTemplateColumns: 'minmax(200px, 2fr) minmax(160px, 1fr)' }}>
-            <label className={styles.search}>
-              <span className={styles.srOnly}>Kütüphanede ara</span>
-              <Search size={18} aria-hidden="true" />
-              <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, kategori ya da etiketle ara" />
-            </label>
-            <CustomSelect value={category} onChange={setCategory} options={[{ value: ANY, label: 'Bütün kategoriler' }, ...categories]} disabled={!categories.length} />
-          </div>
+          {manage && <div className={layout.toolbar}>
+            <p className={styles.muted} role="status">{visible.length} öğe</p>
+            <div className={layout.viewSwitch} role="group" aria-label="Görünüm">
+              <button type="button" aria-pressed={view === 'gallery'} onClick={() => setView('gallery')}>Galeri</button>
+              <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>Liste</button>
+            </div>
+          </div>}
           {visible.length === 0 ? <p className={styles.muted}>Aramaya uyan dosya yok.</p> : (
-            <ul className={styles.list} aria-label="Kütüphane dosyaları">
-              {visible.map((i) => (
-                <li key={i.id} className={styles.row}>
-                  <KindIcon mime={i.mime} />
-                  <div className={styles.info}>
+            <ul className={gallery ? layout.gallery : styles.list} aria-label="Kütüphane dosyaları">
+              {displayed.map((i) => (
+                <li key={i.id} className={gallery ? layout.card : styles.row}>
+                  {gallery ? <button type="button" className={layout.preview} onClick={() => setPreviewing(i)} aria-label={`${i.title} görselini önizle`}><LibraryThumbnail item={i} /></button> : <KindIcon mime={i.mime} />}
+                  <div className={`${styles.info} ${gallery ? layout.cardInfo : ''}`}>
                     <p className={styles.name}><button type="button" className={styles.nameButton} onClick={() => setPreviewing(i)} title={i.title}>{i.title}</button></p>
                     <div className={styles.meta}>
                       <span>{KIND_LABEL[fileKind(i.mime)]} · {formatBytes(i.size)}</span>
@@ -122,8 +140,20 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
               ))}
             </ul>
           )}
+          {manage && visible.length > 0 && <nav className={layout.pagination} aria-label="Kütüphane sayfaları">
+            <div className={layout.pageSize}>
+              <label htmlFor="library-page-size">Sayfa başına</label>
+              <CustomSelect id="library-page-size" value={String(pageSize)} onChange={(value) => { setPageSize(Number(value)); setPage(1); }} options={[12, 24, 48].map((size) => ({ value: String(size), label: String(size) }))} />
+            </div>
+            <div className={layout.pageButtons}>
+              <button type="button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Önceki</button>
+              <span aria-live="polite">{currentPage} / {totalPages}</span>
+              <button type="button" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>Sonraki</button>
+            </div>
+          </nav>}
         </>
       )}
+      </div>
 
       {previewing && <FilePreview bucket={LIBRARY_BUCKET} path={previewing.path} name={previewing.title} mime={previewing.mime} onClose={() => setPreviewing(null)} />}
       {editing && (
@@ -136,6 +166,22 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
       )}
     </section>
   );
+}
+
+function LibraryThumbnail({ item }: { item: LibraryItemRow }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (!item.mime.startsWith('image/')) return;
+    let alive = true;
+    signedFileUrl(LIBRARY_BUCKET, item.path).then((result) => {
+      if (alive && result.ok) setUrl(result.data);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [item.mime, item.path]);
+  if (!url || failed) return <KindIcon mime={item.mime} />;
+  // eslint-disable-next-line @next/next/no-img-element -- Storage URLs are signed and expire.
+  return <img src={url} alt="" loading="lazy" onError={() => setFailed(true)} />;
 }
 
 function LibraryUpload({ categories, onUploaded }: { categories: string[]; onUploaded: (rows: LibraryItemRow[], errors: string[]) => void }) {
@@ -156,7 +202,7 @@ function LibraryUpload({ categories, onUploaded }: { categories: string[]; onUpl
     onUploaded(res.uploaded, res.errors);
   };
   return (
-    <div className={styles.libraryUpload}>
+    <div className={`${styles.libraryUpload} ${layout.upload}`}>
       <div className={styles.grid2}>
         <label className={styles.field} htmlFor={catId}>
           Kategori

@@ -95,7 +95,7 @@ export interface PolyEl {
   lib?: ElementLib;
 }
 export type BoardEl = StrokeEl | ShapeEl | NoteEl | ImageEl | WidgetEl | PolyEl;
-export interface BoardPage { id: string; background: Background; elements: BoardEl[] }
+export interface BoardPage { id: string; background: Background; backgroundColor?: string; elements: BoardEl[] }
 export interface BoardContent { version: 1; pages: BoardPage[] }
 /** Öğrencinin çizim katmanı: sayfa kimliği → çizgiler */
 export type DrawingLayer = Record<string, StrokeEl[]>;
@@ -110,7 +110,7 @@ export const AUDIO_MAX_SECONDS = 180;
 export const AUDIO_MAX_BYTES = 5 * 1024 * 1024;
 
 export const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
-export const newPage = (background: Background = 'blank'): BoardPage => ({ id: newId(), background, elements: [] });
+export const newPage = (background: Background = 'blank', backgroundColor = '#ffffff'): BoardPage => ({ id: newId(), background, backgroundColor, elements: [] });
 export const emptyContent = (): BoardContent => ({ version: 1, pages: [newPage()] });
 export const byteSize = (x: unknown) => new TextEncoder().encode(JSON.stringify(x)).length;
 
@@ -299,7 +299,7 @@ export function scaleElements(
 export function normalizeContent(raw: unknown): BoardContent {
   const c = raw as Partial<BoardContent> | null;
   const pages = Array.isArray(c?.pages) && c!.pages.length ? c!.pages : [newPage()];
-  return { version: 1, pages: pages.map((p) => ({ id: p.id || newId(), background: p.background || 'blank', elements: Array.isArray(p.elements) ? p.elements : [] })) };
+  return { version: 1, pages: pages.map((p) => ({ id: p.id || newId(), background: p.background || 'blank', backgroundColor: p.backgroundColor || '#ffffff', elements: Array.isArray(p.elements) ? p.elements : [] })) };
 }
 
 /** Kalem izini sadeleştirir: yakın noktaları atar, tam sayıya yuvarlar (boyut sınırı için) */
@@ -470,8 +470,15 @@ function imageSize(url: string, revoke = false): Promise<{ w: number; h: number 
 /** Görseller için süreli adresler: "bucket/yol" → adres */
 export async function boardImageUrls(images: { bucket: string; path: string }[]): Promise<Record<string, string>> {
   const byBucket = new Map<string, string[]>();
-  images.forEach((i) => byBucket.set(i.bucket, Array.from(new Set([...(byBucket.get(i.bucket) || []), i.path]))));
   const out: Record<string, string> = {};
+  for (const i of images) {
+    if (i.bucket === 'builtin-library') {
+      // Yalnızca sitenin kendi hazır görselleri; tahta içeriğindeki dış adresler yüklenmez
+      if (/^\/board-library\/[a-z0-9/_-]+\.png$/.test(i.path)) out[`${i.bucket}/${i.path}`] = i.path;
+    } else {
+      byBucket.set(i.bucket, Array.from(new Set([...(byBucket.get(i.bucket) || []), i.path])));
+    }
+  }
   await Promise.all(Array.from(byBucket.entries()).map(async ([bucket, paths]) => {
     const { data } = await supabase.storage.from(bucket).createSignedUrls(paths, 3600);
     // Yanıt istekle aynı sıradadır; yol alanı her sürümde dolu gelmeyebilir

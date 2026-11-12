@@ -134,64 +134,71 @@ export function TeacherBoardsPage({ defaultSubject }: { defaultSubject?: string 
 
   return (
     <section className={`${f.page} ${bStyles.workspace}`} aria-label="Tahtalarım">
-      <div className={`${f.topBar} ${bStyles.intro}`}>
-        <p className={f.muted}>Tahtayı derste tam ekran açın (akıllı tahta) ya da Ödev gönder’de türü “Tahta” seçip sınıfa gönderin; öğrenciler kendi kopyası üzerinde çözer.</p>
-        <button type="button" className={f.primaryButton} onClick={() => setDialog({ board: null })}><Plus size={18} aria-hidden="true" />Yeni tahta</button>
-      </div>
-      <Notice notice={notice} onClose={() => setNotice(null)} />
-      {all.length === 0 ? (
-        <div className={f.empty}>
-          <Layers size={32} aria-hidden="true" />
-          <h3>Henüz tahtanız yok</h3>
-          <p>Kalem, şekil, not, görsel ve Mini Test, Adım Adım, Kronometre gibi parçalarla ders tahtası hazırlayın. Tahtaları “1. Ünite”, “LGS tekrar” gibi kategorilere ayırabilirsiniz.</p>
-          <button type="button" className={f.primaryButton} onClick={() => setDialog({ board: null })}><Plus size={18} aria-hidden="true" />İlk tahtayı oluştur</button>
+      <div className={bStyles.controls}>
+        <div className={`${f.topBar} ${bStyles.intro}`}>
+          <p className={f.muted}>Tahtayı derste tam ekran açın (akıllı tahta) ya da Ödev gönder’de türü “Tahta” seçip sınıfa gönderin; öğrenciler kendi kopyası üzerinde çözer.</p>
+          <button type="button" className={f.primaryButton} onClick={() => setDialog({ board: null })}><Plus size={18} aria-hidden="true" />Yeni tahta</button>
         </div>
-      ) : (
-        <>
-          <div className={bStyles.filters}>
-            <label className={f.search}>
-              <span className={f.srOnly}>Tahtalarda ara</span>
-              <Search size={18} aria-hidden="true" />
-              <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, kategori ya da ders ara" />
-            </label>
-            <div className={bStyles.filterField}><label htmlFor="boards-category">Kategori</label><CustomSelect
-              id="boards-category"
-              value={view}
-              onChange={setView}
-              disabled={!categories.length}
-              options={[
-                { value: ALL, label: categories.length ? `Tüm kategoriler (${all.length})` : 'Kategori yok' },
-                ...categories.map((c) => ({ value: c, label: `${c} (${all.filter((b) => b.category === c).length})` })),
-                ...(categories.length && all.some((b) => !b.category) ? [{ value: NONE, label: `Kategorisiz (${all.filter((b) => !b.category).length})` }] : []),
-              ]}
-            /></div>
-            <div className={bStyles.filterField}><label htmlFor="boards-subject">Ders</label><CustomSelect id="boards-subject" value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Tüm dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} /></div>
-            <div className={bStyles.filterField}><label htmlFor="boards-grade">Kademe</label><CustomSelect id="boards-grade" value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Tüm kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} /></div>
-            <button
-              type="button"
-              className={f.secondaryButton}
-              onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); setView(ALL); }}
-              disabled={!filtering}
-              title={filtering ? 'Arama ve süzgeçleri temizle' : 'Temizlenecek süzgeç yok'}
-            >
-              <X size={18} aria-hidden="true" />Temizle
-            </button>
-          </div>
-          <p className={`${f.muted} ${bStyles.resultCount}`}>{visible.length} / {all.length} tahta</p>
-          {groups.length === 0 ? (
-            <p className={f.muted}>
-              Süzgece uyan tahta yok.{' '}
-              {filtering && <button type="button" className={f.linkButton} onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); setView(ALL); }}>Süzgeçleri temizle</button>}
-            </p>
-          ) : groups.map((g) => (
-            <div key={g.key} className={bStyles.categoryGroup}>
-              {g.title && <h3 className={f.cardTitle}>{g.title} <span className={f.muted} style={{ display: 'inline', fontWeight: 400 }}>· {g.items.length}</span></h3>}
-              <div className={`${styles.boardCards} ${bStyles.cardGrid}`}>{g.items.map(card)}</div>
+        {all.length > 0 && (
+            <div className={bStyles.filters}>
+              <label className={f.search}>
+                <span className={f.srOnly}>Tahtalarda ara</span>
+                <Search size={18} aria-hidden="true" />
+                <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, kategori ya da ders ara" />
+              </label>
+              <div className={bStyles.filterField}><label htmlFor="boards-category">Kategori</label><CustomSelect
+                id="boards-category"
+                value={view}
+                onChange={setView}
+                disabled={!categories.length}
+                options={[
+                  { value: ALL, label: categories.length ? `Tüm kategoriler (${all.length})` : 'Kategori yok' },
+                  ...categories.map((c) => ({ value: c, label: `${c} (${all.filter((b) => b.category === c).length})` })),
+                  ...(categories.length && all.some((b) => !b.category) ? [{ value: NONE, label: `Kategorisiz (${all.filter((b) => !b.category).length})` }] : []),
+                ]}
+              /></div>
+              <div className={bStyles.filterField}><label htmlFor="boards-subject">Ders</label><CustomSelect id="boards-subject" value={subjectFilter} onChange={setSubjectFilter} options={[{ value: '', label: subjects.length ? 'Tüm dersler' : 'Ders girilmedi' }, ...subjects]} disabled={!subjects.length} /></div>
+              <div className={bStyles.filterField}><label htmlFor="boards-grade">Kademe</label><CustomSelect id="boards-grade" value={gradeFilter} onChange={setGradeFilter} options={[{ value: '', label: grades.length ? 'Tüm kademeler' : 'Kademe girilmedi' }, ...grades]} disabled={!grades.length} /></div>
+              <button
+                type="button"
+                className={f.secondaryButton}
+                onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); setView(ALL); }}
+                disabled={!filtering}
+                title={filtering ? 'Arama ve süzgeçleri temizle' : 'Temizlenecek süzgeç yok'}
+              >
+                <X size={18} aria-hidden="true" />Temizle
+              </button>
             </div>
-          ))}
-          {categories.length === 0 && <p className={f.muted}>İpucu: Tahtaları kategorilere ayırmak için kalem düğmesine basıp “Kategori” yazın (ör. 1. Ünite).</p>}
-        </>
-      )}
+        )}
+      </div>
+      <div className={bStyles.results}>
+        <Notice notice={notice} onClose={() => setNotice(null)} />
+        {all.length === 0 ? (
+          <div className={f.empty}>
+            <Layers size={32} aria-hidden="true" />
+            <h3>Henüz tahtanız yok</h3>
+            <p>Kalem, şekil, not, görsel ve Mini Test, Adım Adım, Kronometre gibi parçalarla ders tahtası hazırlayın. Tahtaları “1. Ünite”, “LGS tekrar” gibi kategorilere ayırabilirsiniz.</p>
+            <button type="button" className={f.primaryButton} onClick={() => setDialog({ board: null })}><Plus size={18} aria-hidden="true" />İlk tahtayı oluştur</button>
+          </div>
+        ) : (
+          <>
+            <p className={`${f.muted} ${bStyles.resultCount}`}>{visible.length} / {all.length} tahta</p>
+            {groups.length === 0 ? (
+              <p className={f.muted}>
+                Süzgece uyan tahta yok.{' '}
+                {filtering && <button type="button" className={f.linkButton} onClick={() => { setQ(''); setSubjectFilter(''); setGradeFilter(''); setView(ALL); }}>Süzgeçleri temizle</button>}
+              </p>
+            ) : groups.map((g) => (
+              <div key={g.key} className={bStyles.categoryGroup}>
+                {g.title && <h3 className={f.cardTitle}>{g.title} <span className={f.muted} style={{ display: 'inline', fontWeight: 400 }}>· {g.items.length}</span></h3>}
+                <div className={`${styles.boardCards} ${bStyles.cardGrid}`}>{g.items.map(card)}</div>
+              </div>
+            ))}
+            {categories.length === 0 && <p className={f.muted}>İpucu: Tahtaları kategorilere ayırmak için kalem düğmesine basıp “Kategori” yazın (ör. 1. Ünite).</p>}
+          </>
+        )}
+
+      </div>
 
       {sharing && (
         <PublishDialog

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Diamond, Download, Eraser, Eye, EyeOff, Hexagon, Highlighter, History, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
+  Copy, Diamond, Download, Eraser, Eye, EyeOff, Hexagon, Highlighter, History, Image as ImageIcon, Layers, Mic, Minimize, Minus, MousePointer,
   Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
@@ -1037,6 +1037,30 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     </div>
   );
 
+  /** Tam ekrandan çıkmadan düzenleme ↔ ders arasında geçiş */
+  const switchMode = (toDers: boolean) => {
+    if (toDers === presenting) return;
+    setSelectedIds([]);
+    setEditingNoteId(null);
+    setActivePopover(null);
+    setCtxMenu(null);
+    setPanelAuto(false);
+    setPanelOpen(false);
+    if (toDers) setStepOpen({});
+    setPresenting(toDers);
+  };
+  // Hangi alanda olunduğu her zaman görünür: sol üstte iki parçalı seçim
+  const modeSwitch = (
+    <div className={`${styles.modeSwitch} ${presenting ? styles.modeSwitchDers : ''}`} role="group" aria-label="Tahta alanı">
+      <button type="button" aria-pressed={!presenting} onClick={() => switchMode(false)} title="Düzenleme alanı: çizim, şekil, parça ve sayfa hazırlığı">
+        <Pen size={18} aria-hidden="true" /><span>Düzenleme</span>
+      </button>
+      <button type="button" aria-pressed={presenting} onClick={() => switchMode(true)} title="Ders alanı: düzenleme kapalı; yazılanlar “Sayfaya kaydet”e basılmadıkça saklanmaz">
+        <Play size={18} aria-hidden="true" /><span>Ders</span>
+      </button>
+    </div>
+  );
+
   // Normal görünüm: yalnızca önizleme. Tuval bu boyutta küçük kaldığı için düzenleme tam ekranda yapılır.
   if (!full) {
     return (
@@ -1050,8 +1074,16 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             <History size={20} aria-hidden="true" />
           </button>
           <div className={styles.previewActions}>
-          <button type="button" className={styles.presentButton} onClick={startPresent} aria-label="Sun" title="Derste göster: düzenleme yok, kalemle yazılanlar kaydedilmez">
-            <Play size={20} aria-hidden="true" /><span>Sun</span>
+          <div className={styles.modeGroup} role="group" aria-label="Hazırlık">
+          <span className={styles.modeCaption} aria-hidden="true">Hazırlık</span>
+          <button type="button" className={styles.openButton} onClick={toggleFull} aria-label="Düzenle" title="Düzenleme alanı: çizim, şekil, parça ve sayfa hazırlığı (tam ekran)">
+            <Pen size={20} aria-hidden="true" /><span>Düzenle</span>
+          </button>
+          </div>
+          <div className={styles.modeGroup} role="group" aria-label="Derste">
+          <span className={styles.modeCaption} aria-hidden="true">Derste</span>
+          <button type="button" className={styles.presentButton} onClick={startPresent} aria-label="Derste kullan" title="Ders alanı: düzenleme kapalı; kalemle yazılanlar “Sayfaya kaydet”e basılmadıkça saklanmaz">
+            <Play size={20} aria-hidden="true" /><span>Derste kullan</span>
           </button>
           <button
             type="button"
@@ -1062,9 +1094,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           >
             <Radio size={20} aria-hidden="true" /><span>Canlı ders</span>
           </button>
-          <button type="button" className={styles.openButton} onClick={toggleFull} aria-label="Tam ekranda düzenle" title="Tam ekranda düzenle">
-            <Maximize size={22} aria-hidden="true" /><span>Tam ekranda düzenle</span>
-          </button>
+          </div>
           </div>
         </div>
         <div className={styles.previewBody}>
@@ -1102,7 +1132,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           </nav>
           <div className={styles.stage}>
             <BoardCanvas page={page} imageUrls={imageUrls} renderWidget={(w) => <WidgetView el={w} ctx={ctx} />} widgetsPassive ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (önizleme)`} />
-            <p className={styles.hintText}>Derste göstermek için “Sun”; çizmek, şekil ve parça eklemek, sayfaları düzenlemek için “Tam ekranda düzenle”.</p>
+            <p className={styles.hintText}>Hazırlık için “Düzenle”: çizim, şekil, parça ve sayfalar. Sınıfta tahtanın başında “Derste kullan”: düzenleme kapalıdır, yalnızca kalemle yazılır.</p>
           </div>
         </div>
         {deleteConfirm}
@@ -1146,6 +1176,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     return (
       <div ref={rootRef} className={`${styles.editor} ${styles.editorFull}`}>
         <div className={styles.stage}>
+          {modeSwitch}
           <BoardCanvas
             page={page}
             tool={presentTool}
@@ -1159,7 +1190,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           />
           {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="status" onClick={() => setNotice(null)}>{notice}</p>}
         </div>
-        <div className={styles.presentBar} role="toolbar" aria-label="Sunum araçları">
+        <div className={styles.presentBar} role="toolbar" aria-label="Ders araçları">
           <button
             type="button"
             className={`${styles.toolIconBtn} ${presentTool === 'pen' ? styles.toolActive : ''}`}
@@ -1213,7 +1244,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 title={`Kalınlık: ${cur.label} (değiştirmek için dokunun)`}
                 aria-label={`Kalem kalınlığı: ${cur.label}. Değiştir`}
               >
-                <span aria-hidden="true" style={{ width: cur.dot, height: cur.dot, borderRadius: '50%', background: presentColor }} />
+                <span aria-hidden="true" style={{ width: cur.dot, height: cur.dot, borderRadius: '50%', background: presentColor, boxShadow: '0 0 0 2px #ffffff' }} />
               </button>
             );
           })()}
@@ -1284,8 +1315,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             type="button"
             className={styles.toolIconBtn}
             onClick={toggleFull}
-            title="Sunumdan çık (Esc)"
-            aria-label="Sunumdan çık"
+            title="Tam ekrandan çık (Esc)"
+            aria-label="Tam ekrandan çık"
           >
             <Minimize size={18} aria-hidden="true" />
           </button>
@@ -1298,6 +1329,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   return (
     <div ref={rootRef} className={`${styles.editor} ${styles.editorFull}`}>
       <div className={styles.stage}>
+        {modeSwitch}
         {toolsHidden ? (
           <button
             type="button"

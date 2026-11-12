@@ -119,10 +119,10 @@
 .teamDouble[aria-pressed='true'] { border-color: #20352d; background: #20352d; color: #fff; opacity: 1; }
 .teamDouble:disabled { cursor: default; }
 .teamDouble:disabled:not([aria-pressed='true']) { opacity: 0.45; text-decoration: line-through; }
-.teamResult { margin: 4px 0 0; padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 70%); color: #20352d; font-size: 15px; font-weight: 700; }
+.teamResult { margin: 6px 0 2px; padding: 6px 16px; border-radius: 999px; background: rgb(255 255 255 / 70%); color: #20352d; font-size: clamp(15px, 1.5cqw, 20px); font-weight: 700; }
 .teamResultOk { background: #216044; color: #fff; }
 .teamResultBad { background: #a33342; color: #fff; }
-.teamButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 4px; }
+.teamButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 280px; margin-top: 4px; }
 .teamButtons button { min-height: 44px; border: 1px solid rgb(32 53 45 / 25%); border-radius: 10px; background: rgb(255 255 255 / 60%); color: #20352d; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .teamButtons button:last-child { border-color: #20352d; background: #20352d; color: #fff; }
 .teamButtons button:hover { filter: brightness(1.1); }
@@ -138,7 +138,7 @@
 .scoreOnly .teamButtons button { min-height: 52px; font-size: 20px; }
 
 /* Soru */
-.question { display: grid; align-content: start; gap: 16px; min-width: 0; padding: 20px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; }
+.question { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 20px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; }
 .questionHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .levelBadge { padding: 4px 12px; border-radius: 999px; background: #e6f1e9; color: #1d503d; font-size: 14px; font-weight: 600; }
 .questionBody { font-size: clamp(20px, 2.6cqw, 40px); font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
@@ -149,15 +149,26 @@
 .choice:disabled { cursor: default; }
 .choiceLetter { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: #20352d; color: #fff; font-size: 18px; font-weight: 700; }
 .choiceText { min-width: 0; overflow-wrap: anywhere; }
-.choiceCorrect { border-color: #216044; background: #e8f3eb; color: #216044; font-weight: 600; }
+.choiceCorrect { border-color: #216044; background: #e8f3eb; color: #216044; font-weight: 600; box-shadow: 0 0 0 1px #216044 inset; }
 .choiceCorrect .choiceLetter { background: #216044; }
 .choiceWrong { border-color: #a33342; background: #fcecef; color: #a33342; }
 .choiceWrong .choiceLetter { background: #a33342; }
 .choiceHidden { opacity: 0.3; }
-.controls, .afterReveal { display: grid; gap: 12px; justify-items: start; }
+.choiceStatic { cursor: default; }
+/* Cevap açıldı: doğru şık öne çıkar, ilgisiz şıklar geri çekilir */
+.choiceDim { opacity: 0.5; }
+/* Kontroller ve sonuç şeridi soru panelinin altına oturur (tam ekranda boşluk ortada kalır) */
+.controls, .afterReveal { display: grid; gap: 12px; justify-items: start; margin-top: auto; }
+.afterReveal { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 16px 24px; padding-top: 16px; border-top: 1px solid #eeece5; }
+.revealInfo { display: grid; gap: 10px; min-width: 0; }
+.revealAnswer { display: flex; align-items: center; gap: 14px; margin: 0; min-width: 0; font-size: clamp(20px, 2.4cqw, 34px); font-weight: 600; line-height: 1.3; color: #216044; }
+.revealAnswer > span:last-child { display: grid; min-width: 0; overflow-wrap: anywhere; }
+.revealAnswer small { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #4f6159; text-transform: uppercase; }
+.revealLetter { display: grid; place-items: center; width: clamp(44px, 4.4cqw, 60px); height: clamp(44px, 4.4cqw, 60px); flex-shrink: 0; border-radius: 50%; background: #216044; color: #fff; font-size: clamp(20px, 2.2cqw, 28px); font-weight: 700; }
+.nextButton { min-height: 56px; padding: 12px 28px; font-size: 18px; }
 .controlButtons { display: flex; flex-wrap: wrap; gap: 8px; }
-.explanation { padding: 12px 14px; border-radius: 12px; background: #faf9f5; font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
-.afterReveal .primary { min-height: 52px; font-size: 17px; }
+.explanation { max-width: 90ch; padding: 12px 14px; border-radius: 12px; background: #faf9f5; font-size: clamp(16px, 1.5cqw, 20px); line-height: 1.6; overflow-wrap: anywhere; }
+
 
 .timer { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #20352d; }
 .timerNumber { min-width: 2ch; font-size: clamp(28px, 4cqw, 56px); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; text-align: right; }
@@ -204,6 +215,8 @@
   .scoreOnly .team { padding: 16px 12px; }
   .question { padding: 14px; }
   .choices { grid-template-columns: minmax(0, 1fr); }
+  .afterReveal { grid-template-columns: minmax(0, 1fr); }
+  .nextButton { width: 100%; }
   .podiumRow { padding: 12px; gap: 10px; }
   .podiumRank { min-width: 40px; font-size: 18px; }
 }

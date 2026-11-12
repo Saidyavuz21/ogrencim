@@ -235,7 +235,7 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
                 </div>
               )
             )}
-            {picking && state.settings.jokers && (
+            {picking && state.settings.jokers && (!state.round.revealed || doubled) && (
               <button
                 type="button"
                 className={s.teamDouble}
@@ -359,7 +359,7 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
           <div className={s.question}>
             <div className={s.questionHead}>
               <span className={s.levelBadge}>{LEVEL_LABEL[q.level]} · {q.level} puan{state.round.doubleFor !== null ? ' · çift puan açık' : ''}</span>
-              {state.settings.seconds > 0 && (
+              {state.settings.seconds > 0 && !state.round.revealed && (
                 <QuestionTimer
                   key={`${state.current}-${state.round.turn}-${state.round.tried.length}`}
                   seconds={state.settings.seconds}
@@ -381,38 +381,44 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
                 const wrongPick = state.round.revealed && index !== q.correct_index && (allMode
                   ? state.round.picks.includes(index)
                   : lastAnswer?.q === state.current && lastAnswer.choice === index && !lastAnswer.correct);
-                return (
-                  <button
-                    key={index}
-                    type="button"
-                    className={`${s.choice} ${isCorrect ? s.choiceCorrect : ''} ${wrongPick || eliminated ? s.choiceWrong : ''} ${hidden ? s.choiceHidden : ''}`}
-                    disabled={allMode || state.round.revealed || hidden || eliminated}
-                    onClick={() => apply(answer(state, index))}
-                    aria-label={`${CHOICE_LETTERS[index]} şıkkı${isCorrect ? ', doğru cevap' : eliminated || wrongPick ? ', yanlış' : hidden ? ', gizlendi' : ''}`}
-                  >
-                    <span className={s.choiceLetter}>{isCorrect ? <Check size={20} aria-hidden="true" /> : wrongPick || eliminated ? <X size={20} aria-hidden="true" /> : CHOICE_LETTERS[index]}</span>
+                const label = `${CHOICE_LETTERS[index]} şıkkı${isCorrect ? ', doğru cevap' : eliminated || wrongPick ? ', yanlış' : hidden ? ', gizlendi' : ''}`;
+                const cls = `${s.choice} ${isCorrect ? s.choiceCorrect : ''} ${wrongPick || eliminated ? s.choiceWrong : ''} ${hidden ? s.choiceHidden : ''} ${state.round.revealed && !isCorrect && !wrongPick ? s.choiceDim : ''}`;
+                const inner = (
+                  <>
+                    <span className={s.choiceLetter}>{isCorrect ? <Check size={22} aria-hidden="true" /> : wrongPick || eliminated ? <X size={22} aria-hidden="true" /> : CHOICE_LETTERS[index]}</span>
                     <span className={s.choiceText}>{hidden ? '' : <RichText text={choice} inline />}</span>
-                  </button>
+                  </>
+                );
+                // Tıklanmayan şık düğme değil: soluk "devre dışı" görünümü almaz
+                const clickable = !allMode && !state.round.revealed && !hidden && !eliminated;
+                return clickable ? (
+                  <button key={index} type="button" className={cls} onClick={() => apply(answer(state, index))} aria-label={label}>{inner}</button>
+                ) : (
+                  <div key={index} className={`${cls} ${s.choiceStatic}`} aria-label={label} role="group">{inner}</div>
                 );
               })}
             </div>
 
             {state.round.revealed ? (
               <div className={s.afterReveal}>
-                <p className={s.stageNote} role="status">
+                <div className={s.revealInfo}>
+                  <p className={s.revealAnswer}>
+                    <span className={s.revealLetter}>{CHOICE_LETTERS[q.correct_index]}</span>
+                    <span><small>Doğru cevap</small><RichText text={q.choices[q.correct_index]} inline /></span>
+                  </p>
+                  <p className={s.stageNote} role="status">
                   {allMode ? (() => {
-                    const right = state.answers.filter((a) => a.q === state.current && a.correct);
-                    return right.length
-                      ? `Doğru cevap ${CHOICE_LETTERS[q.correct_index]}. Bilenler: ${right.map((a) => `${state.teams[a.team]?.name} (+${a.points})`).join(', ')}.`
-                      : `Doğru cevap ${CHOICE_LETTERS[q.correct_index]}. Bilen takım olmadı.`;
+                    const right = state.answers.filter((a) => a.q === state.current && a.correct).length;
+                    return right === state.teams.length ? 'Bütün takımlar bildi.' : right ? `${right} takım bildi.` : 'Bilen takım olmadı.';
                   })() : lastAnswer?.q === state.current
                     ? lastAnswer.correct
                       ? `${state.teams[lastAnswer.team]?.name} doğru bildi: +${lastAnswer.points} puan.`
-                      : `${state.teams[lastAnswer.team]?.name} bilemedi${lastAnswer.points ? `: −${Math.abs(lastAnswer.points)} puan` : ''}. Doğru cevap ${CHOICE_LETTERS[q.correct_index]}.`
-                    : `Doğru cevap ${CHOICE_LETTERS[q.correct_index]}.`}
-                </p>
-                {q.explanation && <div className={s.explanation}><RichText text={q.explanation} /></div>}
-                <button type="button" className={s.primary} onClick={goNext}>
+                      : `${state.teams[lastAnswer.team]?.name} bilemedi${lastAnswer.points ? `: −${Math.abs(lastAnswer.points)} puan` : ''}.`
+                    : 'Cevap verilmeden açıldı.'}
+                  </p>
+                  {q.explanation && <div className={s.explanation}><RichText text={q.explanation} /></div>}
+                </div>
+                <button type="button" className={`${s.primary} ${s.nextButton}`} onClick={goNext}>
                   {state.current + 1 >= state.questions.length ? <><Trophy size={20} aria-hidden="true" />Sonuçları göster</> : <><Play size={20} aria-hidden="true" />Sonraki soru</>}
                 </button>
               </div>

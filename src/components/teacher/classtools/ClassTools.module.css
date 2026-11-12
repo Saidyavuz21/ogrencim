@@ -393,6 +393,71 @@
 
 /* Shared teacher shell refinements, with full-screen presentation preserved. */
 .workspace { gap: 22px; }
+.toolContent { min-width: 0; }
+.scoreStage.stage { grid-template-rows: auto minmax(0, 1fr) auto; background: #f7f6f2; color: #20352d; border: 1px solid #dedad0; }
+.scoreStage .counter { color: #58665f; font-weight: 500; }
+.scoreStage .ghost { border-color: #dedad0; background: white; color: #20352d; border-radius: 10px; min-height: 44px; }
+.scoreStage .ghost:hover { background: #eeece5; }
+.scoreStage :is(button, input):focus-visible { outline-color: #25634b; }
+.scoreGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; min-width: 0; }
+.scoreTeam { display: grid; grid-template-rows: auto auto minmax(80px, 1fr) auto; justify-items: center; align-items: center; gap: 8px; min-width: 0; padding: 24px; border: 1px solid transparent; border-radius: 16px; background: var(--score-team-bg, #cce3cc); color: #20352d; }
+.scoreTeam h2 { margin: 0; max-width: 100%; font-size: 22px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; text-align: center; }
+.scoreRank { display: flex; align-items: center; gap: 6px; min-height: 24px; margin: 0; color: #20352d; font-size: 13px; }
+.scoreLeader { border-color: #20352d; }
+.scoreNumber { font-size: clamp(64px, 12cqw, 132px); font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; max-width: 100%; }
+.scoreButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 8px; }
+.scoreButtons button { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 48px; border: 1px solid rgb(32 53 45 / 25%); border-radius: 10px; background: rgb(255 255 255 / 40%); color: #20352d; font: inherit; font-weight: 600; cursor: pointer; }
+.scoreButtons button:last-child { border-color: #20352d; background: #20352d; color: white; }
+.scoreButtons button:hover { filter: brightness(1.12); }
+.scoreField { display: grid; gap: 8px; min-width: 0; }
+.scoreField > label { color: var(--teacher-text); font-size: 14px; font-weight: 500; }
+.scoreField input { width: 100%; min-width: 0; min-height: 48px; padding: 10px 12px; border: 1px solid #a4b1a6; border-radius: 10px; font: inherit; font-size: 16px; color: var(--teacher-text); background: white; }
+.scoreSettings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.scoreSettingsActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.scoreSettingsActions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--teacher-border); border-radius: 10px; background: white; color: var(--teacher-primary); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.scoreSettingsActions button:hover:not(:disabled) { background: var(--teacher-selected); }
+.scoreSettingsActions button:disabled, .scoreUndo:disabled { opacity: 0.5; cursor: default; }
+.scoreFooter { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.scoreNotice { margin: 0; color: #58665f; font-size: 13px; line-height: 1.6; }
+.scoreUndo { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #dedad0; border-radius: 10px; background: white; color: #20352d; font: inherit; font-size: 14px; cursor: pointer; }
+.scoreUndo:hover:not(:disabled) { background: #eeece5; }
+.scoreColors { min-width: 0; margin: 4px 0 0; padding: 0; border: 0; }
+.scoreColors legend { margin-bottom: 4px; color: var(--teacher-muted); font-size: 12px; }
+.scoreColors > div { display: flex; flex-wrap: wrap; gap: 2px; }
+.scoreColors button { display: grid; place-items: center; width: 44px; height: 44px; padding: 4px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #20352d; cursor: pointer; }
+.scoreColors button[aria-pressed='true'] { border-color: #25634b; }
+.scoreColors button:hover { background: #eeece5; }
+.scoreColors button > span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--score-team-bg); }
+.scoreStage.full { height: 100dvh; min-height: 0; overflow: auto; border: 0; }
+.full .scoreGrid { min-height: 0; overflow-y: auto; grid-auto-rows: minmax(240px, 1fr); }
+.full .scoreTeam h2 { font-size: clamp(22px, 2.5vw, 40px); }
+.full .scoreNumber { font-size: clamp(64px, 14vh, 180px); }
+@media (min-width: 1100px) {
+  .full .scoreGrid[data-teams='3'], .full .scoreGrid[data-teams='5'], .full .scoreGrid[data-teams='6'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .scoreGrid { grid-template-columns: minmax(0, 1fr); }
+  .scoreTeam { padding: 20px; }
+  .scoreFooter { flex-direction: column-reverse; align-items: stretch; }
+}
+@media (max-width: 767px) {
+  .scoreSettings { grid-template-columns: minmax(0, 1fr); }
+  .scoreSettingsActions > button { width: 100%; }
+}
+.soundDisplay { display: grid; justify-items: center; gap: 16px; width: min(100%, 600px); padding-block: 16px; }
+.soundValue { font-size: clamp(64px, 16cqw, 132px); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.soundValue span { font-size: 0.25em; color: rgb(255 255 255 / 80%); }
+.soundMeter { position: relative; width: 100%; height: 28px; border: 1px solid rgb(255 255 255 / 45%); border-radius: 10px; background: rgb(0 0 0 / 20%); }
+.soundFill { height: 100%; border-radius: 9px; background: #ffd84d; transition: width 100ms linear; }
+.soundThreshold { position: absolute; top: -5px; bottom: -5px; width: 3px; background: white; transform: translateX(-50%); }
+.soundStatus { margin: 0; font-size: clamp(18px, 4cqw, 28px); font-weight: 600; }
+.soundField { display: grid; gap: 8px; min-width: 0; }
+.soundField > label { display: flex; justify-content: space-between; gap: 12px; color: var(--teacher-text); font-size: 14px; font-weight: 500; }
+.soundField input[type='range'] { width: 100%; min-height: 44px; margin: 0; accent-color: var(--teacher-primary); }
+.soundError { margin: 0; padding: 14px 16px; border-radius: 10px; background: white; color: #a33342; font-size: 14px; line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) {
+  .soundFill { transition: none; }
+}
 .workspace .tabsNav { gap: 0; }
 .workspace .tabsNav > .scrollBtn { display: none; }
 .workspace .tabsTrack { border: 0; border-radius: 12px; padding: 5px; background: #ecefe8; overflow: visible; }
@@ -402,7 +467,7 @@
 .workspace .tabs button[aria-selected='true'] { box-shadow: 0 1px 3px rgb(20 35 28 / 6%); }
 .workspace .layout { gap: 24px; }
 .workspace .stage:not(.full) { min-height: 440px; padding: 24px; border-radius: 18px; gap: 20px; }
-.workspace .stage:not(.full):not(.stageWarn):not(.stageDone) { background: #25634b; }
+.workspace .stage:not(.full):not(.stageWarn):not(.stageDone):not(.scoreStage) { background: #25634b; }
 .workspace .stage:not(.full) .ghost { min-height: 44px; border-radius: 10px; font-size: 13px; font-weight: 500; }
 .workspace .stage:not(.full) .primary { min-height: 52px; border-radius: 12px; font-size: 17px; font-weight: 600; box-shadow: 0 3px 10px rgb(20 35 28 / 12%); }
 .workspace .stage:not(.full) .secondary { min-height: 52px; border-radius: 12px; font-size: 16px; font-weight: 500; }
@@ -425,7 +490,14 @@
 .workspace .stage:not(.full) .groupTitle { font-size: 15px; font-weight: 600; }
 .workspace .stage:not(.full) .groupMembers { font-size: 14px; font-weight: 500; line-height: 1.6; }
 @media (min-width: 1024px) {
-  .workspace .layout { grid-template-columns: minmax(0, 1fr) 320px; }
+  .workspace { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; }
+  .workspace .tabsNav { position: sticky; top: 16px; }
+  .workspace .tabsTrack { padding: 8px; border: 1px solid var(--teacher-border); border-radius: 18px; background: var(--teacher-surface); }
+  .workspace .tabs { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .workspace .tabs button { justify-content: flex-start; padding: 12px; }
+  .workspace .tabs button[aria-selected='true'] { background: var(--teacher-selected); box-shadow: none; }
+  .workspace .layout { grid-template-columns: minmax(0, 1fr); }
+  .workspace .side { position: static; }
 }
 @media (max-width: 767px) {
   .workspace { gap: 18px; }

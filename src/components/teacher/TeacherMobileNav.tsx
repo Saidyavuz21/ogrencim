@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { LayoutDashboard, Shuffle, MessageSquare, Menu, Clock, Users, Bell } from '../icons';
+import { LayoutDashboard, Shuffle, MessageSquare, Menu, Clock, Users, Bell, Mic, Trophy } from '../icons';
 import type { ClassToolId } from './TeacherClassToolsPage';
 import type { TeacherPageId } from './teacherPages';
 import styles from './TeacherDashboard.module.css';
@@ -45,6 +45,8 @@ export function TeacherMobileNav({ page, unreadMessages, onOpenPage, onOpenTool,
           { id: 'picker', label: 'Rastgele seçici', icon: Shuffle },
           { id: 'stopwatch', label: 'Kronometre', icon: Clock },
           { id: 'groups', label: 'Gruplama', icon: Users },
+          { id: 'sound', label: 'Ses seviyesi', icon: Mic },
+          { id: 'scoreboard', label: 'Skor tabelası', icon: Trophy },
           { id: 'countdown', label: 'Geri sayım', icon: Bell },
         ] as const).map((tool) => <button key={tool.id} type="button" onClick={() => { setOpen(false); onOpenTool(tool.id); }}>
           <tool.icon size={20} aria-hidden="true" /><span>{tool.label}</span>

@@ -103,25 +103,7 @@
 .teamStrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; min-width: 0; }
 .team { display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; padding: 12px; border: 2px solid transparent; border-radius: 14px; background: var(--team-bg); text-align: center; }
 .team h3 { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
-.teamActive { border-color: #20352d; box-shadow: 0 3px 10px rgb(20 35 28 / 12%); }
 .teamScore { font-size: clamp(34px, 6cqw, 64px); font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.teamTurn { margin: 0; padding: 2px 10px; border-radius: 999px; background: #20352d; color: #fff; font-size: 12px; font-weight: 600; }
-.teamJokers { display: flex; gap: 6px; margin: 0; font-size: 13px; font-weight: 700; }
-.teamJokers span { padding: 1px 8px; border: 1px solid rgb(32 53 45 / 35%); border-radius: 999px; background: rgb(255 255 255 / 55%); }
-.teamJokers span[data-used] { opacity: 0.4; text-decoration: line-through; }
-/* Tüm takımlar kipi: kartta takımın şıkkı, çift puan jokeri ve açılınca sonuç */
-.teamPicks { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; margin-top: 4px; }
-.teamPicks button { min-width: 44px; min-height: 44px; flex: 1 1 44px; max-width: 64px; border: 1px solid rgb(32 53 45 / 30%); border-radius: 10px; background: rgb(255 255 255 / 70%); color: #20352d; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
-.teamPicks button:hover { background: #fff; }
-.teamPicks button[aria-pressed='true'] { border-color: #20352d; background: #20352d; color: #fff; }
-.teamPicks button:focus-visible, .teamDouble:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
-.teamDouble { min-height: 44px; padding: 4px 12px; border: 1px solid rgb(32 53 45 / 35%); border-radius: 999px; background: rgb(255 255 255 / 55%); color: #20352d; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
-.teamDouble[aria-pressed='true'] { border-color: #20352d; background: #20352d; color: #fff; opacity: 1; }
-.teamDouble:disabled { cursor: default; }
-.teamDouble:disabled:not([aria-pressed='true']) { opacity: 0.45; text-decoration: line-through; }
-.teamResult { margin: 6px 0 2px; padding: 6px 16px; border-radius: 999px; background: rgb(255 255 255 / 70%); color: #20352d; font-size: clamp(15px, 1.5cqw, 20px); font-weight: 700; }
-.teamResultOk { background: #216044; color: #fff; }
-.teamResultBad { background: #a33342; color: #fff; }
 .teamButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 280px; margin-top: 4px; }
 .teamButtons button { min-height: 44px; border: 1px solid rgb(32 53 45 / 25%); border-radius: 10px; background: rgb(255 255 255 / 60%); color: #20352d; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .teamButtons button:last-child { border-color: #20352d; background: #20352d; color: #fff; }
@@ -137,37 +119,75 @@
 .scoreOnly .teamButtons { max-width: 320px; }
 .scoreOnly .teamButtons button { min-height: 52px; font-size: 20px; }
 
-/* Soru */
-.question { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 20px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; }
-.questionHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.levelBadge { padding: 4px 12px; border-radius: 999px; background: #e6f1e9; color: #1d503d; font-size: 14px; font-weight: 600; }
-.questionBody { font-size: clamp(20px, 2.6cqw, 40px); font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
-.questionImage { display: block; max-width: 100%; max-height: 38vh; margin: 0 auto; border-radius: 12px; object-fit: contain; }
-.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.choice { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px 16px; border: 2px solid #dedad0; border-radius: 14px; background: #faf9f5; color: #20352d; font: inherit; font-size: clamp(17px, 2cqw, 30px); line-height: 1.4; text-align: left; cursor: pointer; }
-.choice:hover:not(:disabled) { border-color: #25634b; background: #e6f1e9; }
-.choice:disabled { cursor: default; }
-.choiceLetter { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: #20352d; color: #fff; font-size: 18px; font-weight: 700; }
-.choiceText { min-width: 0; overflow-wrap: anywhere; }
-.choiceCorrect { border-color: #216044; background: #e8f3eb; color: #216044; font-weight: 600; box-shadow: 0 0 0 1px #216044 inset; }
-.choiceCorrect .choiceLetter { background: #216044; }
-.choiceWrong { border-color: #a33342; background: #fcecef; color: #a33342; }
-.choiceWrong .choiceLetter { background: #a33342; }
-.choiceHidden { opacity: 0.3; }
-.choiceStatic { cursor: default; }
-/* Cevap açıldı: doğru şık öne çıkar, ilgisiz şıklar geri çekilir */
-.choiceDim { opacity: 0.5; }
-/* Kontroller ve sonuç şeridi soru panelinin altına oturur (tam ekranda boşluk ortada kalır) */
-.controls, .afterReveal { display: grid; gap: 12px; justify-items: start; margin-top: auto; }
-.afterReveal { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 16px 24px; padding-top: 16px; border-top: 1px solid #eeece5; }
-.revealInfo { display: grid; gap: 10px; min-width: 0; }
-.revealAnswer { display: flex; align-items: center; gap: 14px; margin: 0; min-width: 0; font-size: clamp(20px, 2.4cqw, 34px); font-weight: 600; line-height: 1.3; color: #216044; }
-.revealAnswer > span:last-child { display: grid; min-width: 0; overflow-wrap: anywhere; }
-.revealAnswer small { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #4f6159; text-transform: uppercase; }
-.revealLetter { display: grid; place-items: center; width: clamp(44px, 4.4cqw, 60px); height: clamp(44px, 4.4cqw, 60px); flex-shrink: 0; border-radius: 50%; background: #216044; color: #fff; font-size: clamp(20px, 2.2cqw, 28px); font-weight: 700; }
-.nextButton { min-height: 56px; padding: 12px 28px; font-size: 18px; }
-.controlButtons { display: flex; flex-wrap: wrap; gap: 8px; }
-.explanation { max-width: 90ch; padding: 12px 14px; border-radius: 12px; background: #faf9f5; font-size: clamp(16px, 1.5cqw, 20px); line-height: 1.6; overflow-wrap: anywhere; }
+/* ---------- Soru ekranı: solda skor tablosu, sağda soru ---------- */
+.stagePlay { grid-template-rows: auto minmax(0, 1fr); }
+.play { display: grid; grid-template-columns: clamp(250px, 24%, 340px) minmax(0, 1fr); gap: 16px; min-width: 0; min-height: 0; }
+
+/* Skor tablosu */
+.board { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow-y: auto; }
+.boardTeam { display: grid; gap: 10px; padding: 12px 12px 12px 16px; border: 2px solid transparent; border-radius: 14px; background: var(--team-bg); }
+.boardTeamActive { border-color: #20352d; box-shadow: 0 4px 14px rgb(20 35 28 / 14%); }
+.boardHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.boardHead h3 { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0; font-size: clamp(16px, 1.4cqw, 20px); font-weight: 600; line-height: 1.3; }
+.boardHead h3 span { overflow-wrap: anywhere; }
+.stepper { display: flex; align-items: center; flex-shrink: 0; }
+.stepper button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: rgb(32 53 45 / 60%); cursor: pointer; }
+.stepper button:hover { background: rgb(255 255 255 / 60%); color: #20352d; }
+.boardScore { min-width: 2ch; font-size: clamp(30px, 3cqw, 46px); font-weight: 700; line-height: 1; text-align: center; font-variant-numeric: tabular-nums; }
+.boardRow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 0; }
+.boardRow:empty { display: none; }
+.teamTurn { padding: 4px 12px; border-radius: 999px; background: #20352d; color: #fff; font-size: 13px; font-weight: 600; }
+.teamJokers { display: inline-flex; gap: 6px; font-size: 13px; font-weight: 700; }
+.teamJokers span { padding: 2px 9px; border: 1px solid rgb(32 53 45 / 35%); border-radius: 999px; background: rgb(255 255 255 / 55%); }
+.teamJokers span[data-used] { opacity: 0.4; text-decoration: line-through; }
+.teamPicks { display: flex; flex: 1 1 auto; gap: 6px; min-width: 0; }
+.teamPicks button { flex: 1 1 0; min-width: 40px; min-height: 44px; border: 1px solid rgb(32 53 45 / 25%); border-radius: 10px; background: rgb(255 255 255 / 70%); color: #20352d; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+.teamPicks button:hover { background: #fff; }
+.teamPicks button[aria-pressed='true'] { border-color: #20352d; background: #20352d; color: #fff; }
+.teamDouble { flex-shrink: 0; min-width: 44px; min-height: 44px; padding: 0 10px; border: 1px dashed rgb(32 53 45 / 45%); border-radius: 10px; background: transparent; color: #20352d; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.teamDouble:hover:not(:disabled) { background: rgb(255 255 255 / 60%); }
+.teamDouble[aria-pressed='true'] { border-style: solid; border-color: #805217; background: #805217; color: #fff; opacity: 1; }
+.teamDouble:disabled { cursor: default; }
+.teamDouble:disabled:not([aria-pressed='true']) { opacity: 0.35; text-decoration: line-through; }
+.teamResult { justify-self: start; margin: 0; padding: 6px 14px; border-radius: 999px; background: rgb(255 255 255 / 70%); color: #20352d; font-size: 15px; font-weight: 700; }
+.teamResultOk { background: #216044; color: #fff; }
+.teamResultBad { background: #a33342; color: #fff; }
+
+/* Soru paneli: üstte bilgi, ortada soru ve şıklar, altta eylem çubuğu */
+.question { display: flex; flex-direction: column; gap: 20px; min-width: 0; min-height: 0; padding: clamp(18px, 2cqw, 32px); border: 1px solid #dedad0; border-radius: 18px; background: #fff; overflow-y: auto; }
+.questionHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.questionMeta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 0; color: #58665f; font-size: 16px; font-variant-numeric: tabular-nums; }
+.questionMeta strong { color: #20352d; font-size: clamp(18px, 1.6cqw, 24px); font-weight: 700; }
+.levelBadge { align-self: center; padding: 4px 12px; border-radius: 999px; background: #e6f1e9; color: #1d503d; font-size: 14px; font-weight: 600; }
+.doubleBadge { align-self: center; padding: 4px 12px; border-radius: 999px; background: #fff3d6; color: #805217; font-size: 14px; font-weight: 700; }
+.questionMain { display: flex; flex: 1 0 auto; flex-direction: column; justify-content: center; gap: clamp(20px, 3vh, 40px); min-width: 0; }
+.questionBody { max-width: 40ch; font-size: clamp(22px, 3cqw, 48px); font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: anywhere; }
+.questionImage { display: block; max-width: 100%; max-height: 34vh; margin: 0 auto; border-radius: 12px; object-fit: contain; }
+
+/* Renkli şık karoları */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(10px, 1.2cqw, 16px); }
+.tiles[data-count='3'] .tile:last-child, .tiles[data-count='5'] .tile:last-child { grid-column: 1 / -1; }
+.tile { position: relative; display: flex; align-items: center; gap: clamp(12px, 1.4cqw, 20px); min-width: 0; min-height: clamp(76px, 10vh, 120px); padding: clamp(12px, 1.4cqw, 20px); border: 0; border-radius: 16px; background: var(--tile); color: #fff; font: inherit; font-size: clamp(18px, 2.1cqw, 32px); font-weight: 600; line-height: 1.3; text-align: left; box-shadow: 0 2px 0 rgb(0 0 0 / 12%); }
+button.tile { cursor: pointer; }
+button.tile:hover { filter: brightness(1.08); }
+.tileLetter { display: grid; place-items: center; width: clamp(44px, 4cqw, 60px); height: clamp(44px, 4cqw, 60px); flex-shrink: 0; border-radius: 12px; background: rgb(255 255 255 / 22%); color: #fff; font-size: clamp(20px, 2cqw, 30px); font-weight: 700; }
+.tileText { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.tilePickers { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 45%; }
+.tilePickers span { padding: 3px 10px; border-radius: 999px; background: var(--team-bg); color: #20352d; font-size: 14px; font-weight: 700; white-space: nowrap; }
+/* Cevap açıldı: doğru karo kendi renginde kalıp halkayla öne çıkar, diğerleri sakinleşir */
+.tileCorrect { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--tile), 0 10px 24px rgb(20 35 28 / 18%); }
+.tileOff { background: #f1efe9; color: #58665f; box-shadow: none; }
+.tileOff .tileLetter { background: #dedad0; color: #58665f; }
+.tileHidden { background: transparent; color: #8a948f; border: 2px dashed #dedad0; box-shadow: none; }
+.tileHidden .tileLetter { background: #eeece5; color: #8a948f; }
+
+/* Eylem çubuğu */
+.actionBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; padding-top: 18px; border-top: 1px solid #eeece5; }
+.actionText { display: grid; gap: 10px; flex: 1 1 320px; min-width: 0; }
+.actionText p { margin: 0; font-size: clamp(15px, 1.3cqw, 18px); line-height: 1.6; overflow-wrap: anywhere; }
+.actionButtons { display: flex; flex-wrap: wrap; gap: 8px; }
+.bigButton { min-height: 56px; padding: 12px 28px; font-size: 18px; }
+.explanation { max-width: 80ch; font-size: clamp(15px, 1.3cqw, 18px); line-height: 1.6; color: #3d4f47; overflow-wrap: anywhere; }
 
 
 .timer { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #20352d; }
@@ -198,6 +218,10 @@
 .summaryOk { color: #216044; }
 .summaryBad { color: #a33342; }
 
+@media (max-width: 1023px) {
+  .play { grid-template-columns: minmax(0, 1fr); }
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); overflow: visible; }
+}
 @media (max-width: 767px) {
   .listPage, .setup { gap: 16px; }
   .panel { gap: 14px; padding: 18px 16px; border-radius: 16px; }
@@ -208,18 +232,21 @@
   .pickedList li { align-items: flex-start; }
   .stage { gap: 14px; padding: 14px; border-radius: 16px; }
   .stageButton span { display: none; }
-  .controlButtons .stageButton span, .timer .stageButton span { display: inline; }
+  .actionButtons .stageButton span, .timer .stageButton span { display: inline; }
   .stageButton { min-width: 44px; padding: 8px 10px; }
   .teamStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .scoreOnly .teamStrip, .scoreOnly .teamStrip[data-teams] { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
   .scoreOnly .team { padding: 16px 12px; }
   .question { padding: 14px; }
-  .choices { grid-template-columns: minmax(0, 1fr); }
-  .afterReveal { grid-template-columns: minmax(0, 1fr); }
-  .nextButton { width: 100%; }
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+  .tile { flex-wrap: wrap; }
+  .tileText { flex: 1 1 0; }
+  .tilePickers { flex: 1 0 100%; max-width: none; justify-content: flex-start; padding-left: calc(clamp(44px, 4cqw, 60px) + 12px); }
+  .actionButtons, .bigButton { width: 100%; }
   .podiumRow { padding: 12px; gap: 10px; }
   .podiumRank { min-width: 40px; font-size: 18px; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .team { transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .boardTeam { transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .tile { transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1), filter 120ms ease; }
 }

@@ -3,7 +3,7 @@
 // Bilgi yarışması oyun ekranı: takım skorları, soru, süre, jokerler ve sonuçlar. Tam ekran çalışır.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, Clock, Crown, Eye, Flag, Maximize, Minimize, Pause, Play, RotateCcw, Trophy, X } from '../icons';
+import { ArrowLeft, Check, Clock, Crown, Eye, Flag, Maximize, Minimize, Minus, Pause, Play, Plus, RotateCcw, Trophy, X } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { RichText } from '../math/RichText';
 import { useDialog } from '../ConfirmDialog';
@@ -20,6 +20,9 @@ import { useFullscreen } from '../teacher/classtools/useFullscreen';
 import s from './QuizShow.module.css';
 
 type Snap = { state: ShowState; status: ShowStatus };
+
+/** Şık karolarının renkleri (takım renklerinden ayrı, beyaz yazıyla okunur) */
+const TILE_COLORS = ['#b4492f', '#2c6690', '#8a6414', '#5e4a8c', '#2f6b5a'];
 
 /** Kısa uyarı sesi (süre dolunca) */
 function beep(ctx: AudioContext | null) {
@@ -205,54 +208,15 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
   const rows = ranking(state.teams);
   const tied = rows.every((r) => r.rank === 1);
 
+  // Sadece skor kipi: takım kartları ekranı doldurur
   const teamStrip = (
     <div className={s.teamStrip} data-teams={state.teams.length}>
       {state.teams.map((team, index) => {
-        const active = isQuestions && !allMode && !finished && !!q && !state.round.revealed && state.round.turn === index;
-        const picking = isQuestions && allMode && !finished && !!q;
-        const pick = state.round.picks[index] ?? null;
-        const result = picking && state.round.revealed ? state.answers.find((a) => a.q === state.current && a.team === index) : undefined;
-        const doubled = state.round.doubles.includes(index);
         const leader = !tied && rows.find((r) => r.index === index)?.rank === 1;
         return (
-          <section key={index} className={`${s.team} ${active ? s.teamActive : ''}`} style={{ '--team-bg': teamBackground(team.color) } as React.CSSProperties} aria-label={team.name}>
+          <section key={index} className={s.team} style={{ '--team-bg': teamBackground(team.color) } as React.CSSProperties} aria-label={team.name}>
             <h3>{leader && <Crown size={18} aria-hidden="true" />}{team.name}</h3>
             <output className={s.teamScore} aria-label={`${team.name} puanı`}>{team.score}</output>
-            {active && <p className={s.teamTurn}>Cevap sırası</p>}
-            {picking && q && (
-              state.round.revealed ? (
-                <p className={`${s.teamResult} ${result?.correct ? s.teamResultOk : result?.choice != null ? s.teamResultBad : ''}`} role="status">
-                  {result?.choice == null ? 'Boş' : `${CHOICE_LETTERS[result.choice]} · ${result.correct ? 'doğru' : 'yanlış'}`}
-                  {result?.points ? ` · ${result.points > 0 ? '+' : '−'}${Math.abs(result.points)}` : ''}
-                </p>
-              ) : (
-                <div className={s.teamPicks} role="group" aria-label={`${team.name} cevabı`}>
-                  {q.choices.map((_, c) => (
-                    <button key={c} type="button" aria-pressed={pick === c} onClick={() => apply(pickAnswer(state, index, c))} aria-label={`${team.name}: ${CHOICE_LETTERS[c]} şıkkı`}>
-                      {CHOICE_LETTERS[c]}
-                    </button>
-                  ))}
-                </div>
-              )
-            )}
-            {picking && state.settings.jokers && (!state.round.revealed || doubled) && (
-              <button
-                type="button"
-                className={s.teamDouble}
-                aria-pressed={doubled}
-                disabled={state.round.revealed || (!!team.usedDouble && !doubled)}
-                onClick={() => apply(playDoubleFor(state, index))}
-                aria-label={doubled ? `${team.name} bu soruda çift puan kullanıyor` : team.usedDouble ? `${team.name} çift puan jokerini kullandı` : `${team.name} için çift puan jokerini aç`}
-              >
-                2× {doubled ? 'bu soruda' : team.usedDouble ? 'kullanıldı' : 'çift puan'}
-              </button>
-            )}
-            {isQuestions && !allMode && state.settings.jokers && !finished && (
-              <p className={s.teamJokers}>
-                <span data-used={team.usedDouble || undefined}>2×</span>
-                <span data-used={team.usedHalf || undefined}>½</span>
-              </p>
-            )}
             {!finished && (
               <div className={s.teamButtons}>
                 <button type="button" onClick={() => apply(adjustScore(state, index, -1))} aria-label={`${team.name} 1 puan azalt`}>−1</button>
@@ -269,13 +233,13 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
   const lastAnswer = state.answers[state.answers.length - 1];
 
   return (
-    <div ref={stageRef} className={`${s.stage} ${full ? s.full : ''}`}>
+    <div ref={stageRef} className={`${s.stage} ${full ? s.full : ''} ${!finished && isQuestions && q ? s.stagePlay : ''}`}>
       <div className={s.stageTop}>
         <button type="button" className={s.stageButton} onClick={exit} aria-label="Yarışmalarıma dön"><ArrowLeft size={18} aria-hidden="true" /><span>Yarışmalarım</span></button>
         <div className={s.stageTitle}>
           <strong>{row.title}</strong>
           <span>
-            {finished ? 'Sonuçlar' : isQuestions && q ? `Soru ${state.current + 1} / ${state.questions.length}` : 'Skor'}
+            {finished ? 'Sonuçlar' : isQuestions && q ? `${state.teams.length} takım` : 'Skor'}
             {' · '}<span className={saveState === 'error' ? s.saveError : undefined} role="status">{saveLabel}</span>
           </span>
         </div>
@@ -354,11 +318,77 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
       ) : !isQuestions || !q ? (
         <div className={s.scoreOnly}>{teamStrip}</div>
       ) : (
-        <>
-          {teamStrip}
+        <div className={s.play}>
+          <aside className={s.board} aria-label="Takımlar">
+            {state.teams.map((team, index) => {
+              const active = !allMode && !state.round.revealed && state.round.turn === index;
+              const pick = state.round.picks[index] ?? null;
+              const result = state.round.revealed ? state.answers.find((a) => a.q === state.current && a.team === index) : undefined;
+              const doubled = allMode ? state.round.doubles.includes(index) : state.round.doubleFor === index;
+              const leader = !tied && rows.find((r) => r.index === index)?.rank === 1;
+              return (
+                <section key={index} className={`${s.boardTeam} ${active ? s.boardTeamActive : ''}`} style={{ '--team-bg': teamBackground(team.color) } as React.CSSProperties} aria-label={team.name}>
+                  <div className={s.boardHead}>
+                    <h3>{leader && <Crown size={16} aria-hidden="true" />}<span>{team.name}</span></h3>
+                    <div className={s.stepper}>
+                      <button type="button" onClick={() => apply(adjustScore(state, index, -1))} aria-label={`${team.name} 1 puan azalt`}><Minus size={16} aria-hidden="true" /></button>
+                      <output className={s.boardScore} aria-label={`${team.name} puanı`}>{team.score}</output>
+                      <button type="button" onClick={() => apply(adjustScore(state, index, 1))} aria-label={`${team.name} 1 puan ekle`}><Plus size={16} aria-hidden="true" /></button>
+                    </div>
+                  </div>
+                  {state.round.revealed ? (
+                    result ? (
+                      <p className={`${s.teamResult} ${result.correct ? s.teamResultOk : result.choice != null ? s.teamResultBad : ''}`}>
+                        {result.choice == null ? 'Boş' : `${CHOICE_LETTERS[result.choice]} · ${result.correct ? 'doğru' : 'yanlış'}`}
+                        {result.points ? ` · ${result.points > 0 ? '+' : '−'}${Math.abs(result.points)}` : ''}
+                      </p>
+                    ) : null
+                  ) : allMode ? (
+                    <div className={s.boardRow}>
+                      <div className={s.teamPicks} role="group" aria-label={`${team.name} cevabı`}>
+                        {q.choices.map((_, c) => (
+                          <button key={c} type="button" aria-pressed={pick === c} onClick={() => apply(pickAnswer(state, index, c))} aria-label={`${team.name}: ${CHOICE_LETTERS[c]} şıkkı`}>
+                            {CHOICE_LETTERS[c]}
+                          </button>
+                        ))}
+                      </div>
+                      {state.settings.jokers && (
+                        <button
+                          type="button"
+                          className={s.teamDouble}
+                          aria-pressed={doubled}
+                          disabled={!!team.usedDouble && !doubled}
+                          onClick={() => apply(playDoubleFor(state, index))}
+                          aria-label={doubled ? `${team.name} bu soruda çift puan kullanıyor` : team.usedDouble ? `${team.name} çift puan jokerini kullandı` : `${team.name} için çift puan jokerini aç`}
+                          title={doubled ? 'Bu soruda çift puan' : team.usedDouble ? 'Çift puan kullanıldı' : 'Çift puan jokeri'}
+                        >
+                          2×
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={s.boardRow}>
+                      {active && <span className={s.teamTurn}>Cevap sırası</span>}
+                      {state.settings.jokers && (
+                        <span className={s.teamJokers}>
+                          <span data-used={team.usedDouble || undefined} aria-label={team.usedDouble ? 'Çift puan kullanıldı' : 'Çift puan hakkı var'}>2×</span>
+                          <span data-used={team.usedHalf || undefined} aria-label={team.usedHalf ? 'Yarı yarıya kullanıldı' : 'Yarı yarıya hakkı var'}>½</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </aside>
+
           <div className={s.question}>
             <div className={s.questionHead}>
-              <span className={s.levelBadge}>{LEVEL_LABEL[q.level]} · {q.level} puan{state.round.doubleFor !== null ? ' · çift puan açık' : ''}</span>
+              <p className={s.questionMeta}>
+                <strong>Soru {state.current + 1}</strong><span>/ {state.questions.length}</span>
+                <span className={s.levelBadge}>{LEVEL_LABEL[q.level]} · {q.level} puan</span>
+                {!allMode && state.round.doubleFor !== null && <span className={s.doubleBadge}>2× çift puan</span>}
+              </p>
               {state.settings.seconds > 0 && !state.round.revealed && (
                 <QuestionTimer
                   key={`${state.current}-${state.round.turn}-${state.round.tried.length}`}
@@ -368,101 +398,117 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
                 />
               )}
             </div>
-            <div className={s.questionBody}><RichText text={q.body} /></div>
-            {q.image_path && imageUrls[q.image_path] && (
-              // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
-              <img className={s.questionImage} src={imageUrls[q.image_path]} alt="Soru görseli" />
-            )}
-            <div className={s.choices} data-count={q.choices.length}>
-              {q.choices.map((choice, index) => {
-                const hidden = state.round.hidden.includes(index);
-                const eliminated = state.round.eliminated.includes(index);
-                const isCorrect = state.round.revealed && index === q.correct_index;
-                const wrongPick = state.round.revealed && index !== q.correct_index && (allMode
-                  ? state.round.picks.includes(index)
-                  : lastAnswer?.q === state.current && lastAnswer.choice === index && !lastAnswer.correct);
-                const label = `${CHOICE_LETTERS[index]} şıkkı${isCorrect ? ', doğru cevap' : eliminated || wrongPick ? ', yanlış' : hidden ? ', gizlendi' : ''}`;
-                const cls = `${s.choice} ${isCorrect ? s.choiceCorrect : ''} ${wrongPick || eliminated ? s.choiceWrong : ''} ${hidden ? s.choiceHidden : ''} ${state.round.revealed && !isCorrect && !wrongPick ? s.choiceDim : ''}`;
-                const inner = (
-                  <>
-                    <span className={s.choiceLetter}>{isCorrect ? <Check size={22} aria-hidden="true" /> : wrongPick || eliminated ? <X size={22} aria-hidden="true" /> : CHOICE_LETTERS[index]}</span>
-                    <span className={s.choiceText}>{hidden ? '' : <RichText text={choice} inline />}</span>
-                  </>
-                );
-                // Tıklanmayan şık düğme değil: soluk "devre dışı" görünümü almaz
-                const clickable = !allMode && !state.round.revealed && !hidden && !eliminated;
-                return clickable ? (
-                  <button key={index} type="button" className={cls} onClick={() => apply(answer(state, index))} aria-label={label}>{inner}</button>
-                ) : (
-                  <div key={index} className={`${cls} ${s.choiceStatic}`} aria-label={label} role="group">{inner}</div>
-                );
-              })}
+
+            <div className={s.questionMain}>
+              <div className={s.questionBody}><RichText text={q.body} /></div>
+              {q.image_path && imageUrls[q.image_path] && (
+                // eslint-disable-next-line @next/next/no-img-element -- özel, süreli bağlantı
+                <img className={s.questionImage} src={imageUrls[q.image_path]} alt="Soru görseli" />
+              )}
+              <div className={s.tiles} data-count={q.choices.length}>
+                {q.choices.map((choice, index) => {
+                  const hidden = state.round.hidden.includes(index);
+                  const eliminated = state.round.eliminated.includes(index);
+                  const isCorrect = state.round.revealed && index === q.correct_index;
+                  const off = (state.round.revealed && !isCorrect) || eliminated;
+                  const pickers = state.round.revealed ? state.answers.filter((a) => a.q === state.current && a.choice === index) : [];
+                  const label = `${CHOICE_LETTERS[index]} şıkkı${isCorrect ? ', doğru cevap' : eliminated ? ', elendi' : hidden ? ', gizlendi' : ''}`;
+                  const cls = `${s.tile} ${isCorrect ? s.tileCorrect : ''} ${off ? s.tileOff : ''} ${hidden ? s.tileHidden : ''}`;
+                  const tileStyle = { '--tile': TILE_COLORS[index % TILE_COLORS.length] } as React.CSSProperties;
+                  const inner = (
+                    <>
+                      <span className={s.tileLetter}>{isCorrect ? <Check size={26} aria-hidden="true" /> : eliminated ? <X size={26} aria-hidden="true" /> : CHOICE_LETTERS[index]}</span>
+                      <span className={s.tileText}>{hidden ? 'Gizlendi' : <RichText text={choice} inline />}</span>
+                      {pickers.length > 0 && (
+                        <span className={s.tilePickers}>
+                          {pickers.map((a) => (
+                            <span key={a.team} style={{ '--team-bg': teamBackground(state.teams[a.team]?.color || '') } as React.CSSProperties}>{state.teams[a.team]?.name}</span>
+                          ))}
+                        </span>
+                      )}
+                    </>
+                  );
+                  // Tıklanmayan şık düğme değil: genel "devre dışı" soluklaşmasını almaz
+                  const clickable = !allMode && !state.round.revealed && !hidden && !eliminated;
+                  return clickable ? (
+                    <button key={index} type="button" className={cls} style={tileStyle} onClick={() => apply(answer(state, index))} aria-label={label}>{inner}</button>
+                  ) : (
+                    <div key={index} className={cls} style={tileStyle} aria-label={label} role="group">{inner}</div>
+                  );
+                })}
+              </div>
             </div>
 
-            {state.round.revealed ? (
-              <div className={s.afterReveal}>
-                <div className={s.revealInfo}>
-                  <p className={s.revealAnswer}>
-                    <span className={s.revealLetter}>{CHOICE_LETTERS[q.correct_index]}</span>
-                    <span><small>Doğru cevap</small><RichText text={q.choices[q.correct_index]} inline /></span>
-                  </p>
-                  <p className={s.stageNote} role="status">
-                  {allMode ? (() => {
-                    const right = state.answers.filter((a) => a.q === state.current && a.correct).length;
-                    return right === state.teams.length ? 'Bütün takımlar bildi.' : right ? `${right} takım bildi.` : 'Bilen takım olmadı.';
-                  })() : lastAnswer?.q === state.current
-                    ? lastAnswer.correct
-                      ? `${state.teams[lastAnswer.team]?.name} doğru bildi: +${lastAnswer.points} puan.`
-                      : `${state.teams[lastAnswer.team]?.name} bilemedi${lastAnswer.points ? `: −${Math.abs(lastAnswer.points)} puan` : ''}.`
-                    : 'Cevap verilmeden açıldı.'}
-                  </p>
-                  {q.explanation && <div className={s.explanation}><RichText text={q.explanation} /></div>}
-                </div>
-                <button type="button" className={`${s.primary} ${s.nextButton}`} onClick={goNext}>
-                  {state.current + 1 >= state.questions.length ? <><Trophy size={20} aria-hidden="true" />Sonuçları göster</> : <><Play size={20} aria-hidden="true" />Sonraki soru</>}
-                </button>
-              </div>
-            ) : allMode ? (
-              <div className={s.controls}>
-                <p className={s.stageNote} role="status">
-                  {expired ? 'Süre doldu. ' : ''}Takımlar cevabını yazsın; her takımın şıkkını kendi kartından işaretleyin, sonra cevapları açın.
-                  {' '}{state.round.picks.filter((v) => v !== null).length} / {state.teams.length} takım işaretlendi.
-                </p>
-                <div className={s.controlButtons}>
-                  <button type="button" className={s.primary} onClick={() => apply(revealAll(state))}>
-                    <Eye size={20} aria-hidden="true" />Cevapları aç
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className={s.controls}>
-                <p className={s.stageNote} role="status">
-                  {expired ? `Süre doldu. ${activeTeam?.name} cevap veremediyse “Süre doldu”ya basın.` : `${activeTeam?.name} cevabını söylesin; söylediği şıkka dokunun.`}
-                </p>
-                <div className={s.controlButtons}>
-                  {state.settings.jokers && (
-                    <>
-                      <button type="button" className={s.stageButton} onClick={() => apply(playDouble(state))} disabled={!!activeTeam?.usedDouble || state.round.doubleFor !== null}>
-                        <span className={s.jokerMark}>2×</span><span>Çift puan</span>
-                      </button>
-                      <button type="button" className={s.stageButton} onClick={() => apply(playHalf(state, shuffled))} disabled={!canUseHalf(state)}>
-                        <span className={s.jokerMark}>½</span><span>Yarı yarıya</span>
-                      </button>
-                    </>
-                  )}
-                  {state.settings.seconds > 0 && (
-                    <button type="button" className={`${s.stageButton} ${expired ? s.stageButtonAlert : ''}`} onClick={() => apply(answer(state, null))}>
-                      <Clock size={18} aria-hidden="true" /><span>Süre doldu</span>
+            <div className={s.actionBar}>
+              {state.round.revealed ? (
+                <>
+                  <div className={s.actionText}>
+                    <p role="status">
+                      <strong>Doğru cevap {CHOICE_LETTERS[q.correct_index]}.</strong>{' '}
+                      {allMode ? (() => {
+                        const right = state.answers.filter((a) => a.q === state.current && a.correct).length;
+                        return right === state.teams.length ? 'Bütün takımlar bildi.' : right ? `${right} takım bildi.` : 'Bilen takım olmadı.';
+                      })() : lastAnswer?.q === state.current
+                        ? lastAnswer.correct
+                          ? `${state.teams[lastAnswer.team]?.name} bildi: +${lastAnswer.points} puan.`
+                          : `${state.teams[lastAnswer.team]?.name} bilemedi${lastAnswer.points ? `: −${Math.abs(lastAnswer.points)} puan` : ''}.`
+                        : 'Cevap verilmeden açıldı.'}
+                    </p>
+                    {q.explanation && <div className={s.explanation}><RichText text={q.explanation} /></div>}
+                  </div>
+                  <div className={s.actionButtons}>
+                    <button type="button" className={`${s.primary} ${s.bigButton}`} onClick={goNext}>
+                      {state.current + 1 >= state.questions.length ? <><Trophy size={20} aria-hidden="true" />Sonuçları göster</> : <><Play size={20} aria-hidden="true" />Sonraki soru</>}
                     </button>
-                  )}
-                  <button type="button" className={s.stageButton} onClick={() => apply(reveal(state))}>
-                    <Eye size={18} aria-hidden="true" /><span>Cevabı göster</span>
-                  </button>
-                </div>
-              </div>
-            )}
+                  </div>
+                </>
+              ) : allMode ? (
+                <>
+                  <div className={s.actionText}>
+                    <p role="status">
+                      <strong>{state.round.picks.filter((v) => v !== null).length} / {state.teams.length} takım işaretlendi.</strong>{' '}
+                      {expired ? 'Süre doldu. ' : ''}Takımlar cevabını yazsın; şıklarını soldaki tablodan işaretleyin.
+                    </p>
+                  </div>
+                  <div className={s.actionButtons}>
+                    <button type="button" className={`${s.primary} ${s.bigButton}`} onClick={() => apply(revealAll(state))}>
+                      <Eye size={20} aria-hidden="true" />Cevapları aç
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={s.actionText}>
+                    <p role="status">
+                      <strong>{activeTeam?.name}</strong>{' '}
+                      {expired ? 'cevap veremediyse “Süre doldu”ya basın.' : 'cevabını söylesin; söylediği şıkka dokunun.'}
+                    </p>
+                  </div>
+                  <div className={s.actionButtons}>
+                    {state.settings.jokers && (
+                      <>
+                        <button type="button" className={s.stageButton} onClick={() => apply(playDouble(state))} disabled={!!activeTeam?.usedDouble || state.round.doubleFor !== null}>
+                          <span className={s.jokerMark}>2×</span><span>Çift puan</span>
+                        </button>
+                        <button type="button" className={s.stageButton} onClick={() => apply(playHalf(state, shuffled))} disabled={!canUseHalf(state)}>
+                          <span className={s.jokerMark}>½</span><span>Yarı yarıya</span>
+                        </button>
+                      </>
+                    )}
+                    {state.settings.seconds > 0 && (
+                      <button type="button" className={`${s.stageButton} ${expired ? s.stageButtonAlert : ''}`} onClick={() => apply(answer(state, null))}>
+                        <Clock size={18} aria-hidden="true" /><span>Süre doldu</span>
+                      </button>
+                    )}
+                    <button type="button" className={s.stageButton} onClick={() => apply(reveal(state))}>
+                      <Eye size={18} aria-hidden="true" /><span>Cevabı göster</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

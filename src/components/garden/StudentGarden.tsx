@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import type { GardenBehavior, GardenTree, MyGarden } from '../../lib/gardenData';
 import {
+  GARDEN_UNLOCKS,
+  gardenLevel,
+  gardenUnlocks,
   getMyGarden,
   growthStage,
   waterMyTree,
@@ -79,6 +82,10 @@ export function StudentGarden() {
   const trees = garden?.trees || [];
   const behaviors = garden?.behaviors || [];
 
+  // Bahçe seviyesi ve manzara kazanımları
+  const level = gardenLevel(trees);
+  const { next, remaining } = gardenUnlocks(level);
+
   // Toplam sulama hakkı
   const totalWaterRights = trees.reduce((sum, t) => sum + waterRights(t), 0);
 
@@ -93,6 +100,7 @@ export function StudentGarden() {
     playWaterSound();
 
     const oldStage = growthStage(tree.watered);
+    const oldLevel = gardenLevel(trees);
 
     const res = await waterMyTree(b.id);
 
@@ -109,17 +117,29 @@ export function StudentGarden() {
     const newStage = growthStage(updatedTree.watered);
 
     // Yerel state'i güncelle
+    let newLevel = oldLevel;
     setGarden((prev) => {
       if (!prev) return prev;
+      const nextTrees = prev.trees.map((t) => (t.behavior_id === b.id ? updatedTree : t));
+      newLevel = gardenLevel(nextTrees);
       return {
         ...prev,
-        trees: prev.trees.map((t) => (t.behavior_id === b.id ? updatedTree : t)),
+        trees: nextTrees,
       };
     });
 
-    // Aşama atlama kutlaması
+    // Yeni açılan manzara öğesi kontrolü
+    const newlyUnlocked = GARDEN_UNLOCKS.filter((u) => oldLevel < u.level && newLevel >= u.level);
     const treeName = TREE_NAMES[b.tree] || 'Ağaç';
-    if (newStage > oldStage) {
+
+    if (newlyUnlocked.length > 0) {
+      const itemsText = newlyUnlocked.map((u) => u.name).join(', ');
+      const unlockMsg = `Tebrikler! Bahçene yeni eklendi: ${itemsText}!`;
+      setCelebration(unlockMsg);
+      setTimeout(() => setCelebration(null), 7000);
+      setNotice({ kind: 'ok', text: unlockMsg });
+    } else if (newStage > oldStage) {
+      // Aşama atlama kutlaması
       const stageName = STAGE_NAMES[newStage];
       const msg = `Tebrikler! ${b.name} için ${treeName} büyüdü: ${stageName}!`;
       setCelebration(msg);
@@ -165,7 +185,7 @@ export function StudentGarden() {
           )}
         </div>
 
-        {/* Bahçe Görünümü (Arsa) */}
+        {/* Bahçe Görünümü (Manzara Resmi) */}
         <GardenPlot
           behaviors={behaviors}
           trees={trees}
@@ -173,6 +193,23 @@ export function StudentGarden() {
           highlightWater={true}
           title="Benim Bahçem"
         />
+
+        {/* Manzara İlerleme Bilgi Çubuğu */}
+        <div className={styles.landscapeProgressCard}>
+          <div className={styles.landscapeProgressLeft}>
+            <Sprout size={18} aria-hidden="true" style={{ color: '#25634b' }} />
+            <span>Bahçe Seviyesi: <strong>{level}</strong></span>
+          </div>
+          {next ? (
+            <span className={styles.landscapeNextTarget}>
+              {next.name} için {remaining} adım kaldı
+            </span>
+          ) : (
+            <span className={styles.landscapeNextTarget} style={{ background: '#dcfce7', color: '#166534' }}>
+              Bahçen tamamlandı! Bütün güzellikler açıldı.
+            </span>
+          )}
+        </div>
 
         {/* Hiç fidan yoksa başlangıç mesajı */}
         {plantedTrees.length === 0 && (

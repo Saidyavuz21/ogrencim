@@ -19,8 +19,135 @@
   display: block;
 }
 
+/* Manzara Doğal Hareket Animasyonları */
+@keyframes cloudFloatSlow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(55px);
+  }
+}
+
+@keyframes cloudFloatFast {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(40px);
+  }
+}
+
+@keyframes butterflyWander {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(3deg);
+  }
+}
+
+@keyframes birdGlide {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(32px, -8px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes smokeRise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.7);
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-24px) scale(1.3);
+  }
+}
+
+@keyframes lightTwinkle {
+  0%, 100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 3px #fffa65);
+  }
+}
+
+@keyframes swingRock {
+  0%, 100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes fadeInPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cloudSlow {
+  animation: cloudFloatSlow 28s ease-in-out infinite alternate;
+}
+
+.cloudFast {
+  animation: cloudFloatFast 20s ease-in-out infinite alternate;
+}
+
+.butterflyGroup {
+  animation: butterflyWander 4.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.birdFlock {
+  animation: birdGlide 14s ease-in-out infinite;
+}
+
+.smokePuff {
+  animation: smokeRise 4.2s linear infinite;
+  transform-origin: 75px 8px;
+}
+
+.twinkleLights {
+  animation: lightTwinkle 3.2s ease-in-out infinite;
+}
+
+.swingMotion {
+  transform-origin: 30px 2px;
+  animation: swingRock 3.6s ease-in-out infinite alternate;
+}
+
+.fadeInElement {
+  animation: fadeInPop 0.85s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .treeSway {
+  .treeSway,
+  .cloudSlow,
+  .cloudFast,
+  .butterflyGroup,
+  .birdFlock,
+  .smokePuff,
+  .twinkleLights,
+  .swingMotion,
+  .fadeInElement {
     animation: none !important;
   }
 }
@@ -380,17 +507,23 @@
   color: #ffffff;
 }
 
-/* Bahçe Arsa Bileşeni (GardenPlot) */
-.gardenPlotContainer {
-  display: flex;
-  flex-direction: column;
+/* ===== MANZARA RESMİ (GARDEN SCENE & PLOT) STİLLERİ ===== */
+.landscapeFigure {
+  margin: 0;
+  padding: 0;
   width: 100%;
   border-radius: 20px;
   overflow: hidden;
   border: 2px solid #5a8a64;
-  box-shadow: 0 4px 20px rgba(37, 99, 75, 0.08);
-  background: linear-gradient(180deg, #d8f3dc 0%, #b7e4c7 60%, #95d5b2 100%);
+  box-shadow: 0 4px 22px rgba(37, 99, 75, 0.12);
+  background: #b6e0f8;
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.figureSmall {
+  max-width: 480px;
 }
 
 .plotSkyline {
@@ -398,9 +531,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  z-index: 10;
 }
 
 .plotTitle {
@@ -410,117 +544,106 @@
   margin: 0;
 }
 
-.plotGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 16px;
-  padding: 24px 20px 32px;
-  min-height: 220px;
-  align-items: end;
-}
-
-.plotGridLarge {
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 20px;
-  padding: 32px 24px 40px;
-}
-
-.plotSlot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  text-align: center;
-  position: relative;
-  min-height: 150px;
-}
-
-.treeClickable {
-  cursor: pointer;
-  border-radius: 16px;
-  padding: 6px 8px;
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.treeClickable:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.45);
-}
-
-.treeClickable:focus-visible {
-  outline: 3px solid #25634b;
-  outline-offset: 4px;
-}
-
-.plotLabel {
-  margin-top: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #1b4332;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(27, 67, 50, 0.15);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Boş tarh: dikilmemiş toprak (kutu değil, zeminde bir toprak öbeği) */
-.plotEmptySlot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  width: 100%;
-  height: 130px;
-  color: #6b4a2f;
-  padding: 12px 8px 4px;
-}
-
-.emptySoilMound {
-  width: 86px;
-  height: 22px;
-  border-radius: 50% 50% 44% 44%;
-  background: radial-gradient(ellipse at 50% 35%, #9a7050 0%, #7a5438 70%);
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
-}
-
-.plotEmptyText {
-  font-size: 11px;
-  font-weight: 600;
-  color: #2d6a4f;
-  margin: 0;
-}
-
-.waterDropBadge {
-  position: absolute;
-  top: 4px;
-  right: 8px;
-  background: #0284c7;
-  color: #ffffff;
+.landscapeLevelBadge {
   font-size: 12px;
   font-weight: 700;
-  padding: 2px 7px;
+  color: #1b4332;
+  background: #d8f3dc;
+  border: 1px solid #95d5b2;
+  padding: 3px 10px;
   border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
 }
 
-/* Öğrenci Paneli Bahçe Görünümü */
+.landscapeSvgWrapper {
+  width: 100%;
+  position: relative;
+  line-height: 0;
+  display: block;
+}
+
+.landscapeSvg {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 72vh;
+}
+
+/* Ağaç Yuvası Etkileşimi */
+.treeSlotInteractive {
+  cursor: pointer;
+  outline: none;
+}
+
+.treeSlotInteractive:hover .woodenSignboard rect {
+  fill: #c9935f;
+  stroke: #25634b;
+}
+
+.treeSlotInteractive:focus-visible .woodenSignboard rect {
+  stroke: #25634b;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 4px #25634b);
+}
+
+.treeSlotInteractive:focus-visible {
+  outline: none;
+}
+
+.treeSlotStatic {
+  pointer-events: none;
+}
+
+.unplantedSpot {
+  transition: opacity 0.15s ease;
+}
+
+.treeSlotInteractive:hover .unplantedSpot {
+  opacity: 0.9;
+}
+
+/* Su Damlası Göstergesi */
+.waterDropIndicator {
+  filter: drop-shadow(0 2px 5px rgba(2, 132, 199, 0.4));
+}
+
+/* Öğrenci Paneli Manzara & İlerleme Bilgileri */
 .studentGardenHero {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 24px;
+  gap: 16px;
+  padding: 20px;
   border: 1px solid var(--teacher-border, #dedad0);
   border-radius: 20px;
   background: #ffffff;
+}
+
+.landscapeProgressCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: #f5f9f6;
+  border: 1px solid #d4e8dc;
+}
+
+.landscapeProgressLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #1b4332;
+}
+
+.landscapeNextTarget {
+  font-size: 13px;
+  font-weight: 600;
+  color: #25634b;
+  background: #e6f1e9;
+  padding: 4px 12px;
+  border-radius: 999px;
 }
 
 .waterRightsBanner {
@@ -803,6 +926,19 @@
   font-weight: 700;
 }
 
+/* Yardımcı ekran okuyucu sınıfı */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Mobil Uyumluluk */
 @media (max-width: 768px) {
   .studentRow {
@@ -832,10 +968,6 @@
     justify-content: center;
   }
 
-  .plotGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .pickerGrid {
     grid-template-columns: repeat(4, 1fr);
   }
@@ -850,4 +982,3 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
-

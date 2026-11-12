@@ -420,13 +420,26 @@ export interface TreeArtProps {
   stage: number;
   className?: string;
   size?: number;
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  height?: number | string;
 }
 
 /**
  * 8 ağaç türü × 6 büyüme aşaması için özgün SVG çizim bileşeni.
  * viewBox="0 0 100 120"
  */
-export function TreeArt({ tree, stage, className, size = 110 }: TreeArtProps) {
+export function TreeArt({
+  tree,
+  stage,
+  className,
+  size = 110,
+  x,
+  y,
+  width,
+  height,
+}: TreeArtProps) {
   const safeStage = Math.max(0, Math.min(5, Math.floor(stage)));
 
   // Sway animasyon sınıfı
@@ -457,11 +470,16 @@ export function TreeArt({ tree, stage, className, size = 110 }: TreeArtProps) {
     );
   };
 
+  const finalWidth = width ?? size;
+  const finalHeight = height ?? Math.round((Number(size) * 120) / 100);
+
   return (
     <svg
+      x={x}
+      y={y}
       viewBox="0 0 100 120"
-      width={size}
-      height={Math.round((size * 120) / 100)}
+      width={finalWidth}
+      height={finalHeight}
       className={`${swayClass} ${className || ''}`}
       aria-hidden="true"
       style={{ overflow: 'visible' }}

@@ -3,15 +3,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { GardenAward, GardenBehavior, GardenStudent } from '../../lib/gardenData';
 import {
-  awardGarden,
-  awardGardenClass,
   GARDEN_ICONS,
   GARDEN_TREES,
+  GARDEN_UNLOCKS,
+  archiveGardenBehavior,
+  awardGarden,
+  awardGardenClass,
+  gardenLevel,
+  gardenUnlocks,
   growthStage,
   listGardenBehaviors,
   listGardenClass,
   saveGardenBehavior,
-  archiveGardenBehavior,
   undoGardenAward,
   waterRights,
 } from '../../lib/gardenData';
@@ -564,70 +567,90 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
       )}
 
       {/* Bahçeyi Gör Penceresi */}
-      {viewingStudent && behaviors && (
-        <Modal
-          title={`${viewingStudent.name} Bahçesi`}
-          kicker={`No ${viewingStudent.student_number || '—'} · Toplam ${viewingStudent.points || 0} puan`}
-          onClose={() => setViewingStudent(null)}
-          wide
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <GardenPlot
-              behaviors={behaviors}
-              trees={viewingStudent.trees || []}
-              size="lg"
-              highlightWater={false}
-            />
+      {viewingStudent && behaviors && (() => {
+        const studentLevel = gardenLevel(viewingStudent.trees || []);
+        const { unlocked } = gardenUnlocks(studentLevel);
+        const unlockedNames = GARDEN_UNLOCKS.filter((u) => unlocked.has(u.key)).map((u) => u.name).join(', ');
 
-            <div>
-              <h4 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700 }}>Ağaçların Durumu</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-                {behaviors
-                  .filter((b) => !b.archived || (viewingStudent.trees || []).some((t) => t.behavior_id === b.id))
-                  .map((b) => {
-                    const tree = (viewingStudent.trees || []).find((t) => t.behavior_id === b.id);
-                    const isPlanted = Boolean(tree && tree.earned >= 1);
-                    const treeName = TREE_NAMES[b.tree] || 'Ağaç';
-                    const stage = isPlanted && tree ? growthStage(tree.watered) : 0;
-                    const stageName = STAGE_NAMES[stage] || 'Fidan';
-                    const waterCount = tree ? tree.watered : 0;
-                    const rights = tree ? waterRights(tree) : 0;
+        return (
+          <Modal
+            title={`${viewingStudent.name} Bahçesi`}
+            kicker={`No ${viewingStudent.student_number || '—'} · Toplam ${viewingStudent.points || 0} puan`}
+            onClose={() => setViewingStudent(null)}
+            wide
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <GardenPlot
+                behaviors={behaviors}
+                trees={viewingStudent.trees || []}
+                size="lg"
+                highlightWater={false}
+              />
 
-                    return (
-                      <div
-                        key={b.id}
-                        style={{
-                          padding: '12px 14px',
-                          border: '1px solid var(--teacher-border, #dedad0)',
-                          borderRadius: 12,
-                          background: isPlanted ? '#ffffff' : '#faf9f5',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <strong style={{ fontSize: 14 }}>{b.name}</strong>
-                          <span style={{ fontSize: 12, color: 'var(--teacher-muted, #58665f)' }}>{treeName}</span>
-                        </div>
-                        {isPlanted ? (
-                          <div style={{ fontSize: 12, color: 'var(--teacher-muted, #58665f)', lineHeight: 1.5 }}>
-                            <div>{stageName}</div>
-                            <div>{tree?.earned} puan · {waterCount} kez sulandı</div>
-                            <div style={{ color: rights > 0 ? '#0284c7' : 'inherit', fontWeight: rights > 0 ? 600 : 'normal' }}>
-                              {rights > 0 ? `${rights} sulama hakkı bekliyor` : 'Bekleyen hak yok'}
+              <div
+                style={{
+                  padding: '10px 16px',
+                  background: '#f4f8f5',
+                  border: '1px solid #d4e8dc',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  color: '#1b4332',
+                }}
+              >
+                <strong>Bahçe seviyesi {studentLevel}</strong> · Açılanlar:{' '}
+                {unlockedNames || 'Henüz açılan öğe yok (seviye 2’de kelebekler açılır)'}
+              </div>
+
+              <div>
+                <h4 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700 }}>Ağaçların Durumu</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+                  {behaviors
+                    .filter((b) => !b.archived || (viewingStudent.trees || []).some((t) => t.behavior_id === b.id))
+                    .map((b) => {
+                      const tree = (viewingStudent.trees || []).find((t) => t.behavior_id === b.id);
+                      const isPlanted = Boolean(tree && tree.earned >= 1);
+                      const treeName = TREE_NAMES[b.tree] || 'Ağaç';
+                      const stage = isPlanted && tree ? growthStage(tree.watered) : 0;
+                      const stageName = STAGE_NAMES[stage] || 'Fidan';
+                      const waterCount = tree ? tree.watered : 0;
+                      const rights = tree ? waterRights(tree) : 0;
+
+                      return (
+                        <div
+                          key={b.id}
+                          style={{
+                            padding: '12px 14px',
+                            border: '1px solid var(--teacher-border, #dedad0)',
+                            borderRadius: 12,
+                            background: isPlanted ? '#ffffff' : '#faf9f5',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <strong style={{ fontSize: 14 }}>{b.name}</strong>
+                            <span style={{ fontSize: 12, color: 'var(--teacher-muted, #58665f)' }}>{treeName}</span>
+                          </div>
+                          {isPlanted ? (
+                            <div style={{ fontSize: 12, color: 'var(--teacher-muted, #58665f)', lineHeight: 1.5 }}>
+                              <div>{stageName}</div>
+                              <div>{tree?.earned} puan · {waterCount} kez sulandı</div>
+                              <div style={{ color: rights > 0 ? '#0284c7' : 'inherit', fontWeight: rights > 0 ? 600 : 'normal' }}>
+                                {rights > 0 ? `${rights} sulama hakkı bekliyor` : 'Bekleyen hak yok'}
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: 12, color: 'var(--teacher-muted, #58665f)', fontStyle: 'italic' }}>
-                            Henüz fidan dikilmedi (0 puan)
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          ) : (
+                            <div style={{ fontSize: 12, color: 'var(--teacher-muted, #58665f)', fontStyle: 'italic' }}>
+                              Henüz fidan dikilmedi (0 puan)
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
               </div>
             </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
 
       {/* Davranışlar Yönetimi Penceresi */}
       {behaviorModalOpen && behaviors && (

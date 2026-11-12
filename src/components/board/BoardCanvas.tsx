@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Background, BOARD_H, BOARD_W, BoardEl, BoardPage, imageKey, newId, NoteEl, PolyEl, scaleElements, ShapeEl, simplifyPoints, StrokeEl, WIDGET_LABEL, WidgetEl,
 } from '../../lib/boardData';
@@ -373,6 +374,8 @@ export interface BoardCanvasProps {
   onDropShape?: (id: string, x: number, y: number) => void;
   /** Sağ tık: tıklanan öğe(ler) seçilir ve menü istenir; boş alanda ids boştur. Koordinatlar ekran pikseli */
   onElementMenu?: (ids: string[], clientX: number, clientY: number) => void;
+  /** Verilirse biçim ve seçim çubukları öğenin üstünde yüzmez, bu sabit alanda gösterilir */
+  barHost?: HTMLElement | null;
   /** Dışa aktarma için SVG öğesi */
   svgRef?: (node: SVGSVGElement | null) => void;
   /** Etkileşimsiz küçük önizleme */
@@ -431,6 +434,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onDropMedia,
     onDropShape,
     onElementMenu,
+    barHost,
     svgRef,
     thumbnail,
     ariaLabel,
@@ -901,6 +905,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
     setIsResizing(true);
   };
 
+  /** Çubuk sabit alana (barHost) ya da tuvalin içine yerleştirilir */
+  const placeBar = (node: React.ReactNode) => (barHost ? createPortal(node, barHost) : node);
+
   return (
     <div
       className={`${styles.canvas} ${thumbnail ? styles.thumb : ''}`}
@@ -1058,8 +1065,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
         })()}
       </svg>
 
-      {editable && !widgetsPassive && selectedElements.length >= 2 && !isResizing && (
+      {editable && !widgetsPassive && selectedElements.length >= 2 && (barHost || !isResizing) && placeBar(
         <MultiSelectBar
+          docked={!!barHost}
           elements={selectedElements}
           onDuplicate={() => onDuplicate?.(selectedIds)}
           onOrder={(dir) => onOrder?.(dir, selectedIds)}
@@ -1071,8 +1079,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
         />
       )}
 
-      {activeNote && !isResizing && (
+      {activeNote && (barHost || !isResizing) && placeBar(
         <FormatBar
+          docked={!!barHost}
           el={activeNote}
           colors={colors}
           barRef={formatBarRef}

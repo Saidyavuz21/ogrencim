@@ -2,8 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Diamond, Download, Eraser, Eye, Hexagon, Highlighter, History, Image as ImageIcon, Layers, Mic, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type,
+  Copy, Diamond, Download, Eraser, Eye, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
+  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -226,17 +226,32 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   // hareketi ister: önce hemen denenir, tarayıcı reddederse tahtaya ilk dokunuşta yeniden girilir.
   const fullRef = useRef(full);
   useEffect(() => { fullRef.current = full; }, [full]);
+  // Tarayıcı tam ekranı tahtadan bağımsızdır: tam ekrandan çıkılınca düzenleme / ders açık kalır
+  const [fsActive, setFsActive] = useState(false);
+  const wantFsRef = useRef(false);
+  const toggleBrowserFs = () => {
+    if (document.fullscreenElement) {
+      wantFsRef.current = false;
+      document.exitFullscreen().catch(() => {});
+    } else {
+      wantFsRef.current = true;
+      rootRef.current?.requestFullscreen?.().catch(() => {});
+    }
+  };
+  // Üst çubuktaki biçim satırı (metin ve çoklu seçim çubukları burada gösterilir) ve kısayol penceresi
+  const [barHost, setBarHost] = useState<HTMLDivElement | null>(null);
+  const [showKeys, setShowKeys] = useState(false);
   const fsRetryRef = useRef<(() => void) | null>(null);
   const reenterFullscreen = () => {
     isUploadingRef.current = false;
     const el = rootRef.current;
-    if (!fullRef.current || !el?.requestFullscreen || document.fullscreenElement || fsRetryRef.current) return;
+    if (!fullRef.current || !wantFsRef.current || !el?.requestFullscreen || document.fullscreenElement || fsRetryRef.current) return;
     el.requestFullscreen().catch(() => {
       if (fsRetryRef.current) return;
       const once = () => {
         document.removeEventListener('pointerdown', once, true);
         fsRetryRef.current = null;
-        if (fullRef.current && !document.fullscreenElement) rootRef.current?.requestFullscreen?.().catch(() => {});
+        if (fullRef.current && wantFsRef.current && !document.fullscreenElement) rootRef.current?.requestFullscreen?.().catch(() => {});
       };
       fsRetryRef.current = once;
       document.addEventListener('pointerdown', once, true);
@@ -491,11 +506,13 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (!full) {
       setFull(true);
       setSelectedIds([]);
+      wantFsRef.current = true;
       const req = rootRef.current?.requestFullscreen?.();
       req?.catch(() => {});
     } else {
       setFull(false);
       setPresenting(false);
+      wantFsRef.current = false;
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     }
   };
@@ -662,8 +679,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
   useEffect(() => {
     const onFs = () => {
-      if (isUploadingRef.current) return;
-      if (!document.fullscreenElement) { setFull(false); setPresenting(false); }
+      const on = !!document.fullscreenElement;
+      setFsActive(on);
+      // Dosya seçme penceresi tam ekranı kendiliğinden kapatır; o durumda geri dönülür. Kullanıcı kendi çıktıysa dönülmez.
+      if (!on && !isUploadingRef.current) wantFsRef.current = false;
     };
     document.addEventListener('fullscreenchange', onFs);
     return () => document.removeEventListener('fullscreenchange', onFs);
@@ -983,6 +1002,29 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
     commitElements(finalElements);
     setSelectedIds(regenerated.map((el) => el.id));
+  };
+  /** Hazır metin türü: tahtanın ortasına eklenir ve yazmaya hazır açılır */
+  const addTextPreset = (kind: 'title' | 'subtitle' | 'body' | 'boxed' | 'note') => {
+    if (!page) return;
+    let el: NoteEl;
+    if (kind === 'note') {
+      el = { id: newId(), type: 'note', x: Math.round((BOARD_W - 420) / 2), y: Math.round((BOARD_H - 240) / 2), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 32 };
+    } else {
+      const w = kind === 'title' ? 900 : 620;
+      const base: NoteEl = {
+        id: newId(), type: 'note', variant: 'text', x: Math.round((BOARD_W - w) / 2), y: 0, w, h: 0, text: '', color: 'transparent',
+        textColor: '#1f2a24', fontSize: kind === 'title' ? 72 : kind === 'subtitle' ? 42 : 32,
+        ...(kind === 'title' || kind === 'subtitle' ? { fontWeight: 700 as const } : {}),
+        ...(kind === 'boxed' ? { boxFill: '#fff3d6', boxBorder: '#f08c00', boxRadius: 12 as const } : {}),
+        autoW: true,
+      };
+      const h = computeTextHeight(base);
+      el = { ...base, h, y: Math.round((BOARD_H - h) / 2) };
+    }
+    commitElements([...page.elements, el]);
+    setTool('select');
+    setSelectedIds([el.id]);
+    setEditingNoteId(el.id);
   };
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
@@ -1327,11 +1369,20 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           <button
             type="button"
             className={styles.toolIconBtn}
-            onClick={toggleFull}
-            title="Tam ekrandan çık (Esc)"
-            aria-label="Tam ekrandan çık"
+            onClick={toggleBrowserFs}
+            title={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'}
+            aria-label={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'}
           >
-            <Minimize size={18} aria-hidden="true" />
+            {fsActive ? <Minimize size={18} aria-hidden="true" /> : <Maximize size={18} aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className={styles.toolIconBtn}
+            onClick={toggleFull}
+            title="Dersi kapat, tahta sayfasına dön"
+            aria-label="Dersi kapat"
+          >
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -1424,9 +1475,28 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           <button type="button" className={styles.toolIconBtn} onClick={exportPdf} title="Bütün sayfaları yazdır / PDF olarak kaydet" aria-label="PDF / Yazdır">
             <Printer size={20} aria-hidden="true" />
           </button>
+          <span className={styles.keysWrap}>
+            <button type="button" className={styles.toolIconBtn} aria-pressed={showKeys} aria-expanded={showKeys} onClick={() => setShowKeys((v) => !v)} title="Klavye kısayolları" aria-label="Klavye kısayolları">
+              <HelpCircle size={20} aria-hidden="true" />
+            </button>
+            {showKeys && (
+              <div className={styles.keysPop} role="note">
+                <strong>Klavye kısayolları</strong>
+                <p>V seç · P kalem · H vurgu · E silgi · N not · T metin</p>
+                <p>Ctrl+Z geri al · Ctrl+Y yinele · Delete sil</p>
+                <p>Ctrl+A tümünü seç · Ctrl+C / Ctrl+V kopyala, yapıştır · Ctrl+D çoğalt · Ctrl+G grupla</p>
+                <p>Ok tuşları seçili öğeyi kaydırır (Shift ile hızlı); seçim yokken ← / → sayfa değiştirir</p>
+                <p>Parçanın düğmeleri “Seç” aracında çalışır; taşımak için düğme olmayan yerinden sürükleyin.</p>
+              </div>
+            )}
+          </span>
+          <button type="button" className={styles.toolIconBtn} onClick={toggleBrowserFs} title={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'} aria-label={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'}>
+            {fsActive ? <Minimize size={20} aria-hidden="true" /> : <Maximize size={20} aria-hidden="true" />}
+          </button>
           {modeSwitch}
         </div>
       </header>
+      <div ref={setBarHost} className={styles.workBar} data-empty-text="Bir yazı ya da birden çok öğe seçince ayarları burada açılır." />
 
       <nav className={styles.workRail} aria-label="Araç grupları">
         {SIDE_TABS.map((t) => (
@@ -1654,17 +1724,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
         {sideTab === 'text' && (
           <div className={styles.sideCard}>
-            <div className={styles.widgetsList}>
-              <button type="button" className={styles.widgetItemBtn} aria-pressed={tool === 'text'} onClick={() => setTool('text')}>
-                <span className={styles.widgetItemIcon}><Type size={16} /></span>
-                <span className={styles.widgetItemTitle}>Metin ekle (T)</span>
-              </button>
-              <button type="button" className={styles.widgetItemBtn} aria-pressed={tool === 'note'} onClick={() => setTool('note')}>
-                <span className={styles.widgetItemIcon}><StickyNote size={16} /></span>
-                <span className={styles.widgetItemTitle}>Yapışkan not ekle (N)</span>
-              </button>
+            <div className={styles.textPresets}>
+              <button type="button" className={styles.textPreset} onClick={() => addTextPreset('title')}><span style={{ fontSize: 26, fontWeight: 700 }}>Başlık ekle</span></button>
+              <button type="button" className={styles.textPreset} onClick={() => addTextPreset('subtitle')}><span style={{ fontSize: 19, fontWeight: 700 }}>Alt başlık ekle</span></button>
+              <button type="button" className={styles.textPreset} onClick={() => addTextPreset('body')}><span style={{ fontSize: 15 }}>Düz metin ekle</span></button>
+              <button type="button" className={`${styles.textPreset} ${styles.textPresetBoxed}`} onClick={() => addTextPreset('boxed')}><span style={{ fontSize: 15 }}>Kutulu metin ekle</span></button>
+              <button type="button" className={`${styles.textPreset} ${styles.textPresetNote}`} onClick={() => addTextPreset('note')}><StickyNote size={16} aria-hidden="true" /><span style={{ fontSize: 15 }}>Yapışkan not ekle</span></button>
             </div>
-            <p className={styles.hintText}>Seçtikten sonra tahtada yazmak istediğiniz yere tıklayın. Yazı tipi, boyut, renk ve hizalama, yazı seçiliyken üstünde açılan çubuktan ayarlanır.</p>
+            <p className={styles.hintText}>Seçtiğiniz tür tahtanın ortasına gelir ve yazmaya hazır açılır. Belirli bir yere yazmak için T tuşuna basıp tahtada o yere tıklayın. Biçim ayarları, yazı seçiliyken üst satırda açılır.</p>
           </div>
         )}
 
@@ -1720,8 +1787,6 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             </label>
           </section>
         )}
-
-        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ok tuşları seçili öğeyi kaydırır (Shift ile hızlı), seçim yokken ←/→ sayfa · Esc çık.</p>
       </aside>
 
       <div className={styles.workStage}>
@@ -1740,10 +1805,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             // Panel kuralı: başka bir öğe (ya da öğeler) seçilince açılır. "Kapat"a basılınca seçim durur ama
             // panel, seçim değişene kadar kapalı kalır (aynı öğeye yeniden tıklamak onSelect çağırmaz).
             // Seçimle açılan panel, seçim bırakılınca kendiliğinden kapanır; elle açılan panel açık kalır.
-            if (ids.length) {
+            const single = ids.length === 1 ? page.elements.find((e) => e.id === ids[0]) : undefined;
+            if (single && single.type !== 'note') {
               if (!panelOpen) setPanelAuto(true);
               setPanelOpen(true);
-            } else if (panelAuto) {
+            } else if (panelAuto || ids.length) {
               setPanelAuto(false);
               setPanelOpen(false);
             }
@@ -1787,6 +1853,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           imageUrls={imageUrls}
           renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
           widgetsControlsOnly={tool === 'select'}
+          barHost={barHost}
           onDropMedia={(payload, x, y) => { try { insertMedia(JSON.parse(payload), x, y); } catch { /* geçersiz */ } }}
           onDropShape={(id, x, y) => insertShape(id, x, y, getLastUsedParams(id))}
           onConfigureShape={canConfigureSelected ? handleOpenConfigureSelected : undefined}

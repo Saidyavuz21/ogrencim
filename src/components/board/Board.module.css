@@ -1046,7 +1046,7 @@
 .ctxSep { height: 1px; margin: 4px 6px; background: #eeece5; }
 
 /* ===== Düzenleme alanı: üst çubuk + sol araç şeridi/paneli + tahta + alt sayfa şeridi ===== */
-.workspace { position: fixed; inset: 0; z-index: 105; display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: 'top top top' 'rail side stage' 'rail side pages'; background: var(--teacher-bg, #f7f6f2); overflow: hidden; }
+.workspace { position: fixed; inset: 0; z-index: 105; display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: 'top top top' 'rail side bar' 'rail side stage' 'rail side pages'; background: var(--teacher-bg, #f7f6f2); overflow: hidden; }
 .workTop { grid-area: top; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; min-width: 0; padding: 8px 12px; border-bottom: 1px solid var(--teacher-border, #dedad0); background: #fff; }
 .workTopGroup { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .workTitle { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 600; color: #20352d; }
@@ -1087,7 +1087,7 @@
 .pageStripTools .saveState { margin-right: 6px; font-variant-numeric: tabular-nums; }
 
 /* Seçili öğe paneli üst çubuğun ve sayfa şeridinin arasında kalır */
-.workDrawer { top: 76px; bottom: 124px; width: min(360px, calc(100vw - 24px)); box-shadow: -8px 0 24px rgb(20 35 28 / 12%); }
+.workDrawer { top: 132px; bottom: 124px; width: min(360px, calc(100vw - 24px)); box-shadow: -8px 0 24px rgb(20 35 28 / 12%); }
 
 @media (max-width: 1100px) {
   /* Dar ekranda sol panel tahtanın üstünde açılır */
@@ -1102,3 +1102,21 @@
   .pageStripList .pageThumb, .pageAdd { width: 96px; }
   .workTitle { display: none; }
 }
+
+/* Biçim satırı: seçili yazının / çoklu seçimin ayarları tahtanın üstüne binmeden burada durur */
+.workBar { grid-area: bar; position: relative; z-index: 30; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 54px; box-sizing: border-box; padding: 4px 12px; border-bottom: 1px solid #eeece5; background: #fff; }
+.workBar:empty::before { content: attr(data-empty-text); font-size: 13px; color: var(--teacher-muted, #58665f); }
+.formatBarDocked { position: static; max-width: 100%; justify-content: center; padding: 0; border: 0; border-radius: 0; box-shadow: none; transform: none; }
+/* Kısayol penceresi */
+.keysWrap { position: relative; display: inline-flex; }
+.keysPop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; display: grid; gap: 6px; width: min(340px, calc(100vw - 24px)); box-sizing: border-box; padding: 14px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; background: #fff; box-shadow: 0 8px 24px rgb(20 35 28 / 12%); font-size: 13px; line-height: 1.5; color: #20352d; }
+.keysPop p { margin: 0; color: var(--teacher-muted, #58665f); }
+/* Hazır metin türleri */
+.textPresets { display: grid; gap: 8px; }
+.textPreset { display: flex; align-items: center; gap: 8px; min-height: 48px !important; padding: 8px 14px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; background: #fff; color: #20352d; font: inherit; text-align: left; cursor: pointer; }
+.textPreset:hover { border-color: #9ab8a5; background: #f0f4ee; }
+.textPreset:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
+.textPresetBoxed { border-color: #f08c00; background: #fff3d6; }
+.textPresetBoxed:hover { border-color: #f08c00; background: #ffecc0; }
+.textPresetNote { border-color: #e6d98a; background: #fff3b0; }
+.textPresetNote:hover { border-color: #d6c666; background: #ffee99; }

@@ -115,7 +115,10 @@ export function FormatBar({
   barRef,
   textareaRef,
   onPatch,
+  docked,
 }: {
+  /** Sabit satırda gösterilir (düzenleme alanının üst çubuğu altı); öğenin üstünde yüzmez */
+  docked?: boolean;
   el: NoteEl;
   colors: string[];
   barRef?: React.RefObject<HTMLDivElement | null>;
@@ -140,10 +143,10 @@ export function FormatBar({
   return (
     <div
       ref={barRef}
-      className={styles.formatBar}
+      className={`${styles.formatBar} ${docked ? styles.formatBarDocked : ''}`}
       role="toolbar"
       aria-label="Metin biçimlendirme"
-      style={{
+      style={docked ? undefined : {
         top: `${topPct}%`,
         left: `${leftPct}%`,
         transform,
@@ -820,7 +823,9 @@ export function MultiSelectBar({
   onUngroup,
   onConfigure,
   onSaveToLibrary,
+  docked,
 }: {
+  docked?: boolean;
   elements: BoardEl[];
   onDuplicate?: () => void;
   onOrder?: (dir: 'front' | 'back') => void;
@@ -850,10 +855,10 @@ export function MultiSelectBar({
 
   return (
     <div
-      className={styles.formatBar}
+      className={`${styles.formatBar} ${docked ? styles.formatBarDocked : ''}`}
       role="toolbar"
       aria-label="Seçim işlemleri"
-      style={{
+      style={docked ? undefined : {
         top: `${topPct}%`,
         left: `${leftPct}%`,
         transform,

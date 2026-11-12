@@ -1044,3 +1044,61 @@
 .ctxDanger:hover:not(:disabled), .ctxDanger:focus-visible { background: #fcecef; }
 .ctxKey { flex-shrink: 0; font-size: 12px; font-weight: 400; color: var(--teacher-muted, #58665f); font-variant-numeric: tabular-nums; }
 .ctxSep { height: 1px; margin: 4px 6px; background: #eeece5; }
+
+/* ===== Düzenleme alanı: üst çubuk + sol araç şeridi/paneli + tahta + alt sayfa şeridi ===== */
+.workspace { position: fixed; inset: 0; z-index: 105; display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: 'top top top' 'rail side stage' 'rail side pages'; background: var(--teacher-bg, #f7f6f2); overflow: hidden; }
+.workTop { grid-area: top; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; min-width: 0; padding: 8px 12px; border-bottom: 1px solid var(--teacher-border, #dedad0); background: #fff; }
+.workTopGroup { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.workTitle { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 600; color: #20352d; }
+.workTop .toolIconBtn { width: 44px; height: 44px; }
+.workTop .toolIconBtn[aria-pressed='true'] { border-color: #9ab8a5; background: #e6f1e9; color: #1d503d; }
+.workTop .sep { width: 1px; height: 24px; margin: 0 4px; background: var(--teacher-border, #dedad0); flex-shrink: 0; }
+.workTop .modeSwitch { position: static; box-shadow: none; }
+.toolChip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-left: 4px; padding: 0 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 10px; background: #faf9f5; color: #20352d; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.toolChip:hover { background: #f0f4ee; }
+.toolChip:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
+.toolChipDot { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 1px #d5d1c5; }
+
+.workRail { grid-area: rail; display: flex; flex-direction: column; gap: 4px; width: 76px; box-sizing: border-box; padding: 8px 6px; border-right: 1px solid var(--teacher-border, #dedad0); background: #fff; overflow-y: auto; }
+.railBtn { display: grid; justify-items: center; gap: 4px; min-height: 60px; padding: 8px 2px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: #35443d; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.railBtn:hover { background: #f0f4ee; }
+.railBtn[aria-pressed='true'] { border-color: #9ab8a5; background: var(--teacher-selected, #e6f1e9); color: #1d503d; }
+.railBtn:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
+
+.workSide { grid-area: side; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 12px; width: 320px; box-sizing: border-box; padding: 12px; border-right: 1px solid var(--teacher-border, #dedad0); background: #f4f3ee; overflow-x: hidden; overflow-y: auto; }
+.workSide[hidden] { display: none; }
+.workSide > * { min-width: 0; }
+.workSide .mediaGrid { max-height: none; }
+.sideCard { display: grid; gap: 14px; padding: 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fff; }
+.sideCard button { min-height: 0 !important; min-width: 0 !important; box-sizing: border-box; }
+.workSide .widgetItemBtn[aria-pressed='true'] { border-color: #9ab8a5; background: var(--teacher-selected, #e6f1e9); color: #1d503d; }
+
+.workStage { grid-area: stage; position: relative; display: grid; place-items: center; min-width: 0; min-height: 0; padding: 16px; container-type: size; overflow: hidden; }
+.workStage > .canvas { width: min(100cqw, calc(100cqh * 16 / 9)); }
+
+.pageStrip { grid-area: pages; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--teacher-border, #dedad0); background: #fff; }
+.pageStripList { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding: 4px; overflow-x: auto; }
+.pageStripList .pageThumb { width: 124px; flex-shrink: 0; }
+.pageAdd { display: grid; place-items: center; align-content: center; gap: 2px; width: 124px; aspect-ratio: 16 / 9; flex-shrink: 0; border: 2px dashed #a4b1a6; border-radius: 10px; background: #faf9f5; color: #25634b; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pageAdd:hover:not(:disabled) { background: var(--teacher-selected, #e6f1e9); }
+.pageAdd:disabled { opacity: 0.45; cursor: not-allowed; }
+.pageAdd:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
+.pageStripTools { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.pageStripTools .saveState { margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+/* Seçili öğe paneli üst çubuğun ve sayfa şeridinin arasında kalır */
+.workDrawer { top: 76px; bottom: 124px; width: min(360px, calc(100vw - 24px)); box-shadow: -8px 0 24px rgb(20 35 28 / 12%); }
+
+@media (max-width: 1100px) {
+  /* Dar ekranda sol panel tahtanın üstünde açılır */
+  .workSide { grid-area: stage; z-index: 20; justify-self: start; width: min(320px, 100%); height: 100%; box-shadow: 8px 0 24px rgb(20 35 28 / 12%); }
+  .workTitle { max-width: 140px; }
+}
+@media (max-width: 767px) {
+  .workRail { width: 60px; padding: 6px 4px; }
+  .railBtn { min-height: 52px; font-size: 11px; }
+  .workStage { padding: 8px; }
+  .pageStrip { flex-wrap: wrap; }
+  .pageStripList .pageThumb, .pageAdd { width: 96px; }
+  .workTitle { display: none; }
+}

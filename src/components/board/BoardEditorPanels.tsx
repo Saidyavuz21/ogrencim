@@ -722,7 +722,10 @@ export function MediaDrawer({
   onToggleSchoolShare,
   onCopySchoolItem,
   schoolSharingEnabled,
+  only,
 }: {
+  /** Yalnızca resimler ya da yalnızca şekiller (sol panelin ayrı sekmeleri); verilmezse üçü de sekmeli */
+  only?: 'images' | 'shapes';
   onInsert: (m: MediaItem) => void;
   onInsertShape?: (shapeId: string) => void;
   onUpload?: () => void;
@@ -739,7 +742,7 @@ export function MediaDrawer({
   schoolSharingEnabled?: boolean;
 }) {
   // Kaynak: resimler (Dosyalarım, Kütüphane) ya da şekiller (kaydedilenler üstte, hazır şekiller altta)
-  const [source, setSource] = useState<'mine' | 'library' | 'shapes'>('mine');
+  const [source, setSource] = useState<'mine' | 'library' | 'shapes'>(only === 'shapes' ? 'shapes' : 'mine');
   const isShapeSource = source === 'shapes';
   const [items, setItems] = useState<Record<string, MediaItem[] | null>>({ mine: null, library: null });
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -770,17 +773,19 @@ export function MediaDrawer({
 
   return (
     <section className={styles.panel} aria-label="Medya çekmecesi">
-      <h3>Medya ve Kütüphane</h3>
+      {!only && <h3>Medya ve Kütüphane</h3>}
+      {only !== 'shapes' && (
       <div className={styles.pageTools}>
         <button type="button" className={styles.tool} aria-pressed={source === 'mine'} onClick={() => setSource('mine')}>Dosyalarım</button>
         <button type="button" className={styles.tool} aria-pressed={source === 'library'} onClick={() => setSource('library')}>Kütüphane</button>
-        <button type="button" className={styles.tool} aria-pressed={source === 'shapes'} onClick={() => setSource('shapes')}>Şekiller</button>
+        {!only && <button type="button" className={styles.tool} aria-pressed={source === 'shapes'} onClick={() => setSource('shapes')}>Şekiller</button>}
         {!isShapeSource && onUpload && (
           <button type="button" className={styles.tool} onClick={onUpload} disabled={busy} title="Bilgisayardan yeni görsel yükle">
             <Upload size={16} aria-hidden="true" /> Yükle
           </button>
         )}
       </div>
+      )}
       {isShapeSource ? (
         <ShapeLibraryPanel
           onInsert={(shapeId) => onInsertShape?.(shapeId)}

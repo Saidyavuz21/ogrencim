@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Diamond, Download, Eraser, Eye, EyeOff, Hexagon, Highlighter, History, Image as ImageIcon, Layers, Mic, Minimize, Minus, MousePointer,
+  Copy, Diamond, Download, Eraser, Eye, Hexagon, Highlighter, History, Image as ImageIcon, Layers, Mic, Minimize, Minus, MousePointer,
   Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
@@ -16,7 +16,7 @@ import {
 import { listQuestions, QuestionRow } from '../../lib/quizData';
 import { listMyFiles, signedFileUrl, uploadTeacherFiles } from '../../lib/filesData';
 import { fileSlug } from '../../lib/reportData';
-import { BoardCanvas, SHAPE_TOOLS, Tool, wrapTextLines } from './BoardCanvas';
+import { BoardCanvas, DRAW_TOOLS, SHAPE_TOOLS, Tool, wrapTextLines } from './BoardCanvas';
 import { computeTextHeight, fitTextWidth } from './textLayout';
 import { translate } from './boardGeometry';
 import { normalizeWholeTags } from './BoardFormatBars';
@@ -60,7 +60,25 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'rect', label: 'Dikdörtgen', key: 'r' }, { id: 'ellipse', label: 'Daire', key: 'o' }, { id: 'note', label: 'Not', key: 'n' },
   { id: 'text', label: 'Metin', key: 't' },
 ];
+const TOOL_LABEL: Record<string, string> = {
+  ...Object.fromEntries(TOOLS.map((t) => [t.id, t.label])),
+  triangle: 'Üçgen', diamond: 'Eşkenar dörtgen', hexagon: 'Altıgen', star: 'Yıldız',
+};
 
+/** Düzenleme alanının sol şeridi: seçilen grubun ayarları yanındaki panelde açılır */
+type SideTab = 'draw' | 'shapes' | 'text' | 'media' | 'widgets' | 'page';
+const SIDE_TABS: { id: SideTab; label: string }[] = [
+  { id: 'draw', label: 'Çizim' }, { id: 'shapes', label: 'Şekiller' }, { id: 'text', label: 'Metin' },
+  { id: 'media', label: 'Görseller' }, { id: 'widgets', label: 'Parçalar' }, { id: 'page', label: 'Zemin' },
+];
+const tabOfTool = (t: Tool): SideTab | null => (
+  DRAW_TOOLS.includes(t) ? 'draw' : SHAPE_TOOLS.includes(t) ? 'shapes' : t === 'text' || t === 'note' ? 'text' : null
+);
+
+/** Sayfa şeridindeki küçük resim: sayfa değişmedikçe yeniden çizilmez */
+const PageThumb = React.memo(function PageThumb({ page, imageUrls }: { page: BoardPage; imageUrls: Record<string, string> }) {
+  return <BoardCanvas page={page} imageUrls={imageUrls} thumbnail />;
+});
 
 /** Öğretmen: tahta düzenleyici (çizim, şekil, not, görsel, parçalar, sayfalar, sunum) */
 export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: () => void }) {
@@ -125,8 +143,22 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [panelAuto, setPanelAuto] = useState(false);
   /** Paneli kullanıcı açtı: seçim bırakılınca kendiliğinden kapanmaz */
   const openPanelManually = () => { setPanelAuto(false); setPanelOpen(true); };
-  // Tam ekranda araç çubuğu tahtanın üstünde yüzer; gizlenebilir
-  const [toolsHidden, setToolsHidden] = useState(false);
+  // Sol panel: hangi araç grubu açık (dar ekranda kapalı başlar, tahtanın üstünde açılır)
+  const [sideTab, setSideTab] = useState<SideTab>('draw');
+  const [sideOpen, setSideOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 1100);
+  /** Araç seçilince ilgili grup sol panelde açılır (klavye kısayolları da buradan geçer) */
+  const chooseTool = (t: Tool) => {
+    setTool(t);
+    const tab = tabOfTool(t);
+    if (tab) { setSideTab(tab); setSideOpen(true); }
+  };
+  const openTab = (id: SideTab) => {
+    const armPen = id === 'draw' && !DRAW_TOOLS.includes(tool);
+    if (armPen) setTool('pen');
+    if (sideOpen && sideTab === id && !armPen) { setSideOpen(false); return; }
+    setSideTab(id);
+    setSideOpen(true);
+  };
   // Sayfa silme onayı tahtanın içinde açılır (tarayıcı tam ekrandayken dışarıdaki pencereler görünmez)
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Ayarlı kütüphane şekilleri için modal (ekleme veya düzenleme)
@@ -152,9 +184,6 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const isUploadingRef = useRef(false);
-  const dockRef = useRef<HTMLDivElement>(null);
-  // Canva stili açılır menü (çizim/kalem, şekiller, parçalar)
-  const [activePopover, setActivePopover] = useState<'draw' | 'shapes' | 'widget' | null>(null);
   // Sun kipi ve ortak adım durumu: widget kimliği → açık adım sayısı
   const [stepOpen, setStepOpen] = useState<Record<string, number>>({});
 
@@ -226,17 +255,6 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, []);
-
-  useEffect(() => {
-    if (!activePopover) return;
-    const handleOutside = (e: MouseEvent) => {
-      if (dockRef.current && !dockRef.current.contains(e.target as Node)) {
-        setActivePopover(null);
-      }
-    };
-    window.addEventListener('mousedown', handleOutside);
-    return () => window.removeEventListener('mousedown', handleOutside);
-  }, [activePopover]);
 
   useEffect(() => {
     let alive = true;
@@ -592,10 +610,6 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           setEditingNoteId(null);
           return;
         }
-        if (activePopover) {
-          setActivePopover(null);
-          return;
-        }
         if (panelOpen) {
           setPanelAuto(false);
           setPanelOpen(false);
@@ -638,7 +652,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         if (dx || dy) { e.preventDefault(); nudgeSelected(dx, dy); return; }
       }
       const t = TOOLS.find((x) => x.key === e.key.toLowerCase());
-      if (t) setTool(t.id);
+      if (t) chooseTool(t.id);
       if (e.key === 'ArrowRight' && full && content) setPageIndex((i) => Math.min(content.pages.length - 1, i + 1));
       if (e.key === 'ArrowLeft' && full) setPageIndex((i) => Math.max(0, i - 1));
     };
@@ -1042,7 +1056,6 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (toDers === presenting) return;
     setSelectedIds([]);
     setEditingNoteId(null);
-    setActivePopover(null);
     setCtxMenu(null);
     setPanelAuto(false);
     setPanelOpen(false);
@@ -1325,140 +1338,198 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     );
   }
 
-  // Tam ekran: bütün düzenleme araçları + sağda sayfa ve ayar paneli
+  // Düzenleme alanı: üstte sabit çubuk, solda araç şeridi ve paneli, ortada tahta, altta sayfa şeridi
+  const sideLabel = SIDE_TABS.find((t) => t.id === sideTab)?.label || '';
   return (
-    <div ref={rootRef} className={`${styles.editor} ${styles.editorFull}`}>
-      <div className={styles.stage}>
-        {modeSwitch}
-        {toolsHidden ? (
+    <div ref={rootRef} className={styles.workspace}>
+      <input
+        ref={fileInput}
+        type="file"
+        accept={BOARD_IMAGE_TYPES.join(',')}
+        hidden
+        onChange={(e) => {
+          upload(e.target.files?.[0]);
+          window.setTimeout(() => reenterFullscreenRef.current(), 400);
+        }}
+      />
+      <header className={styles.workTop}>
+        <div className={styles.workTopGroup}>
+          <button type="button" className={styles.tool} onClick={toggleFull} aria-label="Düzenlemeden çık" title="Düzenlemeden çık (Esc)">
+            <ArrowLeft size={20} aria-hidden="true" />
+          </button>
+          <strong className={styles.workTitle} title={board.title}>{board.title}</strong>
+          <span
+            className={`${styles.saveStatusBadge} ${saveState === 'error' ? styles.saveWarn : ''}`}
+            role="status"
+            title={
+              saveState === 'saved' ? 'Tüm değişiklikler kaydedildi' :
+              saveState === 'saving' ? 'Kaydediliyor…' :
+              saveState === 'error' ? `Kayıt hatası: ${saveError}` :
+              'Kaydedilmemiş değişiklikler var'
+            }
+            aria-label={
+              saveState === 'saved' ? 'Kaydedildi' :
+              saveState === 'saving' ? 'Kaydediliyor' :
+              saveState === 'error' ? 'Hata' : 'Değişiklik var'
+            }
+          >
+            {saveState === 'saving' ? (
+              <span className={styles.savingSpinner} aria-hidden="true" />
+            ) : saveState === 'saved' ? (
+              <Check size={16} color="#1e7a4c" aria-hidden="true" />
+            ) : saveState === 'error' ? (
+              <AlertCircle size={16} color="#d03b3b" aria-hidden="true" />
+            ) : (
+              <span className={styles.dirtyDot} aria-hidden="true" />
+            )}
+            <span className={styles.saveStatusText}>
+              {saveState === 'saved' ? 'Kaydedildi' : saveState === 'saving' ? 'Kaydediliyor…' : saveState === 'error' ? 'Kayıt hatası' : 'Değişiklik var'}
+            </span>
+          </span>
+        </div>
+        <div className={styles.workTopGroup} role="toolbar" aria-label="Tahta araçları">
           <button
             type="button"
-            className={styles.toolsReveal}
-            onClick={() => setToolsHidden(false)}
-            title="Araç çubuğunu göster"
+            className={styles.toolIconBtn}
+            aria-pressed={tool === 'select'}
+            onClick={() => setTool('select')}
+            title="Seçim aracı (V): öğeleri seç, taşı, boyutlandır"
+            aria-label="Seç"
           >
-            <Eye size={18} aria-hidden="true" />
-            <span>Araçlar</span>
+            <MousePointer size={20} aria-hidden="true" />
           </button>
-        ) : (
-          <div className={styles.dockWrapper} ref={dockRef}>
-            {/* Canva-stili Kalem & Renk & Kalınlık Açılır Menüsü */}
-            {activePopover === 'draw' && (
-              <div className={styles.popoverCard} role="dialog" aria-label="Çizim aracı ve renk ayarları">
+          <span className={styles.sep} aria-hidden="true" />
+          <button type="button" className={styles.toolIconBtn} onClick={undo} disabled={!past.length} title="Geri al (Ctrl+Z)" aria-label="Geri al">
+            <RotateCcw size={20} aria-hidden="true" />
+          </button>
+          <button type="button" className={styles.toolIconBtn} onClick={redo} disabled={!future.length} title="Yinele (Ctrl+Y)" aria-label="Yinele">
+            <RotateCw size={20} aria-hidden="true" />
+          </button>
+          {tool !== 'select' && (
+            <button
+              type="button"
+              className={styles.toolChip}
+              onClick={() => { const tab = tabOfTool(tool); if (tab) { setSideTab(tab); setSideOpen(true); } }}
+              title="Etkin araç · ayarlarını sol panelde aç"
+            >
+              {tool !== 'eraser' && <span className={styles.toolChipDot} style={{ backgroundColor: color }} aria-hidden="true" />}
+              <span>{TOOL_LABEL[tool] || tool}</span>
+            </button>
+          )}
+        </div>
+        <div className={styles.workTopGroup}>
+          <button type="button" className={styles.toolIconBtn} onClick={exportPng} disabled={busy} title="Bu sayfayı PNG görsel olarak indir" aria-label="PNG indir">
+            <Download size={20} aria-hidden="true" />
+          </button>
+          <button type="button" className={styles.toolIconBtn} onClick={exportPdf} title="Bütün sayfaları yazdır / PDF olarak kaydet" aria-label="PDF / Yazdır">
+            <Printer size={20} aria-hidden="true" />
+          </button>
+          {modeSwitch}
+        </div>
+      </header>
+
+      <nav className={styles.workRail} aria-label="Araç grupları">
+        {SIDE_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={styles.railBtn}
+            aria-pressed={sideOpen && sideTab === t.id}
+            aria-controls="board-side"
+            onClick={() => openTab(t.id)}
+          >
+            {t.id === 'draw' ? <Pen size={22} aria-hidden="true" /> :
+             t.id === 'shapes' ? <Shapes size={22} aria-hidden="true" /> :
+             t.id === 'text' ? <Type size={22} aria-hidden="true" /> :
+             t.id === 'media' ? <ImageIcon size={22} aria-hidden="true" /> :
+             t.id === 'widgets' ? <Component size={22} aria-hidden="true" /> :
+             <Layers size={22} aria-hidden="true" />}
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <aside id="board-side" className={styles.workSide} aria-label={`${sideLabel} paneli`} hidden={!sideOpen}>
+        <div className={styles.drawerHead}>
+          <strong>{sideLabel}</strong>
+          <button type="button" className={styles.tool} onClick={() => setSideOpen(false)} aria-label="Sol paneli kapat">Kapat</button>
+        </div>
+
+        {sideTab === 'draw' && (
+          <div className={styles.sideCard}>
+            <div className={styles.popoverSection}>
+              <span className={styles.popoverLabel}>Çizim aracı</span>
+              <div className={styles.brushRow}>
+                <button type="button" className={`${styles.brushCard} ${tool === 'pen' ? styles.brushActive : ''}`} aria-pressed={tool === 'pen'} onClick={() => setTool('pen')} title="Kalem (P)">
+                  <div className={styles.brushPreview} style={{ borderColor: tool === 'pen' ? color : '#dedad0' }}>
+                    <Pen size={20} color={tool === 'pen' ? color : 'currentColor'} />
+                  </div>
+                  <span>Kalem</span>
+                </button>
+                <button type="button" className={`${styles.brushCard} ${tool === 'highlighter' ? styles.brushActive : ''}`} aria-pressed={tool === 'highlighter'} onClick={() => setTool('highlighter')} title="Vurgulayıcı (H)">
+                  <div className={styles.brushPreview} style={{ borderColor: tool === 'highlighter' ? color : '#dedad0' }}>
+                    <Highlighter size={20} color={tool === 'highlighter' ? color : 'currentColor'} />
+                  </div>
+                  <span>Vurgu</span>
+                </button>
+                <button type="button" className={`${styles.brushCard} ${tool === 'eraser' ? styles.brushActive : ''}`} aria-pressed={tool === 'eraser'} onClick={() => setTool('eraser')} title="Silgi (E)">
+                  <div className={styles.brushPreview} style={{ borderColor: tool === 'eraser' ? '#d03b3b' : '#dedad0' }}>
+                    <Eraser size={20} color={tool === 'eraser' ? '#d03b3b' : 'currentColor'} />
+                  </div>
+                  <span>Silgi</span>
+                </button>
+              </div>
+            </div>
+            {tool === 'eraser' ? (
+              <p className={styles.hintText}>Dokunduğunuz çizgi veya şeklin tamamını siler. Geri al ile geri getirebilirsiniz.</p>
+            ) : (
+              <>
                 <div className={styles.popoverSection}>
-                  <span className={styles.popoverLabel}>Çizim aracı</span>
-                  <div className={styles.brushRow}>
-                    <button
-                      type="button"
-                      className={`${styles.brushCard} ${tool === 'pen' ? styles.brushActive : ''}`}
-                      onClick={() => setTool('pen')}
-                      title="İnce Kalem (P)"
-                    >
-                      <div className={styles.brushPreview} style={{ borderColor: tool === 'pen' ? color : '#dedad0' }}>
-                        <Pen size={20} color={tool === 'pen' ? color : 'currentColor'} />
-                      </div>
-                      <span>Kalem</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className={`${styles.brushCard} ${tool === 'highlighter' ? styles.brushActive : ''}`}
-                      onClick={() => setTool('highlighter')}
-                      title="Vurgulayıcı / Fosforlu (H)"
-                    >
-                      <div className={styles.brushPreview} style={{ borderColor: tool === 'highlighter' ? color : '#dedad0' }}>
-                        <Highlighter size={20} color={tool === 'highlighter' ? color : 'currentColor'} />
-                      </div>
-                      <span>Vurgu</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className={`${styles.brushCard} ${tool === 'eraser' ? styles.brushActive : ''}`}
-                      onClick={() => setTool('eraser')}
-                      title="Silgi (E)"
-                    >
-                      <div className={styles.brushPreview} style={{ borderColor: tool === 'eraser' ? '#d03b3b' : '#dedad0' }}>
-                        <Eraser size={20} color={tool === 'eraser' ? '#d03b3b' : 'currentColor'} />
-                      </div>
-                      <span>Silgi</span>
-                    </button>
+                  <span className={styles.popoverLabel}><Palette size={14} aria-hidden="true" />{tool === 'highlighter' ? 'Vurgu rengi' : 'Kalem rengi'}</span>
+                  <div className={styles.colorPalette}>
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`${styles.colorSwatch} ${color === c ? styles.colorSwatchActive : ''}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => {
+                      setColor(c);
+                      if (selected && 'color' in selected && selected.type !== 'note') patchElement(selected.id, { color: c });
+                    }}
+                    title={`Renk: ${c}`}
+                    aria-label={`Renk ${c}`}
+                  />
+                ))}
                   </div>
                 </div>
-
-                {tool !== 'eraser' && (
-                  <div className={styles.popoverSection}>
-                    <div className={styles.popoverHeaderRow}>
-                      <span className={styles.popoverLabel}>
-                        <Palette size={14} aria-hidden="true" />
-                        {tool === 'highlighter' ? 'Vurgu renkleri' : 'Kalem renkleri'}
-                      </span>
-                    </div>
-                    <div className={styles.colorPalette}>
-                      {COLORS.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          className={`${styles.colorSwatch} ${color === c ? styles.colorSwatchActive : ''}`}
-                          style={{ backgroundColor: c }}
-                          onClick={() => {
-                            setColor(c);
-                            if (selected && 'color' in selected && selected.type !== 'note') {
-                              patchElement(selected.id, { color: c });
-                            }
-                          }}
-                          title={`Renk: ${c}`}
-                          aria-label={`Renk ${c}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {tool === 'eraser' ? (
-                  <p className={styles.hintText}>
-                    Dokunduğunuz çizgi veya şeklin tamamını siler. Geri al ile geri getirebilirsiniz.
-                  </p>
-                ) : (
                 <div className={styles.popoverSection}>
                   <div className={styles.popoverHeaderRow}>
-                    <span className={styles.popoverLabel}>
-                      <Sliders size={14} aria-hidden="true" />
-                      Çizgi kalınlığı
-                    </span>
+                    <span className={styles.popoverLabel}><Sliders size={14} aria-hidden="true" />Çizgi kalınlığı</span>
                     <span className={styles.widthValue}>{width} px</span>
                   </div>
-
                   <div className={styles.widthPresets}>
-                    {[
-                      { label: 'İnce', value: 2, dot: 4 },
-                      { label: 'Orta', value: 6, dot: 8 },
-                      { label: 'Kalın', value: 12, dot: 13 },
-                      { label: 'Çok kalın', value: 20, dot: 18 },
-                    ].map((preset) => (
-                      <button
-                        key={preset.value}
-                        type="button"
-                        className={`${styles.widthPresetBtn} ${width === preset.value ? styles.widthPresetActive : ''}`}
-                        onClick={() => {
-                          setWidth(preset.value);
-                          if (selected && 'width' in selected) patchElement(selected.id, { width: preset.value });
-                        }}
-                        title={`${preset.label} (${preset.value}px)`}
-                      >
-                        <span
-                          className={styles.widthDotPreview}
-                          style={{
-                            width: preset.dot,
-                            height: preset.dot,
-                            backgroundColor: color,
-                          }}
-                        />
-                        <span>{preset.label}</span>
-                      </button>
-                    ))}
+                {[
+                  { label: 'İnce', value: 2, dot: 4 },
+                  { label: 'Orta', value: 6, dot: 8 },
+                  { label: 'Kalın', value: 12, dot: 13 },
+                  { label: 'Çok kalın', value: 20, dot: 18 },
+                ].map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    className={`${styles.widthPresetBtn} ${width === preset.value ? styles.widthPresetActive : ''}`}
+                    onClick={() => {
+                      setWidth(preset.value);
+                      if (selected && 'width' in selected) patchElement(selected.id, { width: preset.value });
+                    }}
+                    title={`${preset.label} (${preset.value}px)`}
+                  >
+                    <span className={styles.widthDotPreview} style={{ width: preset.dot, height: preset.dot, backgroundColor: color }} />
+                    <span>{preset.label}</span>
+                  </button>
+                ))}
                   </div>
-
                   <input
                     type="range"
                     min={tool === 'highlighter' ? 6 : 1}
@@ -1470,454 +1541,190 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                       if (selected && 'width' in selected) patchElement(selected.id, { width: val });
                     }}
                     className={styles.widthSlider}
-                    aria-label="Çizgi kalınlığı ayar kaydırıcısı"
+                    aria-label="Çizgi kalınlığı"
                   />
                 </div>
-                )}
-              </div>
+              </>
             )}
-
-            {/* Şekiller Açılır Menüsü */}
-            {activePopover === 'shapes' && (
-              <div className={styles.popoverCard} role="dialog" aria-label="Şekil seçimi ve ayarları">
-                <div className={styles.popoverSection}>
-                  <span className={styles.popoverLabel}>Şekil türü</span>
-                  <div className={styles.shapesGrid}>
-                    {[
-                      { id: 'line', label: 'Çizgi', icon: <Minus size={22} /> },
-                      { id: 'arrow', label: 'Ok', icon: <ArrowRight size={22} /> },
-                      { id: 'rect', label: 'Dikdörtgen', icon: <Square size={22} /> },
-                      { id: 'ellipse', label: 'Daire', icon: <Circle size={22} /> },
-                      { id: 'triangle', label: 'Üçgen', icon: <Triangle size={22} /> },
-                      { id: 'diamond', label: 'Eşkenar', icon: <Diamond size={22} /> },
-                      { id: 'hexagon', label: 'Altıgen', icon: <Hexagon size={22} /> },
-                      { id: 'star', label: 'Yıldız', icon: <Star size={22} /> },
-                    ].map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        className={`${styles.shapeBtn} ${tool === s.id ? styles.shapeBtnActive : ''}`}
-                        onClick={() => setTool(s.id as Tool)}
-                        aria-pressed={tool === s.id}
-                        title={s.id === 'diamond' ? 'Eşkenar dörtgen' : s.label}
-                        aria-label={s.id === 'diamond' ? 'Eşkenar dörtgen' : undefined}
-                      >
-                        {s.icon}
-                        <span>{s.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.popoverSection}>
-                  <span className={styles.popoverLabel}>Şekil rengi</span>
-                  <div className={styles.colorPalette}>
-                    {COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        className={`${styles.colorSwatch} ${color === c ? styles.colorSwatchActive : ''}`}
-                        style={{ backgroundColor: c }}
-                        onClick={() => {
-                          setColor(c);
-                          if (selected && 'color' in selected && selected.type !== 'note') {
-                            patchElement(selected.id, { color: c });
-                          }
-                        }}
-                        title={`Renk: ${c}`}
-                        aria-label={`Renk ${c}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.popoverSection}>
-                  <div className={styles.popoverHeaderRow}>
-                    <span className={styles.popoverLabel}>Kenar kalınlığı</span>
-                    <span className={styles.widthValue}>{width} px</span>
-                  </div>
-                  <div className={styles.widthPresets}>
-                    {[
-                      { label: 'İnce', value: 2, dot: 4 },
-                      { label: 'Orta', value: 5, dot: 8 },
-                      { label: 'Kalın', value: 10, dot: 13 },
-                    ].map((preset) => (
-                      <button
-                        key={preset.value}
-                        type="button"
-                        className={`${styles.widthPresetBtn} ${width === preset.value ? styles.widthPresetActive : ''}`}
-                        onClick={() => {
-                          setWidth(preset.value);
-                          if (selected && 'width' in selected) patchElement(selected.id, { width: preset.value });
-                        }}
-                        title={`${preset.label} (${preset.value}px)`}
-                      >
-                        <span
-                          className={styles.widthDotPreview}
-                          style={{ width: preset.dot, height: preset.dot, backgroundColor: color }}
-                        />
-                        <span>{preset.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Parçalar Açılır Menüsü */}
-            {activePopover === 'widget' && (
-              <div className={styles.popoverCard} role="dialog" aria-label="Sınıf Araçları ve Parçalar">
-                <div className={styles.popoverSection}>
-                  <span className={styles.popoverLabel}>Sınıf Araçları Ekle</span>
-                  <div className={styles.widgetsList}>
-                    {(Object.keys(WIDGET_LABEL) as WidgetKind[]).map((k) => (
-                      <button
-                        key={k}
-                        type="button"
-                        className={styles.widgetItemBtn}
-                        onClick={() => {
-                          setActivePopover(null);
-                          addWidget(k);
-                        }}
-                      >
-                        <span className={styles.widgetItemIcon}>
-                          {k === 'timer' ? <Clock size={16} /> :
-                           k === 'minitest' ? <Component size={16} /> :
-                           k === 'reveal' ? <Eye size={16} /> :
-                           k === 'match' ? <Shuffle size={16} /> :
-                           k === 'audio' ? <Mic size={16} /> :
-                           <Layers size={16} />}
-                        </span>
-                        <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Alt Yüzen Araç Çubuğu (Yalnızca İkonlar) */}
-            <div className={styles.toolbar} role="toolbar" aria-label="Tahta araçları">
-              <div className={styles.toolGroup} role="group" aria-label="Çizim araçları">
-              {/* Seçim */}
-              <button
-                type="button"
-                className={styles.toolIconBtn}
-                aria-pressed={tool === 'select'}
-                onClick={() => {
-                  setTool('select');
-                  setActivePopover(null);
-                }}
-                title="Seçim Aracı (V)"
-                aria-label="Seç"
-              >
-                <MousePointer size={19} aria-hidden="true" />
-              </button>
-
-              {/* Kalem */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${tool === 'pen' ? styles.toolActive : ''}`}
-                aria-pressed={tool === 'pen'}
-                onClick={() => {
-                  setTool('pen');
-                  setActivePopover((cur) => (cur === 'draw' && tool === 'pen' ? null : 'draw'));
-                }}
-                title="Kalem (P) · Çeşit, renk ve boyut için tıklayın"
-                aria-label="Kalem"
-              >
-                <Pen size={19} aria-hidden="true" />
-                <ChevronDown className={styles.toolDisclosure} size={9} aria-hidden="true" />
-                <span className={styles.toolColorBadge} style={{ backgroundColor: color }} />
-              </button>
-
-              {/* Vurgulayıcı */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${tool === 'highlighter' ? styles.toolActive : ''}`}
-                aria-pressed={tool === 'highlighter'}
-                onClick={() => {
-                  setTool('highlighter');
-                  setActivePopover((cur) => (cur === 'draw' && tool === 'highlighter' ? null : 'draw'));
-                }}
-                title="Vurgulayıcı (H) · Renk ve boyut için tıklayın"
-                aria-label="Vurgulayıcı"
-              >
-                <Highlighter size={19} aria-hidden="true" />
-                <span className={styles.toolColorBadge} style={{ backgroundColor: color, opacity: 0.8 }} />
-              </button>
-
-              {/* Silgi */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${tool === 'eraser' ? styles.toolActive : ''}`}
-                aria-pressed={tool === 'eraser'}
-                onClick={() => {
-                  setTool('eraser');
-                  setActivePopover((cur) => (cur === 'draw' && tool === 'eraser' ? null : 'draw'));
-                }}
-                title="Silgi (E) · Dokunduğu çizgi ya da şeklin tamamını siler"
-                aria-label="Silgi"
-              >
-                <Eraser size={19} aria-hidden="true" />
-              </button>
-
-              </div>
-              <div className={styles.toolGroup} role="group" aria-label="İçerik ekle">
-              {/* Şekiller */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${SHAPE_TOOLS.includes(tool) ? styles.toolActive : ''}`}
-                aria-pressed={SHAPE_TOOLS.includes(tool)}
-                onClick={() => {
-                  if (!SHAPE_TOOLS.includes(tool)) {
-                    setTool('rect');
-                  }
-                  setActivePopover((cur) => (cur === 'shapes' ? null : 'shapes'));
-                }}
-                title="Şekiller (Çizgi, Ok, Dikdörtgen, Daire, Üçgen, Eşkenar dörtgen, Altıgen, Yıldız)"
-                aria-label="Şekiller"
-              >
-                {tool === 'line' ? <Minus size={19} aria-hidden="true" /> :
-                 tool === 'arrow' ? <ArrowRight size={19} aria-hidden="true" /> :
-                 tool === 'rect' ? <Square size={19} aria-hidden="true" /> :
-                 tool === 'ellipse' ? <Circle size={19} aria-hidden="true" /> :
-                 tool === 'triangle' ? <Triangle size={19} aria-hidden="true" /> :
-                 tool === 'diamond' ? <Diamond size={19} aria-hidden="true" /> :
-                 tool === 'hexagon' ? <Hexagon size={19} aria-hidden="true" /> :
-                 tool === 'star' ? <Star size={19} aria-hidden="true" /> :
-                 <Shapes size={19} aria-hidden="true" />}
-              </button>
-
-              {/* Not */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${tool === 'note' ? styles.toolActive : ''}`}
-                aria-pressed={tool === 'note'}
-                onClick={() => {
-                  setTool('note');
-                  setActivePopover(null);
-                }}
-                title="Yapışkan Not (N)"
-                aria-label="Yapışkan Not"
-              >
-                <StickyNote size={19} aria-hidden="true" />
-              </button>
-
-              {/* Metin */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${tool === 'text' ? styles.toolActive : ''}`}
-                aria-pressed={tool === 'text'}
-                onClick={() => {
-                  setTool('text');
-                  setActivePopover(null);
-                }}
-                title="Metin (T)"
-                aria-label="Metin"
-              >
-                <Type size={19} aria-hidden="true" />
-              </button>
-
-              {/* Görsel (Kütüphane ve Medya Çekmecesi) */}
-              <input
-                ref={fileInput}
-                type="file"
-                accept={BOARD_IMAGE_TYPES.join(',')}
-                hidden
-                onChange={(e) => {
-                  upload(e.target.files?.[0]);
-                  window.setTimeout(() => reenterFullscreenRef.current(), 400);
-                }}
-              />
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${panelOpen && !selectedIds.length ? styles.toolActive : ''}`}
-                onClick={() => {
-                  setActivePopover(null);
-                  setSelectedIds([]);
-                  setPanelAuto(false);
-                  setPanelOpen((v) => !(v && !selectedIds.length));
-                }}
-                title="Görseller & Kütüphane paneli"
-                aria-label="Görseller ve Kütüphane"
-              >
-                <ImageIcon size={19} aria-hidden="true" />
-              </button>
-
-              {/* Parçalar */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${activePopover === 'widget' ? styles.toolActive : ''}`}
-                aria-pressed={activePopover === 'widget'}
-                onClick={() => setActivePopover((cur) => (cur === 'widget' ? null : 'widget'))}
-                title="Sınıf Araçları (Kronometre, Sayaç, Çarkıfelek, Mini test)"
-                aria-label="Parça Ekle"
-              >
-                <Component size={19} aria-hidden="true" />
-              </button>
-
-              </div>
-              <span className={styles.sep} aria-hidden="true" />
-
-              <div className={styles.toolGroup} role="group" aria-label="Renk ve geçmiş">
-              {/* Renk & Kalınlık Seçici Buton */}
-              <button
-                type="button"
-                className={styles.colorPickerTrigger}
-                onClick={() => setActivePopover((cur) => (cur === 'draw' ? null : 'draw'))}
-                title={`Renk: ${color}, Kalınlık: ${width}px · Ayarları aç`}
-                aria-label="Renk ve Kalınlık Seçimi"
-              >
-                <span className={styles.colorPickerCircle} style={{ backgroundColor: color }}>
-                  <span
-                    className={styles.colorPickerDot}
-                    style={{
-                      width: Math.min(10, Math.max(3, width)),
-                      height: Math.min(10, Math.max(3, width)),
-                      backgroundColor: color === '#ffffff' ? '#1f2a24' : '#ffffff',
-                    }}
-                  />
-                </span>
-              </button>
-
-              {/* Geri Al */}
-              <button
-                type="button"
-                className={styles.toolIconBtn}
-                onClick={undo}
-                disabled={!past.length}
-                title="Geri al (Ctrl+Z)"
-                aria-label="Geri al"
-              >
-                <RotateCcw size={19} aria-hidden="true" />
-              </button>
-
-              {/* Yinele */}
-              <button
-                type="button"
-                className={styles.toolIconBtn}
-                onClick={redo}
-                disabled={!future.length}
-                title="Yinele (Ctrl+Y)"
-                aria-label="Yinele"
-              >
-                <RotateCw size={19} aria-hidden="true" />
-              </button>
-
-              <span className={styles.sep} aria-hidden="true" />
-
-              </div>
-              {/* Kayıt Durumu */}
-              <span
-                className={`${styles.saveStatusBadge} ${saveState === 'error' ? styles.saveWarn : ''}`}
-                role="status"
-                title={
-                  saveState === 'saved' ? 'Tüm değişiklikler kaydedildi' :
-                  saveState === 'saving' ? 'Kaydediliyor…' :
-                  saveState === 'error' ? `Kayıt hatası: ${saveError}` :
-                  'Kaydedilmemiş değişiklikler var'
-                }
-                aria-label={
-                  saveState === 'saved' ? 'Kaydedildi' :
-                  saveState === 'saving' ? 'Kaydediliyor' :
-                  saveState === 'error' ? 'Hata' : 'Değişiklik var'
-                }
-              >
-                {saveState === 'saving' ? (
-                  <span className={styles.savingSpinner} aria-hidden="true" />
-                ) : saveState === 'saved' ? (
-                  <Check size={16} color="#1e7a4c" aria-hidden="true" />
-                ) : saveState === 'error' ? (
-                  <AlertCircle size={16} color="#d03b3b" aria-hidden="true" />
-                ) : (
-                  <span className={styles.dirtyDot} aria-hidden="true" />
-                )}
-                <span className={styles.saveStatusText}>
-                  {saveState === 'saved' ? 'Kaydedildi' : saveState === 'saving' ? 'Kaydediliyor…' : saveState === 'error' ? 'Kayıt hatası' : 'Değişiklik var'}
-                </span>
-              </span>
-
-              <span className={styles.sep} aria-hidden="true" />
-
-              <div className={styles.toolGroup} role="group" aria-label="Belge ve görünüm">
-              {/* Panel */}
-              <button
-                type="button"
-                className={`${styles.toolIconBtn} ${panelOpen ? styles.toolActive : ''}`}
-                aria-expanded={panelOpen}
-                aria-controls="board-drawer"
-                onClick={() => {
-                  setActivePopover(null);
-                  setPanelAuto(false);
-                  setPanelOpen((v) => !v);
-                }}
-                title="Sayfalar, Zemin, Medya ve Ayarlar Paneli"
-                aria-label="Panel"
-              >
-                <Layers size={19} aria-hidden="true" />
-              </button>
-
-              {/* PNG İndir */}
-              <button
-                type="button"
-                className={styles.toolIconBtn}
-                onClick={() => {
-                  setActivePopover(null);
-                  exportPng();
-                }}
-                disabled={busy}
-                title="Bu sayfayı PNG görsel olarak indir"
-                aria-label="PNG İndir"
-              >
-                <Download size={19} aria-hidden="true" />
-              </button>
-
-              {/* Yazdır / PDF */}
-              <button
-                type="button"
-                className={styles.toolIconBtn}
-                onClick={() => {
-                  setActivePopover(null);
-                  exportPdf();
-                }}
-                title="Bütün sayfaları yazdır / PDF olarak kaydet"
-                aria-label="PDF / Yazdır"
-              >
-                <Printer size={19} aria-hidden="true" />
-              </button>
-
-              {/* Gizle */}
-              <button
-                type="button"
-                className={styles.toolIconBtn}
-                onClick={() => {
-                  setActivePopover(null);
-                  setToolsHidden(true);
-                }}
-                title="Araç çubuğunu gizle"
-                aria-label="Gizle"
-              >
-                <EyeOff size={19} aria-hidden="true" />
-              </button>
-
-              {/* Çık */}
-              <button
-                type="button"
-                className={styles.toolIconBtn}
-                onClick={() => {
-                  setActivePopover(null);
-                  toggleFull();
-                }}
-                title="Tam ekrandan çık (Esc)"
-                aria-label="Tam ekrandan çık"
-              >
-                <Minimize size={19} aria-hidden="true" />
-              </button>
-              </div>
-            </div>
           </div>
         )}
+
+        {sideTab === 'shapes' && (
+          <>
+            <div className={styles.sideCard}>
+              <div className={styles.popoverSection}>
+                <span className={styles.popoverLabel}>Şekil çiz</span>
+                <div className={styles.shapesGrid}>
+                  {[
+                    { id: 'line', label: 'Çizgi', icon: <Minus size={22} /> },
+                    { id: 'arrow', label: 'Ok', icon: <ArrowRight size={22} /> },
+                    { id: 'rect', label: 'Dikdörtgen', icon: <Square size={22} /> },
+                    { id: 'ellipse', label: 'Daire', icon: <Circle size={22} /> },
+                    { id: 'triangle', label: 'Üçgen', icon: <Triangle size={22} /> },
+                    { id: 'diamond', label: 'Eşkenar', icon: <Diamond size={22} /> },
+                    { id: 'hexagon', label: 'Altıgen', icon: <Hexagon size={22} /> },
+                    { id: 'star', label: 'Yıldız', icon: <Star size={22} /> },
+                  ].map((sh) => (
+                    <button
+                      key={sh.id}
+                      type="button"
+                      className={`${styles.shapeBtn} ${tool === sh.id ? styles.shapeBtnActive : ''}`}
+                      onClick={() => setTool(sh.id as Tool)}
+                      aria-pressed={tool === sh.id}
+                      title={sh.id === 'diamond' ? 'Eşkenar dörtgen' : sh.label}
+                      aria-label={sh.id === 'diamond' ? 'Eşkenar dörtgen' : undefined}
+                    >
+                      {sh.icon}
+                      <span>{sh.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className={styles.hintText}>Şekli seçip tahtada sürükleyerek çizin. Shift: düz çizgi, kare, daire.</p>
+              </div>
+              <div className={styles.popoverSection}>
+                <span className={styles.popoverLabel}>Şekil rengi</span>
+                <div className={styles.colorPalette}>
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`${styles.colorSwatch} ${color === c ? styles.colorSwatchActive : ''}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => {
+                      setColor(c);
+                      if (selected && 'color' in selected && selected.type !== 'note') patchElement(selected.id, { color: c });
+                    }}
+                    title={`Renk: ${c}`}
+                    aria-label={`Renk ${c}`}
+                  />
+                ))}
+                </div>
+              </div>
+              <div className={styles.popoverSection}>
+                <div className={styles.popoverHeaderRow}>
+                  <span className={styles.popoverLabel}>Kenar kalınlığı</span>
+                  <span className={styles.widthValue}>{width} px</span>
+                </div>
+                <div className={styles.widthPresets}>
+                {[
+                  { label: 'İnce', value: 2, dot: 4 },
+                  { label: 'Orta', value: 5, dot: 8 },
+                  { label: 'Kalın', value: 10, dot: 13 },
+                ].map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    className={`${styles.widthPresetBtn} ${width === preset.value ? styles.widthPresetActive : ''}`}
+                    onClick={() => {
+                      setWidth(preset.value);
+                      if (selected && 'width' in selected) patchElement(selected.id, { width: preset.value });
+                    }}
+                    title={`${preset.label} (${preset.value}px)`}
+                  >
+                    <span className={styles.widthDotPreview} style={{ width: preset.dot, height: preset.dot, backgroundColor: color }} />
+                    <span>{preset.label}</span>
+                  </button>
+                ))}
+                </div>
+              </div>
+            </div>
+            <MediaDrawer
+              only="shapes"
+            onInsert={(m) => insertMedia(m)}
+            onInsertShape={handleRequestInsertShape}
+            onUpload={() => {
+              isUploadingRef.current = true;
+              fileInput.current?.click();
+            }}
+            busy={busy}
+            userItems={userLibraryItems}
+            schoolItems={schoolLibraryItems}
+            isLoadingUserItems={isLoadingUserItems}
+            userItemsError={userItemsError}
+            onReloadUserItems={loadUserLibrary}
+            onEditItem={(it, f) => setEditModal({ item: it, initialField: f })}
+            onDeleteItem={handleDeleteShape}
+            onToggleSchoolShare={handleToggleSchoolShare}
+            onCopySchoolItem={handleCopySchoolItem}
+            // Okul paylaşımı panelde kapalı (Okulum listesi kaldırıldı); altyapı duruyor, true yapınca geri gelir
+            schoolSharingEnabled={false}
+            />
+          </>
+        )}
+
+        {sideTab === 'text' && (
+          <div className={styles.sideCard}>
+            <div className={styles.widgetsList}>
+              <button type="button" className={styles.widgetItemBtn} aria-pressed={tool === 'text'} onClick={() => setTool('text')}>
+                <span className={styles.widgetItemIcon}><Type size={16} /></span>
+                <span className={styles.widgetItemTitle}>Metin ekle (T)</span>
+              </button>
+              <button type="button" className={styles.widgetItemBtn} aria-pressed={tool === 'note'} onClick={() => setTool('note')}>
+                <span className={styles.widgetItemIcon}><StickyNote size={16} /></span>
+                <span className={styles.widgetItemTitle}>Yapışkan not ekle (N)</span>
+              </button>
+            </div>
+            <p className={styles.hintText}>Seçtikten sonra tahtada yazmak istediğiniz yere tıklayın. Yazı tipi, boyut, renk ve hizalama, yazı seçiliyken üstünde açılan çubuktan ayarlanır.</p>
+          </div>
+        )}
+
+        {sideTab === 'media' && (
+          <MediaDrawer
+            only="images"
+            onInsert={(m) => insertMedia(m)}
+            onInsertShape={handleRequestInsertShape}
+            onUpload={() => {
+              isUploadingRef.current = true;
+              fileInput.current?.click();
+            }}
+            busy={busy}
+            userItems={userLibraryItems}
+            schoolItems={schoolLibraryItems}
+            isLoadingUserItems={isLoadingUserItems}
+            userItemsError={userItemsError}
+            onReloadUserItems={loadUserLibrary}
+            onEditItem={(it, f) => setEditModal({ item: it, initialField: f })}
+            onDeleteItem={handleDeleteShape}
+            onToggleSchoolShare={handleToggleSchoolShare}
+            onCopySchoolItem={handleCopySchoolItem}
+            // Okul paylaşımı panelde kapalı (Okulum listesi kaldırıldı); altyapı duruyor, true yapınca geri gelir
+            schoolSharingEnabled={false}
+          />
+        )}
+
+        {sideTab === 'widgets' && (
+          <div className={styles.sideCard}>
+            <div className={styles.widgetsList}>
+              {(Object.keys(WIDGET_LABEL) as WidgetKind[]).map((k) => (
+                <button key={k} type="button" className={styles.widgetItemBtn} onClick={() => addWidget(k)}>
+                  <span className={styles.widgetItemIcon}>
+                    {k === 'timer' ? <Clock size={16} /> :
+                     k === 'minitest' ? <Component size={16} /> :
+                     k === 'reveal' ? <Eye size={16} /> :
+                     k === 'match' ? <Shuffle size={16} /> :
+                     k === 'audio' ? <Mic size={16} /> :
+                     <Layers size={16} />}
+                  </span>
+                  <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>
+                </button>
+              ))}
+            </div>
+            <p className={styles.hintText}>Parça tahtanın ortasına eklenir; ayarları sağda açılan panelden yapılır.</p>
+          </div>
+        )}
+
+        {sideTab === 'page' && (
+          <section className={styles.panel}>
+            <label>Bu sayfanın zemini
+              <CustomSelect value={page.background} onChange={(v) => updatePage({ background: v as Background })} options={(Object.keys(BACKGROUND_LABEL) as Background[]).map((b) => ({ value: b, label: BACKGROUND_LABEL[b] }))} />
+            </label>
+          </section>
+        )}
+
+        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ok tuşları seçili öğeyi kaydırır (Shift ile hızlı), seçim yokken ←/→ sayfa · Esc çık.</p>
+      </aside>
+
+      <div className={styles.workStage}>
         {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="alert" onClick={() => setNotice(null)}>{notice}</p>}
         <BoardCanvas
           page={page}
@@ -1927,7 +1734,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           width={width}
           onCommit={commitElements}
           selectedIds={selectedIds}
-          onElementMenu={(ids, x, y) => { setActivePopover(null); setCtxMenu({ ids, x, y }); }}
+          onElementMenu={(ids, x, y) => setCtxMenu({ ids, x, y })}
           onSelect={(ids) => {
             setSelectedIds(ids);
             // Panel kuralı: başka bir öğe (ya da öğeler) seçilince açılır. "Kapat"a basılınca seçim durur ama
@@ -1989,26 +1796,48 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         />
       </div>
 
-      <aside id="board-drawer" className={`${styles.drawer} ${panelOpen ? styles.drawerOpen : ''}`} aria-label="Sayfalar ve ayarlar" aria-hidden={!panelOpen || undefined} inert={!panelOpen || undefined}>
-        <div className={styles.drawerHead}>
-          <strong>Panel</strong>
-          <button type="button" className={styles.tool} onClick={() => { setPanelAuto(false); setPanelOpen(false); }} aria-label="Paneli kapat">Kapat</button>
+      <footer className={styles.pageStrip}>
+        <nav className={styles.pageStripList} aria-label="Sayfalar (sırayı değiştirmek için sürükleyin)">
+          {content.pages.map((p, i) => (
+            <button
+              key={p.id}
+              type="button"
+              className={`${styles.pageThumb} ${dragPage === i ? styles.pageDragging : ''} ${dropPage === i && dragPage !== i ? styles.pageDropTarget : ''}`}
+              aria-current={i === pageIndex ? 'true' : undefined}
+              onClick={() => { setPageIndex(i); setSelectedIds([]); }}
+              aria-label={`${i + 1}. sayfa`}
+              title="Sırasını değiştirmek için sürükleyin"
+              draggable
+              onDragStart={(e) => { setDragPage(i); e.dataTransfer.setData('application/x-board-page', String(i)); e.dataTransfer.effectAllowed = 'move'; }}
+              onDragOver={(e) => { if (e.dataTransfer.types.includes('application/x-board-page')) { e.preventDefault(); setDropPage(i); } }}
+              onDragLeave={() => setDropPage((cur) => (cur === i ? null : cur))}
+              onDrop={(e) => { e.preventDefault(); const from = Number(e.dataTransfer.getData('application/x-board-page')); setDragPage(null); setDropPage(null); if (!Number.isNaN(from)) movePageTo(from, i); }}
+              onDragEnd={() => { setDragPage(null); setDropPage(null); }}
+            >
+              <span>{i + 1}</span>
+              <PageThumb page={p} imageUrls={imageUrls} />
+            </button>
+          ))}
+          <button type="button" className={styles.pageAdd} onClick={addPage} disabled={content.pages.length >= MAX_PAGES} title={content.pages.length >= MAX_PAGES ? `En fazla ${MAX_PAGES} sayfa olabilir` : 'Bu sayfadan sonra boş sayfa ekle'}>
+            <Plus size={22} aria-hidden="true" />
+            <span>Sayfa ekle</span>
+          </button>
+        </nav>
+        <div className={styles.pageStripTools} role="toolbar" aria-label={`${pageIndex + 1}. sayfa işlemleri`}>
+          <span className={styles.saveState}>Sayfa {pageIndex + 1} / {content.pages.length}</span>
+          <button type="button" className={styles.tool} onClick={duplicatePage} title="Sayfayı çoğalt" aria-label="Sayfayı çoğalt"><Copy size={18} aria-hidden="true" /></button>
+          <button type="button" className={styles.tool} onClick={() => movePage(-1)} disabled={pageIndex === 0} title="Sayfayı sola taşı" aria-label="Sayfayı sola taşı"><ChevronLeft size={18} aria-hidden="true" /></button>
+          <button type="button" className={styles.tool} onClick={() => movePage(1)} disabled={pageIndex >= content.pages.length - 1} title="Sayfayı sağa taşı" aria-label="Sayfayı sağa taşı"><ChevronRight size={18} aria-hidden="true" /></button>
+          <button type="button" className={styles.tool} onClick={deletePage} disabled={content.pages.length <= 1} title={content.pages.length <= 1 ? 'Tek sayfa silinemez' : 'Sayfayı sil'} aria-label="Sayfayı sil"><Trash2 size={18} aria-hidden="true" /></button>
         </div>
-        <section className={styles.panel}>
-          <h3>Sayfa {pageIndex + 1} / {content.pages.length}</h3>
-          <div className={styles.pageTools}>
-            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.max(0, i - 1)); setSelectedIds([]); }} disabled={pageIndex === 0} title="Önceki sayfa (←)"><ChevronUp size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
-            <button type="button" className={styles.tool} onClick={() => { setPageIndex((i) => Math.min(content.pages.length - 1, i + 1)); setSelectedIds([]); }} disabled={pageIndex >= content.pages.length - 1} title="Sonraki sayfa (→)"><ChevronDown size={18} aria-hidden="true" style={{ transform: 'rotate(-90deg)' }} /></button>
-            <button type="button" className={styles.tool} onClick={addPage} title="Sayfa ekle"><Plus size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={duplicatePage} title="Sayfayı çoğalt"><Copy size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={() => movePage(-1)} disabled={pageIndex === 0} title="Sayfayı öne taşı"><ChevronUp size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={() => movePage(1)} disabled={pageIndex >= content.pages.length - 1} title="Sayfayı arkaya taşı"><ChevronDown size={18} aria-hidden="true" /></button>
-            <button type="button" className={styles.tool} onClick={deletePage} disabled={content.pages.length <= 1} title="Sayfayı sil"><Trash2 size={18} aria-hidden="true" /></button>
-          </div>
-          <label>Zemin
-            <CustomSelect value={page.background} onChange={(v) => updatePage({ background: v as Background })} options={(Object.keys(BACKGROUND_LABEL) as Background[]).map((b) => ({ value: b, label: BACKGROUND_LABEL[b] }))} />
-          </label>
-        </section>
+      </footer>
+
+      {/* Seçili öğenin ayarları: yalnızca seçim varken sağdan açılır */}
+      <aside id="board-drawer" className={`${styles.drawer} ${styles.workDrawer} ${panelOpen && selectedIds.length ? styles.drawerOpen : ''}`} aria-label="Seçili öğe ayarları" aria-hidden={!(panelOpen && selectedIds.length) || undefined} inert={!(panelOpen && selectedIds.length) || undefined}>
+        <div className={styles.drawerHead}>
+          <strong>{selectedIds.length > 1 ? `${selectedIds.length} öğe seçili` : 'Seçili öğe'}</strong>
+          <button type="button" className={styles.tool} onClick={() => { setPanelAuto(false); setPanelOpen(false); }} aria-label="Ayar panelini kapat">Kapat</button>
+        </div>
         {selectedIds.length === 1 && selected ? (
           <SelectionPanel
             el={selected}
@@ -2033,29 +1862,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
             onSaveToLibrary={canSaveToLibrary(page.elements.filter((el) => selectedIds.includes(el.id))) ? () => handleOpenSaveModal(page.elements.filter((el) => selectedIds.includes(el.id))) : undefined}
           />
-        ) : (
-          <MediaDrawer
-            onInsert={(m) => insertMedia(m)}
-            onInsertShape={handleRequestInsertShape}
-            onUpload={() => {
-              isUploadingRef.current = true;
-              fileInput.current?.click();
-            }}
-            busy={busy}
-            userItems={userLibraryItems}
-            schoolItems={schoolLibraryItems}
-            isLoadingUserItems={isLoadingUserItems}
-            userItemsError={userItemsError}
-            onReloadUserItems={loadUserLibrary}
-            onEditItem={(it, f) => setEditModal({ item: it, initialField: f })}
-            onDeleteItem={handleDeleteShape}
-            onToggleSchoolShare={handleToggleSchoolShare}
-            onCopySchoolItem={handleCopySchoolItem}
-            // Okul paylaşımı panelde kapalı (Okulum listesi kaldırıldı); altyapı duruyor, true yapınca geri gelir
-            schoolSharingEnabled={false}
-          />
-        )}
-        <p className={styles.hintText}>Kısayollar: V seç, P kalem, E silgi, N not, T metin · Ctrl+A tümünü seç · Ctrl+C/V kopyala/yapıştır · Ctrl+D çoğalt · Ctrl+G grupla · Ctrl+Z geri al · Delete sil · ok tuşları seçili öğeyi kaydırır (Shift ile hızlı), seçim yokken ←/→ sayfa · Esc çık. “Seç” aracında parçanın düğmeleri çalışır; parçayı taşımak için düğme olmayan yerinden tutup sürükleyin.</p>
+        ) : null}
       </aside>
       {ctxMenu && (() => {
         const ids = ctxMenu.ids;

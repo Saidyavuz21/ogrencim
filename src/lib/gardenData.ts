@@ -86,6 +86,39 @@ export function wateringsToNext(watered: number): number | null {
   return next === undefined ? null : next - watered;
 }
 
+// ---------------- Manzara kazanımları ----------------
+/**
+ * Bahçe seviyesi: dikilmiş her ağaç (aşama + 1) kadar katkı verir.
+ * Fidan dikmek 1, her büyüme aşaması +1 (meyveli ağaç = 6). 12 davranışla en fazla 72.
+ */
+export function gardenLevel(trees: Pick<GardenTree, 'earned' | 'watered'>[]): number {
+  return trees.filter((t) => t.earned >= 1).reduce((sum, t) => sum + growthStage(t.watered) + 1, 0);
+}
+
+/** Manzaraya sırayla eklenen öğeler. Bahçe boş bir çayırla başlar (gökyüzü, tepeler, çimen). */
+export const GARDEN_UNLOCKS = [
+  { key: 'butterflies', level: 2, name: 'Kelebekler' },
+  { key: 'path', level: 4, name: 'Patika' },
+  { key: 'flowers', level: 6, name: 'Kır çiçekleri' },
+  { key: 'fence', level: 9, name: 'Çit' },
+  { key: 'house', level: 12, name: 'Küçük ev' },
+  { key: 'birds', level: 16, name: 'Kuşlar ve kuş evi' },
+  { key: 'bench', level: 20, name: 'Bank' },
+  { key: 'pond', level: 25, name: 'Gölet' },
+  { key: 'house2', level: 31, name: 'Ev büyüyor (pencere çiçekleri, baca)' },
+  { key: 'lights', level: 38, name: 'Fenerler ve ışık zinciri' },
+  { key: 'swing', level: 46, name: 'Salıncak' },
+  { key: 'rainbow', level: 56, name: 'Gökkuşağı' },
+] as const;
+export type GardenUnlockKey = (typeof GARDEN_UNLOCKS)[number]['key'];
+
+/** Açılmış öğeler ve sıradaki hedef */
+export function gardenUnlocks(level: number) {
+  const unlocked = new Set<GardenUnlockKey>(GARDEN_UNLOCKS.filter((u) => level >= u.level).map((u) => u.key));
+  const next = GARDEN_UNLOCKS.find((u) => level < u.level) || null;
+  return { unlocked, next, remaining: next ? next.level - level : 0 };
+}
+
 // ---------------- Öğretmen ----------------
 /** Sınıfın davranışları; sınıfta hiç yoksa varsayılan 6 davranış eklenir. Arşivlenenler de döner. */
 export async function listGardenBehaviors(className: string): Promise<Result<GardenBehavior[]>> {

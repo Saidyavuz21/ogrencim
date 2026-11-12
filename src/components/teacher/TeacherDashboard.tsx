@@ -23,6 +23,7 @@ import { TeacherLeaderboardPage } from './TeacherLeaderboardPage';
 import { TeacherConsentPage } from './TeacherConsentPage';
 import { TeacherAquariumPage } from './TeacherAquariumPage';
 import { TeacherReadingPage } from '../reading/TeacherReadingPage';
+import { TeacherQuizShowPage } from '../quizshow/TeacherQuizShowPage';
 import { TeacherGradesPage } from './TeacherGradesPage';
 import { TeacherMessagesPage } from './TeacherMessagesPage';
 import { TeacherClassToolsPage, type ClassToolId } from './TeacherClassToolsPage';
@@ -41,7 +42,7 @@ import { TeacherMobileNav } from './TeacherMobileNav';
 import { InstallAppBanner } from '../InstallAppBanner';
 
 /** Seçili sınıfa göre çalışan sayfalar (üst çubukta sınıf seçici gösterilir) */
-const CLASS_PAGES: TeacherPageId[] = ['class_tools', 'check_sheet', 'plus_minus', 'assignments', 'grade_entry', 'leaderboard', 'aquarium', 'messages', 'consent'];
+const CLASS_PAGES: TeacherPageId[] = ['class_tools', 'quiz_show', 'check_sheet', 'plus_minus', 'assignments', 'grade_entry', 'leaderboard', 'aquarium', 'messages', 'consent'];
 /** Sınıf seçilmeden açılamayan sayfalar */
 const NEEDS_CLASS: TeacherPageId[] = ['class_tools', 'check_sheet', 'plus_minus', 'grade_entry', 'leaderboard', 'aquarium', 'messages', 'class_report', 'consent'];
 
@@ -268,6 +269,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
       {page === 'files' && <TeacherFilesPage classNames={classNames} userId={currentUser?.id} isSchoolAdmin={currentUser?.isSchoolAdmin} branch={currentUser?.branch} />}
       {page === 'questions' && <QuestionBankPage />}
+      {page === 'quiz_show' && <TeacherQuizShowPage key={effectiveClass} selectedClass={effectiveClass} onOpenQuestionBank={() => openPage('questions')} />}
       {page === 'boards' && <TeacherBoardsPage defaultSubject={defaultSubject} />}
       {page === 'community' && (
         <CommunityHub

@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { IconProps } from '../icons';
-import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building, Layers, Globe, ShieldCheck } from '../icons';
+import { Shuffle, CheckSquare, Star, Send, TrendingUp, Users, Award, School, MessageSquare, Bell, User, Fish, BookOpen, Folder, HelpCircle, BarChart3, Building, Layers, Globe, ShieldCheck, Trophy } from '../icons';
 
 export type TeacherPageId =
   | 'home'
@@ -10,6 +10,7 @@ export type TeacherPageId =
   | 'plus_minus'
   | 'assignments'
   | 'reading'
+  | 'quiz_show'
   | 'grade_entry'
   | 'files'
   | 'class_report'
@@ -49,6 +50,7 @@ export const TEACHER_PAGES: TeacherPageInfo[] = [
   { id: 'aquarium', slug: 'akvaryum', title: 'Sınıf akvaryumu', description: 'Puanla büyüyen balıklar, tam ekran', icon: Fish, group: 'Puan ve ödül' },
   { id: 'class_tools', slug: 'sinif-araclari', title: 'Sınıf araçları', description: 'Rastgele seçici, grup, kronometre, geri sayım', icon: Shuffle, group: 'Ders ve değerlendirme' },
   { id: 'reading', slug: 'okuma-yarismasi', title: 'Okuma yarışması', description: '1 dakikada okunan kelime, sıralama, gelişim', icon: BookOpen, group: 'Ders ve değerlendirme' },
+  { id: 'quiz_show', slug: 'bilgi-yarismasi', title: 'Bilgi yarışması', description: 'Takımlı yarışma: soru bankasından sorular, skor, sonuçlar', icon: Trophy, group: 'Ders ve değerlendirme' },
   { id: 'grade_entry', slug: 'not-girisi', title: 'Not girişi', description: 'Yazılı ve sözlü notlar', icon: TrendingUp, group: 'Ders ve değerlendirme' },
   { id: 'boards', slug: 'tahtalarim', title: 'Tahtalarım', description: 'Etkileşimli tahta: çiz, sun, ödev olarak gönder', icon: Layers, group: 'Ders ve değerlendirme' },
   { id: 'community', slug: 'topluluk', title: 'Topluluk', description: 'Öğretmenlerin paylaştığı tahta ve soru setleri', icon: Globe, group: 'Ders ve değerlendirme' },

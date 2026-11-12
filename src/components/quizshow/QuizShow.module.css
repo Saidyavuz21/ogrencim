@@ -1,0 +1,199 @@
+/* Bilgi yarışması: liste, hazırlık ve oyun ekranı. Renkler öğretmen kabuğunun --teacher-* değişkenlerinden gelir. */
+
+/* ---------- Ortak ---------- */
+.listPage, .setup { display: grid; gap: 22px; min-width: 0; }
+.panel { display: grid; gap: 16px; min-width: 0; padding: 22px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: #fff; }
+.panelHead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.panelTitle { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.4; color: var(--teacher-text, #20352d); }
+.subTitle { margin: 0; font-size: 15px; font-weight: 600; color: var(--teacher-text, #20352d); }
+.count { font-size: 14px; color: var(--teacher-muted, #58665f); font-variant-numeric: tabular-nums; }
+.muted { margin: 0; font-size: 13px; line-height: 1.7; color: var(--teacher-muted, #58665f); overflow-wrap: anywhere; }
+.info { margin: 0; padding: 10px 14px; border-radius: 12px; background: #e8f3eb; color: #216044; font-size: 14px; line-height: 1.55; }
+.error { margin: 0; padding: 10px 14px; border-radius: 12px; background: #fcecef; color: #a33342; font-size: 14px; line-height: 1.55; }
+.inlineLink { display: inline; margin-left: 6px; padding: 0; border: 0; background: none; color: var(--teacher-primary, #25634b); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.inlineLink:focus-visible, .textButton:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; border-radius: 6px; }
+
+.primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px; border: 1px solid var(--teacher-primary, #25634b); border-radius: 12px; background: var(--teacher-primary, #25634b); color: #fff; font: inherit; font-size: 16px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.primary:hover:not(:disabled) { background: var(--teacher-hover, #1d503d); }
+.secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 10px; background: #fff; color: var(--teacher-text, #20352d); font: inherit; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.secondary:hover:not(:disabled) { background: var(--teacher-selected, #e6f1e9); }
+.primary:disabled, .secondary:disabled { opacity: 0.5; cursor: default; }
+.primary:focus-visible, .secondary:focus-visible, .iconDanger:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+.textButton { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px 0 0; border: 0; background: none; color: var(--teacher-primary, #25634b); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.iconDanger { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 10px; background: #fff; color: #a33342; cursor: pointer; }
+.iconDanger:hover { background: #fcecef; }
+
+/* ---------- Liste ---------- */
+.newRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.newRow > div { display: grid; gap: 6px; min-width: 0; flex: 1 1 320px; }
+.showList { display: grid; margin: 0; padding: 0; list-style: none; }
+.showList li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid #eeece5; }
+.showList li:first-child { border-top: 0; padding-top: 0; }
+.showInfo { display: grid; gap: 2px; min-width: 0; flex: 1 1 280px; }
+.showInfo strong { font-size: 16px; font-weight: 500; color: var(--teacher-text, #20352d); overflow-wrap: anywhere; }
+.showMeta, .showSummary { font-size: 13px; line-height: 1.6; color: var(--teacher-muted, #58665f); overflow-wrap: anywhere; }
+.showActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+/* ---------- Hazırlık ---------- */
+.setupHead { display: flex; }
+.field { display: grid; gap: 8px; min-width: 0; }
+.field > label { font-size: 14px; font-weight: 500; color: var(--teacher-text, #20352d); }
+.field input { width: 100%; min-width: 0; min-height: 48px; box-sizing: border-box; padding: 10px 12px; border: 1px solid #a4b1a6; border-radius: 10px; background: #fff; color: var(--teacher-text, #20352d); font: inherit; font-size: 16px; }
+.field input:focus-visible, .checkRow input:focus-visible, .questionRow input:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+.segment { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: #ecefe8; }
+.segment button { min-height: 44px; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--teacher-text, #20352d); font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; }
+.segment button[aria-pressed='true'] { border-color: #9ab8a5; background: var(--teacher-selected, #e6f1e9); color: #1d503d; font-weight: 600; }
+.segment button:focus-visible, .levels button:focus-visible, .rowButtons button:focus-visible, .colors button:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+.teamGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.teamCard { display: grid; align-content: start; gap: 10px; min-width: 0; padding: 14px; border: 1px solid #eeece5; border-radius: 14px; }
+.colors { min-width: 0; margin: 0; padding: 0; border: 0; }
+.colors legend { margin-bottom: 4px; padding: 0; font-size: 12px; color: var(--teacher-muted, #58665f); }
+.colors > div { display: flex; flex-wrap: wrap; gap: 2px; }
+.colors button { display: grid; place-items: center; width: 44px; height: 44px; padding: 4px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #20352d; cursor: pointer; }
+.colors button[aria-pressed='true'] { border-color: var(--teacher-primary, #25634b); }
+.colors button:hover { background: #eeece5; }
+.colors button > span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--team-bg); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.searchBox { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border: 1px solid #a4b1a6; border-radius: 10px; background: #fff; color: var(--teacher-muted, #58665f); }
+.searchBox input { min-height: 44px; padding: 0; border: 0; outline: 0; }
+.searchBox:focus-within { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+.questionList { display: grid; max-height: 420px; margin: 0; padding: 0; overflow-y: auto; list-style: none; border: 1px solid #eeece5; border-radius: 12px; }
+.questionList li { border-top: 1px solid #eeece5; }
+.questionList li:first-child { border-top: 0; }
+.questionRow { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; padding: 10px 12px; cursor: pointer; }
+.questionRow:hover { background: #faf9f5; }
+.questionRow input, .checkRow input { width: 20px; height: 20px; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--teacher-primary, #25634b); }
+.questionText { display: grid; gap: 2px; min-width: 0; font-size: 15px; line-height: 1.5; color: var(--teacher-text, #20352d); overflow-wrap: anywhere; }
+.questionText small { font-size: 12px; color: var(--teacher-muted, #58665f); }
+.pickedBlock { display: grid; gap: 12px; justify-items: start; }
+.pickedList { display: grid; width: 100%; margin: 0; padding: 0; list-style: none; }
+.pickedList li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #eeece5; }
+.pickedList li:first-child { border-top: 0; }
+.pickedNo { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #ecefe8; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pickedText { flex: 1 1 220px; min-width: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.levels { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: #ecefe8; }
+.levels button { min-height: 38px; padding: 4px 10px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--teacher-text, #20352d); font: inherit; font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.levels button[aria-pressed='true'] { border-color: #9ab8a5; background: #fff; color: #1d503d; font-weight: 600; }
+.rowButtons { display: inline-flex; gap: 2px; }
+.rowButtons button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--teacher-text, #20352d); cursor: pointer; }
+.rowButtons button:hover:not(:disabled) { background: #eeece5; }
+.rowButtons button:disabled { opacity: 0.35; cursor: default; }
+.checkRow { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; font-size: 14px; line-height: 1.6; color: var(--teacher-text, #20352d); cursor: pointer; }
+.startRow { display: flex; justify-content: flex-end; }
+.startRow .primary { min-height: 52px; padding: 12px 26px; font-size: 17px; }
+
+/* ---------- Oyun ekranı ---------- */
+.stage { display: grid; grid-template-rows: auto auto minmax(0, 1fr); align-content: start; gap: 18px; min-width: 0; min-height: 520px; padding: 20px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: #f7f6f2; color: #20352d; container-type: inline-size; }
+.stage.full { position: fixed; inset: 0; z-index: 200; height: 100dvh; min-height: 0; border: 0; border-radius: 0; overflow-y: auto; }
+.stageTop { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.stageTitle { display: grid; gap: 2px; min-width: 0; flex: 1 1 200px; }
+.stageTitle strong { font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.stageTitle > span { font-size: 13px; color: #58665f; font-variant-numeric: tabular-nums; }
+.saveError { color: #a33342; }
+.stageTopActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.stageButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid #dedad0; border-radius: 10px; background: #fff; color: #20352d; font: inherit; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.stageButton:hover:not(:disabled) { background: #eeece5; }
+.stageButton:disabled { opacity: 0.45; cursor: default; }
+.stageButtonAlert { border-color: #a33342; background: #fcecef; color: #a33342; }
+.stage :is(button):focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
+.stageNote { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; line-height: 1.6; color: #20352d; overflow-wrap: anywhere; }
+.jokerMark { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.teamStrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; min-width: 0; }
+.team { display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; padding: 12px; border: 2px solid transparent; border-radius: 14px; background: var(--team-bg); text-align: center; }
+.team h3 { display: flex; align-items: center; justify-content: center; gap: 6px; max-width: 100%; margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.teamActive { border-color: #20352d; box-shadow: 0 3px 10px rgb(20 35 28 / 12%); }
+.teamScore { font-size: clamp(34px, 6cqw, 64px); font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.teamTurn { margin: 0; padding: 2px 10px; border-radius: 999px; background: #20352d; color: #fff; font-size: 12px; font-weight: 600; }
+.teamJokers { display: flex; gap: 6px; margin: 0; font-size: 13px; font-weight: 700; }
+.teamJokers span { padding: 1px 8px; border: 1px solid rgb(32 53 45 / 35%); border-radius: 999px; background: rgb(255 255 255 / 55%); }
+.teamJokers span[data-used] { opacity: 0.4; text-decoration: line-through; }
+.teamButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 4px; }
+.teamButtons button { min-height: 44px; border: 1px solid rgb(32 53 45 / 25%); border-radius: 10px; background: rgb(255 255 255 / 60%); color: #20352d; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.teamButtons button:last-child { border-color: #20352d; background: #20352d; color: #fff; }
+.teamButtons button:hover { filter: brightness(1.1); }
+
+/* Sadece skor: takım kartları ekranı doldurur */
+.scoreOnly { display: grid; min-height: 0; }
+.scoreOnly .teamStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(200px, 1fr); gap: 16px; }
+.scoreOnly .teamStrip[data-teams='3'], .scoreOnly .teamStrip[data-teams='5'], .scoreOnly .teamStrip[data-teams='6'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.scoreOnly .team { align-content: center; gap: 10px; padding: 24px; }
+.scoreOnly .team h3 { font-size: clamp(20px, 2.6cqw, 40px); }
+.scoreOnly .teamScore { font-size: clamp(64px, 12cqw, 180px); }
+.scoreOnly .teamButtons { max-width: 320px; }
+.scoreOnly .teamButtons button { min-height: 52px; font-size: 20px; }
+
+/* Soru */
+.question { display: grid; align-content: start; gap: 16px; min-width: 0; padding: 20px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; }
+.questionHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.levelBadge { padding: 4px 12px; border-radius: 999px; background: #e6f1e9; color: #1d503d; font-size: 14px; font-weight: 600; }
+.questionBody { font-size: clamp(20px, 2.6cqw, 40px); font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.questionImage { display: block; max-width: 100%; max-height: 38vh; margin: 0 auto; border-radius: 12px; object-fit: contain; }
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.choice { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px 16px; border: 2px solid #dedad0; border-radius: 14px; background: #faf9f5; color: #20352d; font: inherit; font-size: clamp(17px, 2cqw, 30px); line-height: 1.4; text-align: left; cursor: pointer; }
+.choice:hover:not(:disabled) { border-color: #25634b; background: #e6f1e9; }
+.choice:disabled { cursor: default; }
+.choiceLetter { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: #20352d; color: #fff; font-size: 18px; font-weight: 700; }
+.choiceText { min-width: 0; overflow-wrap: anywhere; }
+.choiceCorrect { border-color: #216044; background: #e8f3eb; color: #216044; font-weight: 600; }
+.choiceCorrect .choiceLetter { background: #216044; }
+.choiceWrong { border-color: #a33342; background: #fcecef; color: #a33342; }
+.choiceWrong .choiceLetter { background: #a33342; }
+.choiceHidden { opacity: 0.3; }
+.controls, .afterReveal { display: grid; gap: 12px; justify-items: start; }
+.controlButtons { display: flex; flex-wrap: wrap; gap: 8px; }
+.explanation { padding: 12px 14px; border-radius: 12px; background: #faf9f5; font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.afterReveal .primary { min-height: 52px; font-size: 17px; }
+
+.timer { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #20352d; }
+.timerNumber { min-width: 2ch; font-size: clamp(28px, 4cqw, 56px); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; text-align: right; }
+.timerWarn { color: #805217; }
+.timerDone { color: #a33342; }
+
+/* Sonuçlar */
+.results { display: grid; align-content: start; gap: 18px; min-width: 0; }
+.podium { display: grid; gap: 10px; }
+.podiumRow { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 14px 18px; border: 2px solid transparent; border-radius: 14px; background: var(--team-bg); }
+.podiumFirst { border-color: #20352d; }
+.podiumRank { display: inline-flex; align-items: center; gap: 6px; min-width: 56px; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.podiumName { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.podiumName strong { font-size: clamp(18px, 2.4cqw, 32px); font-weight: 600; overflow-wrap: anywhere; }
+.podiumName small { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.podiumScore { font-size: clamp(30px, 4.5cqw, 64px); font-weight: 600; font-variant-numeric: tabular-nums; }
+.resultPanel { display: grid; gap: 12px; min-width: 0; padding: 18px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; }
+.resultPanel h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.awardRow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.awardSelect { display: grid; gap: 8px; min-width: 180px; }
+.awardSelect label { font-size: 14px; font-weight: 500; }
+.summary { display: grid; margin: 0; padding: 0 0 0 24px; }
+.summary li { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid #eeece5; font-size: 14px; line-height: 1.6; }
+.summary li:first-child { border-top: 0; padding-top: 0; }
+.summaryText { font-weight: 500; overflow-wrap: anywhere; }
+.summaryMeta { font-size: 13px; color: #58665f; }
+.summaryOk { color: #216044; }
+.summaryBad { color: #a33342; }
+
+@media (max-width: 767px) {
+  .listPage, .setup { gap: 16px; }
+  .panel { gap: 14px; padding: 18px 16px; border-radius: 16px; }
+  .newRow .primary, .startRow .primary { width: 100%; }
+  .showActions { width: 100%; }
+  .showActions .secondary { flex: 1; }
+  .actions .secondary { flex: 1 1 100%; }
+  .pickedList li { align-items: flex-start; }
+  .stage { gap: 14px; padding: 14px; border-radius: 16px; }
+  .stageButton span { display: none; }
+  .controlButtons .stageButton span, .timer .stageButton span { display: inline; }
+  .stageButton { min-width: 44px; padding: 8px 10px; }
+  .teamStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .scoreOnly .teamStrip, .scoreOnly .teamStrip[data-teams] { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
+  .scoreOnly .team { padding: 16px 12px; }
+  .question { padding: 14px; }
+  .choices { grid-template-columns: minmax(0, 1fr); }
+  .podiumRow { padding: 12px; gap: 10px; }
+  .podiumRank { min-width: 40px; font-size: 18px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .team { transition: border-color 150ms ease, box-shadow 150ms ease; }
+}

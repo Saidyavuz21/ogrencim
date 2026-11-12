@@ -39,6 +39,12 @@ export const WRONG_RULE_LABEL: Record<WrongRule, string> = {
   minus: 'Eksi puan',
   pass: 'Soru diğer takıma geçer',
 };
+/** Cevaplama: her soruyu tüm takımlar birlikte cevaplar / sırası gelen tek takım cevaplar */
+export type ShowFormat = 'all' | 'turn';
+export const FORMAT_LABEL: Record<ShowFormat, string> = {
+  all: 'Tüm takımlar cevaplar',
+  turn: 'Takımlar sırayla cevaplar',
+};
 export const SECONDS_OPTIONS = [0, 15, 30, 45, 60];
 
 export interface ShowTeam {
@@ -65,6 +71,8 @@ export interface ShowQuestion {
 export interface ShowSettings {
   /** Soru süresi (sn); 0 = süre yok */
   seconds: number;
+  /** Eski kayıtlarda yoktur: 'turn' sayılır */
+  format: ShowFormat;
   wrong: WrongRule;
   jokers: boolean;
 }
@@ -90,6 +98,10 @@ export interface ShowRound {
   hidden: number[];
   /** Çift puan jokeri bu soruda kimde etkin (yoksa null) */
   doubleFor: number | null;
+  /** Tüm takımlar kipinde: takım sırasına göre işaretlenen şık (null: işaretlenmedi / boş) */
+  picks: (number | null)[];
+  /** Tüm takımlar kipinde: bu soruda çift puan jokerini açan takımlar */
+  doubles: number[];
   /** Doğru cevap ekranda */
   revealed: boolean;
 }
@@ -105,7 +117,7 @@ export interface ShowState {
   answers: ShowAnswer[];
 }
 
-export const DEFAULT_SETTINGS: ShowSettings = { seconds: 30, wrong: 'none', jokers: true };
+export const DEFAULT_SETTINGS: ShowSettings = { seconds: 30, format: 'all', wrong: 'none', jokers: true };
 
 export const newTeam = (index: number): ShowTeam => ({
   name: `Takım ${index + 1}`,
@@ -120,6 +132,8 @@ const newRound = (questionIndex: number, teamCount: number): ShowRound => ({
   eliminated: [],
   hidden: [],
   doubleFor: null,
+  picks: Array.from({ length: teamCount }, () => null),
+  doubles: [],
   revealed: false,
 });
 
@@ -164,7 +178,8 @@ export function playDouble(s: ShowState): ShowState {
 export function canUseHalf(s: ShowState): boolean {
   const q = currentQuestion(s);
   const team = s.teams[s.round.turn];
-  if (!q || !team || !s.settings.jokers || s.round.revealed || team.usedHalf) return false;
+  // Tüm takımlar kipinde şıklar herkes için aynı ekranda: yarı yarıya kullanılmaz
+  if (!q || !team || !s.settings.jokers || s.settings.format === 'all' || s.round.revealed || team.usedHalf) return false;
   const visible = q.choices.map((_, i) => i).filter((i) => !s.round.hidden.includes(i) && !s.round.eliminated.includes(i));
   return visible.length >= 3;
 }
@@ -210,6 +225,44 @@ export function answer(s: ShowState, choice: number | null): ShowState {
     };
   }
   return { ...s, teams, answers, round: { ...s.round, tried, revealed: true } };
+}
+
+/** Tüm takımlar kipi: bir takımın söylediği/yazdığı şıkkı işaretler; aynı şık yeniden seçilirse işaret kalkar */
+export function pickAnswer(s: ShowState, team: number, choice: number): ShowState {
+  const q = currentQuestion(s);
+  if (!q || s.settings.format !== 'all' || s.round.revealed || team < 0 || team >= s.teams.length || choice < 0 || choice >= q.choices.length) return s;
+  const picks = s.teams.map((_, i) => s.round.picks[i] ?? null);
+  picks[team] = picks[team] === choice ? null : choice;
+  return { ...s, round: { ...s.round, picks } };
+}
+
+/** Tüm takımlar kipi: takım bu soru için çift puan jokerini açar (yarışmada bir kez) */
+export function playDoubleFor(s: ShowState, team: number): ShowState {
+  const t = s.teams[team];
+  if (!currentQuestion(s) || !t || s.settings.format !== 'all' || !s.settings.jokers || s.round.revealed || t.usedDouble) return s;
+  return {
+    ...s,
+    teams: s.teams.map((x, i) => (i === team ? { ...x, usedDouble: true } : x)),
+    round: { ...s.round, doubles: [...s.round.doubles, team] },
+  };
+}
+
+/** Tüm takımlar kipi: doğru cevabı açar ve her takımı işaretlenen şıkkına göre puanlar (işaretsiz = boş, puan değişmez) */
+export function revealAll(s: ShowState): ShowState {
+  const q = currentQuestion(s);
+  if (!q || s.settings.format !== 'all' || s.round.revealed) return s;
+  const given = s.teams.map((_, team) => {
+    const choice = s.round.picks[team] ?? null;
+    const correct = choice === q.correct_index;
+    const points = correct ? q.level * (s.round.doubles.includes(team) ? 2 : 1) : choice !== null && s.settings.wrong === 'minus' ? -q.level : 0;
+    return { q: s.current, team, choice, correct, points };
+  });
+  return {
+    ...s,
+    teams: s.teams.map((t, i) => ({ ...t, score: t.score + given[i].points })),
+    answers: [...s.answers, ...given],
+    round: { ...s.round, tried: s.teams.map((_, i) => i), revealed: true },
+  };
 }
 
 /** Cevap beklenmeden doğru cevabı gösterir (puan yok) */
@@ -277,7 +330,8 @@ export function normalizeState(raw: unknown): ShowState {
   const st = (r.settings && typeof r.settings === 'object' ? r.settings : {}) as Partial<ShowSettings>;
   const settings: ShowSettings = {
     seconds: SECONDS_OPTIONS.includes(st.seconds as number) ? (st.seconds as number) : DEFAULT_SETTINGS.seconds,
-    wrong: st.wrong === 'minus' || st.wrong === 'pass' ? st.wrong : 'none',
+    format: st.format === 'all' ? 'all' : 'turn',
+    wrong: st.wrong === 'minus' || (st.wrong === 'pass' && st.format !== 'all') ? st.wrong : 'none',
     jokers: st.jokers !== false,
   };
   const current = typeof r.current === 'number' && r.current >= 0 ? Math.min(Math.floor(r.current), questions.length) : 0;
@@ -291,6 +345,11 @@ export function normalizeState(raw: unknown): ShowState {
     eliminated: idx(rd.eliminated, choiceCount),
     hidden: idx(rd.hidden, choiceCount),
     doubleFor: Number.isInteger(rd.doubleFor) && (rd.doubleFor as number) < teams.length ? (rd.doubleFor as number) : null,
+    picks: teams.map((_, i) => {
+      const v = Array.isArray(rd.picks) ? rd.picks[i] : null;
+      return Number.isInteger(v) && (v as number) >= 0 && (v as number) < choiceCount ? (v as number) : null;
+    }),
+    doubles: idx(rd.doubles, teams.length),
     revealed: rd.revealed === true,
   };
   const answers: ShowAnswer[] = (Array.isArray(r.answers) ? r.answers : []).flatMap((a) => {

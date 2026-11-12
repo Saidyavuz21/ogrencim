@@ -12,8 +12,8 @@ import type { ClassStudent } from '../../lib/teacherData';
 import { listQuestions, type QuestionRow } from '../../lib/quizData';
 import {
   createQuizShow, DEFAULT_SETTINGS, LEVEL_LABEL, MAX_SHOW_QUESTIONS, MAX_TEAMS, MIN_TEAMS, newShowState, newTeam,
-  questionFromBank, readLegacyTeams, SECONDS_OPTIONS, TEAM_COLORS, WRONG_RULE_LABEL,
-  type QuizShowRow, type ShowLevel, type ShowMode, type ShowSettings, type ShowTeam, type WrongRule,
+  questionFromBank, readLegacyTeams, FORMAT_LABEL, SECONDS_OPTIONS, TEAM_COLORS, WRONG_RULE_LABEL,
+  type QuizShowRow, type ShowLevel, type ShowMode, type ShowFormat, type ShowSettings, type ShowTeam, type WrongRule,
 } from '../../lib/quizShowData';
 import { readJson, shuffled, today } from '../teacher/classtools/storage';
 import s from './QuizShow.module.css';
@@ -311,19 +311,31 @@ export function QuizShowSetup({ className, students, studentsLoading, template, 
             <h2 id="show-rules-title" className={s.panelTitle}>Kurallar</h2>
             <div className={s.filters}>
               <div className={s.field}>
+                <label htmlFor="show-format">Cevaplama</label>
+                <CustomSelect
+                  id="show-format"
+                  value={settings.format}
+                  onChange={(v) => setSettings((p) => ({ ...p, format: v as ShowFormat, wrong: v === 'all' && p.wrong === 'pass' ? 'none' : p.wrong }))}
+                  options={(Object.keys(FORMAT_LABEL) as ShowFormat[]).map((k) => ({ value: k, label: FORMAT_LABEL[k] }))}
+                />
+              </div>
+              <div className={s.field}>
                 <label htmlFor="show-seconds">Soru süresi</label>
                 <CustomSelect id="show-seconds" value={String(settings.seconds)} onChange={(v) => setSettings((p) => ({ ...p, seconds: Number(v) }))} options={SECONDS_OPTIONS.map((n) => ({ value: String(n), label: n ? `${n} saniye` : 'Süre yok' }))} />
               </div>
               <div className={s.field}>
                 <label htmlFor="show-wrong">Yanlış cevapta</label>
-                <CustomSelect id="show-wrong" value={settings.wrong} onChange={(v) => setSettings((p) => ({ ...p, wrong: v as WrongRule }))} options={(Object.keys(WRONG_RULE_LABEL) as WrongRule[]).map((k) => ({ value: k, label: WRONG_RULE_LABEL[k] }))} />
+                <CustomSelect id="show-wrong" value={settings.wrong} onChange={(v) => setSettings((p) => ({ ...p, wrong: v as WrongRule }))} options={(Object.keys(WRONG_RULE_LABEL) as WrongRule[]).filter((k) => !(settings.format === 'all' && k === 'pass')).map((k) => ({ value: k, label: WRONG_RULE_LABEL[k] }))} />
               </div>
             </div>
             <label className={s.checkRow}>
               <input type="checkbox" checked={settings.jokers} onChange={(e) => setSettings((p) => ({ ...p, jokers: e.target.checked }))} />
-              <span>Jokerler açık: her takımın bir “çift puan” ve bir “yarı yarıya” hakkı olur</span>
+              <span>{settings.format === 'all' ? 'Jokerler açık: her takımın bir “çift puan” hakkı olur' : 'Jokerler açık: her takımın bir “çift puan” ve bir “yarı yarıya” hakkı olur'}</span>
             </label>
             <p className={s.muted}>
+              {settings.format === 'all'
+                ? 'Her soruyu bütün takımlar cevaplar: takımlar cevabını kâğıda ya da mini tahtaya yazar, siz her takımın şıkkını işaretleyip cevapları açarsınız; bilen her takım puan alır. '
+                : 'Her soruyu sırası gelen tek takım cevaplar; sıra her soruda bir sonraki takıma geçer. '}
               Doğru cevap sorunun puan değeri kadar kazandırır (kolay 1, orta 2, zor 3).
               {settings.wrong === 'minus' ? ' Yanlış cevap aynı değer kadar puan götürür.' : settings.wrong === 'pass' ? ' Yanlış cevapta soru, henüz denememiş sıradaki takıma geçer.' : ' Yanlış cevapta puan değişmez.'}
             </p>

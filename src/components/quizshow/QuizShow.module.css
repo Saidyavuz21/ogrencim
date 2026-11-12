@@ -109,6 +109,19 @@
 .teamJokers { display: flex; gap: 6px; margin: 0; font-size: 13px; font-weight: 700; }
 .teamJokers span { padding: 1px 8px; border: 1px solid rgb(32 53 45 / 35%); border-radius: 999px; background: rgb(255 255 255 / 55%); }
 .teamJokers span[data-used] { opacity: 0.4; text-decoration: line-through; }
+/* Tüm takımlar kipi: kartta takımın şıkkı, çift puan jokeri ve açılınca sonuç */
+.teamPicks { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; margin-top: 4px; }
+.teamPicks button { min-width: 44px; min-height: 44px; flex: 1 1 44px; max-width: 64px; border: 1px solid rgb(32 53 45 / 30%); border-radius: 10px; background: rgb(255 255 255 / 70%); color: #20352d; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+.teamPicks button:hover { background: #fff; }
+.teamPicks button[aria-pressed='true'] { border-color: #20352d; background: #20352d; color: #fff; }
+.teamPicks button:focus-visible, .teamDouble:focus-visible { outline: 3px solid #25634b; outline-offset: 2px; }
+.teamDouble { min-height: 44px; padding: 4px 12px; border: 1px solid rgb(32 53 45 / 35%); border-radius: 999px; background: rgb(255 255 255 / 55%); color: #20352d; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.teamDouble[aria-pressed='true'] { border-color: #20352d; background: #20352d; color: #fff; opacity: 1; }
+.teamDouble:disabled { cursor: default; }
+.teamDouble:disabled:not([aria-pressed='true']) { opacity: 0.45; text-decoration: line-through; }
+.teamResult { margin: 4px 0 0; padding: 6px 12px; border-radius: 999px; background: rgb(255 255 255 / 70%); color: #20352d; font-size: 15px; font-weight: 700; }
+.teamResultOk { background: #216044; color: #fff; }
+.teamResultBad { background: #a33342; color: #fff; }
 .teamButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 4px; }
 .teamButtons button { min-height: 44px; border: 1px solid rgb(32 53 45 / 25%); border-radius: 10px; background: rgb(255 255 255 / 60%); color: #20352d; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 .teamButtons button:last-child { border-color: #20352d; background: #20352d; color: #fff; }

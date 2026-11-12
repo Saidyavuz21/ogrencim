@@ -11,8 +11,8 @@ import { stripRich } from '../../lib/math/parseRich';
 import type { ClassStudent } from '../../lib/teacherData';
 import { CHOICE_LETTERS, quizImageUrls } from '../../lib/quizData';
 import {
-  adjustScore, answer, awardQuizShow, canUseHalf, currentQuestion, HISTORY_LIMIT, LEVEL_LABEL, nextQuestion, playDouble, playHalf,
-  questionsDone, ranking, reveal, saveQuizShow, teamBackground, winnerMembers,
+  adjustScore, answer, awardQuizShow, canUseHalf, currentQuestion, HISTORY_LIMIT, LEVEL_LABEL, nextQuestion, pickAnswer, playDouble, playDoubleFor, playHalf,
+  questionsDone, ranking, reveal, revealAll, saveQuizShow, teamBackground, winnerMembers,
   type QuizShowRow, type ShowState, type ShowStatus,
 } from '../../lib/quizShowData';
 import { shuffled } from '../teacher/classtools/storage';
@@ -114,6 +114,8 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
   const { full, toggle: toggleFull } = useFullscreen(stageRef);
   const { state, status } = snap;
   const isQuestions = row.mode === 'questions';
+  /** Her soruyu tüm takımlar cevaplar (eski kayıtlar sırayla) */
+  const allMode = state.settings.format === 'all';
   const q = currentQuestion(state);
   const finished = status === 'finished';
   const byId = useMemo(() => new Map(students.map((st) => [st.id, st.name])), [students]);
@@ -206,14 +208,46 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
   const teamStrip = (
     <div className={s.teamStrip} data-teams={state.teams.length}>
       {state.teams.map((team, index) => {
-        const active = isQuestions && !finished && !!q && !state.round.revealed && state.round.turn === index;
+        const active = isQuestions && !allMode && !finished && !!q && !state.round.revealed && state.round.turn === index;
+        const picking = isQuestions && allMode && !finished && !!q;
+        const pick = state.round.picks[index] ?? null;
+        const result = picking && state.round.revealed ? state.answers.find((a) => a.q === state.current && a.team === index) : undefined;
+        const doubled = state.round.doubles.includes(index);
         const leader = !tied && rows.find((r) => r.index === index)?.rank === 1;
         return (
           <section key={index} className={`${s.team} ${active ? s.teamActive : ''}`} style={{ '--team-bg': teamBackground(team.color) } as React.CSSProperties} aria-label={team.name}>
             <h3>{leader && <Crown size={18} aria-hidden="true" />}{team.name}</h3>
             <output className={s.teamScore} aria-label={`${team.name} puanı`}>{team.score}</output>
             {active && <p className={s.teamTurn}>Cevap sırası</p>}
-            {isQuestions && state.settings.jokers && !finished && (
+            {picking && q && (
+              state.round.revealed ? (
+                <p className={`${s.teamResult} ${result?.correct ? s.teamResultOk : result?.choice != null ? s.teamResultBad : ''}`} role="status">
+                  {result?.choice == null ? 'Boş' : `${CHOICE_LETTERS[result.choice]} · ${result.correct ? 'doğru' : 'yanlış'}`}
+                  {result?.points ? ` · ${result.points > 0 ? '+' : '−'}${Math.abs(result.points)}` : ''}
+                </p>
+              ) : (
+                <div className={s.teamPicks} role="group" aria-label={`${team.name} cevabı`}>
+                  {q.choices.map((_, c) => (
+                    <button key={c} type="button" aria-pressed={pick === c} onClick={() => apply(pickAnswer(state, index, c))} aria-label={`${team.name}: ${CHOICE_LETTERS[c]} şıkkı`}>
+                      {CHOICE_LETTERS[c]}
+                    </button>
+                  ))}
+                </div>
+              )
+            )}
+            {picking && state.settings.jokers && (
+              <button
+                type="button"
+                className={s.teamDouble}
+                aria-pressed={doubled}
+                disabled={state.round.revealed || (!!team.usedDouble && !doubled)}
+                onClick={() => apply(playDoubleFor(state, index))}
+                aria-label={doubled ? `${team.name} bu soruda çift puan kullanıyor` : team.usedDouble ? `${team.name} çift puan jokerini kullandı` : `${team.name} için çift puan jokerini aç`}
+              >
+                2× {doubled ? 'bu soruda' : team.usedDouble ? 'kullanıldı' : 'çift puan'}
+              </button>
+            )}
+            {isQuestions && !allMode && state.settings.jokers && !finished && (
               <p className={s.teamJokers}>
                 <span data-used={team.usedDouble || undefined}>2×</span>
                 <span data-used={team.usedHalf || undefined}>½</span>
@@ -344,13 +378,15 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
                 const hidden = state.round.hidden.includes(index);
                 const eliminated = state.round.eliminated.includes(index);
                 const isCorrect = state.round.revealed && index === q.correct_index;
-                const wrongPick = state.round.revealed && lastAnswer?.q === state.current && lastAnswer.choice === index && !lastAnswer.correct;
+                const wrongPick = state.round.revealed && index !== q.correct_index && (allMode
+                  ? state.round.picks.includes(index)
+                  : lastAnswer?.q === state.current && lastAnswer.choice === index && !lastAnswer.correct);
                 return (
                   <button
                     key={index}
                     type="button"
                     className={`${s.choice} ${isCorrect ? s.choiceCorrect : ''} ${wrongPick || eliminated ? s.choiceWrong : ''} ${hidden ? s.choiceHidden : ''}`}
-                    disabled={state.round.revealed || hidden || eliminated}
+                    disabled={allMode || state.round.revealed || hidden || eliminated}
                     onClick={() => apply(answer(state, index))}
                     aria-label={`${CHOICE_LETTERS[index]} şıkkı${isCorrect ? ', doğru cevap' : eliminated || wrongPick ? ', yanlış' : hidden ? ', gizlendi' : ''}`}
                   >
@@ -364,7 +400,12 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
             {state.round.revealed ? (
               <div className={s.afterReveal}>
                 <p className={s.stageNote} role="status">
-                  {lastAnswer?.q === state.current
+                  {allMode ? (() => {
+                    const right = state.answers.filter((a) => a.q === state.current && a.correct);
+                    return right.length
+                      ? `Doğru cevap ${CHOICE_LETTERS[q.correct_index]}. Bilenler: ${right.map((a) => `${state.teams[a.team]?.name} (+${a.points})`).join(', ')}.`
+                      : `Doğru cevap ${CHOICE_LETTERS[q.correct_index]}. Bilen takım olmadı.`;
+                  })() : lastAnswer?.q === state.current
                     ? lastAnswer.correct
                       ? `${state.teams[lastAnswer.team]?.name} doğru bildi: +${lastAnswer.points} puan.`
                       : `${state.teams[lastAnswer.team]?.name} bilemedi${lastAnswer.points ? `: −${Math.abs(lastAnswer.points)} puan` : ''}. Doğru cevap ${CHOICE_LETTERS[q.correct_index]}.`
@@ -374,6 +415,18 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
                 <button type="button" className={s.primary} onClick={goNext}>
                   {state.current + 1 >= state.questions.length ? <><Trophy size={20} aria-hidden="true" />Sonuçları göster</> : <><Play size={20} aria-hidden="true" />Sonraki soru</>}
                 </button>
+              </div>
+            ) : allMode ? (
+              <div className={s.controls}>
+                <p className={s.stageNote} role="status">
+                  {expired ? 'Süre doldu. ' : ''}Takımlar cevabını yazsın; her takımın şıkkını kendi kartından işaretleyin, sonra cevapları açın.
+                  {' '}{state.round.picks.filter((v) => v !== null).length} / {state.teams.length} takım işaretlendi.
+                </p>
+                <div className={s.controlButtons}>
+                  <button type="button" className={s.primary} onClick={() => apply(revealAll(state))}>
+                    <Eye size={20} aria-hidden="true" />Cevapları aç
+                  </button>
+                </div>
               </div>
             ) : (
               <div className={s.controls}>

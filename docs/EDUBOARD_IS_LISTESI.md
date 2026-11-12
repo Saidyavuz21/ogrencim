@@ -24,12 +24,14 @@ Her iş bitince: kutu işaretlenir, tarih ve commit yazılır.
 | 7 | Etkileşimli tahta | 15 / 15 ✅ |
 | 7b | Tahta: metin, gruplama, şekil kütüphanesi | 13 / 13 ✅ |
 | 7c | Tahta: derste kullanım | 7 / 7 ✅ |
+| 7d | Tahta: düzenleme alanı yerleşimi | 6 / 6 ✅ |
 | 8 | Güvenlik ve KVKK | 9 / 13 |
 | 9 | Kalite: test, CI, izleme | 6 / 7 |
 | 10 | Canlı ders | 7 / 7 ✅ |
 | 11 | Topluluk / Keşfet | 9 / 9 ✅ |
 | 12 | Yapay zekâ | 0 / 5 |
-| | **Toplam** | **118 / 128** |
+| 13 | Bilgi yarışması | 8 / 11 |
+| | **Toplam** | **132 / 145** |
 
 **Sıra (9 Kasım 2026):** Güvenlik ve KVKK öne alındı; canlı ders ve topluluk ona dayanıyor (öğrenci verisi anlık paylaşılıyor / herkese açık içerik). Ardından kalite (temiz build, CI, yedek), sonra canlı ders (tek öğretmenle de işe yarar), topluluk (çok öğretmen olunca değer kazanır) ve en son yapay zekâ.
 
@@ -172,6 +174,17 @@ Akıllı tahtanın başında parmakla/kalemle kullanım. Görsel deneme gerçek 
 - [x] Sunum çubuğunda büyük dokunma alanları (48 px düğme, 36 px renk) · 12 Kasım 2026 · `31a888d`
 - [x] Düzenleyicide ok tuşlarıyla seçili öğeyi kaydırma (Shift ile hızlı); yanıltıcı silgi ipucu düzeltildi · 12 Kasım 2026 · `31a888d`
 
+## 7d. Tahta: düzenleme alanı yerleşimi (bizde ek)
+
+Düzenleme ile ders alanı ayrıldı; düzenleme alanı Canva düzenine geçti. Tarayıcıda kullanıcı ekran görüntüleriyle bakıldı; ayrıca otomatik görsel test yok.
+
+- [x] Düzenleme / Ders alanı ayrımı: açılış sayfasında Hazırlık ve Derste grupları, tam ekranda kip seçimi, koyu ders çubuğu · 12 Kasım 2026 · `56158d5`
+- [x] Üstte sabit çubuk, solda araç şeridi ve paneli, altta sayfa şeridi (Sayfa ekle) · 12 Kasım 2026 · `b6c83fd`
+- [x] Hazır metin türleri (başlık, alt başlık, düz, kutulu, not); biçim satırı üst çubuğun altında · 12 Kasım 2026 · `28685c2`
+- [x] Tam ekran düğmesi: tam ekrandan çıkınca düzenleme / ders açık kalır; kısayol penceresi · 12 Kasım 2026 · `28685c2`
+- [x] Şekil, çizim ve görsel ayarları üst satırda; parça ayarları sol panelde (Geri ile); sağ panel kaldırıldı · 12 Kasım 2026 · `5b60b3c`
+- [x] Düzenleme alanı seçim aracıyla açılır · 12 Kasım 2026 · `a10c320`
+
 ## 8. Güvenlik ve KVKK
 
 - [ ] Admin şifresini değiştir (eski şifre git geçmişinde açık) — *K-14*
@@ -240,6 +253,22 @@ Akıllı tahtanın başında parmakla/kalemle kullanım. Görsel deneme gerçek 
 - [ ] Açık rıza ve kişisel verinin modele gönderilmemesi (anonimleştirme) — *K-13*
 - [ ] Prompt injection savunması; otomatik puanlama yok — *K-13*
 
+## 13. Bilgi yarışması (bizde ek)
+
+Sınıfta tek ekranda (akıllı tahtada) oynanan takımlı yarışma. Öğrenci cihazı yok: takım cevabını söyler, öğretmen şıkka dokunur. Öğretmen panelinde ayrı sayfa (`?sayfa=bilgi-yarismasi`).
+
+- [x] Sayfa ve hazırlık: 2–6 takım, ad, renk, bugünkü grupları aktarma, sınıfı rastgele dağıtma · 12 Kasım 2026 · `a768ee1`
+- [x] “Sadece skor tut”: soru hazırlamadan puan tutma; skor tabelasında tarayıcıda kayıtlı takım adları, renkleri ve puanları aktarılır · 12 Kasım 2026 · `a768ee1`
+- [x] Sorular soru bankasından seçilir (ders, konu, arama), sıralanır; yarışmaya kopyası yazılır (bankadan silinse de yarışma bozulmaz) · 12 Kasım 2026 · `a768ee1`
+- [x] Soru puan değeri: kolay 1, orta 2, zor 3 · 12 Kasım 2026 · `a768ee1`
+- [x] Süre (15/30/45/60 sn, sesli uyarı); yanlışta puan yok / eksi puan / soru diğer takıma geçer; geri al · 12 Kasım 2026 · `a768ee1`
+- [x] Jokerler: takım başına birer çift puan ve yarı yarıya · 12 Kasım 2026 · `a768ee1`
+- [x] Sonuçlar: sıralama, soru özeti; “Yarışmalarım” listesi (devam et, tekrar oyna, sil) · 12 Kasım 2026 · `a768ee1`
+- [x] Kazanana davranış puanı: sunucu fonksiyonu `quiz_show_award`, yarışma başına bir kez, öğrenci başına 1–5 · 12 Kasım 2026 · `a768ee1`
+- [ ] Veritabanı canlıya uygulanacak: `bash scripts/sunucu/veritabani-guncelle.sh --uygula` (`20261114090000_quiz_shows.sql`); uygulanmadan sayfa “Yarışmalar yüklenemedi” der
+- [ ] Yetki testi canlıda çalıştırılacak (`supabase/tests/quiz_show_test.sql`, 21 kontrol); oyun kuralları 28 kontrolle sınandı
+- [ ] Tarayıcıda deneme (masaüstü, mobil, tam ekran, kaydın yeniden açılması); sonra skor tabelası Sınıf araçları’ndan kaldırılacak
+
 ---
 
 ## Bitenler (kronolojik)
@@ -267,3 +296,5 @@ Akıllı tahtanın başında parmakla/kalemle kullanım. Görsel deneme gerçek 
 | 10 Kasım 2026 | Canlı ders: anlık quiz, çözüm yansıtma, 30 sn kalem izni, ortak çalışma; tahtaya eşleştirme ve sesli not; tahta sürüm geçmişi. Veritabanı testi 41/41 (`supabase/tests/live_test.sql`); test kalem izni denetiminde bir açık yakaladı, düzeltildi (Paket 10, 7/7) | `6ca6d4f`, `f6ab4d9`, `b5276a3` |
 | 11 Kasım 2026 | Topluluk / Keşfet: tahta ve soru seti paylaşma, kişisel veri taraması, önizleme, kota ayırmalı kopyalama, atıf, yıldız, favori, kazanım koduyla arama, sıralamalar, editörün seçimi. Veritabanı testi 30/30 (`supabase/tests/community_test.sql`) (Paket 11, 9/9) | `e2420e5` |
 | 12 Kasım 2026 | Tahta derste kullanım: akıcı çizim, avuç içi koruması, sunumda kalınlık / sayfaya kaydet / boş sayfa, büyük düğmeler, ok tuşlarıyla kaydırma (Paket 7c, 7/7) | `31a888d` |
+| 12 Kasım 2026 | Tahta düzenleme alanı: Düzenleme / Ders ayrımı, üst çubuk + sol araç şeridi + alt sayfa şeridi, hazır metin türleri, biçim satırı, tam ekran düğmesi (Paket 7d, 6/6) | `56158d5`, `b6c83fd`, `28685c2`, `5b60b3c`, `a10c320` |
+| 12 Kasım 2026 | Bilgi yarışması: sayfa, takımlar, soru bankasından sorular, puan değeri, süre, jokerler, sonuçlar, kazanana davranış puanı; veritabanı ve tarayıcı denemesi bekliyor (Paket 13, 8/11) | `a768ee1` |

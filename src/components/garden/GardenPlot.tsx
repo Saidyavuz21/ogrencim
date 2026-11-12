@@ -204,7 +204,7 @@ export function GardenPlot({
                             fontSize={10.5 * slot.scale}
                             fontWeight="700"
                             fontFamily="inherit"
-                            style={{ pointerEvents: 'none', userSelect: 'none' }}
+                            style={{ pointerEvents: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
                           >
                             {behavior.name.length > 9 ? `${behavior.name.slice(0, 8)}…` : behavior.name}
                           </text>

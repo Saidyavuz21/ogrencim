@@ -114,7 +114,7 @@ export function QuizShowStage({ row, students, onExit, onRowChange }: {
   const { full, toggle: toggleFull } = useFullscreen(stageRef);
   const { state, status } = snap;
   const isQuestions = row.mode === 'questions';
-  /** Her soruyu tüm takımlar cevaplar (eski kayıtlar sırayla) */
+  /** Her soruyu tüm takımlar cevaplar (sırayla oynamak kurulumda seçilir) */
   const allMode = state.settings.format === 'all';
   const q = currentQuestion(state);
   const finished = status === 'finished';

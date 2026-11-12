@@ -71,7 +71,7 @@ export interface ShowQuestion {
 export interface ShowSettings {
   /** Soru süresi (sn); 0 = süre yok */
   seconds: number;
-  /** Eski kayıtlarda yoktur: 'turn' sayılır */
+  /** Eski kayıtlarda yoktur: 'all' sayılır */
   format: ShowFormat;
   wrong: WrongRule;
   jokers: boolean;
@@ -330,8 +330,9 @@ export function normalizeState(raw: unknown): ShowState {
   const st = (r.settings && typeof r.settings === 'object' ? r.settings : {}) as Partial<ShowSettings>;
   const settings: ShowSettings = {
     seconds: SECONDS_OPTIONS.includes(st.seconds as number) ? (st.seconds as number) : DEFAULT_SETTINGS.seconds,
-    format: st.format === 'all' ? 'all' : 'turn',
-    wrong: st.wrong === 'minus' || (st.wrong === 'pass' && st.format !== 'all') ? st.wrong : 'none',
+    // Biçimi yazılmamış (eski) kayıtlar da tüm takımlar kipinde açılır; sırayla oynamak kurulumda açıkça seçilir
+    format: st.format === 'turn' ? 'turn' : 'all',
+    wrong: st.wrong === 'minus' || (st.wrong === 'pass' && st.format === 'turn') ? st.wrong : 'none',
     jokers: st.jokers !== false,
   };
   const current = typeof r.current === 'number' && r.current >= 0 ? Math.min(Math.floor(r.current), questions.length) : 0;

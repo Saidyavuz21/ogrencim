@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Diamond, Download, Eraser, Eye, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
@@ -29,6 +30,7 @@ import { ShapeConfigModal } from './ShapeConfigModal';
 import { SaveShapeModal } from './SaveShapeModal';
 import { EditShapeModal } from './EditShapeModal';
 import { BoardVersionsModal } from './BoardVersions';
+import { ElementBar } from './BoardElementBar';
 import { LiveTeacherSession } from '../live/LiveTeacherSession';
 
 import styles from './Board.module.css';
@@ -155,6 +157,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const openTab = (id: SideTab) => {
     const armPen = id === 'draw' && !DRAW_TOOLS.includes(tool);
     if (armPen) setTool('pen');
+    // Ayar görünümü açıksa şerit düğmesi araç listesine döndürür
+    if (panelOpen && selectedIds.length) { setPanelAuto(false); setPanelOpen(false); setSideTab(id); setSideOpen(true); return; }
     if (sideOpen && sideTab === id && !armPen) { setSideOpen(false); return; }
     setSideTab(id);
     setSideOpen(true);
@@ -1391,6 +1395,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
   // Düzenleme alanı: üstte sabit çubuk, solda araç şeridi ve paneli, ortada tahta, altta sayfa şeridi
   const sideLabel = SIDE_TABS.find((t) => t.id === sideTab)?.label || '';
+  // Seçili öğenin uzun ayarları (parçalar) sol panelde açılır; "Geri" araç listesine döndürür
+  const settingsView = panelOpen && selectedIds.length > 0;
+  const closeSettings = () => { setPanelAuto(false); setPanelOpen(false); };
   return (
     <div ref={rootRef} className={styles.workspace}>
       <input
@@ -1496,7 +1503,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           {modeSwitch}
         </div>
       </header>
-      <div ref={setBarHost} className={styles.workBar} data-empty-text="Bir yazı ya da birden çok öğe seçince ayarları burada açılır." />
+      <div ref={setBarHost} className={styles.workBar} data-empty-text="Bir öğe seçince ayarları burada açılır." />
 
       <nav className={styles.workRail} aria-label="Araç grupları">
         {SIDE_TABS.map((t) => (
@@ -1504,7 +1511,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             key={t.id}
             type="button"
             className={styles.railBtn}
-            aria-pressed={sideOpen && sideTab === t.id}
+            aria-pressed={!settingsView && sideOpen && sideTab === t.id}
             aria-controls="board-side"
             onClick={() => openTab(t.id)}
           >
@@ -1519,13 +1526,47 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         ))}
       </nav>
 
-      <aside id="board-side" className={styles.workSide} aria-label={`${sideLabel} paneli`} hidden={!sideOpen}>
-        <div className={styles.drawerHead}>
-          <strong>{sideLabel}</strong>
-          <button type="button" className={styles.tool} onClick={() => setSideOpen(false)} aria-label="Sol paneli kapat">Kapat</button>
-        </div>
+      <aside id="board-side" className={styles.workSide} aria-label={settingsView ? 'Seçili öğe ayarları' : `${sideLabel} paneli`} hidden={!sideOpen && !settingsView}>
+        {settingsView ? (
+          <div className={styles.drawerHead}>
+            <button type="button" className={styles.tool} onClick={closeSettings} aria-label="Geri: araç listesine dön" title="Araç listesine dön">
+              <ArrowLeft size={18} aria-hidden="true" /> Geri
+            </button>
+            <strong>{selectedIds.length > 1 ? `${selectedIds.length} öğe seçili` : 'Ayarlar'}</strong>
+          </div>
+        ) : (
+          <div className={styles.drawerHead}>
+            <strong>{sideLabel}</strong>
+            <button type="button" className={styles.tool} onClick={() => setSideOpen(false)} aria-label="Sol paneli kapat">Kapat</button>
+          </div>
+        )}
+        {!settingsView ? null : selectedIds.length === 1 && selected ? (
+          <SelectionPanel
+            el={selected}
+            questions={questions}
+            minitests={minitests}
+            onPatch={(patch) => patchElement(selected.id, patch)}
+            onDelete={() => deleteSelected([selected.id])}
+            onOrder={(dir) => reorderElements(dir, [selected.id])}
+            onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
+            onSaveToLibrary={canSaveToLibrary([selected]) ? () => handleOpenSaveModal([selected]) : undefined}
+            onSaveImage={selected.type === 'image' && !imageInMyFiles(selected) ? () => saveImageToFiles(selected) : undefined}
+            busy={busy}
+          />
+        ) : selectedIds.length > 1 ? (
+          <MultiSelectionPanel
+            elements={page.elements.filter((el) => selectedIds.includes(el.id))}
+            onDuplicate={() => duplicateElements()}
+            onOrder={(dir) => reorderElements(dir)}
+            onDelete={() => deleteSelected()}
+            onGroup={() => groupSelected()}
+            onUngroup={() => ungroupSelected()}
+            onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
+            onSaveToLibrary={canSaveToLibrary(page.elements.filter((el) => selectedIds.includes(el.id))) ? () => handleOpenSaveModal(page.elements.filter((el) => selectedIds.includes(el.id))) : undefined}
+          />
+        ) : null}
 
-        {sideTab === 'draw' && (
+        {!settingsView && sideTab === 'draw' && (
           <div className={styles.sideCard}>
             <div className={styles.popoverSection}>
               <span className={styles.popoverLabel}>Çizim aracı</span>
@@ -1619,7 +1660,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           </div>
         )}
 
-        {sideTab === 'shapes' && (
+        {!settingsView && sideTab === 'shapes' && (
           <>
             <div className={styles.sideCard}>
               <div className={styles.popoverSection}>
@@ -1722,7 +1763,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           </>
         )}
 
-        {sideTab === 'text' && (
+        {!settingsView && sideTab === 'text' && (
           <div className={styles.sideCard}>
             <div className={styles.textPresets}>
               <button type="button" className={styles.textPreset} onClick={() => addTextPreset('title')}><span style={{ fontSize: 26, fontWeight: 700 }}>Başlık ekle</span></button>
@@ -1735,7 +1776,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           </div>
         )}
 
-        {sideTab === 'media' && (
+        {!settingsView && sideTab === 'media' && (
           <MediaDrawer
             only="images"
             onInsert={(m) => insertMedia(m)}
@@ -1759,7 +1800,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           />
         )}
 
-        {sideTab === 'widgets' && (
+        {!settingsView && sideTab === 'widgets' && (
           <div className={styles.sideCard}>
             <div className={styles.widgetsList}>
               {(Object.keys(WIDGET_LABEL) as WidgetKind[]).map((k) => (
@@ -1776,11 +1817,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 </button>
               ))}
             </div>
-            <p className={styles.hintText}>Parça tahtanın ortasına eklenir; ayarları sağda açılan panelden yapılır.</p>
+            <p className={styles.hintText}>Parça tahtanın ortasına eklenir; ayarları bu panelde açılır. “Geri” ile listeye dönersiniz.</p>
           </div>
         )}
 
-        {sideTab === 'page' && (
+        {!settingsView && sideTab === 'page' && (
           <section className={styles.panel}>
             <label>Bu sayfanın zemini
               <CustomSelect value={page.background} onChange={(v) => updatePage({ background: v as Background })} options={(Object.keys(BACKGROUND_LABEL) as Background[]).map((b) => ({ value: b, label: BACKGROUND_LABEL[b] }))} />
@@ -1806,7 +1847,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             // panel, seçim değişene kadar kapalı kalır (aynı öğeye yeniden tıklamak onSelect çağırmaz).
             // Seçimle açılan panel, seçim bırakılınca kendiliğinden kapanır; elle açılan panel açık kalır.
             const single = ids.length === 1 ? page.elements.find((e) => e.id === ids[0]) : undefined;
-            if (single && single.type !== 'note') {
+            // Sağdaki panel yalnızca parçalarda (uzun ayarlar) açılır; diğer öğelerin ayarları üst satırdadır
+            if (single && single.type === 'widget') {
               if (!panelOpen) setPanelAuto(true);
               setPanelOpen(true);
             } else if (panelAuto || ids.length) {
@@ -1899,38 +1941,23 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         </div>
       </footer>
 
-      {/* Seçili öğenin ayarları: yalnızca seçim varken sağdan açılır */}
-      <aside id="board-drawer" className={`${styles.drawer} ${styles.workDrawer} ${panelOpen && selectedIds.length ? styles.drawerOpen : ''}`} aria-label="Seçili öğe ayarları" aria-hidden={!(panelOpen && selectedIds.length) || undefined} inert={!(panelOpen && selectedIds.length) || undefined}>
-        <div className={styles.drawerHead}>
-          <strong>{selectedIds.length > 1 ? `${selectedIds.length} öğe seçili` : 'Seçili öğe'}</strong>
-          <button type="button" className={styles.tool} onClick={() => { setPanelAuto(false); setPanelOpen(false); }} aria-label="Ayar panelini kapat">Kapat</button>
-        </div>
-        {selectedIds.length === 1 && selected ? (
-          <SelectionPanel
-            el={selected}
-            questions={questions}
-            minitests={minitests}
-            onPatch={(patch) => patchElement(selected.id, patch)}
-            onDelete={() => deleteSelected([selected.id])}
-            onOrder={(dir) => reorderElements(dir, [selected.id])}
-            onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
-            onSaveToLibrary={canSaveToLibrary([selected]) ? () => handleOpenSaveModal([selected]) : undefined}
-            onSaveImage={selected.type === 'image' && !imageInMyFiles(selected) ? () => saveImageToFiles(selected) : undefined}
-            busy={busy}
-          />
-        ) : selectedIds.length > 1 ? (
-          <MultiSelectionPanel
-            elements={page.elements.filter((el) => selectedIds.includes(el.id))}
-            onDuplicate={() => duplicateElements()}
-            onOrder={(dir) => reorderElements(dir)}
-            onDelete={() => deleteSelected()}
-            onGroup={() => groupSelected()}
-            onUngroup={() => ungroupSelected()}
-            onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
-            onSaveToLibrary={canSaveToLibrary(page.elements.filter((el) => selectedIds.includes(el.id))) ? () => handleOpenSaveModal(page.elements.filter((el) => selectedIds.includes(el.id))) : undefined}
-          />
-        ) : null}
-      </aside>
+      {barHost && selectedIds.length === 1 && selected && selected.type !== 'note' && createPortal(
+        <ElementBar
+          key={selected.id}
+          el={selected}
+          colors={COLORS}
+          onPatch={(patch) => patchElement(selected.id, patch)}
+          onDuplicate={() => duplicateElements([selected.id])}
+          onOrder={(dir) => reorderElements(dir, [selected.id])}
+          onDelete={() => deleteSelected([selected.id])}
+          onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
+          onSaveToLibrary={canSaveToLibrary([selected]) ? () => handleOpenSaveModal([selected]) : undefined}
+          onSaveImage={selected.type === 'image' && !imageInMyFiles(selected) ? () => saveImageToFiles(selected) : undefined}
+          onOpenSettings={selected.type === 'widget' ? openPanelManually : undefined}
+          busy={busy}
+        />,
+        barHost,
+      )}
       {ctxMenu && (() => {
         const ids = ctxMenu.ids;
         const els = page.elements.filter((el) => ids.includes(el.id));

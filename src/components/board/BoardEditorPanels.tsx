@@ -396,6 +396,12 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
           )}
         </label>
       )}
+      {el.type === 'widget' && el.kind === 'minitest' && (
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <input type="checkbox" checked={!!el.data.allowReveal} onChange={(e) => onPatch({ data: { ...el.data, allowReveal: e.target.checked } } as Partial<BoardEl>)} />
+          <span>Öğrenci cevabı görebilsin<span className={styles.saveState} style={{ display: 'block' }}>Ödevde &quot;Cevabı göster&quot; düğmesi çıkar; cevabı açan bu sorudan puan alamaz. Sınav modunda çalışmaz.</span></span>
+        </label>
+      )}
       {el.type === 'widget' && el.kind === 'reveal' && (
         <label>Bağlı Mini Test
           {minitests.length === 0 ? <span className={styles.saveState}>Tahtada Mini Test yok.</span> : (

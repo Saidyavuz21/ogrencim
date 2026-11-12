@@ -70,7 +70,9 @@ export interface WidgetData {
   questionId?: string;
   /** Mini Test (ödeve gönderilmiş kopyada): quiz sorusu */
   itemId?: string;
-  /** Cevabı Göster: bağlı Mini Test parçasının kimliği */
+  /** Mini Test: öğrenci "Cevabı göster" düğmesiyle cevabı açabilir (o sorudan puan alamaz) */
+  allowReveal?: boolean;
+  /** Eski "Cevabı Göster" parçası (artık eklenemiyor): bağlı Mini Test parçasının kimliği */
   targetId?: string;
   /** Adım Adım */
   title?: string;
@@ -101,6 +103,8 @@ export interface BoardContent { version: 1; pages: BoardPage[] }
 export type DrawingLayer = Record<string, StrokeEl[]>;
 
 export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme', audio: 'Sesli Not' };
+/** Parçalar listesinde eklenebilenler; "Cevabı Göster" artık Mini Test ayarı, eski tahtalarda çalışmaya devam eder */
+export const ADDABLE_WIDGETS: WidgetKind[] = ['minitest', 'steps', 'timer', 'match', 'audio'];
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
   match: { w: 860, h: 560 }, audio: { w: 460, h: 200 },

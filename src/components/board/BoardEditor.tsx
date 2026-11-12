@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Diamond, Download, Eraser, Eye, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
+  Copy, Diamond, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
   Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
@@ -12,7 +12,7 @@ import {
   Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl,
   boardImageUrls, BoardPage, BoardRow, byteSize, cloneElements, copyImageToBoard, exportBoardPng, getBoard,
   HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, mediaRefs, MAX_PAGES, newId, newPage, NoteEl, saveBoard, scaleElements,
-  StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
+  ADDABLE_WIDGETS, StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { listQuestions, QuestionRow } from '../../lib/quizData';
 import { listMyFiles, signedFileUrl, uploadTeacherFiles } from '../../lib/filesData';
@@ -1884,12 +1884,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
         {!settingsView && sideTab === 'widgets' && (
           <div className={styles.sideCard}>
             <div className={styles.widgetsList}>
-              {(Object.keys(WIDGET_LABEL) as WidgetKind[]).map((k) => (
+              {ADDABLE_WIDGETS.map((k) => (
                 <button key={k} type="button" className={styles.widgetItemBtn} onClick={() => addWidget(k)}>
                   <span className={styles.widgetItemIcon}>
                     {k === 'timer' ? <Clock size={16} /> :
                      k === 'minitest' ? <Component size={16} /> :
-                     k === 'reveal' ? <Eye size={16} /> :
                      k === 'match' ? <Shuffle size={16} /> :
                      k === 'audio' ? <Mic size={16} /> :
                      <Layers size={16} />}

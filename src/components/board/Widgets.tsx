@@ -52,6 +52,7 @@ export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
 // Mini Test
 // --------------------------------------------------------
 function MiniTest({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
+  const { confirm } = useDialog();
   const [picked, setPicked] = useState<number | null>(null);
   const [wrong, setWrong] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
@@ -80,6 +81,7 @@ function MiniTest({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
             );
           })}
         </ul>
+        {ctx.mode === 'teacher' && el.data.allowReveal && <p className={styles.widgetNote}>Öğrenci ödevde &quot;Cevabı göster&quot; düğmesini görecek.</p>}
         {picked != null && !review && (
           <div className={styles.widgetRow}>
             <p className={`${styles.widgetFeedback} ${picked === q.correct_index ? styles.fbOk : styles.fbBad}`}>{picked === q.correct_index ? 'Doğru!' : `Yanlış. Doğru cevap: ${CHOICE_LETTERS[q.correct_index]}`}</p>
@@ -107,6 +109,19 @@ function MiniTest({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
     setMsg(r.correct ? { ok: true, text: r.tries === 1 ? 'Doğru! Tam puan.' : `Doğru! ${r.tries}. denemede.` }
       : r.resolved ? { ok: false, text: 'Yanlış. Deneme hakkın bitti.' } : { ok: false, text: `Yanlış. ${PRACTICE_TRIES - r.tries} hakkın kaldı.` });
   };
+  const reveal = async () => {
+    if (!ctx.homeworkId || busy) return;
+    const ok = await confirm({
+      title: 'Cevabı göster', message: 'Cevabı görürsen bu sorudan puan alamazsın. Gösterilsin mi?', confirmText: 'Göster', cancelText: 'Vazgeç', variant: 'warning',
+    });
+    if (!ok) return;
+    setBusy(true);
+    setMsg(null);
+    const res = await revealAnswer(ctx.homeworkId, item.id);
+    setBusy(false);
+    if (!res.ok) { setMsg({ ok: false, text: res.error }); return; }
+    ctx.onItem?.(item.id, { correct_index: res.data.correct_index, explanation: res.data.explanation, resolved: true, tries: PRACTICE_TRIES });
+  };
   return (
     <div className={styles.widget}>
       <p className={styles.widgetTitle}>Mini Test{!item.resolved && ` · ${PRACTICE_TRIES - item.tries} hak`}</p>
@@ -124,6 +139,11 @@ function MiniTest({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
         })}
       </ul>
       {msg && <p className={`${styles.widgetFeedback} ${msg.ok ? styles.fbOk : styles.fbBad}`} role="status">{msg.text}</p>}
+      {el.data.allowReveal && !item.resolved && item.correct_index == null && (
+        <div className={styles.widgetRow}>
+          <button type="button" className={`${styles.widgetButton} ${styles.secondary}`} onClick={reveal} disabled={busy || ctx.locked}>{busy ? 'Açılıyor…' : 'Cevabı göster'}</button>
+        </div>
+      )}
       {item.explanation && item.correct_index != null && <p className={styles.widgetNote}><b>Çözüm:</b> <RichText text={item.explanation} inline /></p>}
     </div>
   );

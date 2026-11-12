@@ -1,6 +1,21 @@
 /* ===== Quiz: soru bankası, soru düzenleyici, öğrenci ekranı, sonuçlar ===== */
 
 .bankWorkspace { gap: 20px; }
+
+/* Ana iki kolonlu yerleşim */
+.bankLayout { display: grid; gap: 16px; min-width: 0; }
+.bankSidebar { display: grid; gap: 16px; min-width: 0; }
+.bankMain { display: grid; gap: 16px; min-width: 0; }
+
+.desktopNewQuestionBtn { display: none; }
+.desktopSubjectNav { display: none; }
+.desktopFilterGroup { display: contents; }
+.desktopClearRow { display: none; }
+.desktopIntroNote { display: none; }
+.mobileIntro { display: flex; }
+.mobileSubjectField { display: grid; }
+.mobileClearBtn { display: inline-block; }
+
 .bankIntro { padding: 22px 24px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: white; }
 .bankIntro > p { flex: 1 1 320px; max-width: 680px; font-size: 14px; line-height: 1.7; }
 .bankIntro > button { min-height: 46px; border-radius: 10px; }
@@ -13,16 +28,237 @@
 .bankResultBar button { min-height: 44px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--teacher-primary, #25634b); font: inherit; font-size: 13px; cursor: pointer; }
 .bankResultBar button:hover { background: var(--teacher-selected, #e6f1e9); }
 .bankResultBar button:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+
+@media (min-width: 1024px) {
+  .bankLayout {
+    grid-template-columns: minmax(0, 1fr) 310px;
+    align-items: start;
+    gap: 24px;
+  }
+  .bankMain {
+    order: 1;
+    min-width: 0;
+  }
+  .bankSidebar {
+    order: 2;
+    position: sticky;
+    top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 16px;
+    padding: 22px;
+    border: 1px solid var(--teacher-border, #dedad0);
+    border-radius: 18px;
+    background: #fff;
+  }
+  .mobileIntro {
+    display: none;
+  }
+  .desktopNewQuestionBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 48px;
+  }
+  .bankFilters {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    gap: 16px;
+  }
+  .bankFilters > label {
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
+  }
+  .mobileSubjectField {
+    display: none;
+  }
+  .desktopSubjectNav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 6px;
+    padding-top: 14px;
+    border-top: 1px solid #eeece5;
+  }
+  .desktopNavLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--teacher-muted, #58665f);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    text-align: left;
+  }
+  .desktopNavList {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .desktopNavList li {
+    display: flex;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  .desktopNavItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--teacher-text, #20352d);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    box-sizing: border-box;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .desktopNavItem:hover {
+    background: #f0f5ef;
+    color: var(--teacher-primary, #25634b);
+  }
+  .desktopNavItem[aria-pressed='true'] {
+    background: var(--teacher-selected, #e6f1e9);
+    color: var(--teacher-primary, #25634b);
+    font-weight: 600;
+  }
+  .desktopNavItem:focus-visible {
+    outline: 3px solid var(--teacher-primary, #25634b);
+    outline-offset: -2px;
+  }
+  .desktopNavName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 8px;
+  }
+  .desktopNavCount {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--teacher-muted, #58665f);
+    background: #f0eee7;
+    padding: 2px 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .desktopNavItem[aria-pressed='true'] .desktopNavCount {
+    background: #d4e8dc;
+    color: var(--teacher-primary, #25634b);
+  }
+  .desktopFilterGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid #eeece5;
+  }
+  .bankFilterField {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .desktopClearRow {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    padding-top: 4px;
+  }
+  .desktopClearRow button {
+    padding: 4px 0;
+    border: 0;
+    background: transparent;
+    color: var(--teacher-primary, #25634b);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .desktopClearRow button:hover {
+    color: #174634;
+  }
+  .mobileClearBtn {
+    display: none;
+  }
+  .desktopIntroNote {
+    display: block;
+    margin: 0;
+    padding-top: 14px;
+    border-top: 1px solid #eeece5;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--teacher-muted, #58665f);
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+.bankGroupToggles { display: inline-flex; align-items: center; gap: 6px; }
+.groupToggleBtn { min-height: 36px; padding: 6px 12px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 8px; background: #fff; color: var(--teacher-muted, #58665f); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.12s ease; }
+.groupToggleBtn:hover { background: var(--teacher-selected, #e6f1e9); color: var(--teacher-primary, #25634b); border-color: var(--teacher-primary, #25634b); }
+.groupToggleBtn:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+
+.bankGroups { display: grid; gap: 14px; min-width: 0; }
+.groupAccordion { border: 1px solid var(--teacher-border, #dedad0); border-radius: 16px; background: #fff; overflow: hidden; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.groupAccordionOpen { border-color: #c9c4b5; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04); }
+
+.groupHeaderRow { display: flex; align-items: center; background: #fff; border-bottom: 1px solid transparent; transition: background 0.12s ease; }
+.groupHeaderRowOpen { border-bottom-color: var(--teacher-border, #dedad0); background: #fafaf7; }
+.groupCheckWrapper { display: flex; align-items: center; justify-content: center; padding-left: 14px; flex-shrink: 0; min-height: 52px; }
+
+.groupButton { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 0; background: transparent; text-align: left; cursor: pointer; color: inherit; font: inherit; min-height: 52px; transition: background 0.12s ease; }
+.groupButton:hover { background: #f4f3ed; }
+.groupButton:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: -3px; }
+
+.groupIcon { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: #eef5ee; color: var(--teacher-primary, #25634b); flex-shrink: 0; }
+.groupMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.groupTitle { font-size: 15px; font-weight: 600; color: var(--teacher-text, #20352d); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.groupGrade { font-size: 12px; font-weight: 500; color: var(--teacher-muted, #58665f); }
+
+.groupMeta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.groupCount { font-size: 12px; font-weight: 600; color: var(--teacher-primary, #25634b); background: var(--teacher-selected, #e6f1e9); padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.groupChevron { color: var(--teacher-muted, #58665f); flex-shrink: 0; transition: transform 0.2s ease; }
+.groupChevronOpen { transform: rotate(180deg); }
+
+.groupPanel { display: flex; flex-direction: column; background: #fff; }
+
 .bankList { display: grid; gap: 16px; min-width: 0; }
-.bankList .qCard { padding: 24px; gap: 18px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; }
-.bankList .qCard:last-child { border-bottom: 1px solid var(--teacher-border, #dedad0); }
-.bankList .qHead { gap: 16px; }
-.bankList .qBody { font-size: 16px; line-height: 1.7; }
-.bankList .qChoices { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; padding-top: 16px; border-top: 1px solid #eeece5; }
-.bankList .qChoices li { min-width: 0; padding: 10px; border-radius: 8px; font-size: 14px; line-height: 1.6; }
-.bankList .qChoices .qCorrect { background: #eef5ee; font-weight: 500; }
-.bankActions { flex-shrink: 0; gap: 6px; }
-.bankActions button { border-radius: 10px; }
+.bankActions { flex-shrink: 0; gap: 6px; display: inline-flex; align-items: center; }
+.bankActions button { border-radius: 10px; min-width: 40px; min-height: 40px; }
 .bankEditor { gap: 22px; }
 .bankEditor textarea { font-size: 16px; line-height: 1.65; padding: 12px; border-radius: 10px; }
 .bankEditor .choiceRows { gap: 10px; }
@@ -33,12 +269,22 @@
   .bankIntro > p { flex-basis: 100%; font-size: 13px; }
   .bankIntro > button { width: 100%; min-height: 48px; }
   .bankFilters { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px 16px; border-radius: 16px; }
-  .bankList .qCard { padding: 18px 16px; border-radius: 16px; gap: 14px; }
-  .bankList .qHead { flex-wrap: wrap; gap: 12px; }
-  .bankList .qBody { flex-basis: calc(100% - 90px); font-size: 15px; }
-  .bankActions { width: 100%; justify-content: flex-end; padding-top: 4px; }
-  .bankList .qChoices { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-top: 14px; }
-  .bankList .qThumb { width: 64px; height: 56px; }
+  
+  .groupButton { padding: 12px 14px; gap: 10px; }
+  .groupTitle { font-size: 14px; }
+  .groupMeta { gap: 6px; }
+  .groupCount { font-size: 11px; padding: 2px 8px; }
+  
+  .qCompactRow { padding: 8px 10px; gap: 8px; flex-wrap: wrap; }
+  .qExpandBtn { padding: 4px 6px; gap: 8px; }
+  .qClampText { font-size: 13px; }
+  .qCorrectBadge { font-size: 11px; padding: 2px 6px; }
+  .bankActions { margin-left: auto; }
+  .bankActions button { min-width: 44px; min-height: 44px; }
+  
+  .qExpandedDetails { padding: 12px 14px 14px 14px; }
+  .qChoices { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  
   .bankEditor .imageBox > button { flex: 1 1 160px; min-height: 48px; }
   .bankEditor .choiceRow { gap: 6px; }
   .bankEditor .choiceRow input { font-size: 16px; }
@@ -58,17 +304,57 @@
 .thumb { display: block; max-width: 220px; max-height: 140px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 12px; object-fit: contain; background: #f7f6f2; }
 .questionImage { display: block; max-width: 100%; max-height: 320px; margin: 0 auto; border-radius: 14px; object-fit: contain; background: #f7f6f2; }
 
-/* Bankadaki soru kartı */
-.qCard { display: grid; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--teacher-border, #dedad0); background: #fff; }
+/* Bankadaki soru kartı (kompakt ve genişletilmiş) */
+.qCard { display: flex; flex-direction: column; padding: 0; border: 0; border-bottom: 1px solid #eeece5; background: #fff; transition: background 0.12s ease; }
 .qCard:last-child { border-bottom: 0; }
+.qCardExpanded { background: #fafaf7; }
+
+.qCompactRow { display: flex; align-items: center; gap: 10px; padding: 8px 14px; min-height: 48px; width: 100%; }
+.qExpandBtn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; color: inherit; font: inherit; min-height: 44px; transition: background 0.12s ease; }
+.qExpandBtn:hover { background: #f1efea; }
+.qExpandBtn:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
+
+.qMiniThumb { width: 36px; height: 28px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #eeece5; border: 1px solid #dedad0; }
+.qClampText { flex: 1; min-width: 0; font-size: 14px; line-height: 1.45; color: var(--teacher-text, #20352d); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+.qCorrectBadge { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; color: #155c38; background: #e3f3ea; padding: 2px 8px; border-radius: 6px; flex-shrink: 0; white-space: nowrap; border: 1px solid #c2e2cf; }
+.qChevron { color: var(--teacher-muted, #58665f); flex-shrink: 0; transition: transform 0.2s ease; }
+.qChevronOpen { transform: rotate(180deg); }
+
+.qExpandedDetails { display: grid; gap: 12px; padding: 14px 18px 18px 46px; background: #faf9f5; border-top: 1px solid #eeece5; animation: qDetailsFadeIn 0.15s ease-out; }
+.qExpandedImageBox { display: flex; }
+.qFullBody { font-size: 15px; line-height: 1.6; color: var(--teacher-text, #20352d); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.qChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 0; padding: 0; list-style: none; }
+.qChoices li { display: flex; gap: 8px; align-items: baseline; min-width: 0; padding: 8px 12px; border: 1px solid #eeece5; border-radius: 8px; background: #fff; font-size: 14px; line-height: 1.5; color: var(--teacher-muted, #58665f); overflow-wrap: anywhere; }
+.qChoices li b { flex-shrink: 0; width: 1.4em; color: var(--teacher-text, #20352d); }
+.qChoices li.qCorrect { background: #eef5ee; border-color: #b8dcbe; color: #155c38; font-weight: 600; }
+.qChoices li.qCorrect b { color: #155c38; }
+
+.qExplanation { display: grid; gap: 4px; padding: 10px 14px; border: 1px solid #cfe3d6; background: #edf5f0; border-radius: 8px; font-size: 13px; line-height: 1.5; color: var(--teacher-text, #20352d); }
+.qExplanationTitle { font-weight: 700; font-size: 12px; color: var(--teacher-primary, #25634b); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Geriye dönük uyumluluk sınıfları */
 .qHead { display: flex; align-items: flex-start; gap: 12px; }
 .qBody { flex: 1; min-width: 0; margin: 0; font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
-.qChoices { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
-.qChoices li { display: flex; gap: 8px; align-items: baseline; font-size: 14px; line-height: 1.5; color: var(--teacher-muted, #58665f); overflow-wrap: anywhere; }
-.qChoices li b { flex-shrink: 0; width: 1.4em; color: var(--teacher-text, #20352d); }
-.qChoices li.qCorrect { color: #155c38; font-weight: 600; }
-.qChoices li.qCorrect b { color: #155c38; }
 .qThumb { flex-shrink: 0; width: 72px; height: 56px; border-radius: 8px; object-fit: cover; background: #f0eee7; }
+
+@keyframes qDetailsFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .groupChevron,
+  .qChevron,
+  .groupAccordion,
+  .groupButton,
+  .qExpandBtn,
+  .groupToggleBtn,
+  .qExpandedDetails {
+    transition: none !important;
+    animation: none !important;
+  }
+}
 
 /* Quiz seçici (ödev formu) */
 .quizBox { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: #fbfaf7; }

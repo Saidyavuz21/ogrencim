@@ -88,7 +88,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [content, setContent] = useState<BoardContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
-  const [tool, setTool] = useState<Tool>('pen');
+  const [tool, setTool] = useState<Tool>('select');
   const [color, setColor] = useState(COLORS[0]);
   const [width, setWidth] = useState(WIDTHS[1]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);

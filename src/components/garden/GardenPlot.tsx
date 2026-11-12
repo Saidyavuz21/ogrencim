@@ -29,7 +29,7 @@ export function GardenPlot({
   });
 
   const treeSize = size === 'lg' ? 140 : size === 'sm' ? 85 : 110;
-  const gridClass = size === 'lg' ? styles.plotGridLarge : styles.plotGrid;
+  const gridClass = size === 'lg' ? `${styles.plotGrid} ${styles.plotGridLarge}` : styles.plotGrid;
 
   return (
     <div className={styles.gardenPlotContainer}>

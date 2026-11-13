@@ -36,7 +36,7 @@ export function SaveShapeModal({
 
   const [name, setName] = useState(initialName);
   const [category, setCategory] = useState<LibraryCategory>(initialCategory);
-  const [visibility, setVisibility] = useState<'private' | 'school'>('private');
+  const [visibility, setVisibility] = useState<'private' | 'school' | 'branch'>('private');
   const [error, setError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement | null>(null);

@@ -23,7 +23,7 @@ export function EditShapeModal({
 }: EditShapeModalProps) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState<LibraryCategory>(item.category);
-  const [visibility, setVisibility] = useState<'private' | 'school'>(item.visibility || 'private');
+  const [visibility, setVisibility] = useState<'private' | 'school' | 'branch'>(item.visibility || 'private');
   const [error, setError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement | null>(null);

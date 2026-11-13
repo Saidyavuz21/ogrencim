@@ -3938,3 +3938,9 @@
 @media (min-width: 1024px) and (max-width: 1199px) {
   .topBar .topBarContainer { padding-inline: 32px; gap: 20px; }
 }
+
+
+/* Çok geniş ekran (1920 px üstü): üst çubuk, sol menü ve içerik birlikte en fazla 1920 px, ortada */
+@media (min-width: 1921px) {
+  .dashboardShell { max-width: 1920px; margin-inline: auto; }
+}

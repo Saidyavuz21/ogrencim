@@ -6,6 +6,7 @@ import {
   imageKey, normalizeFractionParts, normalizeFractionShape, ORDER_MIN, WidgetEl,
 } from '../../lib/boardData';
 import styles from './ActivityWidgets.module.css';
+import bs from './Board.module.css';
 
 function seededShuffle<T>(arr: T[], seedStr: string): T[] {
   const out = [...arr];
@@ -54,7 +55,7 @@ export function OrderWidget({ el }: { el: WidgetEl }) {
 
   if (items.length < ORDER_MIN) {
     return (
-      <div className={styles.wrap}>
+      <div className={`${bs.widget} ${styles.wrap}`}>
         <p className={styles.title}>{el.data.title?.trim() || 'Sıralama'}</p>
         <p className={styles.note}>En az {ORDER_MIN} madde gerekli. Parçayı seçip sağdaki panelden maddeleri yazın.</p>
       </div>
@@ -80,7 +81,7 @@ export function OrderWidget({ el }: { el: WidgetEl }) {
   const correctCount = activeOrder.reduce((acc, origIdx, pos) => acc + (origIdx === pos ? 1 : 0), 0);
 
   return (
-    <div className={styles.wrap} ref={rootRef}>
+    <div className={`${bs.widget} ${styles.wrap}`} ref={rootRef}>
       <div className={styles.header}>
         <p className={styles.title}>{el.data.title?.trim() || 'Sıralama'}</p>
         <span className={styles.badge}>{items.length} madde</span>
@@ -205,7 +206,7 @@ export function SortWidget({ el }: { el: WidgetEl }) {
 
   if (groups.length < 2 || flatItems.length < 2) {
     return (
-      <div className={styles.wrap}>
+      <div className={`${bs.widget} ${styles.wrap}`}>
         <p className={styles.title}>{el.data.title?.trim() || 'Gruplara Ayırma'}</p>
         <p className={styles.note}>En az 2 grup ve maddeler gerekli. Parçayı seçip sağdaki panelden grupları yazın.</p>
       </div>
@@ -238,7 +239,7 @@ export function SortWidget({ el }: { el: WidgetEl }) {
   const unplacedIds = poolOrder.filter((id) => placed[id] === undefined);
 
   return (
-    <div className={styles.wrap} ref={rootRef}>
+    <div className={`${bs.widget} ${styles.wrap}`} ref={rootRef}>
       <div className={styles.header}>
         <p className={styles.title}>{el.data.title?.trim() || 'Gruplara Ayırma'}</p>
         <span className={styles.badge}>{Object.keys(placed).length} / {flatItems.length}</span>
@@ -406,7 +407,7 @@ export function BlanksWidget({ el }: { el: WidgetEl }) {
 
   if (answers.length === 0) {
     return (
-      <div className={styles.wrap}>
+      <div className={`${bs.widget} ${styles.wrap}`}>
         <p className={styles.title}>{el.data.title?.trim() || 'Boşluk Doldurma'}</p>
         <p className={styles.note}>Metinde [köşeli parantez] içinde en az bir boşluk yazın. Örnek: Türkiye’nin başkenti [Ankara]’dır.</p>
       </div>
@@ -455,7 +456,7 @@ export function BlanksWidget({ el }: { el: WidgetEl }) {
   const correctCount = answers.reduce((acc, _, idx) => acc + (isBlankCorrect(idx) ? 1 : 0), 0);
 
   return (
-    <div className={styles.wrap} ref={rootRef}>
+    <div className={`${bs.widget} ${styles.wrap}`} ref={rootRef}>
       <div className={styles.header}>
         <p className={styles.title}>{el.data.title?.trim() || 'Boşluk Doldurma'}</p>
         <span className={styles.badge}>{Object.keys(placed).length} / {answers.length}</span>
@@ -585,7 +586,7 @@ export function LabelWidget({ el, mediaUrls }: { el: WidgetEl; mediaUrls?: Recor
 
   if (!imgRef || points.length === 0) {
     return (
-      <div className={styles.wrap}>
+      <div className={`${bs.widget} ${styles.wrap}`}>
         <p className={styles.title}>{el.data.title?.trim() || 'Görsel Etiketleme'}</p>
         <p className={styles.note}>Parçayı seçip sağdaki panelden tahtadaki bir görseli seçin ve üzerine etiket noktaları ekleyin.</p>
       </div>
@@ -632,7 +633,7 @@ export function LabelWidget({ el, mediaUrls }: { el: WidgetEl; mediaUrls?: Recor
   const correctCount = points.reduce((acc, _, idx) => acc + (isPinOk(idx) ? 1 : 0), 0);
 
   return (
-    <div className={styles.wrap} ref={rootRef}>
+    <div className={`${bs.widget} ${styles.wrap}`} ref={rootRef}>
       <div className={styles.header}>
         <p className={styles.title}>{el.data.title?.trim() || 'Görsel Etiketleme'}</p>
         <span className={styles.badge}>{Object.keys(placed).length} / {points.length}</span>
@@ -797,7 +798,7 @@ export function FractionWidget({ el }: { el: WidgetEl }) {
   };
 
   return (
-    <div className={styles.wrap}>
+    <div className={`${bs.widget} ${styles.wrap}`}>
       <div className={styles.header}>
         <p className={styles.title}>{el.data.title?.trim() || 'Kesir Boyama'}</p>
         {showFraction && (

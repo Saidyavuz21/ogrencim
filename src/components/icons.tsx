@@ -1168,3 +1168,44 @@ export const Trees = createIcon('Trees', (
     <path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-4 4.3a1 1 0 0 0 .8 1.7H10l-3 3.3a1 1 0 0 0 .7 1.7H8l-3 3.3a1 1 0 0 0 .7 1.7H12" />
   </>
 ));
+
+
+export const AlignTop = createIcon('AlignTop', (
+  <>
+    <path d="M4 4h16" />
+    <rect x="7" y="8" width="4" height="12" rx="1" />
+    <rect x="13" y="8" width="4" height="8" rx="1" />
+  </>
+));
+
+export const AlignMiddle = createIcon('AlignMiddle', (
+  <>
+    <path d="M3 12h18" />
+    <rect x="7" y="5" width="4" height="14" rx="1" />
+    <rect x="13" y="7" width="4" height="10" rx="1" />
+  </>
+));
+
+export const AlignBottom = createIcon('AlignBottom', (
+  <>
+    <path d="M4 20h16" />
+    <rect x="7" y="4" width="4" height="12" rx="1" />
+    <rect x="13" y="8" width="4" height="8" rx="1" />
+  </>
+));
+
+export const DistributeH = createIcon('DistributeH', (
+  <>
+    <path d="M4 4v16" />
+    <path d="M20 4v16" />
+    <rect x="9" y="7" width="6" height="10" rx="1" />
+  </>
+));
+
+export const DistributeV = createIcon('DistributeV', (
+  <>
+    <path d="M4 4h16" />
+    <path d="M4 20h16" />
+    <rect x="7" y="9" width="10" height="6" rx="1" />
+  </>
+));

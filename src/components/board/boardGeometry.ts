@@ -213,3 +213,35 @@ export function getFontSizeOptions(currentSize?: number): number[] {
   }
   return base;
 }
+
+export const MIN_ZOOM = 0.5;
+export const MAX_ZOOM = 3;
+export const ZOOM_STEP = 0.25;
+
+export function clampZoom(z: number): number {
+  if (!Number.isFinite(z)) return 1;
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(z * 100) / 100));
+}
+
+/**
+ * Ekran koordinatını (clientX, clientY) yakınlaştırma ve kaydırmadan bağımsız olarak
+ * 1920×1080 tahta koordinatına dönüştürür.
+ * Dönüşümlü tuvalin getBoundingClientRect() çıktısını kullanır; böylece çizim, seçim,
+ * Doldur ve parçalar her yakınlaştırma düzeyinde aynı noktaya düşer.
+ */
+export function clientToBoardPoint(
+  clientX: number,
+  clientY: number,
+  rect: Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>,
+  boardW = 1920,
+  boardH = 1080,
+): { x: number; y: number } {
+  const w = Math.max(1, rect.width);
+  const h = Math.max(1, rect.height);
+  const rawX = ((clientX - rect.left) / w) * boardW;
+  const rawY = ((clientY - rect.top) / h) * boardH;
+  return {
+    x: Math.max(0, Math.min(boardW, Math.round(rawX))),
+    y: Math.max(0, Math.min(boardH, Math.round(rawY))),
+  };
+}

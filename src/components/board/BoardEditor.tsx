@@ -4,14 +4,14 @@ import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Diamond, Dice, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Spotlight, Square, Star, StickyNote, Trash2, Triangle, Type, Video, Wheel, X,
+  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Spotlight, Square, Star, StickyNote, Trash2, Triangle, Type, Unlock, Video, Wheel, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import {
   Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl,
   boardImageUrls, BoardPage, BoardRow, byteSize, cloneElements, copyImageToBoard, exportBoardPng, getBoard,
-  HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, mediaRefs, MAX_PAGES, newId, newPage, NoteEl, saveBoard, scaleElements,
+  HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, mediaRefs, MAX_PAGES, newId, newPage, NoteEl, PolyEl, saveBoard, scaleElements,
   ADDABLE_WIDGETS, StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { listQuestions, QuestionRow } from '../../lib/quizData';
@@ -19,7 +19,8 @@ import { listMyFiles, signedFileUrl, uploadTeacherFiles } from '../../lib/filesD
 import { fileSlug } from '../../lib/reportData';
 import { BoardCanvas, DRAW_TOOLS, SHAPE_TOOLS, Tool, wrapTextLines } from './BoardCanvas';
 import { computeTextHeight, fitTextWidth, isDarkFill } from './textLayout';
-import { translate } from './boardGeometry';
+import { clampZoom, MAX_ZOOM, MIN_ZOOM, translate, ZOOM_STEP } from './boardGeometry';
+import { alignElements, distributeElements, type AlignMode, type DistributeAxis } from './snapGuides';
 import { normalizeWholeTags } from './BoardFormatBars';
 import { WidgetContext, WidgetView } from './Widgets';
 import { PresentOverlay, PresentOverlayTool } from './PresentTools';
@@ -117,14 +118,23 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   // Sunum: düzenleme yok; kalemle yazılanlar geçicidir (kaydedilmez), sayfa başına ayrı
   const [presenting, setPresenting] = useState(false);
   const [annot, setAnnot] = useState<Record<string, StrokeEl[]>>({});
-  const [annotPast, setAnnotPast] = useState<Record<string, StrokeEl[]>[]>([]);
+  const [annotFills, setAnnotFills] = useState<Record<string, PolyEl[]>>({});
+  const [annotPast, setAnnotPast] = useState<{ strokes: Record<string, StrokeEl[]>; fills: Record<string, PolyEl[]> }[]>([]);
   const [presentTool, setPresentTool] = useState<Tool>('pen');
   const [presentColor, setPresentColor] = useState('#d03b3b');
   const [presentWidth, setPresentWidth] = useState(5);
   const [penMenuOpen, setPenMenuOpen] = useState(false);
-  const [presentPenType, setPresentPenType] = useState<'pen' | 'highlighter' | 'fine' | 'brush'>('pen');
+  const [presentPenType, setPresentPenType] = useState<'pen' | 'highlighter' | 'fine' | 'brush' | 'fill'>('pen');
   const [presentOverlay, setPresentOverlay] = useState<PresentOverlayTool>(null);
   const penMenuRef = useRef<HTMLDivElement>(null);
+  // Yakınlaştırma ve kaydırma (oturum içi, kaydedilmez)
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [spaceDown, setSpaceDown] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const stagePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchRef = useRef<{ dist: number; cx: number; cy: number; zoom: number; pan: { x: number; y: number } } | null>(null);
+  const spacePanRef = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
 
   useEffect(() => {
     if (!penMenuOpen) return;
@@ -136,6 +146,27 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     window.addEventListener('pointerdown', handlePointerDown);
     return () => window.removeEventListener('pointerdown', handlePointerDown);
   }, [penMenuOpen]);
+
+  useEffect(() => {
+    if (!full || presenting) return;
+    const onDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+      const typing = (e.target as HTMLElement)?.closest('input, textarea, [contenteditable="true"]');
+      if (typing) return;
+      e.preventDefault();
+      setSpaceDown(true);
+    };
+    const onUp = (e: KeyboardEvent) => { if (e.code === 'Space') setSpaceDown(false); };
+    const onBlur = () => setSpaceDown(false);
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [full, presenting]);
   const [printing, setPrinting] = useState(false);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -445,11 +476,13 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const savePresentAnnotations = () => {
     if (!content || !page) return;
     const strokes = annot[page.id] || [];
-    if (!strokes.length) return;
-    const next: BoardContent = { ...content, pages: content.pages.map((p) => (p.id === page.id ? { ...p, elements: [...p.elements, ...strokes] } : p)) };
+    const fills = annotFills[page.id] || [];
+    if (!strokes.length && !fills.length) return;
+    const next: BoardContent = { ...content, pages: content.pages.map((p) => (p.id === page.id ? { ...p, elements: [...p.elements, ...fills, ...strokes] } : p)) };
     if (byteSize(next) > MAX_BOARD_BYTES) { setNotice('Tahta boyutu sınırına ulaşıldı, yazılanlar kaydedilemedi.'); return; }
     apply(next);
     setAnnot({ ...annot, [page.id]: [] });
+    setAnnotFills({ ...annotFills, [page.id]: [] });
     // Kaydedilen çizgiler artık sayfanın parçası: sunum geri al'ı onları ikinci kez getirmesin
     setAnnotPast([]);
     setNotice('Yazılanlar bu sayfaya kaydedildi.');
@@ -476,8 +509,31 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     const targetIds = idsToDelete || selectedIds;
     if (!page || !targetIds.length) return;
     const idSet = new Set(targetIds);
-    commitElements(page.elements.filter((el) => !idSet.has(el.id)));
+    commitElements(page.elements.filter((el) => !idSet.has(el.id) || el.locked));
     setSelectedIds([]);
+  };
+
+  const lockElements = (ids: string[]) => {
+    if (!page || !ids.length) return;
+    const idSet = new Set(ids);
+    commitElements(page.elements.map((el) => (idSet.has(el.id) ? { ...el, locked: true } : el)));
+    setSelectedIds([]);
+  };
+
+  const unlockAllOnPage = () => {
+    if (!page) return;
+    if (!page.elements.some((el) => el.locked)) return;
+    commitElements(page.elements.map((el) => (el.locked ? { ...el, locked: undefined } : el)));
+  };
+
+  const handleAlign = (mode: AlignMode) => {
+    if (!page || selectedIds.length < 2) return;
+    commitElements(alignElements(page.elements, selectedIds, mode));
+  };
+
+  const handleDistribute = (axis: DistributeAxis) => {
+    if (!page || selectedIds.length < 3) return;
+    commitElements(distributeElements(page.elements, selectedIds, axis));
   };
 
   const reorderElements = (dir: 'front' | 'back', targetIds?: string[]) => {
@@ -579,6 +635,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       setFull(false);
       setPresenting(false);
       setPresentOverlay(null);
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
       wantFsRef.current = false;
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     }
@@ -586,6 +644,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const startPresent = () => {
     setPresenting(true);
     setAnnot({});
+    setAnnotFills({});
     setAnnotPast([]);
     setEditingNoteId(null);
     setStepOpen({});
@@ -631,7 +690,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
   const undoAnnot = () => {
     if (!annotPast.length) return;
-    setAnnot(annotPast[annotPast.length - 1]);
+    const prev = annotPast[annotPast.length - 1];
+    setAnnot(prev.strokes);
+    setAnnotFills(prev.fills);
     setAnnotPast((p) => p.slice(0, -1));
   };
   // ---- Klavye ----
@@ -663,7 +724,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && page) {
         e.preventDefault();
-        setSelectedIds(page.elements.map((el) => el.id));
+        setSelectedIds(page.elements.filter((el) => !el.locked).map((el) => el.id));
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selectedIds.length && page) {
@@ -1228,6 +1289,121 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     </div>
   );
 
+  const resetZoom = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+  const stepZoom = (delta: number) => {
+    setZoom((z) => {
+      const nz = clampZoom(z + delta);
+      if (nz <= 1) setPan({ x: 0, y: 0 });
+      return nz;
+    });
+  };
+  const zoomStyle: React.CSSProperties | undefined = (zoom !== 1 || pan.x !== 0 || pan.y !== 0)
+    ? { transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: 'center center' }
+    : undefined;
+
+  const stageZoomProps = {
+    onWheel: (e: React.WheelEvent<HTMLDivElement>) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setZoom((z) => {
+        const nz = clampZoom(z - e.deltaY * 0.002);
+        if (nz <= 1) setPan({ x: 0, y: 0 });
+        return nz;
+      });
+    },
+    onPointerDownCapture: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (spaceDown && full && !presenting && zoom > 1 && e.button === 0) {
+        spacePanRef.current = { sx: e.clientX, sy: e.clientY, px: pan.x, py: pan.y };
+        setIsPanning(true);
+        e.stopPropagation();
+        return;
+      }
+      if (e.pointerType === 'touch') {
+        stagePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (stagePointersRef.current.size === 2) {
+          const pts = Array.from(stagePointersRef.current.values());
+          const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+          const cx = (pts[0].x + pts[1].x) / 2;
+          const cy = (pts[0].y + pts[1].y) / 2;
+          pinchRef.current = { dist: Math.max(1, dist), cx, cy, zoom, pan };
+          setIsPanning(true);
+        }
+      }
+    },
+    onPointerMoveCapture: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (spacePanRef.current) {
+        setPan({ x: spacePanRef.current.px + (e.clientX - spacePanRef.current.sx), y: spacePanRef.current.py + (e.clientY - spacePanRef.current.sy) });
+        e.stopPropagation();
+        return;
+      }
+      if (e.pointerType === 'touch' && stagePointersRef.current.has(e.pointerId)) {
+        stagePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pinchRef.current && stagePointersRef.current.size === 2) {
+          const pts = Array.from(stagePointersRef.current.values());
+          const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+          const cx = (pts[0].x + pts[1].x) / 2;
+          const cy = (pts[0].y + pts[1].y) / 2;
+          const nz = clampZoom(pinchRef.current.zoom * (dist / pinchRef.current.dist));
+          setZoom(nz);
+          setPan(nz <= 1 ? { x: 0, y: 0 } : {
+            x: pinchRef.current.pan.x + (cx - pinchRef.current.cx),
+            y: pinchRef.current.pan.y + (cy - pinchRef.current.cy),
+          });
+          e.stopPropagation();
+        }
+      }
+    },
+    onPointerUpCapture: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (spacePanRef.current) { spacePanRef.current = null; setIsPanning(false); }
+      if (e.pointerType === 'touch') {
+        stagePointersRef.current.delete(e.pointerId);
+        if (stagePointersRef.current.size < 2) { pinchRef.current = null; setIsPanning(false); }
+      }
+    },
+    onPointerCancelCapture: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (spacePanRef.current) { spacePanRef.current = null; setIsPanning(false); }
+      if (e.pointerType === 'touch') {
+        stagePointersRef.current.delete(e.pointerId);
+        if (stagePointersRef.current.size < 2) { pinchRef.current = null; setIsPanning(false); }
+      }
+    },
+  };
+
+  const zoomControls = (
+    <div className={styles.zoomGroup} role="group" aria-label="Yakınlaştırma">
+      <button
+        type="button"
+        className={styles.toolIconBtn}
+        onClick={() => stepZoom(-ZOOM_STEP)}
+        disabled={zoom <= MIN_ZOOM}
+        title="Uzaklaştır"
+        aria-label="Uzaklaştır"
+      >
+        <Minus size={18} aria-hidden="true" />
+      </button>
+      <span className={styles.zoomValue} aria-live="polite">{Math.round(zoom * 100)}%</span>
+      <button
+        type="button"
+        className={styles.toolIconBtn}
+        onClick={() => stepZoom(ZOOM_STEP)}
+        disabled={zoom >= MAX_ZOOM}
+        title="Yakınlaştır"
+        aria-label="Yakınlaştır"
+      >
+        <Plus size={18} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className={styles.zoomFitBtn}
+        onClick={resetZoom}
+        disabled={zoom === 1 && pan.x === 0 && pan.y === 0}
+        title="Sayfayı ekrana sığdır"
+      >
+        Sığdır
+      </button>
+    </div>
+  );
+
   // Normal görünüm: yalnızca önizleme. Tuval bu boyutta küçük kaldığı için düzenleme tam ekranda yapılır.
   if (!full) {
     return (
@@ -1340,9 +1516,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   // Sunum: sade ekran, altta küçük çubuk; yazılanlar kaydedilmez
   if (presenting) {
     const layer = annot[page.id] || [];
+    const layerFills = annotFills[page.id] || [];
     return (
       <div ref={rootRef} className={`${styles.editor} ${styles.editorFull}`}>
-        <div className={styles.stage}>
+        <div className={styles.stage} {...stageZoomProps}>
           {modeSwitch}
           <BoardCanvas
             page={page}
@@ -1350,7 +1527,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             color={presentColor}
             width={presentWidth}
             layer={layer}
-            onLayerCommit={(strokes) => { setAnnotPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), annot]); setAnnot({ ...annot, [page.id]: strokes }); }}
+            onLayerCommit={(strokes) => { setAnnotPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), { strokes: annot, fills: annotFills }]); setAnnot({ ...annot, [page.id]: strokes }); }}
+            layerFills={layerFills}
+            onLayerFillCommit={(fills) => { setAnnotPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), { strokes: annot, fills: annotFills }]); setAnnotFills({ ...annotFills, [page.id]: fills }); }}
+            zoomStyle={zoomStyle}
+            panning={isPanning}
             imageUrls={imageUrls}
             renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
             ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (sunum)`}
@@ -1369,7 +1550,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 onClick={() => {
                   setPresentOverlay((cur) => (cur === 'laser' ? null : cur));
                   if (presentTool === 'eraser' || presentOverlay === 'laser') {
-                    setPresentTool(presentPenType === 'highlighter' ? 'highlighter' : 'pen');
+                    setPresentTool(presentPenType === 'fill' ? 'fill' : presentPenType === 'highlighter' ? 'highlighter' : 'pen');
                     setPenMenuOpen(true);
                   } else {
                     setPenMenuOpen((prev) => !prev);
@@ -1378,7 +1559,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 title="Kalem ve renk ayarları (seçenekleri açmak için tıklayın)"
                 aria-label="Kalem ve renk ayarları"
               >
-                {presentPenType === 'highlighter' ? (
+                {presentPenType === 'fill' ? (
+                  <PaintBucket size={19} aria-hidden="true" />
+                ) : presentPenType === 'highlighter' ? (
                   <Highlighter size={19} aria-hidden="true" />
                 ) : (
                   <Pen size={19} aria-hidden="true" />
@@ -1442,6 +1625,17 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                       >
                         <span style={{ fontSize: 14, lineHeight: 1 }}>🖌</span>
                         <span>Fırça</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.penTypeBtn} ${presentPenType === 'fill' ? styles.penTypeActive : ''}`}
+                        onClick={() => {
+                          setPresentPenType('fill');
+                          setPresentTool('fill');
+                        }}
+                      >
+                        <PaintBucket size={15} aria-hidden="true" />
+                        <span>Doldur</span>
                       </button>
                     </div>
                   </div>
@@ -1580,7 +1774,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               type="button"
               className={styles.toolIconBtn}
               onClick={savePresentAnnotations}
-              disabled={!layer.length}
+              disabled={!layer.length && !layerFills.length}
               title="Yazılanları bu sayfaya kaydet"
               aria-label="Yazılanları sayfaya kaydet"
             >
@@ -1623,6 +1817,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               <Plus size={18} aria-hidden="true" />
             </button>
           </div>
+
+          <span className={styles.presentSep} aria-hidden="true" />
+
+          {zoomControls}
 
           <span className={styles.presentSep} aria-hidden="true" />
 
@@ -1735,6 +1933,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           )}
         </div>
         <div className={styles.workTopGroup}>
+          {zoomControls}
+          <span className={styles.sep} aria-hidden="true" />
           <button type="button" className={styles.toolIconBtn} onClick={exportPng} disabled={busy} title="Bu sayfayı PNG görsel olarak indir" aria-label="PNG indir">
             <Download size={20} aria-hidden="true" />
           </button>
@@ -1807,6 +2007,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onPatch={(patch) => patchElement(selected.id, patch)}
             onDelete={() => deleteSelected([selected.id])}
             onOrder={(dir) => reorderElements(dir, [selected.id])}
+            onLock={() => lockElements([selected.id])}
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
             onSaveToLibrary={canSaveToLibrary([selected]) ? () => handleOpenSaveModal([selected]) : undefined}
             onSaveImage={selected.type === 'image' && !imageInMyFiles(selected) ? () => saveImageToFiles(selected) : undefined}
@@ -1820,6 +2021,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onDelete={() => deleteSelected()}
             onGroup={() => groupSelected()}
             onUngroup={() => ungroupSelected()}
+            onLock={() => lockElements(selectedIds)}
+            onAlign={handleAlign}
+            onDistribute={handleDistribute}
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
             onSaveToLibrary={canSaveToLibrary(page.elements.filter((el) => selectedIds.includes(el.id))) ? () => handleOpenSaveModal(page.elements.filter((el) => selectedIds.includes(el.id))) : undefined}
           />
@@ -2174,11 +2378,22 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 Bu zemini tüm sayfalara uygula
               </button>
             )}
+            {page.elements.some((el) => el.locked) && (
+              <button
+                type="button"
+                className={styles.bgApplyAllBtn}
+                onClick={unlockAllOnPage}
+                style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <Unlock size={16} aria-hidden="true" />
+                Tüm kilitleri aç ({page.elements.filter((el) => el.locked).length})
+              </button>
+            )}
           </section>
         )}
       </aside>
 
-      <div className={styles.workStage}>
+      <div className={styles.workStage} {...stageZoomProps}>
         {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="alert" onClick={() => setNotice(null)}>{notice}</p>}
         <BoardCanvas
           page={page}
@@ -2186,6 +2401,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           tool={tool}
           color={color}
           width={width}
+          zoomStyle={zoomStyle}
+          panning={(full && !presenting && spaceDown) || isPanning}
           onNotice={setNotice}
           onCommit={commitElements}
           selectedIds={selectedIds}
@@ -2214,6 +2431,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onDeleteSelected={(ids) => deleteSelected(ids)}
           onGroup={(ids) => groupSelected(ids)}
           onUngroup={(ids) => ungroupSelected(ids)}
+          onLockSelected={(ids) => lockElements(ids)}
+          onAlign={handleAlign}
+          onDistribute={handleDistribute}
           onToolChange={setTool}
           editingNoteId={editingNoteId}
           onEditNote={setEditingNoteId}
@@ -2299,6 +2519,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onDuplicate={() => duplicateElements([selected.id])}
           onOrder={(dir) => reorderElements(dir, [selected.id])}
           onDelete={() => deleteSelected([selected.id])}
+          onLock={() => lockElements([selected.id])}
           onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
           onSaveToLibrary={canSaveToLibrary([selected]) ? () => handleOpenSaveModal([selected]) : undefined}
           onSaveImage={selected.type === 'image' && !imageInMyFiles(selected) ? () => saveImageToFiles(selected) : undefined}
@@ -2325,10 +2546,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           if (els.some((el) => !!el.groupId)) items.push({ label: 'Grubu çöz', key: 'Ctrl+Shift+G', onClick: run(() => ungroupSelected(ids)), sep: !(els.length >= 2 && !oneGroup) });
           if (canSaveToLibrary(els)) items.push({ label: 'Kütüphaneye kaydet', onClick: run(() => handleOpenSaveModal(els)), sep: true });
           if (image && !imageInMyFiles(image)) items.push({ label: 'Dosyalarıma kaydet', onClick: run(() => { void saveImageToFiles(image); }), disabled: busy, sep: true });
+          items.push({ label: 'Kilitle', onClick: run(() => lockElements(ids)), sep: true });
           items.push({ label: 'Sil', key: 'Delete', onClick: run(() => deleteSelected(ids)), danger: true, sep: true });
         } else {
           items.push({ label: 'Yapıştır', key: 'Ctrl+V', onClick: run(() => pasteClipboard()), disabled: !boardClipboard || !boardClipboard.length });
-          items.push({ label: 'Tümünü seç', key: 'Ctrl+A', onClick: run(() => setSelectedIds(page.elements.map((el) => el.id))), disabled: !page.elements.length });
+          const unlockedIds = page.elements.filter((el) => !el.locked).map((el) => el.id);
+          items.push({ label: 'Tümünü seç', key: 'Ctrl+A', onClick: run(() => setSelectedIds(unlockedIds)), disabled: !unlockedIds.length });
+          if (page.elements.some((el) => el.locked)) {
+            items.push({ label: 'Tüm kilitleri aç', onClick: run(unlockAllOnPage), sep: true });
+          }
         }
         const height = items.length * 44 + items.filter((i) => i.sep).length * 9 + 14;
         const left = Math.max(8, Math.min(ctxMenu.x, window.innerWidth - 236));

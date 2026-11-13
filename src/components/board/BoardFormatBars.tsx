@@ -3,12 +3,16 @@
 // Seçili öğenin üstünde açılan araç çubukları: metin biçimlendirme (FormatBar) ve
 // çoklu seçim işlemleri (MultiSelectBar). (BoardCanvas.tsx'ten ayrıldı.)
 import React, { useState } from 'react';
-import { AlignCenter, AlignLeft, AlignRight, Bold, Highlighter, Italic, Square, Underline } from '../icons';
+import {
+  AlignBottom, AlignCenter, AlignLeft, AlignMiddle, AlignRight, AlignTop,
+  Bold, DistributeH, DistributeV, Highlighter, Italic, Lock, Square, Underline,
+} from '../icons';
 import { BOARD_H, BOARD_W, BoardEl, NoteEl } from '../../lib/boardData';
 import { LIBRARY_ITEMS } from '../../lib/boardLibrary';
 import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { applyEditToElement, toggleList, toggleTextList, wrapSelection } from '../math/richEditing';
 import { bbox, combinedBbox, getFontSizeOptions } from './boardGeometry';
+import type { AlignMode, DistributeAxis } from './snapGuides';
 import styles from './Board.module.css';
 import { BOX_BORDERS, BOX_FILLS, isDarkFill } from './textLayout';
 
@@ -821,6 +825,9 @@ export function MultiSelectBar({
   onDelete,
   onGroup,
   onUngroup,
+  onLock,
+  onAlign,
+  onDistribute,
   onConfigure,
   onSaveToLibrary,
   docked,
@@ -832,6 +839,9 @@ export function MultiSelectBar({
   onDelete?: () => void;
   onGroup?: () => void;
   onUngroup?: () => void;
+  onLock?: () => void;
+  onAlign?: (mode: AlignMode) => void;
+  onDistribute?: (axis: DistributeAxis) => void;
   onConfigure?: () => void;
   onSaveToLibrary?: () => void;
 }) {
@@ -940,6 +950,31 @@ export function MultiSelectBar({
       >
         Arkaya
       </button>
+      {onAlign && (
+        <>
+          <span className={styles.formatDivider} aria-hidden="true" />
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onAlign('left')} title="Sola hizala" aria-label="Sola hizala"><AlignLeft size={14} /></button>
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onAlign('center')} title="Yatay ortala" aria-label="Yatay ortala"><AlignCenter size={14} /></button>
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onAlign('right')} title="Sağa hizala" aria-label="Sağa hizala"><AlignRight size={14} /></button>
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onAlign('top')} title="Üste hizala" aria-label="Üste hizala"><AlignTop size={14} /></button>
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onAlign('middle')} title="Dikey ortala" aria-label="Dikey ortala"><AlignMiddle size={14} /></button>
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onAlign('bottom')} title="Alta hizala" aria-label="Alta hizala"><AlignBottom size={14} /></button>
+        </>
+      )}
+      {onDistribute && elements.length >= 3 && (
+        <>
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onDistribute('horizontal')} title="Yatay eşit dağıt" aria-label="Yatay eşit dağıt"><DistributeH size={14} /></button>
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => onDistribute('vertical')} title="Dikey eşit dağıt" aria-label="Dikey eşit dağıt"><DistributeV size={14} /></button>
+        </>
+      )}
+      {onLock && (
+        <>
+          <span className={styles.formatDivider} aria-hidden="true" />
+          <button type="button" className={styles.formatBtn} onMouseDown={(e) => e.preventDefault()} onClick={onLock} title="Seçili öğeleri kilitle" aria-label="Seçili öğeleri kilitle">
+            <Lock size={14} /> Kilitle
+          </button>
+        </>
+      )}
       <span className={styles.formatDivider} aria-hidden="true" />
       <button
         type="button"

@@ -70,7 +70,7 @@
 .editor { display: grid; grid-template-columns: 180px minmax(0, 1fr) 260px; gap: 12px; align-items: start; min-width: 0; }
 .editorFull { position: fixed; inset: 0; z-index: 105; display: block; padding: 0; background: #ffffff; overflow: hidden; }
 /* Tuval ekranın tamamını kaplar (16:9 sığdırılır, kalan alan beyaz) */
-.editorFull .stage { position: absolute; inset: 0; display: grid; place-items: center; gap: 0; max-width: none; margin: 0; }
+.editorFull .stage { position: absolute; inset: 0; display: grid; place-items: center; gap: 0; max-width: none; margin: 0; overflow: hidden; }
 .editorFull .stage > .canvas { width: min(100vw, calc(100dvh * 16 / 9)); border: 0; border-radius: 0; box-shadow: none; }
 /* Araç çubuğu ve açılır menü sarmalayıcısı (tahtanın altında yüzer) */
 .editorFull .dockWrapper {
@@ -1388,3 +1388,46 @@
 .textPresetBoxed:hover { border-color: #f08c00; background: #ffecc0; }
 .textPresetNote { border-color: #e6d98a; background: #fff3b0; }
 .textPresetNote:hover { border-color: #d6c666; background: #ffee99; }
+
+.zoomGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.zoomValue {
+  min-width: 46px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #34443c;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.zoomFitBtn {
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #d5d0c4;
+  background: #ffffff;
+  color: #2c3a33;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.zoomFitBtn:hover:not(:disabled) {
+  background: #f5f3ec;
+}
+
+.zoomFitBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.zoomFitBtn:focus-visible {
+  outline: 2px solid #1f5c41;
+  outline-offset: 2px;
+}

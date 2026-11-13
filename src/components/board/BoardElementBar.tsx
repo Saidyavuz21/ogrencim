@@ -4,6 +4,7 @@
 // Yazı ve notların çubuğu BoardFormatBars.tsx içindedir.
 
 import React, { useState } from 'react';
+import { Lock } from '../icons';
 import { BoardEl, WIDGET_LABEL } from '../../lib/boardData';
 import { BOX_FILLS } from './textLayout';
 import styles from './Board.module.css';
@@ -17,7 +18,7 @@ const labelStyle: React.CSSProperties = { fontSize: 13, color: '#58665f', whiteS
 const wrapStyle: React.CSSProperties = { position: 'relative', display: 'inline-flex' };
 
 export function ElementBar({
-  el, colors, onPatch, onDuplicate, onOrder, onDelete, onConfigure, onSaveToLibrary, onSaveImage, onOpenSettings, busy,
+  el, colors, onPatch, onDuplicate, onOrder, onDelete, onLock, onConfigure, onSaveToLibrary, onSaveImage, onOpenSettings, busy,
 }: {
   el: BoardEl;
   colors: string[];
@@ -25,6 +26,7 @@ export function ElementBar({
   onDuplicate: () => void;
   onOrder: (dir: 'front' | 'back') => void;
   onDelete: () => void;
+  onLock?: () => void;
   /** Ayarlı kütüphane parçası (sayı doğrusu aralığı vb.) */
   onConfigure?: () => void;
   onSaveToLibrary?: () => void;
@@ -177,6 +179,11 @@ export function ElementBar({
       )}
       {onSaveImage && (
         <button type="button" className={styles.formatBtn} onClick={onSaveImage} disabled={busy} title="Resmi Dosyalarım'a kopyala">Dosyalarıma kaydet</button>
+      )}
+      {onLock && (
+        <button type="button" className={styles.formatBtn} onClick={onLock} title="Öğeyi kilitle" aria-label="Öğeyi kilitle">
+          <Lock size={14} /> Kilitle
+        </button>
       )}
       <button type="button" className={styles.formatBtn} onClick={onDelete} title="Sil (Delete)" style={{ color: '#a33342' }}>Sil</button>
     </div>

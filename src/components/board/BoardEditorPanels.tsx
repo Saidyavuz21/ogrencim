@@ -5,12 +5,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  AlignCenter, AlignLeft, AlignRight, Bold, Bookmark, ChevronDown, ChevronUp, Component, Copy, Italic, Layers, Sliders,
+  AlignBottom, AlignCenter, AlignLeft, AlignMiddle, AlignRight, AlignTop, Bold, Bookmark, ChevronDown, ChevronUp, Component, Copy, DistributeH, DistributeV, Italic, Layers, Lock, Sliders,
   Mic, Square, Trash2, Underline, Upload,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import { AUDIO_MAX_SECONDS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, DICE_MAX, MATCH_MAX_PAIRS, normalizeDiceCount, normalizeSlices, parseVideoUrl, SPINNER_MAX_SLICES, SPINNER_MIN_SLICES, SPINNER_SLICE_MAX_CHARS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
+import type { AlignMode, DistributeAxis } from './snapGuides';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, QuestionRow } from '../../lib/quizData';
 import { getFontSizeOptions } from './BoardCanvas';
@@ -39,13 +40,14 @@ const BUILTIN_IMAGES: MediaItem[] = SCHOOL_ITEMS.map((item) => ({
 // --------------------------------------------------------
 // Seçili öğenin ayarları
 // --------------------------------------------------------
-export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onConfigure, onSaveToLibrary, onSaveImage, busy }: {
+export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onLock, onConfigure, onSaveToLibrary, onSaveImage, busy }: {
   el: BoardEl;
   questions: QuestionRow[];
   minitests: WidgetEl[];
   onPatch: (patch: Partial<BoardEl>) => void;
   onDelete: () => void;
   onOrder: (dir: 'front' | 'back') => void;
+  onLock?: () => void;
   onConfigure?: () => void;
   onSaveToLibrary?: () => void;
   /** Seçili resmi öğretmenin Dosyalarım alanına kopyalar */
@@ -648,6 +650,11 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
         )}
         <button type="button" className={styles.tool} onClick={() => onOrder('front')}>Öne getir</button>
         <button type="button" className={styles.tool} onClick={() => onOrder('back')}>Arkaya gönder</button>
+        {onLock && (
+          <button type="button" className={styles.tool} onClick={onLock}>
+            <Lock size={16} aria-hidden="true" /> Kilitle
+          </button>
+        )}
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }}><Trash2 size={18} aria-hidden="true" /> Sil</button>
       </div>
       {el.type === 'widget' && <p className={styles.hintText}>Parçanın düğmeleri “Seç” aracında da çalışır; taşımak için düğme olmayan yerinden tutup sürükleyin.</p>}
@@ -662,6 +669,9 @@ export function MultiSelectionPanel({
   onDelete,
   onGroup,
   onUngroup,
+  onLock,
+  onAlign,
+  onDistribute,
   onConfigure,
   onSaveToLibrary,
 }: {
@@ -671,6 +681,9 @@ export function MultiSelectionPanel({
   onDelete: () => void;
   onGroup: () => void;
   onUngroup: () => void;
+  onLock?: () => void;
+  onAlign?: (mode: AlignMode) => void;
+  onDistribute?: (axis: DistributeAxis) => void;
   onConfigure?: () => void;
   onSaveToLibrary?: () => void;
 }) {
@@ -721,10 +734,34 @@ export function MultiSelectionPanel({
         <button type="button" className={styles.tool} onClick={() => onOrder('back')} title="En arkaya gönder">
           Arkaya gönder
         </button>
+        {onLock && (
+          <button type="button" className={styles.tool} onClick={onLock} title="Seçili öğeleri kilitle">
+            <Lock size={16} aria-hidden="true" /> Kilitle
+          </button>
+        )}
         <button type="button" className={styles.tool} onClick={onDelete} style={{ color: '#a3283a' }} title="Sil (Delete)">
           <Trash2 size={16} aria-hidden="true" /> Sil
         </button>
       </div>
+      {onAlign && (
+        <div className={styles.propGroup} style={{ marginTop: 12 }}>
+          <span className={styles.propLabel}>Hizala</span>
+          <div className={styles.pageTools} style={{ flexWrap: 'wrap', gap: '6px' }}>
+            <button type="button" className={styles.tool} onClick={() => onAlign('left')} title="Sola hizala" aria-label="Sola hizala"><AlignLeft size={16} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={() => onAlign('center')} title="Yatay ortala" aria-label="Yatay ortala"><AlignCenter size={16} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={() => onAlign('right')} title="Sağa hizala" aria-label="Sağa hizala"><AlignRight size={16} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={() => onAlign('top')} title="Üste hizala" aria-label="Üste hizala"><AlignTop size={16} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={() => onAlign('middle')} title="Dikey ortala" aria-label="Dikey ortala"><AlignMiddle size={16} aria-hidden="true" /></button>
+            <button type="button" className={styles.tool} onClick={() => onAlign('bottom')} title="Alta hizala" aria-label="Alta hizala"><AlignBottom size={16} aria-hidden="true" /></button>
+            {onDistribute && elements.length >= 3 && (
+              <>
+                <button type="button" className={styles.tool} onClick={() => onDistribute('horizontal')} title="Yatay eşit dağıt" aria-label="Yatay eşit dağıt"><DistributeH size={16} aria-hidden="true" /></button>
+                <button type="button" className={styles.tool} onClick={() => onDistribute('vertical')} title="Dikey eşit dağıt" aria-label="Dikey eşit dağıt"><DistributeV size={16} aria-hidden="true" /></button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

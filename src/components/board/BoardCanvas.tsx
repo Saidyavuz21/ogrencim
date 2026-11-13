@@ -22,12 +22,13 @@ import {
 } from './textLayout';
 import styles from './Board.module.css';
 import {
-  bbox, boxContains, combinedBbox, FONT_SIZES, getFontSizeOptions, hitTest, isShape, measuredHtmlHeights,
+  bbox, boxContains, clientToBoardPoint, combinedBbox, FONT_SIZES, getFontSizeOptions, hitTest, isShape, measuredHtmlHeights,
   measuredMathHeights, pointsToSvg, translate, type Box,
   isPolyShape, marqueeHits, polyShapePoints, type PolyShape,
 } from './boardGeometry';
 import { applyTagOrElement, FormatBar, MultiSelectBar } from './BoardFormatBars';
 import { bucketFill, isBucketFill } from './bucketFill';
+import { computeSnap, type AlignMode, type DistributeAxis, type GuideLine } from './snapGuides';
 
 export { getFontFamily, wrapLines, wrapTextLines };
 export {
@@ -92,8 +93,6 @@ function resize(el: BoardEl, dx: number, dy: number): BoardEl {
   if (el.type === 'note' || el.type === 'widget') return { ...el, w: Math.round(Math.max(160, el.w + dx)), h: Math.round(Math.max(100, el.h + dy)) };
   return el;
 }
-
-const clampPt = (v: number, max: number) => Math.max(0, Math.min(max, v));
 
 // --------------------------------------------------------
 // Çizim
@@ -357,6 +356,13 @@ export interface BoardCanvasProps {
   /** Öğrenci katmanı: verilirse kalem/silgi yalnızca bu katmana çizer */
   layer?: StrokeEl[];
   onLayerCommit?: (strokes: StrokeEl[]) => void;
+  /** Sunum katmanı dolguları (geçici Doldur aracı) */
+  layerFills?: PolyEl[];
+  onLayerFillCommit?: (fills: PolyEl[]) => void;
+  /** Yakınlaştırma/kaydırma CSS dönüşümü */
+  zoomStyle?: React.CSSProperties;
+  /** Boşluk tuşu basılıyken kaydırma kipi (tuval çizim/seçim başlatmaz) */
+  panning?: boolean;
   selectedIds?: string[];
   onSelect?: (ids: string[]) => void;
   onDuplicate?: (ids: string[]) => void;
@@ -364,6 +370,9 @@ export interface BoardCanvasProps {
   onDeleteSelected?: (ids: string[]) => void;
   onGroup?: (ids: string[]) => void;
   onUngroup?: (ids: string[]) => void;
+  onLockSelected?: (ids: string[]) => void;
+  onAlign?: (mode: AlignMode) => void;
+  onDistribute?: (axis: DistributeAxis) => void;
   onConfigureShape?: () => void;
   onSaveToLibrary?: (selectedIds: string[]) => void;
   onToolChange?: (tool: Tool) => void;
@@ -425,6 +434,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onCommit,
     layer,
     onLayerCommit,
+    layerFills,
+    onLayerFillCommit,
+    zoomStyle,
+    panning,
     selectedIds = [],
     onSelect,
     onDuplicate,
@@ -432,6 +445,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onDeleteSelected,
     onGroup,
     onUngroup,
+    onLockSelected,
+    onAlign,
+    onDistribute,
     onConfigureShape,
     onSaveToLibrary,
     onToolChange,
@@ -461,7 +477,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const activePointer = useRef<number | null>(null);
   const lastPointerAt = useRef(0);
   const strokeRaf = useRef(0);
-  const [preview, setPreview] = useState<{ el?: BoardEl; els?: BoardEl[]; erased?: Set<string>; marquee?: Box } | null>(null);
+  const [preview, setPreview] = useState<{ el?: BoardEl; els?: BoardEl[]; erased?: Set<string>; marquee?: Box; guides?: GuideLine[] } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [editingHeight, setEditingHeight] = useState<{ id: string; h: number } | null>(null);
   const [editingTextOverride, setEditingTextOverride] = useState<{ id: string; text: string } | null>(null);
@@ -510,15 +526,16 @@ export function BoardCanvas(props: BoardCanvasProps) {
 
   const toPoint = (clientX: number, clientY: number) => {
     const r = localSvg.current!.getBoundingClientRect();
-    return { x: clampPt(((clientX - r.left) / r.width) * BOARD_W, BOARD_W), y: clampPt(((clientY - r.top) / r.height) * BOARD_H, BOARD_H) };
+    return clientToBoardPoint(clientX, clientY, r, BOARD_W, BOARD_H);
   };
 
   const elements = page.elements;
-  const activeGroupId = (enteredGroupId && selectedIds.length && elements.some((e) => e.groupId === enteredGroupId && selectedIds.includes(e.id))) ? enteredGroupId : null;
+  const activeGroupId = (enteredGroupId && selectedIds.length && elements.some((e) => !e.locked && e.groupId === enteredGroupId && selectedIds.includes(e.id))) ? enteredGroupId : null;
   const layerStrokes = layer || [];
+  const layerFillEls = layerFills || [];
 
   const eraseAt = (x: number, y: number, d: Extract<Draft, { kind: 'erase' }>) => {
-    const pool: BoardEl[] = drawingOnLayer ? layerStrokes : elements.filter((e) => (e.type === 'stroke' || e.type === 'line' || e.type === 'arrow' || e.type === 'rect' || e.type === 'ellipse' || e.type === 'poly') && !isBucketFill(e));
+    const pool: BoardEl[] = drawingOnLayer ? layerStrokes : elements.filter((e) => !e.locked && (e.type === 'stroke' || e.type === 'line' || e.type === 'arrow' || e.type === 'rect' || e.type === 'ellipse' || e.type === 'poly') && !isBucketFill(e));
     let changed = false;
     for (const el of pool) {
       if (!d.removed.has(el.id) && hitTest(el, x, y, 14)) { d.removed.add(el.id); changed = true; }
@@ -527,7 +544,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   };
 
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!interactive || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (!interactive || panning || (e.pointerType === 'mouse' && e.button !== 0)) return;
     if (draft.current && activePointer.current !== null && activePointer.current !== e.pointerId) {
       // Çizim sürerken gelen ikinci dokunuş yok sayılır. Bırakma olayı kaçmış, yarım kalmış bir
       // çizim varsa (1 sn'dir hareket yok) önce o tamamlanır, yeni dokunuş olağan işlenir.
@@ -537,7 +554,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     activePointer.current = e.pointerId;
     lastPointerAt.current = e.timeStamp;
     const { x, y } = toPoint(e.clientX, e.clientY);
-    const t: Tool = drawingOnLayer && !DRAW_TOOLS.includes(tool) ? 'pen' : tool;
+    const t: Tool = drawingOnLayer && !DRAW_TOOLS.includes(tool) && !(tool === 'fill' && onLayerFillCommit) ? 'pen' : tool;
     if (editingNoteId) {
       const curVal = textareaRef.current ? textareaRef.current.value : (editingNote?.text || '');
       if (editingNote && editingNote.variant === 'text' && !curVal.trim()) {
@@ -556,16 +573,26 @@ export function BoardCanvas(props: BoardCanvasProps) {
     } else if (t === 'eraser') {
       draft.current = { kind: 'erase', removed: new Set() };
       eraseAt(x, y, draft.current);
-    } else if (!editable) {
+    } else if (t === 'fill' && (editable || (drawingOnLayer && onLayerFillCommit))) {
+      const pool: BoardEl[] = drawingOnLayer ? [...elements, ...layerFillEls, ...layerStrokes] : elements;
+      const res = bucketFill(pool, x, y, color);
+      if (res.ok) {
+        if (drawingOnLayer && onLayerFillCommit) {
+          const existingIds = new Set(pool.map((el) => el.id));
+          const added = res.elements.find((el): el is PolyEl => el.type === 'poly' && !existingIds.has(el.id));
+          if (added) onLayerFillCommit([...layerFillEls, added]);
+        } else {
+          onCommit?.(res.elements);
+        }
+      } else {
+        onNotice?.(res.reason === 'onLine'
+          ? 'Çizginin üstüne değil, doldurmak istediğiniz alanın içine dokunun.'
+          : res.reason === 'open'
+            ? 'Bu alan kapalı değil. Çizgilerin birleştiğinden emin olun.'
+            : 'Bu alan doldurulamayacak kadar küçük.');
+      }
       return;
-    } else if (t === 'fill') {
-      const res = bucketFill(elements, x, y, color);
-      if (res.ok) onCommit?.(res.elements);
-      else onNotice?.(res.reason === 'onLine'
-        ? 'Çizginin üstüne değil, doldurmak istediğiniz alanın içine dokunun.'
-        : res.reason === 'open'
-          ? 'Bu alan kapalı değil. Çizgilerin birleştiğinden emin olun.'
-          : 'Bu alan doldurulamayacak kadar küçük.');
+    } else if (!editable) {
       return;
     } else if (t === 'line' || t === 'arrow' || t === 'rect' || t === 'ellipse') {
       draft.current = { kind: 'shape', el: { id: newId(), type: t, x1: x, y1: y, x2: x, y2: y, color, width } };
@@ -608,8 +635,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
       onToolChange?.('select');
       return;
     } else {
-      // Seçim
-      const curSelectedEls = elements.filter((el) => selectedIds.includes(el.id));
+      // Seçim (kilitli öğeler seçilemez)
+      const curSelectedEls = elements.filter((el) => !el.locked && selectedIds.includes(el.id));
       if (curSelectedEls.length > 1 && !activeGroupId) {
         const cb = combinedBbox(curSelectedEls.map(bbox));
         if (Math.hypot(x - (cb.x + cb.w), y - (cb.y + cb.h)) < 24) {
@@ -635,8 +662,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
         }
       }
 
-      // Hit tespiti: önce tıklanan öğeyi bul
-      const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
+      // Hit tespiti: önce tıklanan (kilitsiz) öğeyi bul
+      const hit = [...elements].reverse().find((el) => !el.locked && hitTest(el, x, y));
 
       if (hit) {
         if (activeGroupId && hit.groupId === activeGroupId) {
@@ -647,7 +674,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
               : [...selectedIds, hit.id];
             onSelect?.(next);
           } else if (selectedIds.includes(hit.id)) {
-            const origs = elements.filter((el) => selectedIds.includes(el.id));
+            const origs = elements.filter((el) => !el.locked && selectedIds.includes(el.id));
             draft.current = { kind: 'move', ids: selectedIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
           } else {
             onSelect?.([hit.id]);
@@ -662,7 +689,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
 
           // Normal seçim: eğer öğenin grubu varsa tüm grup seçilir
           const targetIds = hit.groupId
-            ? elements.filter((el) => el.groupId === hit.groupId).map((el) => el.id)
+            ? elements.filter((el) => !el.locked && el.groupId === hit.groupId).map((el) => el.id)
             : [hit.id];
 
           if (e.shiftKey) {
@@ -674,11 +701,11 @@ export function BoardCanvas(props: BoardCanvasProps) {
           } else {
             const isAllSelected = targetIds.every((id) => selectedIds.includes(id));
             if (isAllSelected && selectedIds.length >= targetIds.length) {
-              const origs = elements.filter((el) => selectedIds.includes(el.id));
+              const origs = elements.filter((el) => !el.locked && selectedIds.includes(el.id));
               draft.current = { kind: 'move', ids: selectedIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
             } else {
               onSelect?.(targetIds);
-              const origs = elements.filter((el) => targetIds.includes(el.id));
+              const origs = elements.filter((el) => !el.locked && targetIds.includes(el.id));
               draft.current = { kind: 'move', ids: targetIds, sx: x, sy: y, origs, clickHitId: hit.id, dragged: false };
             }
           }
@@ -700,7 +727,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     if ((e.target as Element).closest?.('input, textarea, select, [contenteditable="true"]')) return;
     e.preventDefault();
     const { x, y } = toPoint(e.clientX, e.clientY);
-    const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
+    const hit = [...elements].reverse().find((el) => !el.locked && hitTest(el, x, y));
     let ids: string[] = [];
     if (hit) {
       if (selectedIds.includes(hit.id)) {
@@ -760,10 +787,22 @@ export function BoardCanvas(props: BoardCanvasProps) {
       d.el = { ...d.el, x2, y2 };
       setPreview({ el: d.poly ? polyFromBox(d.el, d.poly) : d.el });
     } else if (d.kind === 'move') {
-      const dx = x - d.sx;
-      const dy = y - d.sy;
-      if (Math.hypot(dx, dy) >= 3) d.dragged = true;
-      setPreview({ els: d.origs.map((orig) => translate(orig, dx, dy)) });
+      const rawDx = x - d.sx;
+      const rawDy = y - d.sy;
+      if (Math.hypot(rawDx, rawDy) >= 3) d.dragged = true;
+      let dx = rawDx;
+      let dy = rawDy;
+      let guides: GuideLine[] | undefined;
+      if (!e.altKey && d.origs.length > 0) {
+        const baseBox = combinedBbox(d.origs.map(bbox));
+        const movingBox: Box = { x: baseBox.x + rawDx, y: baseBox.y + rawDy, w: baseBox.w, h: baseBox.h };
+        const otherBoxes = elements.filter((el) => !el.locked && !d.ids.includes(el.id)).map(bbox);
+        const snap = computeSnap(movingBox, otherBoxes);
+        dx += snap.dx;
+        dy += snap.dy;
+        if (snap.guides.length > 0) guides = snap.guides;
+      }
+      setPreview({ els: d.origs.map((orig) => translate(orig, dx, dy)), guides });
     } else if (d.kind === 'resize') {
       setPreview({ el: resize(d.orig, x - d.sx, y - d.sy) });
     } else if (d.kind === 'resizeMulti') {
@@ -851,14 +890,15 @@ export function BoardCanvas(props: BoardCanvasProps) {
       if (mbox.w < 4 && mbox.h < 4) {
         if (!d.additive) onSelect?.([]);
       } else {
-        // Çerçevenin dokunduğu öğeler seçilir (tamamen içinde olması gerekmez)
-        const insideElements = elements.filter((el) => marqueeHits(mbox, el));
+        // Çerçevenin dokunduğu öğeler seçilir (tamamen içinde olması gerekmez; kilitliler hariç)
+        const unlocked = elements.filter((el) => !el.locked);
+        const insideElements = unlocked.filter((el) => marqueeHits(mbox, el));
         let finalInsideIds: string[];
         if (activeGroupId) {
           finalInsideIds = insideElements.filter((el) => el.groupId === activeGroupId).map((el) => el.id);
         } else {
           const groupIds = new Set(insideElements.map((el) => el.groupId).filter(Boolean));
-          finalInsideIds = elements
+          finalInsideIds = unlocked
             .filter((el) => marqueeHits(mbox, el) || (el.groupId && groupIds.has(el.groupId)))
             .map((el) => el.id);
         }
@@ -879,7 +919,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     })
     .filter((el) => !(!drawingOnLayer && preview?.erased?.has(el.id)));
   const draftNew = preview?.el && !elements.some((el) => el.id === preview.el!.id) && !layerStrokes.some((s) => s.id === preview.el!.id) ? preview.el : null;
-  const shownLayer = layerStrokes.filter((s) => !(drawingOnLayer && preview?.erased?.has(s.id)));
+  const shownLayer = [...layerFillEls, ...layerStrokes.filter((s) => !(drawingOnLayer && preview?.erased?.has(s.id)))];
   const selectedElements = shown.filter((el) => selectedIds.includes(el.id));
   const selected = selectedElements.length === 1 ? selectedElements[0] : undefined;
   const editingNote = editingNoteId ? (elements.find((el) => el.id === editingNoteId) as NoteEl | undefined) : undefined;
@@ -896,7 +936,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     : undefined;
   const widgets = renderWidget ? shown.filter((el): el is WidgetEl => el.type === 'widget') : [];
   const drawTool = drawingOnLayer || DRAW_TOOLS.includes(tool);
-  const cursor = !interactive ? 'default' : (drawTool || (editable && tool === 'fill')) ? drawCursor(tool, color) : tool === 'select' ? 'default' : 'crosshair';
+  const cursor = !interactive ? 'default' : panning ? 'grab' : (drawTool || ((editable || (drawingOnLayer && onLayerFillCommit)) && tool === 'fill')) ? drawCursor(tool, color) : tool === 'select' ? 'default' : 'crosshair';
 
   // Boyut tutamağı: çoklu seçim / grup için birleşik çerçevenin, tek seçimde öğenin sağ alt köşesi
   let handlePos: { x: number; y: number; kind: 'multi' } | { x: number; y: number; kind: 'single'; sel: BoardEl } | null = null;
@@ -934,6 +974,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   return (
     <div
       className={`${styles.canvas} ${thumbnail ? styles.thumb : ''}`}
+      style={zoomStyle}
       onDragOver={(e) => {
         if (
           (onDropMedia && e.dataTransfer.types.includes('application/x-board-media')) ||
@@ -977,7 +1018,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
         onDoubleClick={(e) => {
           if (!editable || tool !== 'select') return;
           const { x, y } = toPoint(e.clientX, e.clientY);
-          const hit = [...elements].reverse().find((el) => hitTest(el, x, y));
+          const hit = [...elements].reverse().find((el) => !el.locked && hitTest(el, x, y));
           if (!hit) return;
 
           if (!activeGroupId && hit.groupId) {
@@ -1094,6 +1135,19 @@ export function BoardCanvas(props: BoardCanvasProps) {
             </g>
           );
         })()}
+        {preview?.guides?.map((g, i) => (
+          <line
+            key={`guide-${i}`}
+            x1={g.axis === 'x' ? g.pos : g.from}
+            y1={g.axis === 'y' ? g.pos : g.from}
+            x2={g.axis === 'x' ? g.pos : g.to}
+            y2={g.axis === 'y' ? g.pos : g.to}
+            stroke="#e03131"
+            strokeWidth={1.5}
+            strokeDasharray="6 4"
+            pointerEvents="none"
+          />
+        ))}
       </svg>
 
       {editable && !widgetsPassive && selectedElements.length >= 2 && (barHost || !isResizing) && placeBar(
@@ -1105,6 +1159,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
           onDelete={() => onDeleteSelected?.(selectedIds)}
           onGroup={() => onGroup?.(selectedIds)}
           onUngroup={() => onUngroup?.(selectedIds)}
+          onLock={onLockSelected ? () => onLockSelected(selectedIds) : undefined}
+          onAlign={onAlign}
+          onDistribute={onDistribute}
           onConfigure={onConfigureShape}
           onSaveToLibrary={onSaveToLibrary ? () => onSaveToLibrary(selectedIds) : undefined}
         />
@@ -1145,7 +1202,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
       {widgets.length > 0 && (
         <div className={styles.overlay}>
           {widgets.map((w) => (
-            <div key={w.id} className={`${styles.widgetBox} ${widgetsControlsOnly && !widgetsPassive ? styles.widgetControlsOnly : ''}`} style={{ pointerEvents: widgetsPassive ? 'none' : undefined, left: `${(w.x / BOARD_W) * 100}%`, top: `${(w.y / BOARD_H) * 100}%`, width: `${(w.w / BOARD_W) * 100}%`, height: `${(w.h / BOARD_H) * 100}%` }}>
+            <div key={w.id} className={`${styles.widgetBox} ${widgetsControlsOnly && !widgetsPassive ? styles.widgetControlsOnly : ''}`} style={{ pointerEvents: (widgetsPassive || (editable && w.locked)) ? 'none' : undefined, left: `${(w.x / BOARD_W) * 100}%`, top: `${(w.y / BOARD_H) * 100}%`, width: `${(w.w / BOARD_W) * 100}%`, height: `${(w.h / BOARD_H) * 100}%` }}>
               {renderWidget!(w)}
             </div>
           ))}

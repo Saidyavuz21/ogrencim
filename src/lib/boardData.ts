@@ -31,8 +31,8 @@ export interface ElementLib {
   scale?: number;
 }
 
-export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string; lib?: ElementLib }
-export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string; lib?: ElementLib; /** Dikdörtgen köşe yuvarlaklığı (yoksa 6) */ rx?: number }
+export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string; lib?: ElementLib; locked?: boolean }
+export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string; lib?: ElementLib; locked?: boolean; /** Dikdörtgen köşe yuvarlaklığı (yoksa 6) */ rx?: number }
 export interface NoteEl {
   id: string;
   type: 'note';
@@ -58,8 +58,9 @@ export interface NoteEl {
   autoW?: boolean;                             // yalnızca variant 'text': kutu yazının genişliğine oturur; elle boyutlandırılınca kapanır
   groupId?: string;
   lib?: ElementLib;
+  locked?: boolean;
 }
-export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib }
+export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib; locked?: boolean }
 export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice';
 /** Eşleştirme etkinliği: soldaki öğe ↔ sağdaki eşi */
 export interface MatchPair { a: string; b: string }
@@ -95,7 +96,7 @@ export interface WidgetData {
   /** Zar: 1–3 zar */
   dice?: number;
 }
-export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib }
+export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib; locked?: boolean }
 export interface PolyEl {
   id: string;
   type: 'poly';
@@ -105,6 +106,7 @@ export interface PolyEl {
   fill?: string | null;      // dolgu (yoksa içi boş)
   groupId?: string;
   lib?: ElementLib;
+  locked?: boolean;
 }
 export type BoardEl = StrokeEl | ShapeEl | NoteEl | ImageEl | WidgetEl | PolyEl;
 export interface BoardPage { id: string; background: Background; backgroundColor?: string; elements: BoardEl[] }
@@ -140,11 +142,15 @@ export function normalizeDiceCount(raw: unknown): number {
 
 /** Yeni parça türlerinin verisini güvenli biçime getirir; diğer öğelere dokunmaz */
 function normalizeElement(el: BoardEl): BoardEl {
-  if (!el || el.type !== 'widget') return el;
+  if (!el || typeof el !== 'object') return el;
+  const locked = el.locked === true ? true : undefined;
+  if (el.type !== 'widget') {
+    return el.locked !== undefined && el.locked !== true ? { ...el, locked: undefined } : el;
+  }
   const data: WidgetData = el.data && typeof el.data === 'object' ? el.data : {};
-  if (el.kind === 'spinner') return { ...el, data: { ...data, slices: normalizeSlices(data.slices), removeWinner: data.removeWinner === true } };
-  if (el.kind === 'dice') return { ...el, data: { ...data, dice: normalizeDiceCount(data.dice) } };
-  return el;
+  if (el.kind === 'spinner') return { ...el, locked, data: { ...data, slices: normalizeSlices(data.slices), removeWinner: data.removeWinner === true } };
+  if (el.kind === 'dice') return { ...el, locked, data: { ...data, dice: normalizeDiceCount(data.dice) } };
+  return el.locked !== undefined && el.locked !== true ? { ...el, locked: undefined } : el;
 }
 
 const YT_ID = /^[A-Za-z0-9_-]{11}$/;

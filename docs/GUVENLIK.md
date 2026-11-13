@@ -120,6 +120,13 @@ select private.rotate_student_pin_key();  -- yeniden şifrelenen PIN sayısını
 
 Tek işlemde çalışır; hata olursa hiçbir şey değişmez. Öğrenci girişleri etkilenmez (giriş bcrypt hash ile doğrulanır).
 
+## HTTP güvenlik başlıkları
+
+`next.config.ts` bütün sayfalara ekler (13 Kasım 2026): HSTS (1 yıl, alt alan adları hariç), `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, CSP yalnızca `frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'`, `Permissions-Policy` (kamera/konum kapalı; mikrofon ve tam ekran yalnızca site için). `x-powered-by` kapalı.
+
+- Tam CSP (script-src / connect-src) yok; satır içi betikler ve Supabase/Turnstile adresleri için ayrıca denenmesi gerekir.
+- Yeni bir özellik kamera ya da konum isterse `Permissions-Policy` güncellenmeli, yoksa tarayıcı sessizce engeller.
+
 ## Gizli anahtar taraması
 
 `.github/workflows/gitleaks.yml` her push ve PR'da gönderilen commit'leri tarar (`.gitleaks.toml`). Geçmişte kalan eski demo şifrelerinin commit'leri izin listesinde; **admin şifresi değiştirilmeden bu izin listesi anlamsızdır**.

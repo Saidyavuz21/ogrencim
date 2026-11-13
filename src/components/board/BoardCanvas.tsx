@@ -27,6 +27,7 @@ import {
   isPolyShape, marqueeHits, polyShapePoints, type PolyShape,
 } from './boardGeometry';
 import { applyTagOrElement, FormatBar, MultiSelectBar } from './BoardFormatBars';
+import { bucketFill, isBucketFill } from './bucketFill';
 
 export { getFontFamily, wrapLines, wrapTextLines };
 export {
@@ -34,7 +35,7 @@ export {
   measuredMathHeights, pointsToSvg, translate,
 };
 
-export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | PolyShape | 'note' | 'text';
+export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'fill' | 'line' | 'arrow' | 'rect' | 'ellipse' | PolyShape | 'note' | 'text';
 export const DRAW_TOOLS: Tool[] = ['pen', 'highlighter', 'eraser'];
 /** Şekiller menüsündeki araçlar (çizgi, ok, dikdörtgen, daire ve hazır çokgenler) */
 export const SHAPE_TOOLS: Tool[] = ['line', 'arrow', 'rect', 'ellipse', 'triangle', 'diamond', 'hexagon', 'star'];
@@ -366,6 +367,8 @@ export interface BoardCanvasProps {
   onConfigureShape?: () => void;
   onSaveToLibrary?: (selectedIds: string[]) => void;
   onToolChange?: (tool: Tool) => void;
+  /** Kısa uyarı (ör. boya kovası kapalı alan bulamadı) */
+  onNotice?: (message: string) => void;
   editingNoteId?: string | null;
   onEditNote?: (id: string | null) => void;
   onNoteText?: (id: string, text: string) => void;
@@ -402,6 +405,8 @@ function drawCursor(tool: Tool, color: string): string {
     shape = "<circle cx='12' cy='12' r='9' fill='rgba(255,255,255,0.6)' stroke='#ffffff' stroke-width='4'/><circle cx='12' cy='12' r='9' fill='none' stroke='#1f2a24' stroke-width='1.6'/>";
   } else if (tool === 'highlighter') {
     shape = `<rect x='5' y='5' width='14' height='14' rx='3' fill='${c}' fill-opacity='0.55' stroke='#ffffff' stroke-width='3'/><rect x='5' y='5' width='14' height='14' rx='3' fill='none' stroke='#1f2a24' stroke-width='1.2'/>`;
+  } else if (tool === 'fill') {
+    shape = `<path d='M12 3c3.5 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.5 6-11Z' fill='${c}' stroke='#ffffff' stroke-width='3' stroke-linejoin='round'/><path d='M12 3c3.5 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.5 6-11Z' fill='none' stroke='#1f2a24' stroke-width='1.2' stroke-linejoin='round'/>`;
   } else {
     shape = `<circle cx='12' cy='12' r='6' fill='${c}' stroke='#ffffff' stroke-width='3'/><circle cx='12' cy='12' r='7.5' fill='none' stroke='#1f2a24' stroke-width='1.2'/>`;
   }
@@ -430,6 +435,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onConfigureShape,
     onSaveToLibrary,
     onToolChange,
+    onNotice,
     editingNoteId,
     onEditNote,
     onNoteText,
@@ -512,7 +518,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
   const layerStrokes = layer || [];
 
   const eraseAt = (x: number, y: number, d: Extract<Draft, { kind: 'erase' }>) => {
-    const pool: BoardEl[] = drawingOnLayer ? layerStrokes : elements.filter((e) => e.type === 'stroke' || e.type === 'line' || e.type === 'arrow' || e.type === 'rect' || e.type === 'ellipse' || e.type === 'poly');
+    const pool: BoardEl[] = drawingOnLayer ? layerStrokes : elements.filter((e) => (e.type === 'stroke' || e.type === 'line' || e.type === 'arrow' || e.type === 'rect' || e.type === 'ellipse' || e.type === 'poly') && !isBucketFill(e));
     let changed = false;
     for (const el of pool) {
       if (!d.removed.has(el.id) && hitTest(el, x, y, 14)) { d.removed.add(el.id); changed = true; }
@@ -551,6 +557,15 @@ export function BoardCanvas(props: BoardCanvasProps) {
       draft.current = { kind: 'erase', removed: new Set() };
       eraseAt(x, y, draft.current);
     } else if (!editable) {
+      return;
+    } else if (t === 'fill') {
+      const res = bucketFill(elements, x, y, color);
+      if (res.ok) onCommit?.(res.elements);
+      else onNotice?.(res.reason === 'onLine'
+        ? 'Çizginin üstüne değil, doldurmak istediğiniz alanın içine dokunun.'
+        : res.reason === 'open'
+          ? 'Bu alan kapalı değil. Çizgilerin birleştiğinden emin olun.'
+          : 'Bu alan doldurulamayacak kadar küçük.');
       return;
     } else if (t === 'line' || t === 'arrow' || t === 'rect' || t === 'ellipse') {
       draft.current = { kind: 'shape', el: { id: newId(), type: t, x1: x, y1: y, x2: x, y2: y, color, width } };
@@ -881,7 +896,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     : undefined;
   const widgets = renderWidget ? shown.filter((el): el is WidgetEl => el.type === 'widget') : [];
   const drawTool = drawingOnLayer || DRAW_TOOLS.includes(tool);
-  const cursor = !interactive ? 'default' : drawTool ? drawCursor(tool, color) : tool === 'select' ? 'default' : 'crosshair';
+  const cursor = !interactive ? 'default' : (drawTool || (editable && tool === 'fill')) ? drawCursor(tool, color) : tool === 'select' ? 'default' : 'crosshair';
 
   // Boyut tutamağı: çoklu seçim / grup için birleşik çerçevenin, tek seçimde öğenin sağ alt köşesi
   let handlePos: { x: number; y: number; kind: 'multi' } | { x: number; y: number; kind: 'single'; sel: BoardEl } | null = null;

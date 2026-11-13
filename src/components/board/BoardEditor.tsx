@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Diamond, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
-  Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type, X,
+  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -58,7 +58,7 @@ const WIDTHS = [3, 6, 12];
 const PRESENT_WIDTHS = [{ value: 3, label: 'İnce', dot: 5 }, { value: 5, label: 'Orta', dot: 9 }, { value: 10, label: 'Kalın', dot: 14 }];
 const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'select', label: 'Seç', key: 'v' }, { id: 'pen', label: 'Kalem', key: 'p' }, { id: 'highlighter', label: 'Vurgu', key: 'h' },
-  { id: 'eraser', label: 'Silgi', key: 'e' }, { id: 'line', label: 'Çizgi', key: 'l' }, { id: 'arrow', label: 'Ok', key: 'a' },
+  { id: 'eraser', label: 'Silgi', key: 'e' }, { id: 'fill', label: 'Doldur', key: 'f' }, { id: 'line', label: 'Çizgi', key: 'l' }, { id: 'arrow', label: 'Ok', key: 'a' },
   { id: 'rect', label: 'Dikdörtgen', key: 'r' }, { id: 'ellipse', label: 'Daire', key: 'o' }, { id: 'note', label: 'Not', key: 'n' },
   { id: 'text', label: 'Metin', key: 't' },
 ];
@@ -86,7 +86,7 @@ const SIDE_TABS: { id: SideTab; label: string }[] = [
   { id: 'media', label: 'Görseller' }, { id: 'widgets', label: 'Parçalar' }, { id: 'page', label: 'Zemin' },
 ];
 const tabOfTool = (t: Tool): SideTab | null => (
-  DRAW_TOOLS.includes(t) ? 'draw' : SHAPE_TOOLS.includes(t) ? 'shapes' : t === 'text' || t === 'note' ? 'text' : null
+  DRAW_TOOLS.includes(t) || t === 'fill' ? 'draw' : SHAPE_TOOLS.includes(t) ? 'shapes' : t === 'text' || t === 'note' ? 'text' : null
 );
 
 /** Sayfa şeridindeki küçük resim: sayfa değişmedikçe yeniden çizilmez */
@@ -167,7 +167,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     if (tab) { setSideTab(tab); setSideOpen(true); }
   };
   const openTab = (id: SideTab) => {
-    const armPen = id === 'draw' && !DRAW_TOOLS.includes(tool);
+    const armPen = id === 'draw' && !DRAW_TOOLS.includes(tool) && tool !== 'fill';
     if (armPen) setTool('pen');
     // Ayar görünümü açıksa şerit düğmesi araç listesine döndürür
     if (panelOpen && selectedIds.length) { setPanelAuto(false); setPanelOpen(false); setSideTab(id); setSideOpen(true); return; }
@@ -1670,6 +1670,12 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                   </div>
                   <span>Silgi</span>
                 </button>
+                <button type="button" className={`${styles.brushCard} ${tool === 'fill' ? styles.brushActive : ''}`} aria-pressed={tool === 'fill'} onClick={() => setTool('fill')} title="Doldur (F)">
+                  <div className={styles.brushPreview} style={{ borderColor: tool === 'fill' ? color : '#dedad0' }}>
+                    <PaintBucket size={20} color={tool === 'fill' ? color : 'currentColor'} />
+                  </div>
+                  <span>Doldur</span>
+                </button>
               </div>
             </div>
             {tool === 'eraser' ? (
@@ -1677,7 +1683,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             ) : (
               <>
                 <div className={styles.popoverSection}>
-                  <span className={styles.popoverLabel}><Palette size={14} aria-hidden="true" />{tool === 'highlighter' ? 'Vurgu rengi' : 'Kalem rengi'}</span>
+                  <span className={styles.popoverLabel}><Palette size={14} aria-hidden="true" />{tool === 'highlighter' ? 'Vurgu rengi' : tool === 'fill' ? 'Dolgu rengi' : 'Kalem rengi'}</span>
                   <div className={styles.colorPalette}>
                 {COLORS.map((c) => (
                   <button
@@ -1687,7 +1693,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                     style={{ backgroundColor: c }}
                     onClick={() => {
                       setColor(c);
-                      if (selected && 'color' in selected && selected.type !== 'note') patchElement(selected.id, { color: c });
+                      if (tool !== 'fill' && selected && 'color' in selected && selected.type !== 'note') patchElement(selected.id, { color: c });
                     }}
                     title={`Renk: ${c}`}
                     aria-label={`Renk ${c}`}
@@ -1695,6 +1701,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 ))}
                   </div>
                 </div>
+                {tool === 'fill' ? (
+                  <p className={styles.hintText}>Çizgilerle kapanmış bir alanın içine dokunun; alan seçili renkle dolar. Dolu alana yeniden dokunmak rengini değiştirir. Dolguyu kaldırmak için Seç ile tıklayıp silin.</p>
+                ) : (
                 <div className={styles.popoverSection}>
                   <div className={styles.popoverHeaderRow}>
                     <span className={styles.popoverLabel}><Sliders size={14} aria-hidden="true" />Çizgi kalınlığı</span>
@@ -1736,6 +1745,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                     aria-label="Çizgi kalınlığı"
                   />
                 </div>
+                )}
               </>
             )}
           </div>
@@ -1961,6 +1971,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           tool={tool}
           color={color}
           width={width}
+          onNotice={setNotice}
           onCommit={commitElements}
           selectedIds={selectedIds}
           onElementMenu={(ids, x, y) => setCtxMenu({ ids, x, y })}

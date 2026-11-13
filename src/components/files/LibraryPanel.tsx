@@ -64,7 +64,8 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
   const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const displayed = manage ? visible.slice((currentPage - 1) * pageSize, currentPage * pageSize) : visible;
-  const gallery = manage && view === 'gallery';
+  // Öğretmenler kütüphaneyi her zaman galeri olarak görür; yönetici galeri/liste arasında geçebilir
+  const gallery = view === 'gallery';
 
   const remove = async (item: LibraryItemRow) => {
     const ok = await confirm({ title: 'Kütüphaneden sil', message: `"${item.title}" kütüphaneden kaldırılsın mı?\nÖdevlere eklenmiş kopyalar etkilenmez.`, confirmText: 'Sil', cancelText: 'Vazgeç', variant: 'danger' });

@@ -228,3 +228,27 @@ GÖREV: Etkinlik parçası (kind: 'numgrid'). 10 sütunlu sayı tablosu; öğret
 - "Temizle" düğmesi. Hücreler en az 44×44 px'e denk düşecek büyüklükte olmayabilir; bu parçada hücreye dokunmayı
   kolaylaştırmak için tablo parça boyutunu doldursun ve parça varsayılan boyutu büyük olsun.
 ```
+
+## İstem 15 – Etkileşimli saat
+
+```
+GÖREV: Etkinlik parçası (kind: 'clock'). Analog saat: 1–12 rakamları, 60 dakika çizgisi (5'lerde kalın), akrep (kısa, kalın)
+ve yelkovan (uzun, ince) farklı renkte; merkez noktası. SVG ile çiz. Şekil kitaplığındaki mevcut saat görünümünü örnek al.
+
+Kollar iki yolla değiştirilir (ikisi birlikte çalışır, dokunmatik + fare + klavye):
+1. Sürükleme: akrebi ya da yelkovanı tutup çevir. Yelkovan dakikaya (öğretmen seçimi: 1 ya da 5 dakikaya) yapışır.
+   Bağlı hareket: yelkovan döndükçe akrep orantılı ilerler (12'yi geçince saat bir artar/azalır), gerçek saat gibi.
+   Akrep sürüklenince yelkovan yerinde kalır, akrep saate yapışır ama dakikaya göre ara konumda durur.
+2. Dokun-seç: önce akrebe ya da yelkovana dokun (seçili kol vurgulanır, aria-pressed), sonra bir rakama dokun.
+   Yelkovan seçiliyse rakam × 5 dakikaya gider (3 → :15); akrep seçiliyse o saate gider. Rakamların dokunma alanı
+   44×44 px'e yakın olsun.
+Klavye: kol seçiliyken ok tuşları 1 adım çevirir.
+
+Öğretmen ayarları ve kipler:
+- "Serbest": öğrenci istediği gibi oynatır. İsteğe bağlı dijital gösterge (ör. 03:15) saatin altında açılıp kapanır.
+- "Saati kur": öğretmen hedef saati yazar (ör. 3:30); öğrenci kolları ayarlar, "Kontrol et" doğru/yanlış gösterir
+  (akrebin dakikaya göre ara konumu toleranslı kabul edilir).
+- "Saat kaç?": öğretmen kolları ayarlar, öğrenci saati yazar (saat ve dakika iki kutu) ya da 4 seçenekten seçer; "Kontrol et".
+- Başlangıç saati öğretmence ayarlanır; "Sıfırla" ona döner. Öğrencinin yaptığı kaydedilmez.
+İsteğe bağlı: "Çeyrek / buçuk" gibi Türkçe okuma ("üçü çeyrek geçiyor", "üç buçuk") dijital göstergenin altında açılıp kapanır.
+```

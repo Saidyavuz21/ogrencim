@@ -227,3 +227,4 @@ GÖREV: Etkinlik parçası (kind: 'numgrid'). 10 sütunlu sayı tablosu; öğret
   ve "Kontrol et" eksik/fazla boyananları gösterir.
 - "Temizle" düğmesi. Hücreler en az 44×44 px'e denk düşecek büyüklükte olmayabilir; bu parçada hücreye dokunmayı
   kolaylaştırmak için tablo parça boyutunu doldursun ve parça varsayılan boyutu büyük olsun.
+```

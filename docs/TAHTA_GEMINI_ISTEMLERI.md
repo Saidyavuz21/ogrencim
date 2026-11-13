@@ -295,3 +295,21 @@ GÖREV: Düzenleyicinin Çizim panelindeki "ÖLÇME ARAÇLARI" bölümünü düz
 4. Ders kipindeki ölçme araçları menüsü de aynı ikonları kullansın.
 Davranışa (cetvele yapışma, pergel çizimi) dokunma.
 ```
+
+## İstem 19 – Öğeler paneli: önce grup kartları
+
+```
+GÖREV: Düzenleyicinin "Öğeler" panelini (WIDGET_GROUPS / getWidgetGroups ile çizilen gruplu liste) iki adımlı yap.
+1. İlk görünüm: her grup için bir kart (2 sütunlu ızgara; dar panelde 1 sütun). Kartta grubun rengiyle ikon kutusu,
+   grup adı, "N öğe" ve ilk 3 öğenin adı ("Kesir Boyama, Fonksiyon Grafiği, Sütun Grafiği…"). Kart tamamen tıklanabilir
+   <button>, en az 44 px yükseklik, görünür odak.
+2. Karta basınca o grubun öğe listesi (bugünkü satırlar) açılır. Üstte "← Geri" düğmesi (aria-label "Gruplara dön")
+   ve grup adı başlık olarak. Geri ve Esc tuşu kartlara döndürür.
+3. Kartların üstünde arama kutusu ("Öğe ara"): yazılınca kartlar yerine tüm gruplardan eşleşen öğeler tek liste olarak
+   çıkar (tr-TR büyük/küçük harf duyarsız; öğe adı ve grup adı). Sonuç yoksa kısa boş durum metni. Temizleyince kartlara döner.
+4. Son açılan grup localStorage'da hatırlansın (try/catch ile; erişilemezse sessizce kartlarla başla); panel yeniden
+   açılınca o grup açık gelir.
+5. Öğe ekleme davranışı (addWidget, parça ortaya eklenir, ayarlar panelde açılır) değişmez. Panelin altındaki
+   "Parça tahtanın ortasına eklenir…" açıklaması yalnızca öğe listesinde görünsün.
+Renkler WIDGET_GROUPS'taki tonlardan gelir; yeni renk tanımlama.
+```

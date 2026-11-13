@@ -1,0 +1,390 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.67cqw;
+  height: 100%;
+  min-height: 0;
+  color: #1f2a24;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.67cqw;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.33cqw;
+  font-weight: 700;
+  color: #1f2a24;
+  line-height: 1.25;
+}
+
+.badge {
+  font-size: 1.05cqw;
+  font-weight: 600;
+  color: #3b4b43;
+  background: #f2efe7;
+  border-radius: 83.25cqw;
+  padding: 0.2cqw 0.8cqw;
+  white-space: nowrap;
+}
+
+.chartArea {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5cqw;
+}
+
+.chartSvg {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: block;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.drawControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5cqw;
+  flex-shrink: 0;
+}
+
+.stepperChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35cqw;
+  padding: 0.25cqw 0.5cqw;
+  border: 0.13cqw solid #d5d0c4;
+  border-radius: 0.7cqw;
+  background: #faf9f5;
+  font-size: 1.05cqw;
+  font-weight: 600;
+}
+
+.stepBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2cqw;
+  height: 2cqw;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0.1cqw solid #c8c2b4;
+  border-radius: 0.5cqw;
+  background: #ffffff;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.15cqw;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stepBtn:hover:not(:disabled) {
+  background: #eaf3ec;
+  border-color: #25634b;
+  color: #25634b;
+}
+
+.stepBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.questionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45cqw;
+  flex-shrink: 0;
+}
+
+.questionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6cqw;
+  padding: 0.4cqw 0.6cqw;
+  border: 0.12cqw solid #dedad0;
+  border-radius: 0.75cqw;
+  background: #faf9f5;
+}
+
+.questionPrompt {
+  flex: 1 1 auto;
+  font-size: 1.1cqw;
+  font-weight: 600;
+  color: #1f2a24;
+}
+
+.inlineInput {
+  width: 8cqw;
+  min-width: 0;
+  padding: 0.35cqw 0.55cqw;
+  border: 0.13cqw solid #c8c2b4;
+  border-radius: 0.6cqw;
+  background: #ffffff;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.12cqw;
+  font-weight: 600;
+  text-align: center;
+}
+
+.inlineInput:focus-visible {
+  outline: 0.2cqw solid #25634b;
+  outline-offset: 0.1cqw;
+}
+
+.inputOk {
+  border-color: #25634b;
+  background: #e9f6ee;
+  color: #1b4d39;
+}
+
+.inputBad {
+  border-color: #c92a2a;
+  background: #fff1f1;
+  color: #9b1c1c;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.67cqw;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.actionBtns {
+  display: flex;
+  align-items: center;
+  gap: 0.5cqw;
+}
+
+.primaryBtn,
+.ghostBtn {
+  min-height: 0;
+  min-width: 0;
+  padding: 0.48cqw 1cqw;
+  border-radius: 0.75cqw;
+  font: inherit;
+  font-size: 1.12cqw;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryBtn {
+  border: 0.13cqw solid #25634b;
+  background: #25634b;
+  color: #ffffff;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: #1d4e3b;
+}
+
+.ghostBtn {
+  border: 0.13cqw solid #d5d0c4;
+  background: #ffffff;
+  color: #1f2a24;
+}
+
+.ghostBtn:hover:not(:disabled) {
+  background: #f4f2ec;
+}
+
+.feedbackOk {
+  font-size: 1.12cqw;
+  font-weight: 700;
+  color: #25634b;
+}
+
+.feedbackBad {
+  font-size: 1.12cqw;
+  font-weight: 700;
+  color: #b42318;
+}
+
+/* Çetele tablosu */
+.tallyTableWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border: 0.13cqw solid #dedad0;
+  border-radius: 0.85cqw;
+  background: #ffffff;
+}
+
+.tallyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.18cqw;
+}
+
+.tallyTable th {
+  text-align: left;
+  padding: 0.55cqw 0.75cqw;
+  background: #f5f3ec;
+  border-bottom: 0.13cqw solid #dedad0;
+  font-size: 1.08cqw;
+  font-weight: 700;
+  color: #3b4b43;
+}
+
+.tallyTable td {
+  padding: 0.5cqw 0.75cqw;
+  border-bottom: 0.1cqw solid #eeece5;
+  vertical-align: middle;
+}
+
+.tallyTable tr:last-child td {
+  border-bottom: none;
+}
+
+.tallyCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5cqw;
+}
+
+.tallySvg {
+  height: 2.3cqw;
+  width: auto;
+  max-width: 100%;
+  display: block;
+}
+
+.tallyCountCell {
+  display: flex;
+  align-items: center;
+  gap: 0.4cqw;
+}
+
+.rowStatusOk {
+  background: #f1f9f4;
+}
+
+.rowStatusBad {
+  background: #fff5f5;
+}
+
+/* Sayı tablosu */
+.gridToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5cqw;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.brushGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4cqw;
+}
+
+.brushBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35cqw;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.32cqw 0.7cqw;
+  border: 0.13cqw solid #d5d0c4;
+  border-radius: 83.25cqw;
+  background: #ffffff;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.02cqw;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.brushBtn[aria-pressed='true'] {
+  border-color: #25634b;
+  background: #eaf3ec;
+  color: #1d4e3b;
+}
+
+.brushDot {
+  width: 1.05cqw;
+  height: 1.05cqw;
+  border-radius: 50%;
+  border: 0.1cqw solid rgba(0, 0, 0, 0.2);
+}
+
+.numGrid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 0.25cqw;
+}
+
+.numCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.15cqw;
+  border: 0.1cqw solid #dedad0;
+  border-radius: 0.45cqw;
+  background: #ffffff;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.2cqw;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 80ms ease, border-color 100ms ease;
+}
+
+.numCell:hover {
+  border-color: #25634b;
+}
+
+.numCellOk {
+  box-shadow: inset 0 0 0 0.18cqw #25634b;
+}
+
+.numCellBad {
+  box-shadow: inset 0 0 0 0.18cqw #c92a2a;
+}
+
+.numCellMissed {
+  box-shadow: inset 0 0 0 0.18cqw #d97706;
+}
+
+.numInput {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+  border-radius: 0.35cqw;
+  background: #faf9f5;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.15cqw;
+  font-weight: 700;
+  text-align: center;
+  padding: 0;
+}
+
+.numInput:focus-visible {
+  outline: 0.18cqw solid #25634b;
+}
+

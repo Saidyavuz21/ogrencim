@@ -1,13 +1,17 @@
-import { BOARD_W, NoteEl } from '../../lib/boardData';
+import { BOARD_W, BoardFontFamily, NoteEl } from '../../lib/boardData';
 import { stripRich } from '../../lib/math/parseRich';
 import { hasMath } from '../../lib/math/parseMath';
 
 export const BOARD_FONT = 'var(--font-geist-sans), system-ui, sans-serif';
 
-export function getFontFamily(family?: 'sans' | 'hand' | 'display' | 'school'): string {
+export function getFontFamily(family?: BoardFontFamily): string {
   if (family === 'hand') return "'Patrick Hand', cursive, sans-serif";
+  if (family === 'script') return "'Caveat', cursive, sans-serif";
   if (family === 'display') return "'Fredoka', sans-serif";
+  if (family === 'rounded') return "'Baloo 2', sans-serif";
   if (family === 'school') return "'Andika', sans-serif";
+  if (family === 'serif') return "'Lora', Georgia, serif";
+  if (family === 'mono') return "'JetBrains Mono', ui-monospace, monospace";
   return BOARD_FONT;
 }
 
@@ -77,7 +81,7 @@ export function wrapTextLines(
   text: string,
   maxWidth: number,
   fontSize: number,
-  family: 'sans' | 'hand' | 'display' | 'school' = 'sans',
+  family: BoardFontFamily = 'sans',
   weight: number = 400,
   italic: boolean = false,
   letterSpacing?: number

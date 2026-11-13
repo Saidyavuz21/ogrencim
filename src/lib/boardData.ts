@@ -33,6 +33,27 @@ export interface ElementLib {
 
 export interface StrokeEl { id: string; type: 'stroke'; points: number[]; color: string; width: number; highlighter?: boolean; groupId?: string; lib?: ElementLib; locked?: boolean }
 export interface ShapeEl { id: string; type: 'line' | 'arrow' | 'rect' | 'ellipse'; x1: number; y1: number; x2: number; y2: number; color: string; width: number; fill?: string | null; groupId?: string; lib?: ElementLib; locked?: boolean; /** Dikdörtgen köşe yuvarlaklığı (yoksa 6) */ rx?: number }
+export type BoardFontFamily =
+  | 'sans'
+  | 'hand'
+  | 'script'
+  | 'display'
+  | 'rounded'
+  | 'school'
+  | 'serif'
+  | 'mono';
+
+export const BOARD_FONT_OPTIONS: ReadonlyArray<{ value: BoardFontFamily; label: string; sample: string }> = [
+  { value: 'sans', label: 'Düz', sample: 'Sade ve net' },
+  { value: 'school', label: 'Okul', sample: 'İlkokul yazı' },
+  { value: 'hand', label: 'El yazısı', sample: 'Samimi notlar' },
+  { value: 'script', label: 'Not defteri', sample: 'Akıcı el yazısı' },
+  { value: 'display', label: 'Başlık', sample: 'Yumuşak başlık' },
+  { value: 'rounded', label: 'Çizgi', sample: 'Kalın afiş' },
+  { value: 'serif', label: 'Kitap', sample: 'Okuma metni' },
+  { value: 'mono', label: 'Daktilo', sample: 'Eşit aralıklı' },
+];
+
 export interface NoteEl {
   id: string;
   type: 'note';
@@ -45,7 +66,7 @@ export interface NoteEl {
   fontSize: number;
   variant?: 'text';                            // yoksa eski Not
   textColor?: string;                          // varsayılan #1f2a24
-  fontFamily?: 'sans' | 'hand' | 'display' | 'school'; // varsayılan 'sans'
+  fontFamily?: BoardFontFamily;                // varsayılan 'sans'
   fontWeight?: 300 | 400 | 700;                // ince / normal / kalın, varsayılan 400
   italic?: boolean;
   underline?: boolean;
@@ -61,7 +82,7 @@ export interface NoteEl {
   locked?: boolean;
 }
 export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib; locked?: boolean }
-export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice' | 'order' | 'sort' | 'blanks' | 'label' | 'fraction' | 'graph';
+export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice' | 'order' | 'sort' | 'blanks' | 'label' | 'fraction' | 'graph' | 'bar' | 'tally' | 'numgrid' | 'clock';
 /** Eşleştirme etkinliği: soldaki öğe ↔ sağdaki eşi */
 export interface MatchPair { a: string; b: string }
 /** Gruplara ayırma etkinliği: grup başlığı ve ait maddeler */
@@ -71,6 +92,21 @@ export interface LabelImageRef { bucket: string; path: string }
 export interface LabelPoint { id: string; x: number; y: number; text: string }
 /** Kesir boyama şekli */
 export type FractionShape = 'circle' | 'strip' | 'grid';
+/** Sütun grafiği */
+export type BarMode = 'show' | 'draw' | 'read';
+export type BarOrientation = 'vertical' | 'horizontal';
+export type BarStep = 1 | 2 | 5 | 10;
+export interface BarCategory { label: string; value: number }
+export interface BarQuestion { prompt: string; answer: string }
+/** Çetele tablosu */
+export type TallyMode = 'show' | 'tally' | 'count';
+export interface TallyItem { label: string; count: number }
+/** Sayı tablosu (yüzlük tablo) */
+export type NumGridRule = 'none' | 'mult2' | 'mult5' | 'mult10' | 'even' | 'odd';
+/** Etkileşimli saat (clock) */
+export type ClockMode = 'free' | 'set' | 'read';
+export type ClockStep = 1 | 5;
+export type ClockReadInput = 'box' | 'choice';
 /** Sesli not dosyası (öğretmenin klasöründe ya da ödev alanında) */
 export interface AudioRef { bucket: string; path: string; seconds?: number }
 /** Video parçası: şimdilik yalnızca YouTube (dosya yüklenmez, kota harcamaz) */
@@ -126,6 +162,32 @@ export interface WidgetData {
   graphXMax?: number;
   graphYMin?: number;
   graphYMax?: number;
+  /** Sütun grafiği (bar) */
+  barMode?: BarMode;
+  barOrientation?: BarOrientation;
+  barStep?: BarStep;
+  barXAxis?: string;
+  barYAxis?: string;
+  barCategories?: BarCategory[];
+  barQuestions?: BarQuestion[];
+  /** Çetele tablosu (tally) */
+  tallyMode?: TallyMode;
+  tallyItems?: TallyItem[];
+  /** Sayı tablosu (numgrid) */
+  numGridStart?: number;
+  numGridEnd?: number;
+  numGridHidden?: number[];
+  numGridRule?: NumGridRule;
+  /** Etkileşimli saat (clock) */
+  clockMode?: ClockMode;
+  clockHour?: number;
+  clockMinute?: number;
+  clockTargetHour?: number;
+  clockTargetMinute?: number;
+  clockStep?: ClockStep;
+  clockShowDigital?: boolean;
+  clockShowTurkish?: boolean;
+  clockReadInput?: ClockReadInput;
 }
 export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib; locked?: boolean }
 export interface PolyEl {
@@ -149,11 +211,11 @@ export const WIDGET_LABEL: Record<WidgetKind, string> = {
   minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme',
   audio: 'Sesli Not', video: 'Video', spinner: 'Çark', dice: 'Zar',
   order: 'Sıralama', sort: 'Gruplara Ayırma', blanks: 'Boşluk Doldurma', label: 'Görsel Etiketleme', fraction: 'Kesir Boyama',
-  graph: 'Fonksiyon Grafiği',
+  graph: 'Fonksiyon Grafiği', bar: 'Sütun Grafiği', tally: 'Çetele Tablosu', numgrid: 'Sayı Tablosu', clock: 'Saat',
 };
 /** Parçalar listesinde eklenebilenler; "Cevabı Göster" artık Mini Test ayarı, eski tahtalarda çalışmaya devam eder */
 export const ADDABLE_WIDGETS: WidgetKind[] = [
-  'minitest', 'steps', 'timer', 'match', 'order', 'sort', 'blanks', 'label', 'fraction', 'graph', 'audio', 'video', 'spinner', 'dice',
+  'minitest', 'steps', 'timer', 'match', 'order', 'sort', 'blanks', 'label', 'fraction', 'graph', 'bar', 'tally', 'numgrid', 'clock', 'audio', 'video', 'spinner', 'dice',
 ];
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
@@ -161,6 +223,7 @@ export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   spinner: { w: 560, h: 680 }, dice: { w: 560, h: 340 },
   order: { w: 600, h: 540 }, sort: { w: 860, h: 560 }, blanks: { w: 720, h: 500 },
   label: { w: 860, h: 580 }, fraction: { w: 540, h: 560 }, graph: { w: 680, h: 520 },
+  bar: { w: 760, h: 540 }, tally: { w: 680, h: 500 }, numgrid: { w: 760, h: 660 }, clock: { w: 540, h: 640 },
 };
 
 export const SPINNER_MIN_SLICES = 2;
@@ -174,6 +237,108 @@ export const SORT_MAX_GROUPS = 4;
 export const BLANKS_MAX_DISTRACTORS = 3;
 export const FRACTION_MIN_PARTS = 2;
 export const FRACTION_MAX_PARTS = 12;
+export const BAR_MIN = 2;
+export const BAR_MAX = 8;
+export const BAR_MAX_QUESTIONS = 3;
+export const BAR_STEPS: readonly BarStep[] = [1, 2, 5, 10];
+export const TALLY_MIN = 2;
+export const TALLY_MAX = 8;
+export const TALLY_MAX_COUNT = 30;
+export const NUMGRID_MAX_CELLS = 200;
+
+export function normalizeBarMode(raw: unknown): BarMode {
+  return raw === 'draw' || raw === 'read' ? raw : 'show';
+}
+
+export function normalizeBarOrientation(raw: unknown): BarOrientation {
+  return raw === 'horizontal' ? 'horizontal' : 'vertical';
+}
+
+export function normalizeBarStep(raw: unknown): BarStep {
+  return raw === 2 || raw === 5 || raw === 10 ? raw : 1;
+}
+
+export function normalizeBarCategories(raw: unknown): BarCategory[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, BAR_MAX).map((c) => {
+    const obj = c && typeof c === 'object' ? (c as Partial<BarCategory>) : {};
+    const label = typeof obj.label === 'string' ? obj.label.slice(0, 32) : '';
+    const value = typeof obj.value === 'number' && Number.isFinite(obj.value) && obj.value >= 0 ? Math.min(200, Math.round(obj.value)) : 0;
+    return { label, value };
+  });
+}
+
+export function normalizeBarQuestions(raw: unknown): BarQuestion[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, BAR_MAX_QUESTIONS).map((q) => {
+    const obj = q && typeof q === 'object' ? (q as Partial<BarQuestion>) : {};
+    return {
+      prompt: typeof obj.prompt === 'string' ? obj.prompt.slice(0, 120) : '',
+      answer: typeof obj.answer === 'string' ? obj.answer.slice(0, 40) : '',
+    };
+  });
+}
+
+export function normalizeTallyMode(raw: unknown): TallyMode {
+  return raw === 'tally' || raw === 'count' ? raw : 'show';
+}
+
+export function normalizeTallyItems(raw: unknown): TallyItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, TALLY_MAX).map((t) => {
+    const obj = t && typeof t === 'object' ? (t as Partial<TallyItem>) : {};
+    const label = typeof obj.label === 'string' ? obj.label.slice(0, 32) : '';
+    const count = typeof obj.count === 'number' && Number.isFinite(obj.count) ? Math.max(0, Math.min(TALLY_MAX_COUNT, Math.round(obj.count))) : 0;
+    return { label, count };
+  });
+}
+
+export function normalizeNumGridRange(startRaw: unknown, endRaw: unknown): { start: number; end: number } {
+  const start = typeof startRaw === 'number' && Number.isFinite(startRaw) ? Math.max(0, Math.min(900, Math.round(startRaw))) : 1;
+  const rawEnd = typeof endRaw === 'number' && Number.isFinite(endRaw) ? Math.round(endRaw) : start + 99;
+  const minEnd = start;
+  const maxEnd = start + NUMGRID_MAX_CELLS - 1;
+  const end = Math.max(minEnd, Math.min(maxEnd, rawEnd));
+  return { start, end };
+}
+
+export function normalizeNumGridHidden(raw: unknown, start: number, end: number): number[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<number>();
+  for (const v of raw) {
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      const n = Math.round(v);
+      if (n >= start && n <= end) seen.add(n);
+    }
+  }
+  return Array.from(seen).sort((a, b) => a - b);
+}
+
+export function normalizeNumGridRule(raw: unknown): NumGridRule {
+  return raw === 'mult2' || raw === 'mult5' || raw === 'mult10' || raw === 'even' || raw === 'odd' ? raw : 'none';
+}
+
+export function normalizeClockMode(raw: unknown): ClockMode {
+  return raw === 'set' || raw === 'read' ? raw : 'free';
+}
+
+export function normalizeClockStep(raw: unknown): ClockStep {
+  return raw === 1 ? 1 : 5;
+}
+
+export function normalizeClockReadInput(raw: unknown): ClockReadInput {
+  return raw === 'choice' ? 'choice' : 'box';
+}
+
+export function normalizeClockHour(raw: unknown, fallback = 3): number {
+  const n = typeof raw === 'number' && Number.isFinite(raw) ? Math.round(raw) : fallback;
+  return ((n - 1) % 12 + 12) % 12 + 1;
+}
+
+export function normalizeClockMinute(raw: unknown, fallback = 0): number {
+  const n = typeof raw === 'number' && Number.isFinite(raw) ? Math.round(raw) : fallback;
+  return ((n % 60) + 60) % 60;
+}
 
 /** Çark dilimleri: metin dışı değerleri boş yapar, uzunluk ve sayıyı sınırlar (boşlar düzenlemede kalabilir) */
 export function normalizeSlices(raw: unknown): string[] {
@@ -269,6 +434,67 @@ function normalizeElement(el: BoardEl): BoardEl {
         graphXMax: xMax,
         graphYMin: yMin,
         graphYMax: yMax,
+      },
+    };
+  }
+  if (el.kind === 'bar') {
+    const cats = normalizeBarCategories(data.barCategories);
+    return {
+      ...el,
+      locked,
+      data: {
+        ...data,
+        barMode: normalizeBarMode(data.barMode),
+        barOrientation: normalizeBarOrientation(data.barOrientation),
+        barStep: normalizeBarStep(data.barStep),
+        barXAxis: typeof data.barXAxis === 'string' ? data.barXAxis.slice(0, 40) : '',
+        barYAxis: typeof data.barYAxis === 'string' ? data.barYAxis.slice(0, 40) : '',
+        barCategories: cats.length >= BAR_MIN ? cats : [{ label: 'Elma', value: 4 }, { label: 'Armut', value: 6 }, { label: 'Muz', value: 3 }],
+        barQuestions: normalizeBarQuestions(data.barQuestions),
+      },
+    };
+  }
+  if (el.kind === 'tally') {
+    const items = normalizeTallyItems(data.tallyItems);
+    return {
+      ...el,
+      locked,
+      data: {
+        ...data,
+        tallyMode: normalizeTallyMode(data.tallyMode),
+        tallyItems: items.length >= TALLY_MIN ? items : [{ label: 'Kırmızı', count: 7 }, { label: 'Mavi', count: 5 }, { label: 'Yeşil', count: 9 }],
+      },
+    };
+  }
+  if (el.kind === 'numgrid') {
+    const { start, end } = normalizeNumGridRange(data.numGridStart, data.numGridEnd);
+    return {
+      ...el,
+      locked,
+      data: {
+        ...data,
+        numGridStart: start,
+        numGridEnd: end,
+        numGridHidden: normalizeNumGridHidden(data.numGridHidden, start, end),
+        numGridRule: normalizeNumGridRule(data.numGridRule),
+      },
+    };
+  }
+  if (el.kind === 'clock') {
+    return {
+      ...el,
+      locked,
+      data: {
+        ...data,
+        clockMode: normalizeClockMode(data.clockMode),
+        clockHour: normalizeClockHour(data.clockHour, 3),
+        clockMinute: normalizeClockMinute(data.clockMinute, 0),
+        clockTargetHour: normalizeClockHour(data.clockTargetHour, 3),
+        clockTargetMinute: normalizeClockMinute(data.clockTargetMinute, 30),
+        clockStep: normalizeClockStep(data.clockStep),
+        clockShowDigital: data.clockShowDigital !== false,
+        clockShowTurkish: data.clockShowTurkish === true,
+        clockReadInput: normalizeClockReadInput(data.clockReadInput),
       },
     };
   }
@@ -414,7 +640,7 @@ export type TextWrapLinesFn = (
   text: string,
   maxWidth: number,
   fontSize: number,
-  family?: 'sans' | 'hand' | 'display' | 'school',
+  family?: BoardFontFamily,
   weight?: number,
   italic?: boolean,
   letterSpacing?: number
@@ -924,6 +1150,10 @@ export async function renderBoardSvgToBlob(
     let usesPatrickHand = false;
     let usesFredoka = false;
     let usesAndika = false;
+    let usesLora = false;
+    let usesJetBrainsMono = false;
+    let usesCaveat = false;
+    let usesBaloo2 = false;
 
     for (const el of textElements) {
       const styleAttr = el.getAttribute('style') || '';
@@ -934,10 +1164,26 @@ export async function renderBoardSvgToBlob(
       if (family.includes('Patrick Hand')) usesPatrickHand = true;
       if (family.includes('Fredoka')) usesFredoka = true;
       if (family.includes('Andika')) usesAndika = true;
+      if (family.includes('Lora')) usesLora = true;
+      if (family.includes('JetBrains Mono')) usesJetBrainsMono = true;
+      if (family.includes('Caveat')) usesCaveat = true;
+      if (family.includes('Baloo 2')) usesBaloo2 = true;
     }
 
     // Web yazı tiplerini SVG içine göm
     const fontCssRules: string[] = [];
+    const embedDualFont = async (fontName: string, prefix: string) => {
+      const [regExt, regLat, boldExt, boldLat] = await Promise.all([
+        fetchFontDataUrl(`/fonts/${prefix}-latin-ext-400.woff2`),
+        fetchFontDataUrl(`/fonts/${prefix}-latin-400.woff2`),
+        fetchFontDataUrl(`/fonts/${prefix}-latin-ext-700.woff2`),
+        fetchFontDataUrl(`/fonts/${prefix}-latin-700.woff2`),
+      ]);
+      if (regExt) fontCssRules.push(`@font-face { font-family: '${fontName}'; font-style: normal; font-weight: 400; src: url(${regExt}) format('woff2'); }`);
+      if (regLat) fontCssRules.push(`@font-face { font-family: '${fontName}'; font-style: normal; font-weight: 400; src: url(${regLat}) format('woff2'); }`);
+      if (boldExt) fontCssRules.push(`@font-face { font-family: '${fontName}'; font-style: normal; font-weight: 700; src: url(${boldExt}) format('woff2'); }`);
+      if (boldLat) fontCssRules.push(`@font-face { font-family: '${fontName}'; font-style: normal; font-weight: 700; src: url(${boldLat}) format('woff2'); }`);
+    };
     if (usesPatrickHand) {
       const patrickData = await fetchFontDataUrl('/fonts/patrick-hand.woff2');
       if (patrickData) {
@@ -962,6 +1208,10 @@ export async function renderBoardSvgToBlob(
       if (regular) fontCssRules.push(`@font-face { font-family: 'Andika'; font-style: normal; font-weight: 400; src: url(${regular}) format('woff2'); }`);
       if (bold) fontCssRules.push(`@font-face { font-family: 'Andika'; font-style: normal; font-weight: 700; src: url(${bold}) format('woff2'); }`);
     }
+    if (usesLora) await embedDualFont('Lora', 'lora');
+    if (usesJetBrainsMono) await embedDualFont('JetBrains Mono', 'jetbrains-mono');
+    if (usesCaveat) await embedDualFont('Caveat', 'caveat');
+    if (usesBaloo2) await embedDualFont('Baloo 2', 'baloo2');
 
     // foreignObject varsa KaTeX CSS ve fontlarını göm
     const foreignObjects = Array.from(clone.querySelectorAll('foreignObject'));

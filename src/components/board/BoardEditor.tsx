@@ -2,23 +2,23 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Columns, Component,
-  Copy, Diamond, Dice, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, ListOrdered, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Ruler, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Sparkles, Spotlight, Square, Star, StickyNote, Tag, TextCursorInput, Trash2, TrendingUp, Triangle, Type, Unlock, Video, Wheel, X,
+  AlertCircle, ArrowLeft, ArrowRight, BarChart3, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Columns, Component,
+  Copy, Diamond, Dice, Download, Eraser, Grid3x3, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, ListOrdered, Maximize, Mic, Minimize, Minus, MousePointer,
+  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Ruler, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Sparkles, Spotlight, Square, Star, StickyNote, Tag, Tally5, TextCursorInput, Timer, Trash2, TrendingUp, Triangle, Type, Unlock, Video, Wheel, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
 import {
-  Background, BACKGROUND_LABEL, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl,
+  Background, BACKGROUND_LABEL, BOARD_FONT_OPTIONS, BOARD_H, BOARD_IMAGE_BUCKET, BOARD_IMAGE_TYPES, BOARD_W, BoardContent, BoardEl, BoardFontFamily,
   boardImageUrls, BoardPage, BoardRow, byteSize, cloneElements, copyImageToBoard, exportBoardPng, getBoard,
-  HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, mediaRefs, MAX_PAGES, newId, newPage, NoteEl, PolyEl, saveBoard, scaleElements,
+  HISTORY_LIMIT, imageKey, ImageEl, MAX_BOARD_BYTES, mediaRefs, MAX_PAGES, newId, newPage, normalizeTallyItems, NoteEl, PolyEl, saveBoard, scaleElements,
   ADDABLE_WIDGETS, StrokeEl, uploadBoardImage, WIDGET_LABEL, WIDGET_SIZE, WidgetEl, WidgetKind,
 } from '../../lib/boardData';
 import { listQuestions, QuestionRow } from '../../lib/quizData';
 import { listMyFiles, signedFileUrl, uploadTeacherFiles } from '../../lib/filesData';
 import { fileSlug } from '../../lib/reportData';
 import { BoardCanvas, DRAW_TOOLS, SHAPE_TOOLS, Tool, wrapTextLines } from './BoardCanvas';
-import { computeTextHeight, fitTextWidth, isDarkFill } from './textLayout';
+import { computeTextHeight, fitTextWidth, getFontFamily, isDarkFill } from './textLayout';
 import { clampZoom, MAX_ZOOM, MIN_ZOOM, translate, ZOOM_STEP } from './boardGeometry';
 import { alignElements, distributeElements, type AlignMode, type DistributeAxis } from './snapGuides';
 import { normalizeWholeTags } from './BoardFormatBars';
@@ -1182,16 +1182,18 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setSelectedIds(regenerated.map((el) => el.id));
   };
   /** Hazır metin türü: tahtanın ortasına eklenir ve yazmaya hazır açılır */
-  const addTextPreset = (kind: 'title' | 'subtitle' | 'body' | 'boxed' | 'note') => {
+  const addTextPreset = (kind: 'title' | 'subtitle' | 'body' | 'boxed' | 'note', fontFamily?: BoardFontFamily) => {
     if (!page) return;
     let el: NoteEl;
     if (kind === 'note') {
-      el = { id: newId(), type: 'note', x: Math.round((BOARD_W - 420) / 2), y: Math.round((BOARD_H - 240) / 2), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 32 };
+      el = { id: newId(), type: 'note', x: Math.round((BOARD_W - 420) / 2), y: Math.round((BOARD_H - 240) / 2), w: 420, h: 240, text: '', color: '#fff3b0', fontSize: 32, ...(fontFamily ? { fontFamily } : {}) };
     } else {
       const w = kind === 'title' ? 900 : 620;
+      const fontSize = kind === 'title' ? 72 : kind === 'subtitle' ? 42 : fontFamily ? 42 : 32;
       const base: NoteEl = {
         id: newId(), type: 'note', variant: 'text', x: Math.round((BOARD_W - w) / 2), y: 0, w, h: 0, text: '', color: 'transparent',
-        textColor: '#1f2a24', fontSize: kind === 'title' ? 72 : kind === 'subtitle' ? 42 : 32,
+        textColor: '#1f2a24', fontSize,
+        ...(fontFamily ? { fontFamily } : {}),
         ...(kind === 'title' || kind === 'subtitle' ? { fontWeight: 700 as const } : {}),
         ...(kind === 'boxed' ? { boxFill: '#fff3d6', boxBorder: '#f08c00', boxRadius: 12 as const } : {}),
         autoW: true,
@@ -1217,6 +1219,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       kind === 'label' ? { title: 'Görsel Etiketleme', labelPoints: [] } :
       kind === 'fraction' ? { title: 'Kesir Boyama', fractionShape: 'circle' as const, fractionParts: 4, fractionNum: 3, fractionDen: 4, showFraction: true } :
       kind === 'graph' ? { title: 'Fonksiyon Grafiği', graphExpr1: '2x+1', graphExpr2: '', graphXMin: -10, graphXMax: 10, graphYMin: -10, graphYMax: 10 } :
+      kind === 'bar' ? { title: 'Sütun Grafiği', barMode: 'show' as const, barOrientation: 'vertical' as const, barStep: 1 as const, barXAxis: '', barYAxis: '', barCategories: [{ label: 'Elma', value: 4 }, { label: 'Armut', value: 6 }, { label: 'Muz', value: 3 }], barQuestions: [{ prompt: 'En çok hangisi?', answer: 'Armut' }] } :
+      kind === 'tally' ? { title: 'Çetele Tablosu', tallyMode: 'show' as const, tallyItems: [{ label: 'Kırmızı', count: 7 }, { label: 'Mavi', count: 5 }, { label: 'Yeşil', count: 9 }] } :
+      kind === 'numgrid' ? { title: 'Sayı Tablosu', numGridStart: 1, numGridEnd: 100, numGridHidden: [], numGridRule: 'none' as const } :
+      kind === 'clock' ? { title: 'Saat', clockMode: 'free' as const, clockHour: 3, clockMinute: 0, clockTargetHour: 3, clockTargetMinute: 30, clockStep: 5 as const, clockShowDigital: true, clockShowTurkish: false, clockReadInput: 'box' as const } :
       kind === 'audio' ? { title: 'Sesli not' } :
       kind === 'video' ? { title: 'Video' } :
       kind === 'spinner' ? { title: 'Çark', slices: ['1', '2', '3', '4', '5', '6'], removeWinner: false } :
@@ -2105,6 +2111,33 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onConfigure={canConfigureSelected ? handleOpenConfigureSelected : undefined}
             onSaveToLibrary={canSaveToLibrary([selected]) ? () => handleOpenSaveModal([selected]) : undefined}
             onSaveImage={selected.type === 'image' && !imageInMyFiles(selected) ? () => saveImageToFiles(selected) : undefined}
+            onConvertTallyToBar={(tallyEl) => {
+              if (!page) return;
+              const items = normalizeTallyItems(tallyEl.data.tallyItems);
+              const cats = items.length >= 2 ? items.map((it) => ({ label: it.label, value: it.count })) : [{ label: 'Kırmızı', value: 7 }, { label: 'Mavi', value: 5 }, { label: 'Yeşil', value: 9 }];
+              const size = WIDGET_SIZE.bar;
+              const x = Math.min(BOARD_W - size.w - 20, tallyEl.x + tallyEl.w + 24);
+              const y = Math.min(BOARD_H - size.h - 20, Math.max(20, tallyEl.y));
+              const barEl: WidgetEl = {
+                id: newId(),
+                type: 'widget',
+                kind: 'bar',
+                x: Math.max(20, x),
+                y,
+                w: size.w,
+                h: size.h,
+                data: {
+                  title: tallyEl.data.title?.trim() || 'Sütun Grafiği',
+                  barMode: 'show',
+                  barOrientation: 'vertical',
+                  barStep: 1,
+                  barCategories: cats,
+                  barQuestions: [],
+                },
+              };
+              commitElements([...page.elements, barEl]);
+              setSelectedIds([barEl.id]);
+            }}
             busy={busy}
           />
         ) : selectedIds.length > 1 ? (
@@ -2408,6 +2441,22 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               <button type="button" className={`${styles.textPreset} ${styles.textPresetBoxed}`} onClick={() => addTextPreset('boxed')}><span style={{ fontSize: 15 }}>Kutulu metin ekle</span></button>
               <button type="button" className={`${styles.textPreset} ${styles.textPresetNote}`} onClick={() => addTextPreset('note')}><StickyNote size={16} aria-hidden="true" /><span style={{ fontSize: 15 }}>Yapışkan not ekle</span></button>
             </div>
+            <div className={styles.textFontSection}>
+              <span className={styles.textFontHeading}>Yazı tipleri</span>
+              <div className={styles.textFontGrid}>
+                {BOARD_FONT_OPTIONS.map((f) => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    className={styles.textFontBtn}
+                    onClick={() => addTextPreset('body', f.value)}
+                  >
+                    <span className={styles.textFontName} style={{ fontFamily: getFontFamily(f.value) }}>{f.label}</span>
+                    <span className={styles.textFontSample} style={{ fontFamily: getFontFamily(f.value) }}>{f.sample}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <p className={styles.hintText}>Seçtiğiniz tür tahtanın ortasına gelir ve yazmaya hazır açılır. Belirli bir yere yazmak için T tuşuna basıp tahtada o yere tıklayın. Biçim ayarları, yazı seçiliyken üst satırda açılır.</p>
           </div>
         )}
@@ -2442,7 +2491,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               {ADDABLE_WIDGETS.map((k) => (
                 <button key={k} type="button" className={styles.widgetItemBtn} onClick={() => addWidget(k)}>
                   <span className={styles.widgetItemIcon}>
-                    {k === 'timer' ? <Clock size={16} /> :
+                    {k === 'timer' ? <Timer size={16} /> :
                      k === 'minitest' ? <Component size={16} /> :
                      k === 'match' ? <Shuffle size={16} /> :
                      k === 'audio' ? <Mic size={16} /> :
@@ -2455,6 +2504,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                      k === 'label' ? <Tag size={16} /> :
                      k === 'fraction' ? <PieChart size={16} /> :
                      k === 'graph' ? <TrendingUp size={16} /> :
+                     k === 'bar' ? <BarChart3 size={16} /> :
+                     k === 'tally' ? <Tally5 size={16} /> :
+                     k === 'numgrid' ? <Grid3x3 size={16} /> :
+                     k === 'clock' ? <Clock size={16} /> :
                      <Layers size={16} />}
                   </span>
                   <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>

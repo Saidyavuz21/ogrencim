@@ -7,7 +7,7 @@ import {
   AlignBottom, AlignCenter, AlignLeft, AlignMiddle, AlignRight, AlignTop,
   Bold, DistributeH, DistributeV, Highlighter, Italic, Lock, Square, Underline,
 } from '../icons';
-import { BOARD_H, BOARD_W, BoardEl, NoteEl } from '../../lib/boardData';
+import { BOARD_FONT_OPTIONS, BOARD_H, BOARD_W, BoardEl, BoardFontFamily, NoteEl } from '../../lib/boardData';
 import { LIBRARY_ITEMS } from '../../lib/boardLibrary';
 import { MathPalette, insertMathTemplate } from '../math/MathPalette';
 import { applyEditToElement, toggleList, toggleTextList, wrapSelection } from '../math/richEditing';
@@ -161,13 +161,12 @@ export function FormatBar({
       <select
         className={styles.formatSelect}
         value={el.fontFamily || 'sans'}
-        onChange={(e) => onPatch({ fontFamily: e.target.value as 'sans' | 'hand' | 'display' | 'school' })}
+        onChange={(e) => onPatch({ fontFamily: e.target.value as BoardFontFamily })}
         aria-label="Yazı tipi"
       >
-        <option value="sans">Düz</option>
-        <option value="hand">El yazısı</option>
-        <option value="display">Başlık</option>
-        <option value="school">Okul</option>
+        {BOARD_FONT_OPTIONS.map((f) => (
+          <option key={f.value} value={f.value}>{f.label}</option>
+        ))}
       </select>
 
       {/* Boyut */}

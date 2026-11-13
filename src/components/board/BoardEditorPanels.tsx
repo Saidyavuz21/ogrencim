@@ -10,12 +10,13 @@ import {
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
-import { AUDIO_MAX_SECONDS, BLANKS_MAX_DISTRACTORS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, DICE_MAX, FRACTION_MAX_PARTS, FRACTION_MIN_PARTS, FractionShape, imageKey, MATCH_MAX_PAIRS, normalizeDiceCount, normalizeFractionParts, normalizeFractionShape, normalizeSlices, ORDER_MAX, ORDER_MIN, parseVideoUrl, SORT_MAX_GROUPS, SORT_MIN_GROUPS, SPINNER_MAX_SLICES, SPINNER_MIN_SLICES, SPINNER_SLICE_MAX_CHARS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
+import { AUDIO_MAX_SECONDS, BLANKS_MAX_DISTRACTORS, BOARD_FONT_OPTIONS, BOARD_IMAGE_TYPES, BoardEl, BoardFontFamily, boardImageUrls, DICE_MAX, FRACTION_MAX_PARTS, FRACTION_MIN_PARTS, FractionShape, imageKey, MATCH_MAX_PAIRS, normalizeDiceCount, normalizeFractionParts, normalizeFractionShape, normalizeSlices, ORDER_MAX, ORDER_MIN, parseVideoUrl, SORT_MAX_GROUPS, SORT_MIN_GROUPS, SPINNER_MAX_SLICES, SPINNER_MIN_SLICES, SPINNER_SLICE_MAX_CHARS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
 import type { AlignMode, DistributeAxis } from './snapGuides';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, QuestionRow } from '../../lib/quizData';
 import { getFontSizeOptions } from './BoardCanvas';
 import { ShapeLibraryPanel } from './ShapeLibraryPanel';
+import { BarChartEditor, ClockEditor, NumGridEditor, TallyEditor } from './DataWidgetEditors';
 import { LIBRARY_ITEMS, LibraryItem } from '../../lib/boardLibrary';
 import { SCHOOL_ITEMS } from '../../lib/boardLibrary/itemsSchool';
 import { MathPalette, insertMathTemplate } from '../math/MathPalette';
@@ -40,7 +41,7 @@ const BUILTIN_IMAGES: MediaItem[] = SCHOOL_ITEMS.map((item) => ({
 // --------------------------------------------------------
 // Seçili öğenin ayarları
 // --------------------------------------------------------
-export function SelectionPanel({ el, questions, minitests, boardImages, imageUrls, onPatch, onDelete, onOrder, onLock, onConfigure, onSaveToLibrary, onSaveImage, busy }: {
+export function SelectionPanel({ el, questions, minitests, boardImages, imageUrls, onPatch, onDelete, onOrder, onLock, onConfigure, onSaveToLibrary, onSaveImage, onConvertTallyToBar, busy }: {
   el: BoardEl;
   questions: QuestionRow[];
   minitests: WidgetEl[];
@@ -54,6 +55,7 @@ export function SelectionPanel({ el, questions, minitests, boardImages, imageUrl
   onSaveToLibrary?: () => void;
   /** Seçili resmi öğretmenin Dosyalarım alanına kopyalar */
   onSaveImage?: () => void;
+  onConvertTallyToBar?: (el: WidgetEl) => void;
   busy?: boolean;
 }) {
   const [mathStepIdx, setMathStepIdx] = useState<number | null>(null);
@@ -69,13 +71,8 @@ export function SelectionPanel({ el, questions, minitests, boardImages, imageUrl
           <label>Yazı tipi
             <CustomSelect
               value={el.fontFamily || 'sans'}
-              onChange={(v) => onPatch({ fontFamily: v as 'sans' | 'hand' | 'display' | 'school' })}
-              options={[
-                { value: 'sans', label: 'Düz' },
-                { value: 'hand', label: 'El yazısı' },
-                { value: 'display', label: 'Başlık' },
-                { value: 'school', label: 'Okul' },
-              ]}
+              onChange={(v) => onPatch({ fontFamily: v as BoardFontFamily })}
+              options={BOARD_FONT_OPTIONS.map((f) => ({ value: f.value, label: f.label }))}
             />
           </label>
 
@@ -652,6 +649,22 @@ export function SelectionPanel({ el, questions, minitests, boardImages, imageUrl
       {el.type === 'widget' && el.kind === 'graph' && (
         <GraphEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
       )}
+      {el.type === 'widget' && el.kind === 'bar' && (
+        <BarChartEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'tally' && (
+        <TallyEditor
+          data={el.data}
+          onChange={(data) => onPatch({ data } as Partial<BoardEl>)}
+          onConvertToBar={onConvertTallyToBar ? () => onConvertTallyToBar(el) : undefined}
+        />
+      )}
+      {el.type === 'widget' && el.kind === 'numgrid' && (
+        <NumGridEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'clock' && (
+        <ClockEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
       <div className={styles.pageTools}>
         {onConfigure && (
           <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
@@ -830,7 +843,21 @@ export function MediaDrawer({
   const [urls, setUrls] = useState<Record<string, string>>({});
   const sharedImages = items.library || [];
   const localImages = BUILTIN_IMAGES.filter((image) => !sharedImages.some((shared) => shared.name.replace(/\.png$/i, '') === image.name));
-  const list = isShapeSource ? null : source === 'library' ? [...localImages, ...sharedImages] : items[source];
+  const fullList = isShapeSource ? null : source === 'library' ? [...localImages, ...sharedImages] : items[source];
+  // Arama: görsel adında geçen metin (Türkçe büyük/küçük harf duyarsız, uzantı yok sayılır)
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLocaleLowerCase('tr-TR');
+  const list = fullList && q ? fullList.filter((m) => m.name.replace(/\.(png|jpe?g|webp|gif|svg)$/i, '').toLocaleLowerCase('tr-TR').includes(q)) : fullList;
+
+  // İlk 60 görselin adresi baştan alınır; aramada öne çıkan diğerlerinin küçük resimleri sonradan istenir
+  useEffect(() => {
+    if (!list) return;
+    const missing = list.filter((m) => !m.thumbnail && !m.shapeId && !urls[`${m.bucket}/${m.path}`]).slice(0, 60);
+    if (!missing.length) return;
+    let alive = true;
+    boardImageUrls(missing).then((u) => { if (alive) setUrls((prev) => ({ ...prev, ...u })); });
+    return () => { alive = false; };
+  }, [list, urls]);
 
   useEffect(() => {
     if (isShapeSource || items[source]) return;
@@ -884,7 +911,19 @@ export function MediaDrawer({
           onCopySchoolItem={onCopySchoolItem}
           schoolSharingEnabled={schoolSharingEnabled}
         />
-      ) : !list ? <Spinner label="Yükleniyor…" /> : list.length === 0 ? <p className={styles.saveState}>Burada resim yok.</p> : (
+      ) : (<>
+        {fullList && fullList.length > 0 && (
+          <input
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={source === 'library' ? 'Kütüphanede ara (ör. saat, harita)' : 'Dosyalarımda ara'}
+            aria-label={source === 'library' ? 'Kütüphanede görsel ara' : 'Dosyalarımda görsel ara'}
+          />
+        )}
+        {!list ? <Spinner label="Yükleniyor…" /> : list.length === 0 ? <p className={styles.saveState}>{q ? `“${query.trim()}” için görsel bulunamadı.` : 'Burada resim yok.'}</p> : (
         <div className={styles.mediaGrid}>
           {list.map((m) => (
             <button
@@ -909,7 +948,8 @@ export function MediaDrawer({
             </button>
           ))}
         </div>
-      )}
+        )}
+      </>)}
     </section>
   );
 }

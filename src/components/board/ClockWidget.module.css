@@ -1,0 +1,255 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55cqw;
+  height: 100%;
+  min-height: 0;
+  color: #1f2a24;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.67cqw;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.33cqw;
+  font-weight: 700;
+  color: #1f2a24;
+  line-height: 1.25;
+}
+
+.badge {
+  font-size: 1.05cqw;
+  font-weight: 600;
+  color: #3b4b43;
+  background: #f2efe7;
+  border-radius: 83.25cqw;
+  padding: 0.2cqw 0.8cqw;
+  white-space: nowrap;
+}
+
+.clockArea {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clockSvg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.clockSvg:focus-visible {
+  outline: 0.2cqw solid #25634b;
+  border-radius: 1cqw;
+}
+
+.handSelectRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5cqw;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.handBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4cqw;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.35cqw 0.85cqw;
+  border: 0.13cqw solid #d5d0c4;
+  border-radius: 83.25cqw;
+  background: #ffffff;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.08cqw;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.handBtn[aria-pressed='true'] {
+  border-color: #25634b;
+  background: #eaf3ec;
+  color: #1d4e3b;
+}
+
+.handDotHour,
+.handDotMin {
+  width: 0.85cqw;
+  height: 0.85cqw;
+  border-radius: 50%;
+}
+
+.handDotHour {
+  background: #1f2a24;
+}
+
+.handDotMin {
+  background: #25634b;
+}
+
+.readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2cqw;
+  flex-shrink: 0;
+}
+
+.digital {
+  font-size: 1.65cqw;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1f2a24;
+  font-variant-numeric: tabular-nums;
+}
+
+.turkish {
+  font-size: 1.12cqw;
+  font-weight: 600;
+  color: #4b5a52;
+}
+
+.targetBanner {
+  text-align: center;
+  padding: 0.4cqw 0.8cqw;
+  border-radius: 0.75cqw;
+  background: #f5f3ec;
+  border: 0.12cqw solid #dedad0;
+  font-size: 1.18cqw;
+  font-weight: 700;
+  color: #1f2a24;
+  flex-shrink: 0;
+}
+
+.readBoxRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45cqw;
+  flex-shrink: 0;
+}
+
+.timeInput {
+  width: 4.5cqw;
+  min-width: 0;
+  padding: 0.35cqw 0.4cqw;
+  border: 0.13cqw solid #c8c2b4;
+  border-radius: 0.65cqw;
+  background: #ffffff;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.35cqw;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeColon {
+  font-size: 1.4cqw;
+  font-weight: 700;
+}
+
+.choiceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45cqw;
+  flex-shrink: 0;
+}
+
+.choiceBtn {
+  min-width: 0;
+  min-height: 0;
+  padding: 0.45cqw 0.6cqw;
+  border: 0.13cqw solid #d5d0c4;
+  border-radius: 0.75cqw;
+  background: #ffffff;
+  color: #1f2a24;
+  font: inherit;
+  font-size: 1.25cqw;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.choiceBtn[aria-pressed='true'] {
+  border-color: #25634b;
+  background: #eaf3ec;
+  color: #1d4e3b;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5cqw;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.actionBtns {
+  display: flex;
+  align-items: center;
+  gap: 0.45cqw;
+}
+
+.primaryBtn,
+.ghostBtn {
+  min-height: 0;
+  min-width: 0;
+  padding: 0.42cqw 0.9cqw;
+  border-radius: 0.75cqw;
+  font: inherit;
+  font-size: 1.08cqw;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryBtn {
+  border: 0.13cqw solid #25634b;
+  background: #25634b;
+  color: #ffffff;
+}
+
+.primaryBtn:hover {
+  background: #1d4e3b;
+}
+
+.ghostBtn {
+  border: 0.13cqw solid #d5d0c4;
+  background: #ffffff;
+  color: #1f2a24;
+}
+
+.ghostBtn:hover {
+  background: #f4f2ec;
+}
+
+.feedbackOk {
+  font-size: 1.1cqw;
+  font-weight: 700;
+  color: #25634b;
+}
+
+.feedbackBad {
+  font-size: 1.1cqw;
+  font-weight: 700;
+  color: #b42318;
+}
+

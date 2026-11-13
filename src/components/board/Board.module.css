@@ -1536,29 +1536,32 @@
 .widgetsList {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-height: 280px;
+  gap: 8px;
+  max-height: 360px;
   overflow-y: auto;
 }
 
 .widgetItemBtn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
+  gap: 12px;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e7e4da;
+  border-radius: 10px;
+  background: #faf9f5;
   color: #2b3932;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
-  transition: background-color 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
 .widgetItemBtn:hover {
+  border-color: #b7cdbd;
   background: #eaf3ec;
   color: #25634b;
 }
@@ -1567,10 +1570,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: #f0f4ee;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #eaf3ec;
   color: #25634b;
 }
 
@@ -2942,8 +2946,10 @@
   min-width: 0;
 }
 
-.workSide .mediaGrid {
+.workSide .mediaGrid,
+.workSide .widgetsList {
   max-height: none;
+  overflow-y: visible;
 }
 
 .sideCard {
@@ -3219,6 +3225,74 @@
 .textPresetNote:hover {
   border-color: #d6c666;
   background: #ffee99;
+}
+
+.textFontSection {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #eceae2;
+}
+
+.textFontHeading {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5b6961;
+  letter-spacing: 0.01em;
+}
+
+.textFontGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.textFontBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #faf9f5;
+  color: #20352d;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.textFontBtn:hover {
+  border-color: #9ab8a5;
+  background: #eaf3ec;
+}
+
+.textFontBtn:focus-visible {
+  outline: 3px solid #25634b;
+  outline-offset: 2px;
+}
+
+.textFontName {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #1f2a24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.textFontSample {
+  font-size: 12px;
+  line-height: 1.25;
+  color: #5b6961;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .zoomGroup {

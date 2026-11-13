@@ -1255,3 +1255,31 @@ export const Ruler = createIcon('Ruler', (
     <path d="m17.5 15.5 2-2" />
   </>
 ));
+
+export const Tally5 = createIcon('Tally5', (
+  <>
+    <path d="M4 4v16" />
+    <path d="M9 4v16" />
+    <path d="M14 4v16" />
+    <path d="M19 4v16" />
+    <path d="M22 6 2 18" />
+  </>
+));
+
+export const Grid3x3 = createIcon('Grid3x3', (
+  <>
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <path d="M3 9h18" />
+    <path d="M3 15h18" />
+    <path d="M9 3v18" />
+    <path d="M15 3v18" />
+  </>
+));
+
+export const Timer = createIcon('Timer', (
+  <>
+    <line x1="10" x2="14" y1="2" y2="2" />
+    <line x1="12" x2="15" y1="14" y2="11" />
+    <circle cx="12" cy="14" r="8" />
+  </>
+));

@@ -9,6 +9,8 @@ import { answerQuiz, CHOICE_LETTERS, PRACTICE_TRIES, PracticeAnswerResult, Quest
 import { RichText } from '../math/RichText';
 import { DiceWidget, SpinnerWidget } from './ChanceWidgets';
 import { BlanksWidget, FractionWidget, LabelWidget, OrderWidget, SortWidget } from './ActivityWidgets';
+import { BarChartWidget, NumGridWidget, TallyWidget } from './DataWidgets';
+import { ClockWidget } from './ClockWidget';
 import { GraphWidget } from './GraphWidget';
 import styles from './Board.module.css';
 import videoStyles from './VideoWidget.module.css';
@@ -58,6 +60,10 @@ export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
   if (el.kind === 'label') return <LabelWidget el={el} mediaUrls={ctx.mediaUrls} />;
   if (el.kind === 'fraction') return <FractionWidget el={el} />;
   if (el.kind === 'graph') return <GraphWidget el={el} />;
+  if (el.kind === 'bar') return <BarChartWidget el={el} />;
+  if (el.kind === 'tally') return <TallyWidget el={el} />;
+  if (el.kind === 'numgrid') return <NumGridWidget el={el} />;
+  if (el.kind === 'clock') return <ClockWidget el={el} />;
   return <Timer el={el} />;
 }
 

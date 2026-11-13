@@ -117,7 +117,7 @@ export function LibraryPanel({ manage = false }: { manage?: boolean }) {
             <ul className={gallery ? layout.gallery : styles.list} aria-label="Kütüphane dosyaları">
               {displayed.map((i) => (
                 <li key={i.id} className={gallery ? layout.card : styles.row}>
-                  {gallery ? <button type="button" className={layout.preview} onClick={() => setPreviewing(i)} aria-label={`${i.title} görselini önizle`}><LibraryThumbnail item={i} /></button> : <KindIcon mime={i.mime} />}
+                  {gallery ? <button type="button" className={layout.preview} onClick={() => setPreviewing(i)} aria-label={`${i.title} görselini önizle`}><LibraryThumbnail item={i} /></button> : i.mime.startsWith('image/') ? <button type="button" className={layout.rowThumb} onClick={() => setPreviewing(i)} aria-label={`${i.title} görselini önizle`}><LibraryThumbnail item={i} /></button> : <KindIcon mime={i.mime} />}
                   <div className={`${styles.info} ${gallery ? layout.cardInfo : ''}`}>
                     <p className={styles.name}><button type="button" className={styles.nameButton} onClick={() => setPreviewing(i)} title={i.title}>{i.title}</button></p>
                     <div className={styles.meta}>

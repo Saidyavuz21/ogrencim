@@ -29,6 +29,8 @@ import {
 import { applyTagOrElement, FormatBar, MultiSelectBar } from './BoardFormatBars';
 import { bucketFill, isBucketFill } from './bucketFill';
 import { computeSnap, type AlignMode, type DistributeAxis, type GuideLine } from './snapGuides';
+import { recognizeShape } from './shapeRecognition';
+import { findActiveMeasureEdge, MeasureEdge, MeasureToolItem, MeasureToolsLayer, projectToEdge } from './measureTools';
 
 export { getFontFamily, wrapLines, wrapTextLines };
 export {
@@ -336,7 +338,7 @@ export const ElementView = React.memo(ElementViewImpl, (a, b) => (
 // Tuval
 // --------------------------------------------------------
 type Draft =
-  | { kind: 'stroke'; el: StrokeEl }
+  | { kind: 'stroke'; el: StrokeEl; edge?: MeasureEdge }
   | { kind: 'shape'; el: ShapeEl; /** Hazır çokgen çiziliyorsa türü; el sürüklenen kutuyu tutar */ poly?: PolyShape }
   | { kind: 'erase'; removed: Set<string> }
   | { kind: 'move'; ids: string[]; sx: number; sy: number; origs: BoardEl[]; clickHitId?: string; dragged?: boolean }
@@ -363,6 +365,10 @@ export interface BoardCanvasProps {
   zoomStyle?: React.CSSProperties;
   /** Boşluk tuşu basılıyken kaydırma kipi (tuval çizim/seçim başlatmaz) */
   panning?: boolean;
+  smartPen?: boolean;
+  measureTools?: MeasureToolItem[];
+  onMeasureToolsChange?: (tools: MeasureToolItem[]) => void;
+  onCloseMeasureTool?: (id: string) => void;
   selectedIds?: string[];
   onSelect?: (ids: string[]) => void;
   onDuplicate?: (ids: string[]) => void;
@@ -438,6 +444,10 @@ export function BoardCanvas(props: BoardCanvasProps) {
     onLayerFillCommit,
     zoomStyle,
     panning,
+    smartPen,
+    measureTools,
+    onMeasureToolsChange,
+    onCloseMeasureTool,
     selectedIds = [],
     onSelect,
     onDuplicate,
@@ -568,7 +578,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
     }
     if (t === 'pen' || t === 'highlighter') {
       const hl = t === 'highlighter';
-      draft.current = { kind: 'stroke', el: { id: newId(), type: 'stroke', points: [x, y], color, width: hl ? Math.max(18, width * 3) : width, highlighter: hl || undefined } };
+      const edge = measureTools?.length ? findActiveMeasureEdge(x, y, measureTools) : null;
+      const startPt = edge ? projectToEdge(x, y, edge) : { x, y };
+      draft.current = { kind: 'stroke', el: { id: newId(), type: 'stroke', points: [startPt.x, startPt.y], color, width: hl ? Math.max(18, width * 3) : width, highlighter: hl || undefined }, edge: edge || undefined };
       setPreview({ el: draft.current.el });
     } else if (t === 'eraser') {
       draft.current = { kind: 'erase', removed: new Set() };
@@ -754,7 +766,8 @@ export function BoardCanvas(props: BoardCanvasProps) {
       const pts = batch.length ? batch.map((ev) => toPoint(ev.clientX, ev.clientY)) : [{ x, y }];
       const p = d.el.points;
       let added = false;
-      for (const pt of pts) {
+      for (const rawPt of pts) {
+        const pt = d.edge ? projectToEdge(rawPt.x, rawPt.y, d.edge) : rawPt;
         if (Math.hypot(pt.x - p[p.length - 2], pt.y - p[p.length - 1]) < 1.5) continue;
         p.push(pt.x, pt.y);
         added = true;
@@ -847,9 +860,15 @@ export function BoardCanvas(props: BoardCanvasProps) {
     setPreview(null);
     setIsResizing(false);
     if (d.kind === 'stroke') {
-      const el = { ...d.el, points: simplifyPoints(d.el.points) };
-      if (drawingOnLayer) onLayerCommit?.([...layerStrokes, el]);
-      else onCommit?.([...elements, el]);
+      const pts = simplifyPoints(d.el.points);
+      const recognized = (smartPen && !drawingOnLayer && !d.el.highlighter) ? recognizeShape(pts, d.el.color, d.el.width, newId) : null;
+      if (recognized) {
+        onCommit?.([...elements, recognized]);
+      } else {
+        const el = { ...d.el, points: pts };
+        if (drawingOnLayer) onLayerCommit?.([...layerStrokes, el]);
+        else onCommit?.([...elements, el]);
+      }
     } else if (d.kind === 'erase') {
       if (!d.removed.size) return;
       if (drawingOnLayer) onLayerCommit?.(layerStrokes.filter((s) => !d.removed.has(s.id)));
@@ -1207,6 +1226,21 @@ export function BoardCanvas(props: BoardCanvasProps) {
             </div>
           ))}
         </div>
+      )}
+
+      {measureTools && measureTools.length > 0 && onMeasureToolsChange && onCloseMeasureTool && (
+        <MeasureToolsLayer
+          tools={measureTools}
+          onChange={onMeasureToolsChange}
+          onCloseTool={onCloseMeasureTool}
+          strokeColor={color}
+          strokeWidth={width}
+          onCommitCompassStroke={(points, c, w) => {
+            const stroke: StrokeEl = { id: newId(), type: 'stroke', points, color: c, width: w };
+            if (drawingOnLayer) onLayerCommit?.([...layerStrokes, stroke]);
+            else onCommit?.([...elements, stroke]);
+          }}
+        />
       )}
 
       {/* Widget katmanının üzerinde tutamak overlay'i */}

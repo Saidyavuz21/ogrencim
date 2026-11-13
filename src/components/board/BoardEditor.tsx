@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Columns, Component,
   Copy, Diamond, Dice, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, ListOrdered, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Spotlight, Square, Star, StickyNote, Tag, TextCursorInput, Trash2, Triangle, Type, Unlock, Video, Wheel, X,
+  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Ruler, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Sparkles, Spotlight, Square, Star, StickyNote, Tag, TextCursorInput, Trash2, TrendingUp, Triangle, Type, Unlock, Video, Wheel, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -24,6 +24,8 @@ import { alignElements, distributeElements, type AlignMode, type DistributeAxis 
 import { normalizeWholeTags } from './BoardFormatBars';
 import { WidgetContext, WidgetView } from './Widgets';
 import { PresentOverlay, PresentOverlayTool } from './PresentTools';
+import { createMeasureTool, MeasureToolItem, MeasureToolKind } from './measureTools';
+import { PdfImportModal } from './PdfImportModal';
 import {
   getLastUsedParams, getElementsBbox, instantiateItem, LIBRARY_ITEMS, LibraryCategory, LibraryItem, listMyLibraryItems,
   listSchoolLibraryItems, resolveParams, saveLibraryItem, setLastUsedParams, updateLibraryItem, deleteLibraryItem,
@@ -132,6 +134,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [spaceDown, setSpaceDown] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
+  const [smartPen, setSmartPen] = useState(false);
+  const [measureTools, setMeasureTools] = useState<MeasureToolItem[]>([]);
+  const [measureMenuOpen, setMeasureMenuOpen] = useState(false);
+  const [showPdfImport, setShowPdfImport] = useState(false);
   const stagePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchRef = useRef<{ dist: number; cx: number; cy: number; zoom: number; pan: { x: number; y: number } } | null>(null);
   const spacePanRef = useRef<{ sx: number; sy: number; px: number; py: number } | null>(null);
@@ -1210,6 +1216,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       kind === 'blanks' ? { title: 'Boşluk Doldurma', blanksText: 'Türkiye’nin başkenti [Ankara]’dır.', blanksDistractors: ['İstanbul'] } :
       kind === 'label' ? { title: 'Görsel Etiketleme', labelPoints: [] } :
       kind === 'fraction' ? { title: 'Kesir Boyama', fractionShape: 'circle' as const, fractionParts: 4, fractionNum: 3, fractionDen: 4, showFraction: true } :
+      kind === 'graph' ? { title: 'Fonksiyon Grafiği', graphExpr1: '2x+1', graphExpr2: '', graphXMin: -10, graphXMax: 10, graphYMin: -10, graphYMax: 10 } :
       kind === 'audio' ? { title: 'Sesli not' } :
       kind === 'video' ? { title: 'Video' } :
       kind === 'spinner' ? { title: 'Çark', slices: ['1', '2', '3', '4', '5', '6'], removeWinner: false } :
@@ -1545,6 +1552,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             onLayerFillCommit={(fills) => { setAnnotPast((p) => [...p.slice(-(HISTORY_LIMIT - 1)), { strokes: annot, fills: annotFills }]); setAnnotFills({ ...annotFills, [page.id]: fills }); }}
             zoomStyle={zoomStyle}
             panning={isPanning}
+            measureTools={measureTools}
+            onMeasureToolsChange={setMeasureTools}
+            onCloseMeasureTool={(id) => setMeasureTools((p) => p.filter((t) => t.id !== id))}
             imageUrls={imageUrls}
             renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
             ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (sunum)`}
@@ -1767,6 +1777,51 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             >
               <Spotlight size={19} aria-hidden="true" />
             </button>
+            <div className={styles.penButtonWrapper}>
+              <button
+                type="button"
+                className={`${styles.toolIconBtn} ${measureTools.length > 0 ? styles.toolActive : ''}`}
+                aria-pressed={measureMenuOpen}
+                onClick={() => {
+                  setPenMenuOpen(false);
+                  setMeasureMenuOpen((v) => !v);
+                }}
+                title="Ölçme araçları (Cetvel, Gönye, İletki, Pergel)"
+                aria-label="Ölçme araçları"
+              >
+                <Ruler size={19} aria-hidden="true" />
+              </button>
+              {measureMenuOpen && (
+                <div className={styles.presentPenPopover} role="dialog" aria-label="Ölçme araçları">
+                  <div className={styles.popoverSection}>
+                    <div className={styles.popoverLabel}>Ölçme Araçları</div>
+                    <div className={styles.penTypeGrid}>
+                      {(
+                        [
+                          ['ruler', 'Cetvel'],
+                          ['set45', 'Gönye 45°'],
+                          ['set3060', 'Gönye 30-60°'],
+                          ['protractor', 'İletki'],
+                          ['compass', 'Pergel'],
+                        ] as [MeasureToolKind, string][]
+                      ).map(([k, lbl]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          className={styles.penTypeBtn}
+                          onClick={() => {
+                            setMeasureTools((prev) => [...prev, createMeasureTool(k, newId())]);
+                            setMeasureMenuOpen(false);
+                          }}
+                        >
+                          <span>{lbl}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <span className={styles.presentSep} aria-hidden="true" />
@@ -2098,6 +2153,18 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                   </div>
                   <span>Doldur</span>
                 </button>
+                <button
+                  type="button"
+                  className={`${styles.brushCard} ${smartPen ? styles.brushActive : ''}`}
+                  aria-pressed={smartPen}
+                  onClick={() => { setSmartPen((v) => !v); if (!smartPen && tool !== 'pen') setTool('pen'); }}
+                  title="Akıllı kalem: çizilen düz çizgi, ok, üçgen, dikdörtgen ve daireyi otomatik düzeltir"
+                >
+                  <div className={styles.brushPreview} style={{ borderColor: smartPen ? '#1f5c41' : '#dedad0' }}>
+                    <Sparkles size={20} color={smartPen ? '#1f5c41' : 'currentColor'} />
+                  </div>
+                  <span>Akıllı kalem</span>
+                </button>
               </div>
             </div>
             {tool === 'eraser' ? (
@@ -2178,6 +2245,29 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 )}
               </>
             )}
+            <div className={styles.popoverSection} style={{ marginTop: 12 }}>
+              <span className={styles.popoverLabel}>Ölçme araçları</span>
+              <div className={styles.pageTools} style={{ flexWrap: 'wrap', gap: 6 }}>
+                {(
+                  [
+                    ['ruler', 'Cetvel'],
+                    ['set45', 'Gönye 45°'],
+                    ['set3060', 'Gönye 30-60°'],
+                    ['protractor', 'İletki'],
+                    ['compass', 'Pergel'],
+                  ] as [MeasureToolKind, string][]
+                ).map(([k, lbl]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className={styles.tool}
+                    onClick={() => setMeasureTools((prev) => [...prev, createMeasureTool(k, newId())])}
+                  >
+                    <Ruler size={15} aria-hidden="true" /> {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -2347,6 +2437,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                      k === 'blanks' ? <TextCursorInput size={16} /> :
                      k === 'label' ? <Tag size={16} /> :
                      k === 'fraction' ? <PieChart size={16} /> :
+                     k === 'graph' ? <TrendingUp size={16} /> :
                      <Layers size={16} />}
                   </span>
                   <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>
@@ -2416,6 +2507,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                 Tüm kilitleri aç ({page.elements.filter((el) => el.locked).length})
               </button>
             )}
+            <button
+              type="button"
+              className={styles.bgApplyAllBtn}
+              onClick={() => setShowPdfImport(true)}
+              style={{ marginTop: 8 }}
+            >
+              PDF’ten sayfa ekle
+            </button>
           </section>
         )}
       </aside>
@@ -2430,6 +2529,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           width={width}
           zoomStyle={zoomStyle}
           panning={(full && !presenting && spaceDown) || isPanning}
+          smartPen={smartPen}
+          measureTools={measureTools}
+          onMeasureToolsChange={setMeasureTools}
+          onCloseMeasureTool={(id) => setMeasureTools((p) => p.filter((t) => t.id !== id))}
           onNotice={setNotice}
           onCommit={commitElements}
           selectedIds={selectedIds}
@@ -2649,6 +2752,27 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           onClose={() => setEditModal(null)}
           busy={saveBusy}
           schoolSharingEnabled={false}
+        />
+      )}
+      {showPdfImport && content && (
+        <PdfImportModal
+          currentPageCount={content.pages.length}
+          onClose={() => setShowPdfImport(false)}
+          onImported={(newPages, urls) => {
+            const next: BoardContent = { ...content, pages: [...content.pages, ...newPages] };
+            if (byteSize(next) > MAX_BOARD_BYTES) {
+              setNotice('Tahta boyutu sınırına ulaşıldı, PDF sayfaları eklenemedi.');
+              setShowPdfImport(false);
+              return;
+            }
+            setImageUrls((prev) => ({ ...prev, ...urls }));
+            const firstNewIdx = content.pages.length;
+            apply(next);
+            setPageIndex(firstNewIdx);
+            setSelectedIds([]);
+            setShowPdfImport(false);
+            setNotice(`${newPages.length} PDF sayfası eklendi.`);
+          }}
         />
       )}
     </div>

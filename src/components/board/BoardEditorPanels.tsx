@@ -649,6 +649,9 @@ export function SelectionPanel({ el, questions, minitests, boardImages, imageUrl
       {el.type === 'widget' && el.kind === 'fraction' && (
         <FractionEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
       )}
+      {el.type === 'widget' && el.kind === 'graph' && (
+        <GraphEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
       <div className={styles.pageTools}>
         {onConfigure && (
           <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
@@ -1410,6 +1413,43 @@ function FractionEditor({ data, onChange }: { data: WidgetData; onChange: (data:
         />
         <span>Hedef kesri göster</span>
       </label>
+    </>
+  );
+}
+
+function GraphEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const xMin = data.graphXMin ?? -10;
+  const xMax = data.graphXMax ?? 10;
+  const yMin = data.graphYMin ?? -10;
+  const yMax = data.graphYMax ?? 10;
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Fonksiyon Grafiği" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <label>1. İfade f(x)
+        <input type="text" value={data.graphExpr1 ?? '2x+1'} placeholder="ör. 2x+1, x^2-3, sin(x)" maxLength={80} onChange={(e) => onChange({ ...data, graphExpr1: e.target.value })} />
+      </label>
+      <label>2. İfade g(x) (isteğe bağlı)
+        <input type="text" value={data.graphExpr2 ?? ''} placeholder="ör. -x+2" maxLength={80} onChange={(e) => onChange({ ...data, graphExpr2: e.target.value })} />
+      </label>
+      <div className={styles.stepEditRow}>
+        <label style={{ flex: 1 }}>X min
+          <input type="number" value={xMin} onChange={(e) => onChange({ ...data, graphXMin: Number(e.target.value) })} />
+        </label>
+        <label style={{ flex: 1 }}>X max
+          <input type="number" value={xMax} onChange={(e) => onChange({ ...data, graphXMax: Number(e.target.value) })} />
+        </label>
+      </div>
+      <div className={styles.stepEditRow}>
+        <label style={{ flex: 1 }}>Y min
+          <input type="number" value={yMin} onChange={(e) => onChange({ ...data, graphYMin: Number(e.target.value) })} />
+        </label>
+        <label style={{ flex: 1 }}>Y max
+          <input type="number" value={yMax} onChange={(e) => onChange({ ...data, graphYMax: Number(e.target.value) })} />
+        </label>
+      </div>
+      <p className={styles.hintText}>Desteklenenler: + − * / ^, parantez, sin, cos, tan, sqrt, abs, log, ln, pi, e.</p>
     </>
   );
 }

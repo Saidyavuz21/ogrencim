@@ -1,0 +1,39 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 18;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.toolBody {
+  pointer-events: auto;
+  cursor: move;
+  touch-action: none;
+}
+
+.handle {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.closeBtn {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.badgeText {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+

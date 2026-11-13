@@ -61,7 +61,7 @@ export interface NoteEl {
   locked?: boolean;
 }
 export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib; locked?: boolean }
-export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice' | 'order' | 'sort' | 'blanks' | 'label' | 'fraction';
+export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice' | 'order' | 'sort' | 'blanks' | 'label' | 'fraction' | 'graph';
 /** Eşleştirme etkinliği: soldaki öğe ↔ sağdaki eşi */
 export interface MatchPair { a: string; b: string }
 /** Gruplara ayırma etkinliği: grup başlığı ve ait maddeler */
@@ -119,6 +119,13 @@ export interface WidgetData {
   fractionNum?: number;
   fractionDen?: number;
   showFraction?: boolean;
+  /** Fonksiyon grafiği (graph) */
+  graphExpr1?: string;
+  graphExpr2?: string;
+  graphXMin?: number;
+  graphXMax?: number;
+  graphYMin?: number;
+  graphYMax?: number;
 }
 export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib; locked?: boolean }
 export interface PolyEl {
@@ -142,17 +149,18 @@ export const WIDGET_LABEL: Record<WidgetKind, string> = {
   minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme',
   audio: 'Sesli Not', video: 'Video', spinner: 'Çark', dice: 'Zar',
   order: 'Sıralama', sort: 'Gruplara Ayırma', blanks: 'Boşluk Doldurma', label: 'Görsel Etiketleme', fraction: 'Kesir Boyama',
+  graph: 'Fonksiyon Grafiği',
 };
 /** Parçalar listesinde eklenebilenler; "Cevabı Göster" artık Mini Test ayarı, eski tahtalarda çalışmaya devam eder */
 export const ADDABLE_WIDGETS: WidgetKind[] = [
-  'minitest', 'steps', 'timer', 'match', 'order', 'sort', 'blanks', 'label', 'fraction', 'audio', 'video', 'spinner', 'dice',
+  'minitest', 'steps', 'timer', 'match', 'order', 'sort', 'blanks', 'label', 'fraction', 'graph', 'audio', 'video', 'spinner', 'dice',
 ];
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
   match: { w: 860, h: 560 }, audio: { w: 460, h: 200 }, video: { w: 800, h: 520 },
   spinner: { w: 560, h: 680 }, dice: { w: 560, h: 340 },
   order: { w: 600, h: 540 }, sort: { w: 860, h: 560 }, blanks: { w: 720, h: 500 },
-  label: { w: 860, h: 580 }, fraction: { w: 540, h: 560 },
+  label: { w: 860, h: 580 }, fraction: { w: 540, h: 560 }, graph: { w: 680, h: 520 },
 };
 
 export const SPINNER_MIN_SLICES = 2;
@@ -244,6 +252,25 @@ function normalizeElement(el: BoardEl): BoardEl {
     const den = typeof data.fractionDen === 'number' && Number.isFinite(data.fractionDen) && data.fractionDen >= 1 ? Math.round(data.fractionDen) : parts;
     const num = typeof data.fractionNum === 'number' && Number.isFinite(data.fractionNum) && data.fractionNum >= 0 ? Math.min(den, Math.round(data.fractionNum)) : 1;
     return { ...el, locked, data: { ...data, fractionShape: normalizeFractionShape(data.fractionShape), fractionParts: parts, fractionNum: num, fractionDen: den, showFraction: data.showFraction !== false } };
+  }
+  if (el.kind === 'graph') {
+    const xMin = typeof data.graphXMin === 'number' && Number.isFinite(data.graphXMin) ? data.graphXMin : -10;
+    const xMax = typeof data.graphXMax === 'number' && Number.isFinite(data.graphXMax) && data.graphXMax > xMin ? data.graphXMax : xMin + 20;
+    const yMin = typeof data.graphYMin === 'number' && Number.isFinite(data.graphYMin) ? data.graphYMin : -10;
+    const yMax = typeof data.graphYMax === 'number' && Number.isFinite(data.graphYMax) && data.graphYMax > yMin ? data.graphYMax : yMin + 20;
+    return {
+      ...el,
+      locked,
+      data: {
+        ...data,
+        graphExpr1: typeof data.graphExpr1 === 'string' ? data.graphExpr1 : '2x+1',
+        graphExpr2: typeof data.graphExpr2 === 'string' ? data.graphExpr2 : '',
+        graphXMin: xMin,
+        graphXMax: xMax,
+        graphYMin: yMin,
+        graphYMax: yMax,
+      },
+    };
   }
   return el.locked !== undefined && el.locked !== true ? { ...el, locked: undefined } : el;
 }

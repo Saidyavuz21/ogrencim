@@ -59,6 +59,7 @@
   border-radius: 10px;
   background: #ffffff;
   touch-action: none;
+  -webkit-user-select: none;
   user-select: none;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
@@ -153,6 +154,7 @@
   font-weight: 600;
   cursor: grab;
   touch-action: none;
+  -webkit-user-select: none;
   user-select: none;
   display: inline-flex;
   align-items: center;
@@ -267,6 +269,7 @@
   max-height: 100%;
   object-fit: contain;
   display: block;
+  -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
 }
@@ -374,4 +377,3 @@
 .resultBad {
   color: #b42836;
 }
-

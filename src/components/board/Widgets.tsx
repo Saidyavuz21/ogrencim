@@ -9,6 +9,7 @@ import { answerQuiz, CHOICE_LETTERS, PRACTICE_TRIES, PracticeAnswerResult, Quest
 import { RichText } from '../math/RichText';
 import { DiceWidget, SpinnerWidget } from './ChanceWidgets';
 import { BlanksWidget, FractionWidget, LabelWidget, OrderWidget, SortWidget } from './ActivityWidgets';
+import { GraphWidget } from './GraphWidget';
 import styles from './Board.module.css';
 import videoStyles from './VideoWidget.module.css';
 
@@ -56,6 +57,7 @@ export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
   if (el.kind === 'blanks') return <BlanksWidget el={el} />;
   if (el.kind === 'label') return <LabelWidget el={el} mediaUrls={ctx.mediaUrls} />;
   if (el.kind === 'fraction') return <FractionWidget el={el} />;
+  if (el.kind === 'graph') return <GraphWidget el={el} />;
   return <Timer el={el} />;
 }
 

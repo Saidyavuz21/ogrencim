@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { WidgetEl } from '../../lib/boardData';
 import { compileMathExpr } from '../../lib/mathExpr';
 import styles from './ActivityWidgets.module.css';
+import bs from './Board.module.css';
 
 const SVG_W = 400;
 const SVG_H = 260;
@@ -109,7 +110,7 @@ export function GraphWidget({ el }: { el: WidgetEl }) {
   const probePy2 = Number.isFinite(p2y) ? SVG_H - ((p2y - yMin) / (yMax - yMin)) * SVG_H : null;
 
   return (
-    <div className={styles.wrap}>
+    <div className={`${bs.widget} ${styles.wrap}`}>
       <div className={styles.header}>
         <p className={styles.title}>{el.data.title?.trim() || 'Fonksiyon Grafiği'}</p>
         <div className={styles.actions}>

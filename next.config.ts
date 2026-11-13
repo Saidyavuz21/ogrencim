@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), geolocation=(), payment=(), usb=(), microphone=(self), fullscreen=(self)",
+            value: "camera=(), geolocation=(), payment=(), usb=(), microphone=(self), fullscreen=(self \"https://www.youtube-nocookie.com\")",
           },
         ],
       },

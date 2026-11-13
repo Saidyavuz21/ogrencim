@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
   Copy, Diamond, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type, X,
+  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type, Video, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -47,6 +47,7 @@ function widgetNeedsSetup(el: WidgetEl): boolean {
   if (el.kind === 'steps') return !(d.steps || []).some((x) => x.trim());
   if (el.kind === 'match') return !(d.pairs || []).some((x) => x.a.trim() || x.b.trim());
   if (el.kind === 'audio') return !d.audio;
+  if (el.kind === 'video') return !d.video;
   return false;
 }
 
@@ -1114,7 +1115,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
     const size = WIDGET_SIZE[kind];
-    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : kind === 'match' ? { title: 'Eşleştirme', pairs: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] } : kind === 'audio' ? { title: 'Sesli not' } : {} };
+    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : kind === 'match' ? { title: 'Eşleştirme', pairs: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] } : kind === 'audio' ? { title: 'Sesli not' } : kind === 'video' ? { title: 'Video' } : {} };
     commitElements([...page.elements, el]);
     setTool('select');
     setSelectedIds([el.id]);
@@ -1901,6 +1902,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                      k === 'minitest' ? <Component size={16} /> :
                      k === 'match' ? <Shuffle size={16} /> :
                      k === 'audio' ? <Mic size={16} /> :
+                     k === 'video' ? <Video size={16} /> :
                      <Layers size={16} />}
                   </span>
                   <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>

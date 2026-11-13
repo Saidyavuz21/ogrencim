@@ -895,6 +895,13 @@ export const Highlighter = createIcon('Highlighter', (
   </>
 ));
 
+export const Video = createIcon('Video', (
+  <>
+    <path d="m16 13 5.2 3.5a.5.5 0 0 0 .8-.4V7.9a.5.5 0 0 0-.8-.4L16 11" />
+    <rect x="2" y="6" width="14" height="12" rx="2" />
+  </>
+));
+
 export const PaintBucket = createIcon('PaintBucket', (
   <>
     <path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z" />

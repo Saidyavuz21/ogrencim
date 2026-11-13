@@ -4,10 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from '../icons';
 import { useDialog } from '../ConfirmDialog';
 import { playAlarm } from '../teacher/classtools/Countdown';
-import { imageKey, revealAnswer, WidgetEl } from '../../lib/boardData';
+import { imageKey, revealAnswer, videoEmbedUrl, WidgetEl } from '../../lib/boardData';
 import { answerQuiz, CHOICE_LETTERS, PRACTICE_TRIES, PracticeAnswerResult, QuestionRow, QuizStateItem } from '../../lib/quizData';
 import { RichText } from '../math/RichText';
 import styles from './Board.module.css';
+import videoStyles from './VideoWidget.module.css';
 
 /**
  * Parçaların çalıştığı bağlam:
@@ -45,6 +46,7 @@ export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
   if (el.kind === 'steps') return <Steps el={el} ctx={ctx} />;
   if (el.kind === 'match') return <Match el={el} />;
   if (el.kind === 'audio') return <AudioNote el={el} ctx={ctx} />;
+  if (el.kind === 'video') return <VideoWidget el={el} />;
   return <Timer el={el} />;
 }
 
@@ -617,6 +619,43 @@ function AudioNote({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
           />
         </div>
       ) : <p className={styles.widgetNote}>Ses yükleniyor…</p>}
+    </div>
+  );
+}
+
+// --------------------------------------------------------
+// Video (YouTube). Oynat'a basılana kadar YouTube'a hiç istek gitmez (çerezsiz alan, KVKK).
+// --------------------------------------------------------
+function VideoWidget({ el }: { el: WidgetEl }) {
+  const ref = el.data.video;
+  const [playing, setPlaying] = useState(false);
+  const title = el.data.title?.trim() || 'Video';
+  if (!ref) {
+    return <div className={styles.widget}><p className={styles.widgetTitle}>{title}</p><p className={styles.widgetNote}>Video eklenmedi. Parçayı seçip soldaki panele YouTube bağlantısını yapıştırın.</p></div>;
+  }
+  return (
+    <div className={`${styles.widget} ${videoStyles.video}`}>
+      <div className={videoStyles.head}>
+        <p className={styles.widgetTitle}>{title}</p>
+        {playing && <button type="button" className={videoStyles.close} onClick={() => setPlaying(false)}>Kapat</button>}
+      </div>
+      <div className={videoStyles.frame}>
+        {playing ? (
+          <iframe
+            src={videoEmbedUrl(ref)}
+            title={title}
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        ) : (
+          <button type="button" className={videoStyles.start} onClick={() => setPlaying(true)} aria-label={`${title}: oynat`}>
+            <span className={videoStyles.playIcon} aria-hidden="true"><Play size={24} /></span>
+            <span>Oynat</span>
+            <small>YouTube videosu{ref.start ? ` · ${Math.floor(ref.start / 60)}:${String(ref.start % 60).padStart(2, '0')}'dan başlar` : ''}</small>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

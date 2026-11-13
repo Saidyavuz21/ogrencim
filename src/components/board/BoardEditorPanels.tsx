@@ -10,7 +10,7 @@ import {
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
-import { AUDIO_MAX_SECONDS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, MATCH_MAX_PAIRS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
+import { AUDIO_MAX_SECONDS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, MATCH_MAX_PAIRS, parseVideoUrl, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, QuestionRow } from '../../lib/quizData';
 import { getFontSizeOptions } from './BoardCanvas';
@@ -621,6 +621,9 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
       {el.type === 'widget' && el.kind === 'audio' && (
         <AudioEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
       )}
+      {el.type === 'widget' && el.kind === 'video' && (
+        <VideoEditor key={el.id} data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
       <div className={styles.pageTools}>
         {onConfigure && (
           <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
@@ -971,6 +974,44 @@ function AudioEditor({ data, onChange }: { data: WidgetData; onChange: (data: Wi
       {busy && <p className={styles.hintText} role="status">Yükleniyor…</p>}
       {error && <p className={styles.limitWarnText} role="alert">{error}</p>}
       <p className={styles.hintText}>{recording ? `Kayıt sürüyor; ${fmt(AUDIO_MAX_SECONDS)} olunca kendiliğinden durur.` : data.audio ? 'Ses eklendi. Tahtada oynat düğmesiyle dinlenir.' : 'En çok 3 dakika ya da 5 MB. Ödeve gönderilince ses de öğrenciye gider.'}</p>
+    </>
+  );
+}
+
+function VideoEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const current = data.video ? `https://youtu.be/${data.video.id}${data.video.start ? `?t=${data.video.start}` : ''}` : '';
+  const [text, setText] = useState(current);
+  const [error, setError] = useState<string | null>(null);
+  const apply = (value: string) => {
+    if (!value.trim()) { setError(null); if (data.video) onChange({ ...data, video: undefined }); return; }
+    const v = parseVideoUrl(value);
+    if (!v) { setError('YouTube bağlantısı tanınmadı. Videonun adres çubuğundaki ya da Paylaş düğmesindeki bağlantıyı yapıştırın.'); return; }
+    setError(null);
+    if (v.id !== data.video?.id || v.start !== data.video?.start) onChange({ ...data, video: v });
+  };
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Video" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <label>YouTube bağlantısı
+        <input
+          type="url"
+          inputMode="url"
+          value={text}
+          placeholder="https://www.youtube.com/watch?v=…"
+          onChange={(e) => { setText(e.target.value); setError(null); }}
+          onBlur={(e) => apply(e.target.value)}
+          onPaste={(e) => { const v = e.clipboardData.getData('text'); if (v) { e.preventDefault(); setText(v.trim()); apply(v); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(e.currentTarget.value); } }}
+        />
+      </label>
+      {error && <p className={styles.limitWarnText} role="alert">{error}</p>}
+      <p className={styles.hintText}>
+        {data.video
+          ? 'Video eklendi. Tahtada Oynat düğmesiyle açılır; bağlantıda başlangıç süresi (?t=90) varsa oradan başlar.'
+          : 'Bağlantıyı yapıştırın. Video dosyası yüklenmez, kotanızdan yer harcamaz. Oynat düğmesine basılana kadar YouTube’a bağlanılmaz.'}
+      </p>
     </>
   );
 }

@@ -60,11 +60,13 @@ export interface NoteEl {
   lib?: ElementLib;
 }
 export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib }
-export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio';
+export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video';
 /** Eşleştirme etkinliği: soldaki öğe ↔ sağdaki eşi */
 export interface MatchPair { a: string; b: string }
 /** Sesli not dosyası (öğretmenin klasöründe ya da ödev alanında) */
 export interface AudioRef { bucket: string; path: string; seconds?: number }
+/** Video parçası: şimdilik yalnızca YouTube (dosya yüklenmez, kota harcamaz) */
+export interface VideoRef { provider: 'youtube'; id: string; start?: number }
 export interface WidgetData {
   /** Mini Test (öğretmenin tahtasında): bankadaki soru */
   questionId?: string;
@@ -84,6 +86,8 @@ export interface WidgetData {
   pairs?: MatchPair[];
   /** Sesli not */
   audio?: AudioRef;
+  /** Video */
+  video?: VideoRef;
 }
 export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib }
 export interface PolyEl {
@@ -102,13 +106,60 @@ export interface BoardContent { version: 1; pages: BoardPage[] }
 /** Öğrencinin çizim katmanı: sayfa kimliği → çizgiler */
 export type DrawingLayer = Record<string, StrokeEl[]>;
 
-export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme', audio: 'Sesli Not' };
+export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme', audio: 'Sesli Not', video: 'Video' };
 /** Parçalar listesinde eklenebilenler; "Cevabı Göster" artık Mini Test ayarı, eski tahtalarda çalışmaya devam eder */
-export const ADDABLE_WIDGETS: WidgetKind[] = ['minitest', 'steps', 'timer', 'match', 'audio'];
+export const ADDABLE_WIDGETS: WidgetKind[] = ['minitest', 'steps', 'timer', 'match', 'audio', 'video'];
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
-  match: { w: 860, h: 560 }, audio: { w: 460, h: 200 },
+  match: { w: 860, h: 560 }, audio: { w: 460, h: 200 }, video: { w: 800, h: 520 },
 };
+
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+
+/** "1m30s", "90", "1:30" → saniye */
+function parseStart(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const v = raw.trim();
+  let sec = 0;
+  if (/^\d+$/.test(v)) sec = Number(v);
+  else if (/^(\d+:)?\d{1,2}:\d{2}$/.test(v)) sec = v.split(':').reduce((a, x) => a * 60 + Number(x), 0);
+  else {
+    const m = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(v);
+    if (!m || !(m[1] || m[2] || m[3])) return undefined;
+    sec = Number(m[1] || 0) * 3600 + Number(m[2] || 0) * 60 + Number(m[3] || 0);
+  }
+  return sec > 0 && sec < 86400 ? sec : undefined;
+}
+
+/** YouTube bağlantısından video kimliği ve başlangıç saniyesi; tanınmazsa null */
+export function parseVideoUrl(input: string): VideoRef | null {
+  const raw = input.trim();
+  if (!raw) return null;
+  if (YT_ID.test(raw)) return { provider: 'youtube', id: raw };
+  let url: URL;
+  try { url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`); } catch { return null; }
+  const host = url.hostname.replace(/^(www\.|m\.|music\.)/, '').toLowerCase();
+  let id: string | null = null;
+  if (host === 'youtu.be') id = url.pathname.split('/')[1] || null;
+  else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+    if (url.pathname === '/watch') id = url.searchParams.get('v');
+    else {
+      const m = /^\/(?:embed|shorts|live|v)\/([^/?#]+)/.exec(url.pathname);
+      id = m ? m[1] : null;
+    }
+  }
+  if (!id || !YT_ID.test(id)) return null;
+  const start = parseStart(url.searchParams.get('t') || url.searchParams.get('start'));
+  return start ? { provider: 'youtube', id, start } : { provider: 'youtube', id };
+}
+
+/** Gömülü oynatıcı adresi: çerezsiz YouTube alanı, ilgili videolar yalnızca aynı kanaldan */
+export function videoEmbedUrl(v: VideoRef, autoplay = true): string {
+  const q = new URLSearchParams({ rel: '0', playsinline: '1', modestbranding: '1' });
+  if (autoplay) q.set('autoplay', '1');
+  if (v.start) q.set('start', String(Math.floor(v.start)));
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.id)}?${q.toString()}`;
+}
 export const MATCH_MAX_PAIRS = 8;
 export const AUDIO_MAX_SECONDS = 180;
 export const AUDIO_MAX_BYTES = 5 * 1024 * 1024;

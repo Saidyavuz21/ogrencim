@@ -36,7 +36,7 @@ export function SaveShapeModal({
 
   const [name, setName] = useState(initialName);
   const [category, setCategory] = useState<LibraryCategory>(initialCategory);
-  const [visibility, setVisibility] = useState<'private' | 'school' | 'branch' | 'branch'>('private');
+  const [visibility, setVisibility] = useState<'private' | 'school' | 'branch'>('private');
   const [error, setError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -68,7 +68,7 @@ export function SaveShapeModal({
     } catch (err) {
       const msg = (err as Error).message || 'Kaydedilirken bir hata oluştu.';
       setError(msg);
-      if (msg.includes('Okulunuz tanımlı olmadığı')) {
+      if (msg.includes('Okulunuz tanımlı olmadığı') || msg.includes('branş tanımlı olmadığı')) {
         setVisibility('private');
       }
     }
@@ -273,6 +273,31 @@ export function SaveShapeModal({
               {schoolSharingEnabled && (
                 <span style={{ fontSize: '12px', color: '#6b7280', paddingLeft: '24px', lineHeight: 1.35 }}>
                   Okulunuzdaki öğretmenler bu şekli görüp kendi tahtalarına ekleyebilir; değiştiremez.
+                </span>
+              )}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '13px',
+                  cursor: !schoolSharingEnabled || busy ? 'not-allowed' : 'pointer',
+                  opacity: !schoolSharingEnabled ? 0.55 : 1,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="branch"
+                  checked={visibility === 'branch'}
+                  disabled={!schoolSharingEnabled || busy}
+                  onChange={() => setVisibility('branch')}
+                />
+                <span>Zümremle paylaş</span>
+              </label>
+              {schoolSharingEnabled && (
+                <span style={{ fontSize: '12px', color: '#6b7280', paddingLeft: '24px', lineHeight: 1.35 }}>
+                  Yalnızca okulunuzda sizinle aynı branştaki öğretmenler görür.
                 </span>
               )}
             </div>

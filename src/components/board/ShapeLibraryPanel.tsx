@@ -289,7 +289,7 @@ export function ShapeLibraryPanel({
                 title={`${item.name} · Tıkla veya sürükleyerek ekle${isConfigurable ? ' (ayarlanabilir)' : ''}`}
               >
                 {/* Paylaşıldı rozeti */}
-                {isUserItem && item.visibility === 'school' && (
+                {isUserItem && (item.visibility === 'school' || item.visibility === 'branch') && (
                   <span
                     style={{
                       position: 'absolute',
@@ -302,9 +302,9 @@ export function ShapeLibraryPanel({
                       padding: '2px 6px',
                       borderRadius: '4px',
                     }}
-                    title="Okulunuzla paylaşıldı"
+                    title={item.visibility === 'branch' ? 'Zümrenizle paylaşıldı' : 'Okulunuzla paylaşıldı'}
                   >
-                    Paylaşıldı
+                    {item.visibility === 'branch' ? 'Zümre' : 'Paylaşıldı'}
                   </span>
                 )}
 
@@ -434,7 +434,7 @@ export function ShapeLibraryPanel({
                               onToggleSchoolShare(item);
                             }}
                           >
-                            {item.visibility === 'school' ? 'Paylaşımı kaldır' : 'Okulumla paylaş'}
+                            {item.visibility === 'school' || item.visibility === 'branch' ? 'Paylaşımı kaldır' : 'Okulumla paylaş'}
                           </button>
                         )}
                         <button
@@ -517,7 +517,7 @@ export function ShapeLibraryPanel({
                   {item.name}
                   {isSchoolItem && item.authorName && (
                     <span style={{ display: 'block', fontSize: '10px', color: '#6b7280', fontWeight: 400, marginTop: '2px' }}>
-                      · {item.authorName}
+                      · {item.authorName}{item.visibility === 'branch' ? ' · Zümre' : ''}
                     </span>
                   )}
                 </span>

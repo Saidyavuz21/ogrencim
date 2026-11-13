@@ -181,3 +181,49 @@ o sayfaya arka plan resmi gibi (ImageEl, kilitli) yerleştirilir.
 - Şifreli/bozuk PDF'te anlaşılır hata.
 İstem 3'teki kilit (locked) alanı bu işe bağlıdır; o yapılmış olmalı.
 ```
+
+---
+
+# Paket 9 – Veri ve sayı parçaları (13 Kasım 2026 eklendi)
+
+Not: Yeni parçalarda dış kapsayıcı `className={`${bs.widget} ${styles.wrap}`}` olmalı (`bs` = `./Board.module.css`).
+Aksi hâlde arkadaki yer tutucu başlık görünür ve iç boşluk kaybolur (Görsel Etiketleme ve Grafik'te bu hata düzeltildi).
+Ölçüler px değil cqw (tahta genişliğine göre); örnek: ActivityWidgets.module.css.
+
+## İstem 12 – Sütun grafiği
+
+```
+GÖREV: Etkinlik parçası (kind: 'bar'). Öğretmen başlık, 2–8 kategori (ad + değer), eksen adları ve ölçek adımını
+(1, 2, 5, 10) girer. Kipler:
+- "Göster": sütunlar hazır çizilir, değerler sütun üstünde yazar.
+- "Öğrenci çizsin": sütunlar boş başlar; öğrenci sütunun tepesini sürükleyerek (ya da sütuna dokunup +/− ile) yükseltir,
+  değer ölçek adımına yapışır. "Kontrol et" her sütunu doğru/yanlış gösterir.
+- "Öğrenci okusun": sütunlar çizili, altta "En çok hangisi?", "X ile Y farkı kaç?" gibi öğretmenin yazdığı 1–3 soru ve
+  cevap kutusu; "Kontrol et".
+Yatay/dikey seçeneği. Renkler palete uygun, kategoriler farklı renk. SVG ile çiz.
+```
+
+## İstem 13 – Çetele tablosu
+
+```
+GÖREV: Etkinlik parçası (kind: 'tally'). Tablo: Kategori | Çetele | Sayı. Öğretmen 2–8 kategori ve her birinin sayısını
+(0–30) girer. Çetele çizgileri 4 dik + 1 çapraz (5'li demet) olarak SVG ile çizilir. Kipler:
+- "Göster": çetele ve sayı dolu.
+- "Öğrenci çetele tutsun": öğrenci satırdaki "+" düğmesiyle çizgi ekler, "−" ile siler; Sayı sütununa sayıyı yazar.
+  "Kontrol et" hem çeteleyi hem sayıyı denetler.
+- "Öğrenci saysın": çetele dolu, Sayı sütunu boş; öğrenci yazar, "Kontrol et".
+İsteğe bağlı: "Sütun grafiğine çevir" düğmesi aynı verilerle yanına 'bar' parçası ekler (öğretmen düzenleyicisinde).
+```
+
+## İstem 14 – Sayı tablosu (yüzlük tablo)
+
+```
+GÖREV: Etkinlik parçası (kind: 'numgrid'). 10 sütunlu sayı tablosu; öğretmen başlangıç ve bitişi seçer
+(1–100 varsayılan; 0–99, 1–120, 101–200 gibi; en fazla 200 hücre).
+- Öğretmen hücreleri gizleyebilir (tıklayarak) ya da "Rastgele N hücre gizle" der; gizli hücreye öğrenci sayıyı yazar,
+  "Kontrol et".
+- Boyama: öğrenci hücrelere dokunarak 3 renkten biriyle boyar (ör. 2'şer ritmik sayma, çift/tek, 5'in katları).
+  Öğretmen isterse hedef kuralı seçer ("2'nin katlarını boya", "5'in katları", "10'un katları", "çift sayılar", "tek sayılar")
+  ve "Kontrol et" eksik/fazla boyananları gösterir.
+- "Temizle" düğmesi. Hücreler en az 44×44 px'e denk düşecek büyüklükte olmayabilir; bu parçada hücreye dokunmayı
+  kolaylaştırmak için tablo parça boyutunu doldursun ve parça varsayılan boyutu büyük olsun.

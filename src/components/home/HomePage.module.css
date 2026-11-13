@@ -48,6 +48,7 @@
 .pinGroup legend { padding: 0; margin-bottom: 9px; font-size: 14px; font-weight: 500; }
 .pinInputs { display: flex; gap: 12px; }
 .pinInputs input { width: 52px; height: 56px; padding: 0; text-align: center; font-size: 24px; }
+.captcha { margin-top: 18px; }
 .help { margin: 12px 0 22px; font-size: 12px; line-height: 1.6; color: #58665f; }
 .submit { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 52px; border: 0; border-radius: 10px; background: #25634b; color: #fff; font-size: 16px; font-weight: 600; }
 .submit:hover { background: #1d503d; }

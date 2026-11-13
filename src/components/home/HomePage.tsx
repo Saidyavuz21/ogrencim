@@ -135,7 +135,7 @@ export default function HomePage() {
                     document.getElementById(`home-pin-${Math.min(index + digits.length, 3)}`)?.focus();
                   }} />)}</div>
                 </fieldset>}
-                {captcha.widget}
+                {captcha.widget && <div className={styles.captcha}>{captcha.widget}</div>}
                 <p className={styles.help}>{role === 'Öğretmen' ? 'Öğretmen hesabınızla giriş yapabilirsiniz.' : 'Okul numaranızı ve PIN kodunuzu öğretmeninizden alabilirsiniz.'}</p>
                 <button className={styles.submit} type="submit">{isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'} <ArrowRight size={19} /></button>
               </fieldset>

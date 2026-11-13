@@ -406,8 +406,12 @@ düzenleyiciyle konur.
 - Düzenleyicide ikon seçiliyken ayar panelinde "İçeriği düzenle": açılır sayfa düzenleyicide açılır, üstte şerit
   "Açılır pencere: İpucu 1 · ← Tahtaya dön". İkon eklenince boş açılır sayfa otomatik oluşur. İkon silinince sayfası da silinir
   (onay penceresiyle; geri alınabilir). İkon kopyalanınca sayfası da kopyalanır.
-- Ders kipinde ve öğrenci görünümünde ikona dokununca modal: başlıkta tür ikonu + etiket, gövdede açılır sayfanın içeriği
-  sayfa oranında küçültülmüş çizilir ve içindeki parçalar etkileşimli çalışır; Kapat düğmesi, Esc, arka plana dokunma kapatır.
+- Pencere boyutu TAM EKRAN DEĞİLDİR: tahtanın üstünde ortalanmış pencere, arkadaki tahta yarı saydam örtüyle soluk görünür.
+  Ayarlarda boyut: Küçük (tahta genişliğinin %45'i), Orta (%65, varsayılan), Büyük (%85). Pencerenin oranı sabit 4:3 olsun;
+  açılır sayfanın düzenleyicide de yalnızca bu 4:3'lük alanı kullanılır (dışı soluk gösterilir), böylece öğretmen
+  pencerede ne görüneceğini düzenlerken görür.
+- Ders kipinde ve öğrenci görünümünde ikona dokununca modal: başlıkta tür ikonu + etiket, gövdede açılır sayfanın 4:3 alanı
+  pencere boyutuna ölçeklenmiş çizilir ve içindeki parçalar etkileşimli çalışır; Kapat düğmesi, Esc, arka plana dokunma kapatır.
   Odak modal içinde kalır, kapanınca ikona döner (useDialog/ConfirmDialog kalıbına bak).
 - Kütüphaneye kaydetme ve topluluk kopyalama: açılır sayfalar tahtayla birlikte taşınır; ikon tek başına kütüphaneye kaydedilemez.
 Bu iş büyük; önce veri modeli + düzenleme, sonra ders/öğrenci modalı olarak iki adımda yapıp her adımda tsc/eslint çalıştır.

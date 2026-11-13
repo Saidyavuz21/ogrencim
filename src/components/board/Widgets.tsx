@@ -7,6 +7,7 @@ import { playAlarm } from '../teacher/classtools/Countdown';
 import { imageKey, revealAnswer, videoEmbedUrl, WidgetEl } from '../../lib/boardData';
 import { answerQuiz, CHOICE_LETTERS, PRACTICE_TRIES, PracticeAnswerResult, QuestionRow, QuizStateItem } from '../../lib/quizData';
 import { RichText } from '../math/RichText';
+import { DiceWidget, SpinnerWidget } from './ChanceWidgets';
 import styles from './Board.module.css';
 import videoStyles from './VideoWidget.module.css';
 
@@ -47,6 +48,8 @@ export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
   if (el.kind === 'match') return <Match el={el} />;
   if (el.kind === 'audio') return <AudioNote el={el} ctx={ctx} />;
   if (el.kind === 'video') return <VideoWidget el={el} />;
+  if (el.kind === 'spinner') return <SpinnerWidget el={el} />;
+  if (el.kind === 'dice') return <DiceWidget el={el} />;
   return <Timer el={el} />;
 }
 

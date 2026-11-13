@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Diamond, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, Shapes, Shuffle, Sliders, Square, Star, StickyNote, Trash2, Triangle, Type, Video, X,
+  Copy, Diamond, Dice, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
+  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Spotlight, Square, Star, StickyNote, Trash2, Triangle, Type, Video, Wheel, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -22,6 +22,7 @@ import { computeTextHeight, fitTextWidth, isDarkFill } from './textLayout';
 import { translate } from './boardGeometry';
 import { normalizeWholeTags } from './BoardFormatBars';
 import { WidgetContext, WidgetView } from './Widgets';
+import { PresentOverlay, PresentOverlayTool } from './PresentTools';
 import {
   getLastUsedParams, getElementsBbox, instantiateItem, LIBRARY_ITEMS, LibraryCategory, LibraryItem, listMyLibraryItems,
   listSchoolLibraryItems, resolveParams, saveLibraryItem, setLastUsedParams, updateLibraryItem, deleteLibraryItem,
@@ -48,6 +49,7 @@ function widgetNeedsSetup(el: WidgetEl): boolean {
   if (el.kind === 'match') return !(d.pairs || []).some((x) => x.a.trim() || x.b.trim());
   if (el.kind === 'audio') return !d.audio;
   if (el.kind === 'video') return !d.video;
+  if (el.kind === 'spinner') return (d.slices || []).filter((x) => typeof x === 'string' && x.trim()).length < 2;
   return false;
 }
 
@@ -121,6 +123,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [presentWidth, setPresentWidth] = useState(5);
   const [penMenuOpen, setPenMenuOpen] = useState(false);
   const [presentPenType, setPresentPenType] = useState<'pen' | 'highlighter' | 'fine' | 'brush'>('pen');
+  const [presentOverlay, setPresentOverlay] = useState<PresentOverlayTool>(null);
   const penMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -575,6 +578,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     } else {
       setFull(false);
       setPresenting(false);
+      setPresentOverlay(null);
       wantFsRef.current = false;
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     }
@@ -638,15 +642,21 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       if (typing) return;
       // Sunum: sayfa ok tuşları, Page Up/Down, boşluk (akıllı tahta kumandaları da bunları gönderir)
       if (presenting) {
+        if (e.key === 'Escape') {
+          if (penMenuOpen) { setPenMenuOpen(false); return; }
+          if (presentOverlay) { setPresentOverlay(null); return; }
+          toggleFull();
+          return;
+        }
+        if (e.defaultPrevented) return;
         if (['ArrowRight', 'PageDown', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); advancePresentStepOrPage(); return; }
         if (['ArrowLeft', 'PageUp', 'ArrowUp'].includes(e.key)) { e.preventDefault(); revertPresentStepOrPage(); return; }
-        if (e.key === 'Escape') { toggleFull(); return; }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undoAnnot(); return; }
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         const k = e.key.toLowerCase();
-        if (k === 'p') setPresentTool('pen');
-        if (k === 'h') setPresentTool('highlighter');
-        if (k === 'e') setPresentTool('eraser');
+        if (k === 'p') { setPresentOverlay((cur) => (cur === 'laser' ? null : cur)); setPresentTool('pen'); }
+        if (k === 'h') { setPresentOverlay((cur) => (cur === 'laser' ? null : cur)); setPresentTool('highlighter'); }
+        if (k === 'e') { setPresentOverlay((cur) => (cur === 'laser' ? null : cur)); setPresentTool('eraser'); }
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
@@ -1130,7 +1140,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
     const size = WIDGET_SIZE[kind];
-    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : kind === 'match' ? { title: 'Eşleştirme', pairs: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] } : kind === 'audio' ? { title: 'Sesli not' } : kind === 'video' ? { title: 'Video' } : {} };
+    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : kind === 'match' ? { title: 'Eşleştirme', pairs: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] } : kind === 'audio' ? { title: 'Sesli not' } : kind === 'video' ? { title: 'Video' } : kind === 'spinner' ? { title: 'Çark', slices: ['1', '2', '3', '4', '5', '6'], removeWinner: false } : kind === 'dice' ? { title: 'Zar', dice: 2 } : {} };
     commitElements([...page.elements, el]);
     setTool('select');
     setSelectedIds([el.id]);
@@ -1203,6 +1213,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     setPanelAuto(false);
     setPanelOpen(false);
     if (toDers) setStepOpen({});
+    else setPresentOverlay(null);
     setPresenting(toDers);
   };
   // Hangi alanda olunduğu her zaman görünür: sol üstte iki parçalı seçim
@@ -1344,6 +1355,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             renderWidget={(w) => <WidgetView el={w} ctx={ctx} />}
             ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (sunum)`}
           />
+          <PresentOverlay tool={presentOverlay} />
           {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="status" onClick={() => setNotice(null)}>{notice}</p>}
         </div>
         <div className={styles.presentBar} role="toolbar" aria-label="Ders araçları">
@@ -1352,10 +1364,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             <div className={styles.penButtonWrapper} ref={penMenuRef}>
               <button
                 type="button"
-                className={`${styles.toolIconBtn} ${styles.presentPenBtn} ${presentTool !== 'eraser' ? styles.toolActive : ''}`}
-                aria-pressed={presentTool !== 'eraser'}
+                className={`${styles.toolIconBtn} ${styles.presentPenBtn} ${presentTool !== 'eraser' && presentOverlay !== 'laser' ? styles.toolActive : ''}`}
+                aria-pressed={presentTool !== 'eraser' && presentOverlay !== 'laser'}
                 onClick={() => {
-                  if (presentTool === 'eraser') {
+                  setPresentOverlay((cur) => (cur === 'laser' ? null : cur));
+                  if (presentTool === 'eraser' || presentOverlay === 'laser') {
                     setPresentTool(presentPenType === 'highlighter' ? 'highlighter' : 'pen');
                     setPenMenuOpen(true);
                   } else {
@@ -1490,9 +1503,10 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
             <button
               type="button"
-              className={`${styles.toolIconBtn} ${presentTool === 'eraser' ? styles.toolActive : ''}`}
-              aria-pressed={presentTool === 'eraser'}
+              className={`${styles.toolIconBtn} ${presentTool === 'eraser' && presentOverlay !== 'laser' ? styles.toolActive : ''}`}
+              aria-pressed={presentTool === 'eraser' && presentOverlay !== 'laser'}
               onClick={() => {
+                setPresentOverlay((cur) => (cur === 'laser' ? null : cur));
                 setPresentTool('eraser');
                 setPenMenuOpen(false);
               }}
@@ -1500,6 +1514,51 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               aria-label="Silgi"
             >
               <Eraser size={19} aria-hidden="true" />
+            </button>
+          </div>
+
+          <span className={styles.presentSep} aria-hidden="true" />
+
+          {/* Sunum Araçları Grubu: Lazer, Perde, Spot Işığı */}
+          <div className={styles.presentGroup}>
+            <button
+              type="button"
+              className={`${styles.toolIconBtn} ${presentOverlay === 'laser' ? styles.toolActive : ''}`}
+              aria-pressed={presentOverlay === 'laser'}
+              onClick={() => {
+                setPenMenuOpen(false);
+                setPresentOverlay((cur) => (cur === 'laser' ? null : 'laser'));
+              }}
+              title="Lazer işaretçi (Esc ile kapat)"
+              aria-label="Lazer işaretçi"
+            >
+              <LaserPointer size={19} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.toolIconBtn} ${presentOverlay === 'curtain' ? styles.toolActive : ''}`}
+              aria-pressed={presentOverlay === 'curtain'}
+              onClick={() => {
+                setPenMenuOpen(false);
+                setPresentOverlay((cur) => (cur === 'curtain' ? null : 'curtain'));
+              }}
+              title="Ekran perdesi (Esc ile kapat)"
+              aria-label="Ekran perdesi"
+            >
+              <ScreenCurtain size={19} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`${styles.toolIconBtn} ${presentOverlay === 'spotlight' ? styles.toolActive : ''}`}
+              aria-pressed={presentOverlay === 'spotlight'}
+              onClick={() => {
+                setPenMenuOpen(false);
+                setPresentOverlay((cur) => (cur === 'spotlight' ? null : 'spotlight'));
+              }}
+              title="Spot ışığı (Esc ile kapat)"
+              aria-label="Spot ışığı"
+            >
+              <Spotlight size={19} aria-hidden="true" />
             </button>
           </div>
 
@@ -2055,6 +2114,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                      k === 'match' ? <Shuffle size={16} /> :
                      k === 'audio' ? <Mic size={16} /> :
                      k === 'video' ? <Video size={16} /> :
+                     k === 'spinner' ? <Wheel size={16} /> :
+                     k === 'dice' ? <Dice size={16} /> :
                      <Layers size={16} />}
                   </span>
                   <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>

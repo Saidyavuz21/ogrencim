@@ -60,7 +60,7 @@ export interface NoteEl {
   lib?: ElementLib;
 }
 export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib }
-export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video';
+export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice';
 /** Eşleştirme etkinliği: soldaki öğe ↔ sağdaki eşi */
 export interface MatchPair { a: string; b: string }
 /** Sesli not dosyası (öğretmenin klasöründe ya da ödev alanında) */
@@ -88,6 +88,12 @@ export interface WidgetData {
   audio?: AudioRef;
   /** Video */
   video?: VideoRef;
+  /** Çark: 2–12 dilim (kısa metin) */
+  slices?: string[];
+  /** Çark: "Çıkanı kaldır" başlangıçta işaretli mi (yalnızca o oturum için gizler) */
+  removeWinner?: boolean;
+  /** Zar: 1–3 zar */
+  dice?: number;
 }
 export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib }
 export interface PolyEl {
@@ -106,13 +112,40 @@ export interface BoardContent { version: 1; pages: BoardPage[] }
 /** Öğrencinin çizim katmanı: sayfa kimliği → çizgiler */
 export type DrawingLayer = Record<string, StrokeEl[]>;
 
-export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme', audio: 'Sesli Not', video: 'Video' };
+export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme', audio: 'Sesli Not', video: 'Video', spinner: 'Çark', dice: 'Zar' };
 /** Parçalar listesinde eklenebilenler; "Cevabı Göster" artık Mini Test ayarı, eski tahtalarda çalışmaya devam eder */
-export const ADDABLE_WIDGETS: WidgetKind[] = ['minitest', 'steps', 'timer', 'match', 'audio', 'video'];
+export const ADDABLE_WIDGETS: WidgetKind[] = ['minitest', 'steps', 'timer', 'match', 'audio', 'video', 'spinner', 'dice'];
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
   match: { w: 860, h: 560 }, audio: { w: 460, h: 200 }, video: { w: 800, h: 520 },
+  spinner: { w: 560, h: 680 }, dice: { w: 560, h: 340 },
 };
+
+export const SPINNER_MIN_SLICES = 2;
+export const SPINNER_MAX_SLICES = 12;
+export const SPINNER_SLICE_MAX_CHARS = 40;
+export const DICE_MAX = 3;
+
+/** Çark dilimleri: metin dışı değerleri boş yapar, uzunluk ve sayıyı sınırlar (boşlar düzenlemede kalabilir) */
+export function normalizeSlices(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, SPINNER_MAX_SLICES).map((s) => (typeof s === 'string' ? s.slice(0, SPINNER_SLICE_MAX_CHARS) : ''));
+}
+
+/** Zar sayısı: 1–3, geçersizse 1 */
+export function normalizeDiceCount(raw: unknown): number {
+  const n = typeof raw === 'number' && Number.isFinite(raw) ? Math.round(raw) : 1;
+  return Math.max(1, Math.min(DICE_MAX, n));
+}
+
+/** Yeni parça türlerinin verisini güvenli biçime getirir; diğer öğelere dokunmaz */
+function normalizeElement(el: BoardEl): BoardEl {
+  if (!el || el.type !== 'widget') return el;
+  const data: WidgetData = el.data && typeof el.data === 'object' ? el.data : {};
+  if (el.kind === 'spinner') return { ...el, data: { ...data, slices: normalizeSlices(data.slices), removeWinner: data.removeWinner === true } };
+  if (el.kind === 'dice') return { ...el, data: { ...data, dice: normalizeDiceCount(data.dice) } };
+  return el;
+}
 
 const YT_ID = /^[A-Za-z0-9_-]{11}$/;
 
@@ -354,7 +387,7 @@ export function scaleElements(
 export function normalizeContent(raw: unknown): BoardContent {
   const c = raw as Partial<BoardContent> | null;
   const pages = Array.isArray(c?.pages) && c!.pages.length ? c!.pages : [newPage()];
-  return { version: 1, pages: pages.map((p) => ({ id: p.id || newId(), background: p.background || 'blank', backgroundColor: p.backgroundColor || '#ffffff', elements: Array.isArray(p.elements) ? p.elements : [] })) };
+  return { version: 1, pages: pages.map((p) => ({ id: p.id || newId(), background: p.background || 'blank', backgroundColor: p.backgroundColor || '#ffffff', elements: Array.isArray(p.elements) ? p.elements.map(normalizeElement) : [] })) };
 }
 
 /** Kalem izini sadeleştirir: yakın noktaları atar, tam sayıya yuvarlar (boyut sınırı için) */

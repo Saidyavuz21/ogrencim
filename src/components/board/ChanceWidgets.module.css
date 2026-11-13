@@ -1,0 +1,76 @@
+/* Tahta: Çark ve Zar parçaları. Ölçüler tahta genişliğine göre (cqw), diğer parçalarla aynı. */
+.spinner,
+.diceWidget { overflow: hidden; gap: 0.6cqw; }
+
+.head { display: flex; align-items: center; justify-content: space-between; gap: 0.6cqw; min-height: 2cqw; }
+.head p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Çark: dönen ve sabit (gösterge) iki katman aynı ölçüde üst üste */
+.wheelArea { position: relative; flex: 1; min-height: 0; }
+.wheel,
+.wheelStatic { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wheel { will-change: transform; }
+.wheel text { font-family: inherit; pointer-events: none; -webkit-user-select: none; user-select: none; }
+
+.result {
+  margin: 0;
+  min-height: 3.6cqw;
+  font-size: 3cqw;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  color: #20352d;
+  overflow-wrap: anywhere;
+}
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.7cqw; }
+.controls button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5cqw; align-self: center; min-width: 2.6cqw; }
+.controls button svg { width: 1.4cqw; height: 1.4cqw; flex-shrink: 0; }
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5cqw;
+  min-height: 2.6cqw;
+  padding: 0 0.4cqw;
+  font-size: 1.2cqw;
+  font-weight: 600;
+  color: #20352d;
+  cursor: pointer;
+}
+.check input { width: 1.5cqw; height: 1.5cqw; margin: 0; accent-color: #25634b; cursor: pointer; }
+.check input:focus-visible { outline: 0.25cqw solid #2a78d6; outline-offset: 0.15cqw; }
+
+/* Zar */
+.diceWidget { justify-content: center; }
+.diceRow { display: flex; flex: 1; min-height: 0; align-items: center; justify-content: center; gap: 2cqw; }
+.die {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.5cqw;
+  width: 9cqw;
+  height: 9cqw;
+  padding: 1.1cqw;
+  box-sizing: border-box;
+  border: 0.18cqw solid #20352d;
+  border-radius: 1.6cqw;
+  background: #fff;
+  box-shadow: 0 0.25cqw 0 #c9c5b8;
+}
+.pip,
+.pipEmpty { border-radius: 50%; }
+.pip { background: #20352d; }
+.dieRolling { animation: diceShake 0.16s linear infinite; }
+
+@keyframes diceShake {
+  0% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-9deg) translateY(-0.3cqw); }
+  50% { transform: rotate(0deg) translateY(0); }
+  75% { transform: rotate(9deg) translateY(-0.3cqw); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dieRolling { animation: none; }
+}

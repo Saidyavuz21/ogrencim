@@ -10,7 +10,7 @@ import {
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
-import { AUDIO_MAX_SECONDS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, MATCH_MAX_PAIRS, parseVideoUrl, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
+import { AUDIO_MAX_SECONDS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, DICE_MAX, MATCH_MAX_PAIRS, normalizeDiceCount, normalizeSlices, parseVideoUrl, SPINNER_MAX_SLICES, SPINNER_MIN_SLICES, SPINNER_SLICE_MAX_CHARS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, QuestionRow } from '../../lib/quizData';
 import { getFontSizeOptions } from './BoardCanvas';
@@ -624,6 +624,12 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
       {el.type === 'widget' && el.kind === 'video' && (
         <VideoEditor key={el.id} data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
       )}
+      {el.type === 'widget' && el.kind === 'spinner' && (
+        <SpinnerEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'dice' && (
+        <DiceEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
       <div className={styles.pageTools}>
         {onConfigure && (
           <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
@@ -887,6 +893,72 @@ function MatchEditor({ data, onChange }: { data: WidgetData; onChange: (data: Wi
         <button type="button" className={styles.addStepBtn} onClick={() => onChange({ ...data, pairs: [...pairs, { a: '', b: '' }] })} disabled={pairs.length >= MATCH_MAX_PAIRS}>+ Çift ekle</button>
         <p className={styles.hintText}>Öğrenciye sağdaki kartlar karışık gelir; sürükleyip (ya da dokunup) eşinin yanına bırakır. Formül için $…$ kullanılabilir.</p>
       </div>
+    </>
+  );
+}
+
+// --------------------------------------------------------
+// Çark dilimleri
+// --------------------------------------------------------
+function SpinnerEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const stored = normalizeSlices(data.slices);
+  const slices = stored.length >= SPINNER_MIN_SLICES ? stored : [...stored, ...Array(SPINNER_MIN_SLICES - stored.length).fill('')];
+  const set = (i: number, v: string) => onChange({ ...data, slices: slices.map((s, j) => (j === i ? v.slice(0, SPINNER_SLICE_MAX_CHARS) : s)) });
+  const ready = slices.filter((s) => s.trim()).length;
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Çark" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <div className={styles.stepEditorSection}>
+        <div className={styles.stepEditorHeaderRow}>
+          <span className={styles.stepEditorTitle}>Dilimler</span>
+          <span className={styles.stepStatsText}>{ready} hazır · en çok {SPINNER_MAX_SLICES}</span>
+        </div>
+        <div className={styles.stepEditorList}>
+          {slices.map((s, i) => (
+            <div key={i} className={styles.stepEditorRow}>
+              <div className={styles.stepRowHeader}>
+                <span className={styles.stepRowBadge}><b>{i + 1}.</b></span>
+                <div className={styles.stepRowActions}>
+                  <button type="button" className={`${styles.stepActionBtn} ${styles.stepDeleteBtn}`} onClick={() => onChange({ ...data, slices: slices.filter((_, j) => j !== i) })} disabled={slices.length <= SPINNER_MIN_SLICES} title="Sil" aria-label={`${i + 1}. dilimi sil`}>
+                    <Trash2 size={13} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+              <input type="text" value={s} placeholder="Ör. Ayşe ya da 5 puan" maxLength={SPINNER_SLICE_MAX_CHARS} onChange={(e) => set(i, e.target.value)} aria-label={`${i + 1}. dilim`} />
+            </div>
+          ))}
+        </div>
+        <button type="button" className={styles.addStepBtn} onClick={() => onChange({ ...data, slices: [...slices, ''] })} disabled={slices.length >= SPINNER_MAX_SLICES}>+ Dilim ekle</button>
+      </div>
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <input type="checkbox" checked={data.removeWinner === true} onChange={(e) => onChange({ ...data, removeWinner: e.target.checked })} />
+        <span>&quot;Çıkanı kaldır&quot; açık başlasın<span className={styles.saveState} style={{ display: 'block' }}>Çıkan dilim yalnızca o derste gizlenir; Sıfırla hepsini geri getirir. Tahtadaki dilimler silinmez.</span></span>
+      </label>
+    </>
+  );
+}
+
+// --------------------------------------------------------
+// Zar sayısı
+// --------------------------------------------------------
+function DiceEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const count = normalizeDiceCount(data.dice);
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Zar" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <fieldset className={styles.timeField}>
+        <legend>Zar sayısı</legend>
+        <div className={styles.pageTools}>
+          {Array.from({ length: DICE_MAX }, (_, i) => i + 1).map((n) => (
+            <button key={n} type="button" className={styles.tool} aria-pressed={count === n} onClick={() => onChange({ ...data, dice: n })}>{n} zar</button>
+          ))}
+        </div>
+        <p className={styles.hintText}>Birden çok zarda toplam da yazılır.</p>
+      </fieldset>
     </>
   );
 }

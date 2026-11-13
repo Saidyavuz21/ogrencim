@@ -902,6 +902,56 @@ export const Video = createIcon('Video', (
   </>
 ));
 
+/** Çark: dilimli daire ve üstte gösterge */
+export const Wheel = createIcon('Wheel', (
+  <>
+    <circle cx="12" cy="13" r="9" />
+    <path d="M12 13V4" />
+    <path d="m12 13 7.8 4.5" />
+    <path d="m12 13-7.8 4.5" />
+    <path d="m10 2 2 2.5L14 2Z" />
+  </>
+));
+
+/** Zar: köşeleri yuvarlak kare ve noktalar */
+export const Dice = createIcon('Dice', (
+  <>
+    <rect x="3" y="3" width="18" height="18" rx="3" />
+    <path d="M8 8h.01" />
+    <path d="M12 12h.01" />
+    <path d="M16 16h.01" />
+  </>
+));
+
+/** Lazer işaretçi: ışın ve parlayan uç */
+export const LaserPointer = createIcon('LaserPointer', (
+  <>
+    <path d="M4 20 14 10" />
+    <circle cx="16.5" cy="7.5" r="2" />
+    <path d="M16.5 2v1.5" />
+    <path d="M22 7.5h-1.5" />
+    <path d="m20.5 3.5-1 1" />
+  </>
+));
+
+/** Ekran perdesi: içerik gizleme örtüsü */
+export const ScreenCurtain = createIcon('ScreenCurtain', (
+  <>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M3 12h18" />
+    <path d="M9 8h6" />
+    <path d="m10 15.5 2 2 2-2" />
+  </>
+));
+
+/** Spot ışığı: odaklanan aydınlık çember */
+export const Spotlight = createIcon('Spotlight', (
+  <>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <circle cx="12" cy="12" r="4" />
+  </>
+));
+
 export const PaintBucket = createIcon('PaintBucket', (
   <>
     <path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z" />

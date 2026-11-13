@@ -2073,15 +2073,32 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             questions={questions}
             minitests={minitests}
             boardImages={Array.from(
-              new Map(
-                content.pages
+              new Map([
+                // Etiketleme parçasına taşınmış görsel tahtada artık yok; seçim listesinde görünmeye devam etsin
+                ...(selected.type === 'widget' && selected.kind === 'label' && selected.data.labelImage
+                  ? [[imageKey(selected.data.labelImage), selected.data.labelImage] as const]
+                  : []),
+                ...content.pages
                   .flatMap((p) => p.elements)
                   .filter((e): e is ImageEl => e.type === 'image')
-                  .map((e) => [imageKey(e), { bucket: e.bucket, path: e.path }])
-              ).values()
+                  .map((e) => [imageKey(e), { bucket: e.bucket, path: e.path }] as const),
+              ]).values()
             )}
             imageUrls={imageUrls}
-            onPatch={(patch) => patchElement(selected.id, patch)}
+            onPatch={(patch) => {
+              // Görsel Etiketleme: tahtadan seçilen görsel parçanın içine taşınır (sayfadaki kopyası kalkar; Geri al ile döner)
+              const nextImg = selected.type === 'widget' && selected.kind === 'label' ? (patch as Partial<WidgetEl>).data?.labelImage : undefined;
+              const prevImg = selected.type === 'widget' ? selected.data.labelImage : undefined;
+              if (page && nextImg && (!prevImg || imageKey(nextImg) !== imageKey(prevImg))) {
+                const key = imageKey(nextImg);
+                const onPage = page.elements.find((e) => e.type === 'image' && !e.locked && imageKey(e) === key);
+                if (onPage) {
+                  commitElements(page.elements.filter((e) => e.id !== onPage.id).map((e) => (e.id === selected.id ? ({ ...e, ...patch } as BoardEl) : e)));
+                  return;
+                }
+              }
+              patchElement(selected.id, patch);
+            }}
             onDelete={() => deleteSelected([selected.id])}
             onOrder={(dir) => reorderElements(dir, [selected.id])}
             onLock={() => lockElements([selected.id])}

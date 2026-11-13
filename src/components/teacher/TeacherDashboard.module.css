@@ -947,9 +947,9 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: var(--teacher-selected);
-  color: var(--teacher-primary);
+  border-radius: 10px;
+  background: var(--tone-bg, var(--teacher-selected));
+  color: var(--tone-fg, var(--teacher-primary));
 }
 
 .accountAvatar {
@@ -1276,9 +1276,9 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: var(--teacher-selected);
-  color: var(--teacher-primary);
+  border-radius: 10px;
+  background: var(--tone-bg, var(--teacher-selected));
+  color: var(--tone-fg, var(--teacher-primary));
 }
 
 .pageCardText {
@@ -1513,9 +1513,9 @@
 .countPill {
   min-width: 28px;
   padding: 2px 8px;
-  border-radius: 12px;
-  background: var(--teacher-selected);
-  color: var(--teacher-primary);
+  border-radius: 10px;
+  background: var(--tone-bg, var(--teacher-selected));
+  color: var(--tone-fg, var(--teacher-primary));
   font-size: 14px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -2652,10 +2652,11 @@
 }
 .sidebarGroup { display: grid; gap: 4px; margin-top: 16px; }
 .sidebarGroup h2 { margin: 0 0 4px 8px; font-size: 13px; font-weight: 600; color: var(--teacher-muted); }
-.sidebarItem { text-decoration: none; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 10px 12px; border: 0; border-radius: 12px; background: transparent; color: var(--teacher-text); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
-.sidebarItem:hover { background: #f0f4ee; }
-.sidebarItem[aria-current='page'] { background: var(--teacher-selected); color: var(--teacher-primary); font-weight: 600; }
-.sidebarItem svg { flex-shrink: 0; color: var(--teacher-primary); }
+.sidebarItemIcon { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px; background: var(--tone-bg, var(--teacher-selected)); color: var(--tone-fg, var(--teacher-primary)); }
+.sidebarItem { text-decoration: none; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--teacher-text); font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
+.sidebarItem:hover { background: #f5f4ef; }
+.sidebarItem[aria-current='page'] { background: var(--tone-bg, var(--teacher-selected)); border-color: var(--tone-border, #b8d3c3); color: var(--teacher-text); font-weight: 600; }
+.sidebarItem svg { flex-shrink: 0; color: currentColor; }
 .sidebarBadge { margin-left: auto; min-width: 24px; height: 24px; padding: 0 8px; display: grid; place-items: center; border-radius: 12px; background: #a33342; color: white; font-size: 13px; font-weight: 600; }
 .sidebar :is(button):focus-visible, .topBar .menuButton:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .sidebar, .sidebarBackdrop { transition: none; } }
@@ -2734,24 +2735,23 @@
   .homeActionRow > svg { flex-shrink: 0; color: var(--teacher-primary); }
   .homeActionRow strong { display: block; font-size: 17px; font-weight: 600; }
   .homeActionRow small { display: block; margin-top: 5px; color: var(--teacher-muted); font-size: 13px; line-height: 1.5; }
-  .homeActionIcon { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: var(--teacher-selected); color: var(--teacher-primary); }
+  .homeActionIcon { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; border-radius: 10px; background: var(--tone-bg, var(--teacher-selected)); color: var(--tone-fg, var(--teacher-primary)); }
   .homeToolGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; margin-top: 24px; }
   .homeToolGrid button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 120px; padding: 12px 4px; border: 0; border-radius: 12px; background: transparent; color: var(--teacher-text); font-size: 14px; cursor: pointer; }
   .homeToolGrid button { position: relative; }
   .homeToolGrid button:nth-child(odd)::after { content: ''; position: absolute; top: 12px; bottom: 12px; right: -6px; width: 1px; background: var(--teacher-border); pointer-events: none; }
   .homeToolGrid button:nth-child(-n+2)::before { content: ''; position: absolute; left: 12px; right: 12px; bottom: -8px; height: 1px; background: var(--teacher-border); pointer-events: none; }
-  .homeToolIcon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #edf2e8; color: var(--teacher-primary); }
-  .homeToolGrid button:nth-child(2) .homeToolIcon { background: #fbf3df; }
-  .homeToolGrid button:nth-child(4) .homeToolIcon { background: #eee8f6; color: #69518a; }
+  .homeToolIcon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--tone-bg, #e6f0ea); color: var(--tone-fg, #25634b); }
   .homeShortcutGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 24px; }
-  .homeShortcutGrid a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 96px; padding: 12px 8px; border-right: 1px solid #eeece5; border-radius: 6px; color: var(--teacher-text); font-size: 14px; text-align: center; text-decoration: none; }
+  .homeShortcutGrid a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 96px; padding: 12px 8px; border-right: 1px solid #eeece5; border-radius: 6px; color: var(--teacher-text); font-size: 14px; text-align: center; text-decoration: none; }
   .homeShortcutGrid a:last-child { border-right: 0; }
-  .homeShortcutGrid svg { color: var(--teacher-primary); stroke-width: 1.75; }
+  .homeShortcutIcon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: var(--tone-bg, var(--teacher-selected)); color: var(--tone-fg, var(--teacher-primary)); }
   .homeManagementList { margin-top: 18px; }
   .homeManagementList a { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 4px; border-bottom: 1px solid #eeece5; border-radius: 6px; color: var(--teacher-text); font-size: 15px; text-decoration: none; }
+  .homeManagementIcon { display: grid; place-items: center; flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; background: var(--tone-bg, var(--teacher-selected)); color: var(--tone-fg, var(--teacher-primary)); }
   .homeManagementList a:last-child { border-bottom: 0; }
-  .homeManagementList a span { flex: 1; }
-  .homeActionRow:hover, .homeToolGrid button:hover, .homeShortcutGrid a:hover, .homeManagementList a:hover { background: #f5f7f2; }
+  .homeManagementList a span:nth-child(2) { flex: 1; }
+  .homeActionRow:hover, .homeToolGrid button:hover, .homeShortcutGrid a:hover, .homeManagementList a:hover { background: #f5f4ef; }
   .desktopHome a:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 3px; }
 }
 @media (max-width: 1023px) {
@@ -2827,10 +2827,10 @@
   .sidebar .sidebarClose { width: 44px; height: 44px; border-radius: 10px; background: #f4f5f1; color: var(--teacher-muted); }
   .sidebar .sidebarClose:hover { background: var(--teacher-selected); color: var(--teacher-primary); }
   .sidebar .sidebarNav { min-height: 0; padding: 12px 12px 20px; gap: 4px; overscroll-behavior: contain; }
-  .sidebar .sidebarItem { min-height: 48px; padding: 12px; gap: 12px; border-radius: 10px; font-size: 15px; font-weight: 400; line-height: 1.4; }
-  .sidebar .sidebarItem svg { width: 20px; height: 20px; stroke-width: 1.75; color: var(--teacher-muted); }
-  .sidebar .sidebarItem[aria-current='page'] { background: var(--teacher-selected); color: var(--teacher-primary); font-weight: 600; }
-  .sidebar .sidebarItem[aria-current='page'] svg { color: var(--teacher-primary); }
+  .sidebar .sidebarItem { min-height: 48px; padding: 10px 12px; gap: 12px; border: 1px solid transparent; border-radius: 10px; font-size: 15px; font-weight: 400; line-height: 1.4; }
+  .sidebar .sidebarItem svg { width: 18px; height: 18px; stroke-width: 1.75; color: currentColor; }
+  .sidebar .sidebarItem[aria-current='page'] { background: var(--tone-bg, var(--teacher-selected)); border-color: var(--tone-border, #b8d3c3); color: var(--teacher-text); font-weight: 600; }
+  .sidebar .sidebarItem[aria-current='page'] svg { color: currentColor; }
   .sidebar .sidebarGroup { gap: 4px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eeece5; }
   .sidebar .sidebarGroup h2 { margin: 0 12px 4px; font-size: 12px; font-weight: 500; line-height: 1.5; color: var(--teacher-muted); }
   .sidebar .sidebarBadge { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; }
@@ -2876,48 +2876,59 @@
 }
 
 @media (min-width: 1024px) {
-  .dashboardShell { grid-template-columns: 264px minmax(0, 1fr); column-gap: 0; row-gap: 20px; }
+  .dashboardShell { grid-template-columns: 104px minmax(0, 1fr); column-gap: 0; row-gap: 20px; }
   .dashboardShell.dashboardSidebarCollapsed { grid-template-columns: 104px minmax(0, 1fr); }
   .dashboardShell > .sidebar {
     position: sticky;
     top: 20px;
     align-self: start;
+    width: 78px;
     min-height: 0;
-    height: calc(100dvh - 144px);
+    height: auto;
     max-height: calc(100dvh - 40px);
-    margin: 0 0 24px 24px;
-    padding: 10px 0 0;
-    border: 1px solid var(--teacher-border);
-    border-radius: 18px;
-    overflow: hidden;
+    margin: 0 0 24px 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
   }
   .dashboardShell > .sidebar .sidebarHead { display: none; }
   .dashboardShell > .sidebar .sidebarNav {
     position: static;
     min-height: 0;
     max-height: none;
-    padding: 0 10px 10px;
-    gap: 2px;
+    padding: 0;
+    gap: 10px;
+    justify-items: center;
     overscroll-behavior: contain;
   }
-  .sidebar .sidebarItem { position: relative; min-height: 42px; padding: 9px 10px; gap: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; font-weight: 400; }
-  .sidebar .sidebarItem svg { width: 19px; height: 19px; stroke-width: 1.75; color: var(--teacher-muted); }
-  .sidebar .sidebarItem[aria-current='page'] { color: var(--teacher-primary); background: var(--teacher-selected); font-weight: 600; }
-  .sidebar .sidebarItem[aria-current='page'] svg { color: var(--teacher-primary); }
-  .sidebarGroup { margin-top: 12px; gap: 2px; padding-top: 10px; border-top: 1px solid #eeece5; }
-  .sidebarGroup h2 { margin: 0 10px 4px; color: var(--teacher-muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
-  .sidebar .sidebarHeaderGroup { display: none; }
-  .sidebarFooter { display: block; flex-shrink: 0; margin: 0 10px; padding: 8px 0; border-top: 1px solid var(--teacher-border); }
-  .sidebarCollapse { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 10px; color: var(--teacher-muted); background: transparent; font-size: 13px; text-align: left; cursor: pointer; }
-  .sidebarCollapse:hover { background: var(--teacher-selected); color: var(--teacher-primary); }
-  .dashboardSidebarCollapsed .sidebar .sidebarNav { padding: 0 8px 8px; }
-  .dashboardSidebarCollapsed .sidebarItem { justify-content: center; padding: 10px 0; }
-  .dashboardSidebarCollapsed .sidebarItem > span:not(.sidebarBadge),
-  .dashboardSidebarCollapsed .sidebarGroup h2,
-  .dashboardSidebarCollapsed .sidebarCollapse > span { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .dashboardSidebarCollapsed .sidebarGroup { margin-top: 8px; padding-top: 8px; }
-  .dashboardSidebarCollapsed .sidebarCollapse { justify-content: center; padding: 8px 0; }
-  .dashboardSidebarCollapsed .sidebarBadge { position: absolute; right: 0; top: 0; min-width: 16px; height: 16px; padding: 0 3px; font-size: 10px; }
+  .sidebarRailCard { display: grid; gap: 4px; width: 100%; padding: 6px; border: 1px solid var(--teacher-border); border-radius: 20px; background: var(--teacher-surface); justify-items: stretch; box-sizing: border-box; }
+  .sidebarRailCard .sidebarItemIcon { width: 38px; height: 38px; border-radius: 10px; }
+  .sidebar .sidebarItem { position: relative; display: grid; justify-items: center; align-content: center; gap: 4px; width: 100%; min-height: 62px; padding: 6px 2px; border: 1px solid transparent; border-radius: 14px; font-size: 11px; font-weight: 600; line-height: 1.15; color: var(--teacher-text); text-align: center; white-space: nowrap; }
+  .sidebar .sidebarItem svg, .sidebarRailBtn svg { width: 22px; height: 22px; stroke-width: 1.75; color: currentColor; }
+  .sidebar .sidebarItem:hover { background: #f5f4ef; color: var(--teacher-text); }
+  .sidebar .sidebarItem[aria-current='page'] { color: var(--teacher-text); background: var(--tone-bg, var(--teacher-selected)); border-color: var(--tone-border, #b8d3c3); }
+  .sidebarRailGroups { display: grid; gap: 4px; justify-items: stretch; }
+  .sidebarRailBtn { position: relative; display: grid; justify-items: center; align-content: center; gap: 4px; width: 100%; min-height: 62px; padding: 6px 2px; border: 1px solid transparent; border-radius: 14px; background: transparent; color: var(--teacher-text); font-size: 11px; font-weight: 600; line-height: 1.15; white-space: nowrap; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease; }
+  .sidebarRailBtn:hover { background: #f5f4ef; color: var(--teacher-text); }
+  .sidebarRailBtn[data-active='true'] { background: var(--tone-bg, var(--teacher-selected)); border-color: var(--tone-border, #b8d3c3); color: var(--teacher-text); }
+  .sidebarRailBtn[aria-expanded='true'] { background: var(--tone-bg, var(--teacher-selected)); border-color: var(--tone-border, #b8d3c3); color: var(--teacher-text); }
+  .sidebarRailBtn:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 2px; }
+  .sidebarRailLogout:hover { background: #fcecef; border-color: #ecc4cb; color: var(--teacher-text); }
+  .sidebarRailLabel { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .sidebarRailBadge { position: absolute; right: 2px; top: 2px; min-width: 16px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: #a33342; color: #ffffff; font-size: 10px; font-weight: 600; }
+  .sidebarFooter { display: none; }
+  .sidebarFlyout { position: fixed; z-index: 90; min-width: 224px; max-width: 264px; padding: 10px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 18px; background: var(--teacher-surface, #ffffff); box-shadow: 0 12px 32px rgb(20 35 28 / 14%); color: var(--teacher-text, #20352d); font-family: var(--font-geist-sans), Arial, sans-serif; }
+  .sidebarFlyoutConnector { position: absolute; left: -11px; width: 11px; height: 16px; border: 1px solid var(--teacher-border, #dedad0); border-right: 0; border-radius: 6px 0 0 6px; background: var(--teacher-surface, #ffffff); }
+  .sidebarFlyoutTitle { margin-bottom: 6px; padding: 4px 10px 8px; border-bottom: 1px solid #eeece5; color: var(--teacher-muted, #58665f); font-size: 12px; font-weight: 600; }
+  .sidebarFlyoutList { display: grid; gap: 2px; }
+  .sidebarFlyoutItem { text-decoration: none; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; border: 1px solid transparent; border-radius: 10px; color: var(--teacher-text, #20352d); font-size: 14px; font-weight: 500; }
+  .sidebarFlyoutItem .sidebarItemIcon { width: 30px; height: 30px; border-radius: 10px; }
+  .sidebarFlyoutItem svg { flex-shrink: 0; color: currentColor; }
+  .sidebarFlyoutItem:hover { background: #f5f4ef; color: var(--teacher-text, #20352d); }
+  .sidebarFlyoutItem[aria-current='page'] { background: var(--tone-bg, var(--teacher-selected, #e6f1e9)); border-color: var(--tone-border, #b8d3c3); color: var(--teacher-text, #20352d); font-weight: 600; }
+  .sidebarFlyoutItem:focus-visible { outline: 3px solid var(--teacher-primary, #25634b); outline-offset: 2px; }
   .dashboardShell > .dashboard { padding-top: 0; }
 }
 
@@ -3887,7 +3898,7 @@
 @media (min-width: 1024px) {
   .topBar .teacherHeaderTabs {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 16px;
   }
   .teacherHeaderTabs .topBarStart { display: flex; align-items: center; gap: 20px; min-width: 0; }

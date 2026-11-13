@@ -5,6 +5,7 @@ import { Plus, ChevronRight, ChevronDown, Shuffle, Clock, Users, Bell } from '..
 import type { ClassToolId } from './TeacherClassToolsPage';
 import { TeacherClass, UserAccount } from '../../data/portalData';
 import { TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick, visibleTeacherPages } from './teacherPages';
+import { TEACHER_CLASS_TOOL_TONE, teacherPageToneVars, teacherToneVars } from './teacherColors';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherHomeProps {
@@ -80,7 +81,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
               {(['assignments', 'check_sheet', 'plus_minus'] as TeacherPageId[]).map((id) => {
                 const item = visibleTeacherPages(user?.isSchoolAdmin).find((p) => p.id === id)!;
                 return <a key={id} href={teacherPageHref(id)} className={styles.homeActionRow} onClick={(event) => { if (!isPlainLeftClick(event)) return; event.preventDefault(); onOpenPage(id); }}>
-                  <span className={styles.homeActionIcon}><item.icon size={22} aria-hidden="true" /></span>
+                  <span className={styles.homeActionIcon} style={teacherPageToneVars(id)}><item.icon size={22} aria-hidden="true" /></span>
                   <span><strong>{item.title}</strong><small>{item.description}</small></span>
                   <ChevronRight size={19} aria-hidden="true" />
                 </a>;
@@ -96,7 +97,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
                 { id: 'groups', title: 'Gruplama', icon: Users },
                 { id: 'countdown', title: 'Geri sayım', icon: Bell },
               ] as const).map((item) => <button key={item.id} type="button" onClick={() => onOpenClassTool(item.id)}>
-                <span className={styles.homeToolIcon}><item.icon size={24} aria-hidden="true" /></span>
+                <span className={styles.homeToolIcon} style={teacherToneVars(TEACHER_CLASS_TOOL_TONE[item.id])}><item.icon size={24} aria-hidden="true" /></span>
                 <span>{item.title}</span>
               </button>)}
             </div>
@@ -107,7 +108,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
               {(['boards', 'questions', 'files', 'class_report'] as TeacherPageId[]).map((id) => {
                 const item = visibleTeacherPages(user?.isSchoolAdmin).find((p) => p.id === id)!;
                 return <a key={id} href={teacherPageHref(id)} onClick={(event) => { if (!isPlainLeftClick(event)) return; event.preventDefault(); onOpenPage(id); }}>
-                  <item.icon size={26} aria-hidden="true" /><span>{item.title}</span>
+                  <span className={styles.homeShortcutIcon} style={teacherPageToneVars(id)}><item.icon size={22} aria-hidden="true" /></span><span>{item.title}</span>
                 </a>;
               })}
             </div>
@@ -118,7 +119,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
               {(['students', 'classes'] as TeacherPageId[]).map((id) => {
                 const item = visibleTeacherPages(user?.isSchoolAdmin).find((p) => p.id === id)!;
                 return <a key={id} href={teacherPageHref(id)} onClick={(event) => { if (!isPlainLeftClick(event)) return; event.preventDefault(); onOpenPage(id); }}>
-                  <item.icon size={20} aria-hidden="true" /><span>{item.title}</span><ChevronRight size={18} aria-hidden="true" />
+                  <span className={styles.homeManagementIcon} style={teacherPageToneVars(id)}><item.icon size={18} aria-hidden="true" /></span><span>{item.title}</span><ChevronRight size={18} aria-hidden="true" />
                 </a>;
               })}
             </div>
@@ -139,7 +140,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
                 const badge = badges[page.id] || 0;
                 return (
                   <a key={page.id} href={teacherPageHref(page.id)} className={styles.pageCard} onClick={(e) => { if (!isPlainLeftClick(e)) return; e.preventDefault(); onOpenPage(page.id); }}>
-                    <span className={styles.pageCardIcon}><page.icon size={22} aria-hidden="true" /></span>
+                    <span className={styles.pageCardIcon} style={teacherPageToneVars(page.id)}><page.icon size={22} aria-hidden="true" /></span>
                     <span className={styles.pageCardText}>
                       <span className={styles.pageCardTitle}>{page.title}</span>
                       <span className={styles.pageCardDesc}>{page.description}</span>

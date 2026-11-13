@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import {
   AlertCircle, ArrowLeft, ArrowRight, BarChart3, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Columns, CompassTool, Component,
   Copy, Diamond, Dice, Download, Eraser, Grid3x3, Hand, Hexagon, Highlighter, History, HelpCircle, IconProps, Image as ImageIcon, LaserPointer, Layers, ListOrdered, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Protractor, Radio, RotateCcw, RotateCw, Ruler, Save, ScreenCurtain, SetSquare3060, SetSquare45, Shapes, Shuffle, Sliders, Sparkles, Spotlight, Square, Star, StickyNote, Tag, Tally5, TextCursorInput, Timer, Trash2, TrendingUp, Triangle, Type, Unlock, Video, Wheel, X,
+  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Protractor, Radio, RotateCcw, RotateCw, Ruler, Save, ScreenCurtain, Search, SetSquare3060, SetSquare45, Shapes, Shuffle, Sliders, Sparkles, Spotlight, Square, Star, StickyNote, Tag, Tally5, TextCursorInput, Timer, Trash2, TrendingUp, Triangle, Type, Unlock, Video, Wheel, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -77,6 +77,38 @@ const MEASURE_TOOL_ITEMS: { kind: MeasureToolKind; label: string; icon: React.FC
   { kind: 'compass', label: 'Pergel', icon: CompassTool },
 ];
 
+const WIDGET_GROUP_STORAGE_KEY = 'tofutr.board.widgetGroup';
+
+const WIDGET_GROUP_ICON: Record<string, React.FC<IconProps>> = {
+  activity: Component,
+  math: PieChart,
+  classroom: Timer,
+  media: Video,
+};
+
+function renderWidgetIcon(k: WidgetKind) {
+  switch (k) {
+    case 'timer': return <Timer size={16} aria-hidden="true" />;
+    case 'minitest': return <Component size={16} aria-hidden="true" />;
+    case 'match': return <Shuffle size={16} aria-hidden="true" />;
+    case 'audio': return <Mic size={16} aria-hidden="true" />;
+    case 'video': return <Video size={16} aria-hidden="true" />;
+    case 'spinner': return <Wheel size={16} aria-hidden="true" />;
+    case 'dice': return <Dice size={16} aria-hidden="true" />;
+    case 'order': return <ListOrdered size={16} aria-hidden="true" />;
+    case 'sort': return <Columns size={16} aria-hidden="true" />;
+    case 'blanks': return <TextCursorInput size={16} aria-hidden="true" />;
+    case 'label': return <Tag size={16} aria-hidden="true" />;
+    case 'fraction': return <PieChart size={16} aria-hidden="true" />;
+    case 'graph': return <TrendingUp size={16} aria-hidden="true" />;
+    case 'bar': return <BarChart3 size={16} aria-hidden="true" />;
+    case 'tally': return <Tally5 size={16} aria-hidden="true" />;
+    case 'numgrid': return <Grid3x3 size={16} aria-hidden="true" />;
+    case 'clock': return <Clock size={16} aria-hidden="true" />;
+    default: return <Layers size={16} aria-hidden="true" />;
+  }
+}
+
 export const BOARD_BG_COLORS: { c: string; label: string; dark?: boolean }[] = [
   { c: '#ffffff', label: 'Beyaz' },
   { c: '#faf8f0', label: 'Krem' },
@@ -145,6 +177,25 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [smartPen, setSmartPen] = useState(false);
   const [measureTools, setMeasureTools] = useState<MeasureToolItem[]>([]);
   const [measureMenuOpen, setMeasureMenuOpen] = useState(false);
+  const [activeWidgetGroupId, setActiveWidgetGroupId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = window.localStorage.getItem(WIDGET_GROUP_STORAGE_KEY);
+      return saved && getWidgetGroups().some((g) => g.id === saved) ? saved : null;
+    } catch {
+      return null;
+    }
+  });
+  const [widgetSearch, setWidgetSearch] = useState('');
+  const selectWidgetGroup = (id: string | null) => {
+    setActiveWidgetGroupId(id);
+    try {
+      if (id) window.localStorage.setItem(WIDGET_GROUP_STORAGE_KEY, id);
+      else window.localStorage.removeItem(WIDGET_GROUP_STORAGE_KEY);
+    } catch {
+      // sessizce yoksay
+    }
+  };
   const toggleMeasureTool = (k: MeasureToolKind) => {
     setMeasureTools((prev) => (prev.some((t) => t.kind === k) ? prev.filter((t) => t.kind !== k) : [...prev, createMeasureTool(k, newId())]));
   };
@@ -2515,48 +2566,155 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             />
           )}
 
-          {!settingsView && sideTab === 'widgets' && (
-            <div className={styles.sideCard}>
-              <div className={styles.widgetsList}>
-                {getWidgetGroups().map((group) => (
-                  <div key={group.id} className={styles.widgetGroup}>
-                    <h4 className={styles.widgetGroupTitle}>{group.label}</h4>
-                    <div className={styles.widgetGroupItems}>
-                      {group.items.map((k) => (
-                        <button key={k} type="button" className={styles.widgetItemBtn} onClick={() => addWidget(k)}>
-                          <span
-                            className={styles.widgetItemIcon}
-                            style={{ backgroundColor: group.bg, color: group.color }}
-                          >
-                            {k === 'timer' ? <Timer size={16} /> :
-                              k === 'minitest' ? <Component size={16} /> :
-                                k === 'match' ? <Shuffle size={16} /> :
-                                  k === 'audio' ? <Mic size={16} /> :
-                                    k === 'video' ? <Video size={16} /> :
-                                      k === 'spinner' ? <Wheel size={16} /> :
-                                        k === 'dice' ? <Dice size={16} /> :
-                                          k === 'order' ? <ListOrdered size={16} /> :
-                                            k === 'sort' ? <Columns size={16} /> :
-                                              k === 'blanks' ? <TextCursorInput size={16} /> :
-                                                k === 'label' ? <Tag size={16} /> :
-                                                  k === 'fraction' ? <PieChart size={16} /> :
-                                                    k === 'graph' ? <TrendingUp size={16} /> :
-                                                      k === 'bar' ? <BarChart3 size={16} /> :
-                                                        k === 'tally' ? <Tally5 size={16} /> :
-                                                          k === 'numgrid' ? <Grid3x3 size={16} /> :
-                                                            k === 'clock' ? <Clock size={16} /> :
-                                                              <Layers size={16} />}
-                          </span>
-                          <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>
-                        </button>
-                      ))}
+          {!settingsView && sideTab === 'widgets' && (() => {
+            const widgetGroups = getWidgetGroups();
+            const activeGroup = activeWidgetGroupId
+              ? widgetGroups.find((g) => g.id === activeWidgetGroupId) || null
+              : null;
+            const searchQuery = widgetSearch.trim().toLocaleLowerCase('tr-TR');
+            const matchedWidgets = searchQuery
+              ? widgetGroups.flatMap((g) =>
+                g.items
+                  .filter((k) =>
+                    WIDGET_LABEL[k].toLocaleLowerCase('tr-TR').includes(searchQuery)
+                    || g.label.toLocaleLowerCase('tr-TR').includes(searchQuery),
+                  )
+                  .map((k) => ({ kind: k, group: g })),
+              )
+              : [];
+
+            return (
+              <div
+                className={styles.sideCard}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape' && activeGroup) {
+                    e.stopPropagation();
+                    selectWidgetGroup(null);
+                  }
+                }}
+              >
+                {activeGroup ? (
+                  <>
+                    <div className={styles.widgetGroupHeader}>
+                      <button
+                        type="button"
+                        className={styles.widgetBackBtn}
+                        aria-label="Gruplara dön"
+                        onClick={() => selectWidgetGroup(null)}
+                      >
+                        <ArrowLeft size={15} aria-hidden="true" />
+                        <span>Geri</span>
+                      </button>
+                      <h4 className={styles.widgetGroupHeaderTitle}>{activeGroup.label}</h4>
                     </div>
-                  </div>
-                ))}
+                    <div className={styles.widgetsList}>
+                      <div className={styles.widgetGroupItems}>
+                        {activeGroup.items.map((k) => (
+                          <button key={k} type="button" className={styles.widgetItemBtn} onClick={() => addWidget(k)}>
+                            <span
+                              className={styles.widgetItemIcon}
+                              style={{ backgroundColor: activeGroup.bg, color: activeGroup.color }}
+                            >
+                              {renderWidgetIcon(k)}
+                            </span>
+                            <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className={styles.hintText}>Öğe tahtanın ortasına eklenir; ayarları bu panelde açılır. “Geri” ile listeye dönersiniz.</p>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.widgetSearchWrap}>
+                      <Search size={15} className={styles.widgetSearchIcon} aria-hidden="true" />
+                      <input
+                        type="text"
+                        className={styles.widgetSearchInput}
+                        value={widgetSearch}
+                        onChange={(e) => setWidgetSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape' && widgetSearch) {
+                            e.stopPropagation();
+                            setWidgetSearch('');
+                          }
+                        }}
+                        placeholder="Öğe ara"
+                        aria-label="Öğe ara"
+                      />
+                      {widgetSearch && (
+                        <button
+                          type="button"
+                          className={styles.widgetSearchClear}
+                          aria-label="Aramayı temizle"
+                          onClick={() => setWidgetSearch('')}
+                        >
+                          <X size={14} aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
+
+                    {searchQuery ? (
+                      <>
+                        {matchedWidgets.length === 0 ? (
+                          <p className={styles.widgetEmptyText}>Eşleşen öğe bulunamadı.</p>
+                        ) : (
+                          <>
+                            <div className={styles.widgetsList}>
+                              <div className={styles.widgetGroupItems}>
+                                {matchedWidgets.map(({ kind, group }) => (
+                                  <button key={kind} type="button" className={styles.widgetItemBtn} onClick={() => addWidget(kind)}>
+                                    <span
+                                      className={styles.widgetItemIcon}
+                                      style={{ backgroundColor: group.bg, color: group.color }}
+                                    >
+                                      {renderWidgetIcon(kind)}
+                                    </span>
+                                    <span className={styles.widgetItemTitle}>{WIDGET_LABEL[kind]}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <p className={styles.hintText}>Öğe tahtanın ortasına eklenir; ayarları bu panelde açılır. “Geri” ile listeye dönersiniz.</p>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <div className={styles.widgetGroupGrid}>
+                        {widgetGroups.map((group) => {
+                          const GroupIcon = WIDGET_GROUP_ICON[group.id] || Layers;
+                          const preview = group.items.slice(0, 3).map((k) => WIDGET_LABEL[k]).join(', ')
+                            + (group.items.length > 3 ? '…' : '');
+                          return (
+                            <button
+                              key={group.id}
+                              type="button"
+                              className={styles.widgetGroupCard}
+                              onClick={() => selectWidgetGroup(group.id)}
+                            >
+                              <span
+                                className={styles.widgetGroupCardIcon}
+                                style={{ backgroundColor: group.bg, color: group.color }}
+                              >
+                                <GroupIcon size={19} aria-hidden="true" />
+                              </span>
+                              <span className={styles.widgetGroupCardBody}>
+                                <span className={styles.widgetGroupCardTop}>
+                                  <span className={styles.widgetGroupCardTitle}>{group.label}</span>
+                                  <span className={styles.widgetGroupCardCount}>{group.items.length} öğe</span>
+                                </span>
+                                <span className={styles.widgetGroupCardPreview}>{preview}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-              <p className={styles.hintText}>Öğe tahtanın ortasına eklenir; ayarları bu panelde açılır. “Geri” ile listeye dönersiniz.</p>
-            </div>
-          )}
+            );
+          })()}
 
           {!settingsView && sideTab === 'page' && (
             <section className={styles.panel}>

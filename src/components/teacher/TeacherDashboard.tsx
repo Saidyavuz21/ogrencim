@@ -210,6 +210,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         isSchoolAdmin={currentUser?.isSchoolAdmin}
         onClose={closeMenu}
         onOpenPage={openPage}
+        onLogout={onLogout && (() => { window.history.replaceState(null, '', window.location.pathname); onLogout(); })}
       />
       <div className={styles.dashboard}>
       <InstallAppBanner variant={page === 'profile' ? 'profile' : 'suggestion'} visible={page === 'home' || page === 'profile'} />

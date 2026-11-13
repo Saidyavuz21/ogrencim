@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, User, MessageSquare, Globe, Shuffle, Layers } from '../icons';
+import { Bell, User, MessageSquare } from '../icons';
 import { BrandLogo } from '../BrandLogo';
 import { CustomSelect } from '../CustomSelect';
 import type { UserAccount } from '../../data/portalData';
@@ -28,7 +28,7 @@ interface TeacherTopBarProps {
   isBoards: boolean;
 }
 
-export function TeacherTopBar({ user, unreadCount, isProfile, onHome, onNotifications, onProfile, classNames, selectedClass, onSelectClass, onMessages, unreadMessages, isMessages, onCommunity, isCommunity, unreadCommunity = 0, onClassTools, isClassTools, onBoards, isBoards }: TeacherTopBarProps) {
+export function TeacherTopBar({ user, unreadCount, isProfile, onHome, onNotifications, onProfile, classNames, selectedClass, onSelectClass, onMessages, unreadMessages, isMessages }: TeacherTopBarProps) {
   const initials = (user?.name || '').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('tr-TR')).join('') || 'Ö';
   return (
     <header className={styles.topBar}>
@@ -50,19 +50,6 @@ export function TeacherTopBar({ user, unreadCount, isProfile, onHome, onNotifica
               disabled={!classNames.length}
             />
           </div>
-        </div>
-        <div className={styles.topBarTabs} role="group" aria-label="Hızlı sayfalar">
-          <button type="button" className={styles.topBarTab} onClick={onCommunity} aria-current={isCommunity ? 'page' : undefined} aria-label={unreadCommunity > 0 ? `Topluluk, ${unreadCommunity} okunmamış` : 'Topluluk'}>
-            <Globe size={21} aria-hidden="true" />
-            <span>Topluluk</span>
-            {unreadCommunity > 0 && <span className={styles.topBarMessageCount} aria-hidden="true">{unreadCommunity > 99 ? '99+' : unreadCommunity}</span>}
-          </button>
-          <button type="button" className={styles.topBarTab} onClick={onClassTools} aria-current={isClassTools ? 'page' : undefined}>
-            <Shuffle size={20} aria-hidden="true" /><span>Sınıf araçlarım</span>
-          </button>
-          <button type="button" className={styles.topBarTab} onClick={onBoards} aria-current={isBoards ? 'page' : undefined}>
-            <Layers size={20} aria-hidden="true" /><span>Tahtalarım</span>
-          </button>
         </div>
         <div className={styles.topBarActions}>
           <button type="button" className={`${styles.topBarMessages} ${styles.topBarIconAction}`} onClick={onMessages} aria-current={isMessages ? 'page' : undefined} aria-label={unreadMessages > 0 ? `Mesajlar, ${unreadMessages} okunmamış` : 'Mesajlar'} title="Mesajlar">

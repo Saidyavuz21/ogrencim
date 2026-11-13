@@ -38,7 +38,7 @@ export {
   measuredMathHeights, pointsToSvg, translate,
 };
 
-export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'fill' | 'line' | 'arrow' | 'rect' | 'ellipse' | PolyShape | 'note' | 'text';
+export type Tool = 'select' | 'hand' | 'pen' | 'highlighter' | 'eraser' | 'fill' | 'line' | 'arrow' | 'rect' | 'ellipse' | PolyShape | 'note' | 'text';
 export const DRAW_TOOLS: Tool[] = ['pen', 'highlighter', 'eraser'];
 /** Şekiller menüsündeki araçlar (çizgi, ok, dikdörtgen, daire ve hazır çokgenler) */
 export const SHAPE_TOOLS: Tool[] = ['line', 'arrow', 'rect', 'ellipse', 'triangle', 'diamond', 'hexagon', 'star'];
@@ -429,6 +429,14 @@ function drawCursor(tool: Tool, color: string): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, crosshair`;
 }
 
+function handCursor(grabbing: boolean): string {
+  const path = grabbing
+    ? "M7.5 11.5V9a1.5 1.5 0 0 1 3 0v1.5m0-1.5V7.5a1.5 1.5 0 0 1 3 0v3m0-2a1.5 1.5 0 0 1 3 0v2.5m0-1.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1.8a5.5 5.5 0 0 1-4.8-2.8l-1.5-2.6a1.5 1.5 0 0 1 2.5-1.6l1.1 1.4V11.5Z"
+    : "M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v6M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15";
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='${path}' fill='#ffffff' stroke='#ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/><path d='${path}' fill='#ffffff' stroke='#1f2a24' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, ${grabbing ? 'grabbing' : 'grab'}`;
+}
+
 export function BoardCanvas(props: BoardCanvasProps) {
   const {
     page,
@@ -564,7 +572,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
     activePointer.current = e.pointerId;
     lastPointerAt.current = e.timeStamp;
     const { x, y } = toPoint(e.clientX, e.clientY);
-    const t: Tool = drawingOnLayer && !DRAW_TOOLS.includes(tool) && !(tool === 'fill' && onLayerFillCommit) ? 'pen' : tool;
+    const t: Tool = tool === 'hand'
+      ? 'hand'
+      : (drawingOnLayer && !DRAW_TOOLS.includes(tool) && !(tool === 'fill' && onLayerFillCommit) ? 'pen' : tool);
     if (editingNoteId) {
       const curVal = textareaRef.current ? textareaRef.current.value : (editingNote?.text || '');
       if (editingNote && editingNote.variant === 'text' && !curVal.trim()) {
@@ -575,6 +585,9 @@ export function BoardCanvas(props: BoardCanvasProps) {
       }
       setEditingHeight(null);
       onEditNote?.(null);
+    }
+    if (t === 'hand') {
+      return;
     }
     if (t === 'pen' || t === 'highlighter') {
       const hl = t === 'highlighter';
@@ -955,7 +968,7 @@ export function BoardCanvas(props: BoardCanvasProps) {
     : undefined;
   const widgets = renderWidget ? shown.filter((el): el is WidgetEl => el.type === 'widget') : [];
   const drawTool = drawingOnLayer || DRAW_TOOLS.includes(tool);
-  const cursor = !interactive ? 'default' : panning ? 'grab' : (drawTool || ((editable || (drawingOnLayer && onLayerFillCommit)) && tool === 'fill')) ? drawCursor(tool, color) : tool === 'select' ? 'default' : 'crosshair';
+  const cursor = !interactive ? 'default' : panning ? handCursor(true) : tool === 'hand' ? handCursor(false) : (drawTool || ((editable || (drawingOnLayer && onLayerFillCommit)) && tool === 'fill')) ? drawCursor(tool, color) : tool === 'select' ? 'default' : 'crosshair';
 
   // Boyut tutamağı: çoklu seçim / grup için birleşik çerçevenin, tek seçimde öğenin sağ alt köşesi
   let handlePos: { x: number; y: number; kind: 'multi' } | { x: number; y: number; kind: 'single'; sel: BoardEl } | null = null;

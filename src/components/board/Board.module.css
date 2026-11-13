@@ -912,6 +912,36 @@
   gap: 4px;
 }
 
+.measureTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.measureTypeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px !important;
+  padding: 8px 10px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.measureTypeBtn:hover {
+  border-color: #9ab8a5;
+  background: #f0f4ee;
+  color: #25634b;
+}
+
 .penTypeBtn {
   display: flex;
   flex-direction: column;
@@ -1536,9 +1566,29 @@
 .widgetsList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
   max-height: 360px;
   overflow-y: auto;
+}
+
+.widgetGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.widgetGroupTitle {
+  margin: 0 0 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #58665f;
+}
+
+.widgetGroupItems {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .widgetItemBtn {

@@ -217,6 +217,55 @@ export const WIDGET_LABEL: Record<WidgetKind, string> = {
 export const ADDABLE_WIDGETS: WidgetKind[] = [
   'minitest', 'steps', 'timer', 'match', 'order', 'sort', 'blanks', 'label', 'fraction', 'graph', 'bar', 'tally', 'numgrid', 'clock', 'audio', 'video', 'spinner', 'dice',
 ];
+
+export interface WidgetGroup {
+  id: string;
+  label: string;
+  bg: string;
+  color: string;
+  items: WidgetKind[];
+}
+
+export const WIDGET_GROUPS: WidgetGroup[] = [
+  {
+    id: 'activity',
+    label: 'Soru ve etkinlik',
+    bg: '#e6f0ea',
+    color: '#25634b',
+    items: ['minitest', 'match', 'order', 'sort', 'blanks', 'label'],
+  },
+  {
+    id: 'math',
+    label: 'Matematik',
+    bg: '#e7eff8',
+    color: '#24527a',
+    items: ['fraction', 'graph', 'bar', 'tally', 'numgrid', 'clock'],
+  },
+  {
+    id: 'classroom',
+    label: 'Sınıf araçları',
+    bg: '#f8eee2',
+    color: '#8a4f17',
+    items: ['steps', 'timer', 'spinner', 'dice'],
+  },
+  {
+    id: 'media',
+    label: 'Medya',
+    bg: '#efeaf6',
+    color: '#5b3c88',
+    items: ['audio', 'video'],
+  },
+];
+
+export function getWidgetGroups(): WidgetGroup[] {
+  const grouped = new Set<WidgetKind>(WIDGET_GROUPS.flatMap((g) => g.items));
+  const other = ADDABLE_WIDGETS.filter((k) => !grouped.has(k));
+  if (other.length === 0) return WIDGET_GROUPS;
+  return [
+    ...WIDGET_GROUPS,
+    { id: 'other', label: 'Diğer', bg: '#eeece5', color: '#58665f', items: other },
+  ];
+}
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
   match: { w: 860, h: 560 }, audio: { w: 460, h: 200 }, video: { w: 800, h: 520 },

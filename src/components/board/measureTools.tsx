@@ -49,16 +49,18 @@ function rotatePt(px: number, py: number, ox: number, oy: number, deg: number) {
   return { x: ox + dx * c - dy * s, y: oy + dx * s + dy * c };
 }
 
+const RULER_PAD = 16;
+
 export function getMeasureEdges(tools: MeasureToolItem[]): MeasureEdge[] {
   const edges: MeasureEdge[] = [];
   for (const t of tools) {
     if (t.kind === 'ruler') {
       const len = t.length ?? Math.round(15 * PX_PER_CM);
       const h = 92;
-      const p1 = { x: t.x, y: t.y };
-      const p2 = rotatePt(t.x + len, t.y, t.x, t.y, t.angle);
-      const p3 = rotatePt(t.x, t.y + h, t.x, t.y, t.angle);
-      const p4 = rotatePt(t.x + len, t.y + h, t.x, t.y, t.angle);
+      const p1 = rotatePt(t.x - RULER_PAD, t.y, t.x, t.y, t.angle);
+      const p2 = rotatePt(t.x + len + RULER_PAD, t.y, t.x, t.y, t.angle);
+      const p3 = rotatePt(t.x - RULER_PAD, t.y + h, t.x, t.y, t.angle);
+      const p4 = rotatePt(t.x + len + RULER_PAD, t.y + h, t.x, t.y, t.angle);
       edges.push({ ax: p1.x, ay: p1.y, bx: p2.x, by: p2.y });
       edges.push({ ax: p3.x, ay: p3.y, bx: p4.x, by: p4.y });
     } else if (t.kind === 'set45' || t.kind === 'set3060') {
@@ -270,9 +272,9 @@ export function MeasureToolsLayer({
           return (
             <g key={t.id} transform={`translate(${t.x}, ${t.y}) rotate(${t.angle})`}>
               <rect
-                x={0}
+                x={-RULER_PAD}
                 y={0}
-                width={len}
+                width={len + RULER_PAD * 2}
                 height={h}
                 rx={6}
                 fill="rgba(252, 246, 227, 0.9)"
@@ -308,7 +310,7 @@ export function MeasureToolsLayer({
               </text>
               {/* Döndürme tutamacı */}
               <circle
-                cx={len - 18}
+                cx={len + RULER_PAD - 18}
                 cy={h - 18}
                 r={13}
                 fill="#1f5c41"
@@ -325,7 +327,7 @@ export function MeasureToolsLayer({
               />
               {/* Kapat düğmesi */}
               <g
-                transform={`translate(${len - 52}, ${h - 18})`}
+                transform={`translate(${len + RULER_PAD - 52}, ${h - 18})`}
                 className={styles.closeBtn}
                 onClick={(e) => { e.stopPropagation(); onCloseTool(t.id); }}
               >

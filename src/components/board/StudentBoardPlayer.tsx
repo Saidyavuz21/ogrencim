@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, X } from '../icons';
+import { ChevronLeft, ChevronRight, Hand, X } from '../icons';
 import { Spinner } from '../Spinner';
 import {
   BoardContent, boardImageUrls, DrawingLayer, getDrawing, getHomeworkBoard, HISTORY_LIMIT, listDrawings, mediaRefs, saveMyDrawing, StrokeEl, WidgetEl,
@@ -148,6 +148,16 @@ export function StudentBoardPlayer({ homeworkId, title, studentId, open, onClose
         <h2>{title}</h2>
         {open ? (
           <div className={styles.playerTools} role="toolbar" aria-label="Çizim araçları">
+            <button
+              type="button"
+              className={styles.tool}
+              aria-pressed={tool === 'hand'}
+              aria-label="El: çizmeden etkileşim"
+              title="El: çizmeden etkileşim"
+              onClick={() => setTool('hand')}
+            >
+              <Hand size={16} aria-hidden="true" /> El
+            </button>
             {(['pen', 'highlighter', 'eraser'] as Tool[]).map((t) => (
               <button key={t} type="button" className={styles.tool} aria-pressed={tool === t} onClick={() => setTool(t)}>{t === 'pen' ? 'Kalem' : t === 'highlighter' ? 'Vurgu' : 'Silgi'}</button>
             ))}

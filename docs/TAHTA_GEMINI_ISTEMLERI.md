@@ -252,3 +252,33 @@ Klavye: kol seçiliyken ok tuşları 1 adım çevirir.
 - Başlangıç saati öğretmence ayarlanır; "Sıfırla" ona döner. Öğrencinin yaptığı kaydedilmez.
 İsteğe bağlı: "Çeyrek / buçuk" gibi Türkçe okuma ("üçü çeyrek geçiyor", "üç buçuk") dijital göstergenin altında açılıp kapanır.
 ```
+
+## İstem 16 – Ders kipinde "El" aracı
+
+```
+GÖREV: Ders (sunum) kipinin alt araç çubuğuna, kalemin soluna "El" aracı ekle (ikon: el; aria-label "El: çizmeden etkileşim";
+aria-pressed gerçek durumla eşleşsin). Ders kipine girince varsayılan araç El olsun; kalem/silgi seçilince El kapanır.
+El seçiliyken:
+- Hiçbir çizim, silme, Doldur yapılmaz; tahtaya ve geri alma yığınına iz düşmez.
+- Etkinlik parçaları (saat kolları, çark, sıralama, sayı tablosu, grafik vb.) dokunma/fare ile normal çalışır.
+- Tahta yakınlaştırılmışsa boş alanda sürükleyerek kaydırılır (yakınlaştırma kodundaki kaydırmayı yeniden kullan).
+- İmleç: boş alanda "grab", sürüklerken "grabbing".
+Lazer, perde, spot ışığı açıkken El'in davranışı onlara üstünlük vermesin (onlar açıksa onlar çalışır).
+Klavye kısayolu: H (El), P (kalem), E (silgi); yazı alanındayken kısayol çalışmasın.
+Öğrenci görünümünde (StudentBoardPlayer) de aynı El aracı çizim araçlarının yanına eklensin.
+```
+
+## İstem 17 – Parçalar listesinde gruplar ve renkler
+
+```
+GÖREV: Düzenleyicideki "Parçalar" panelinde (ADDABLE_WIDGETS listesi) parçaları gruplara ayır; her grubun üstünde küçük
+grup başlığı (h4 ya da görsel olarak küçük, büyük harf olmayan etiket) olsun. Renk yalnızca satırdaki ikon kutusunda;
+satır zemini, kenarlığı ve yazısı bugünkü gibi sade kalsın. Sıra:
+1. Soru ve etkinlik (yeşil): minitest, match, order, sort, blanks, label
+2. Matematik (mavi): fraction, graph, bar, tally, numgrid, clock
+3. Sınıf araçları (turuncu): steps, timer, spinner, dice
+4. Medya (mor): audio, video
+Grup ve renk bilgisi boardData.ts'te tek bir sabit (ör. WIDGET_GROUPS) olarak dursun; liste ondan üretilsin.
+Renkler DESIGN.md paletine yakın, düşük doygunlukta açık zemin + koyu ikon olsun (ör. yeşil zemin #e6f0ea / ikon #25634b);
+ikon ile zemin arasında en az 3:1 kontrast. Yeni bir parça grubu olmadan eklenirse "Diğer" grubunda görünsün.
+```

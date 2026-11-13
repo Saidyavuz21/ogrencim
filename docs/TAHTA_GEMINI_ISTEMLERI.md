@@ -282,3 +282,16 @@ Grup ve renk bilgisi boardData.ts'te tek bir sabit (ör. WIDGET_GROUPS) olarak d
 Renkler DESIGN.md paletine yakın, düşük doygunlukta açık zemin + koyu ikon olsun (ör. yeşil zemin #e6f0ea / ikon #25634b);
 ikon ile zemin arasında en az 3:1 kontrast. Yeni bir parça grubu olmadan eklenirse "Diğer" grubunda görünsün.
 ```
+
+## İstem 18 – Ölçme araçları düğmelerinin düzeni
+
+```
+GÖREV: Düzenleyicinin Çizim panelindeki "ÖLÇME ARAÇLARI" bölümünü düzenle (yeri değişmez, Çizim sekmesinde kalır).
+1. Her araca kendi ikonu (src/components/icons.tsx, mevcut çizgi tarzında): Cetvel (cetvel), Gönye 45° ve Gönye 30-60°
+   (dik üçgen; 30-60 olanı daha uzun), İletki (yarım daire + derece çizgileri), Pergel (iki bacaklı pergel).
+2. Düğmeler eşit boyutlu, 2 sütunlu ızgara; ikon üstte ya da solda, etiket tek satır. Aralıklar paneldeki diğer
+   düğme gruplarıyla aynı. En az 44×44 px dokunma alanı.
+3. Açık olan araç aria-pressed="true" ve belirgin seçili görünüm (paneldeki diğer seçili araçlarla aynı stil); tekrar basınca kapanır.
+4. Ders kipindeki ölçme araçları menüsü de aynı ikonları kullansın.
+Davranışa (cetvele yapışma, pergel çizimi) dokunma.
+```

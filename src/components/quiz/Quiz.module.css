@@ -254,6 +254,33 @@
 .groupChevron { color: var(--teacher-muted, #58665f); flex-shrink: 0; transition: transform 0.2s ease; }
 .groupChevronOpen { transform: rotate(180deg); }
 
+.groupDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-right: 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--teacher-muted, #58665f);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.groupDeleteBtn:hover {
+  background: #fde8e8;
+  color: #c53030;
+  border-color: #fbd5d5;
+}
+
+.groupDeleteBtn:focus-visible {
+  outline: 3px solid #c53030;
+  outline-offset: 2px;
+}
+
 .groupPanel { display: flex; flex-direction: column; background: #fff; }
 
 .bankList { display: grid; gap: 16px; min-width: 0; }
@@ -274,6 +301,7 @@
   .groupTitle { font-size: 14px; }
   .groupMeta { gap: 6px; }
   .groupCount { font-size: 11px; padding: 2px 8px; }
+  .groupDeleteBtn { width: 42px; height: 42px; margin-right: 8px; }
   
   .qCompactRow { padding: 8px 10px; gap: 8px; flex-wrap: wrap; }
   .qExpandBtn { padding: 4px 6px; gap: 8px; }

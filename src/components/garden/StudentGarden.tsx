@@ -6,16 +6,16 @@ import {
   GARDEN_UNLOCKS,
   gardenLevel,
   gardenUnlocks,
+  unlockLevel,
   getMyGarden,
   growthStage,
   waterMyTree,
   waterRights,
-  wateringsToNext,
 } from '../../lib/gardenData';
 import { Notice, NoticeState } from '../teacher/TeacherUi';
 import { Spinner } from '../Spinner';
 import { GardenPlot } from './GardenPlot';
-import { TreeArt, TREE_NAMES, STAGE_NAMES } from './GardenArt';
+import { TREE_NAMES, STAGE_NAMES } from './GardenArt';
 import { Droplet, Sparkles, Sprout } from '../icons';
 import styles from './Garden.module.css';
 
@@ -84,7 +84,8 @@ export function StudentGarden() {
 
   // Bahçe seviyesi ve manzara kazanımları
   const level = gardenLevel(trees);
-  const { next, remaining } = gardenUnlocks(level);
+  const behaviorCount = behaviors.filter((b) => !b.archived).length;
+  const { next, remaining } = gardenUnlocks(level, behaviorCount);
 
   // Toplam sulama hakkı
   const totalWaterRights = trees.reduce((sum, t) => sum + waterRights(t), 0);
@@ -104,8 +105,8 @@ export function StudentGarden() {
 
     const res = await waterMyTree(b.id);
 
-    // Animasyonun ~1 saniye görünmesi için bekle
-    await new Promise((resolve) => setTimeout(resolve, 850));
+    // Sulama animasyonu (kap, damlalar, ağacın kabarması) bitene kadar bekle
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     setWateringBehaviorId(null);
 
     if (!res.ok) {
@@ -129,7 +130,7 @@ export function StudentGarden() {
     });
 
     // Yeni açılan manzara öğesi kontrolü
-    const newlyUnlocked = GARDEN_UNLOCKS.filter((u) => oldLevel < u.level && newLevel >= u.level);
+    const newlyUnlocked = GARDEN_UNLOCKS.filter((u) => oldLevel < unlockLevel(u, behaviorCount) && newLevel >= unlockLevel(u, behaviorCount));
     const treeName = TREE_NAMES[b.tree] || 'Ağaç';
 
     if (newlyUnlocked.length > 0) {
@@ -137,19 +138,14 @@ export function StudentGarden() {
       const unlockMsg = `Tebrikler! Bahçene yeni eklendi: ${itemsText}!`;
       setCelebration(unlockMsg);
       setTimeout(() => setCelebration(null), 7000);
-      setNotice({ kind: 'ok', text: unlockMsg });
     } else if (newStage > oldStage) {
       // Aşama atlama kutlaması
       const stageName = STAGE_NAMES[newStage];
       const msg = `Tebrikler! ${b.name} için ${treeName} büyüdü: ${stageName}!`;
       setCelebration(msg);
       setTimeout(() => setCelebration(null), 6000);
-      setNotice({ kind: 'ok', text: msg });
-    } else {
-      const toNext = wateringsToNext(updatedTree.watered);
-      const hint = toNext !== null ? `Bir sonraki aşamaya ${toNext} sulama kaldı.` : 'Ağacın en üst aşamada!';
-      setNotice({ kind: 'ok', text: `${treeName} sulandı! ${hint}` });
     }
+    // Sıradan sulamada ayrıca bildirim yok: animasyon ve damladaki sayı yeterli
   };
 
   return (
@@ -176,10 +172,10 @@ export function StudentGarden() {
           </div>
           {totalWaterRights > 0 ? (
             <span className={styles.waterRightsCount}>
-              Hemen bir ağacını sula!
+              Ağacının yanındaki damlaya dokunarak sula.
             </span>
           ) : (
-            <span style={{ fontSize: 13, color: '#0369a1' }}>
+            <span style={{ fontSize: 13, color: '#48654b' }}>
               Öğretmenin puan verdikçe sulama hakkı kazanırsın.
             </span>
           )}
@@ -192,6 +188,8 @@ export function StudentGarden() {
           size="lg"
           highlightWater={true}
           title="Benim Bahçem"
+          onWater={(b, t) => void handleWater(b, t)}
+          wateringId={wateringBehaviorId}
         />
 
         {/* Manzara İlerleme Bilgi Çubuğu */}
@@ -202,7 +200,7 @@ export function StudentGarden() {
           </div>
           {next ? (
             <span className={styles.landscapeNextTarget}>
-              {next.name} için {remaining} adım kaldı
+              Ağaçların {remaining} aşama daha büyüyünce bahçene {next.name.toLocaleLowerCase('tr-TR')} gelecek
             </span>
           ) : (
             <span className={styles.landscapeNextTarget} style={{ background: '#dcfce7', color: '#166534' }}>
@@ -233,77 +231,6 @@ export function StudentGarden() {
         )}
       </section>
 
-      {/* Ağaçları Sulama Kartları */}
-      {plantedTrees.length > 0 && (
-        <section aria-label="Ağaçlarımı sula">
-          <h3 style={{ fontSize: 18, fontWeight: 700, margin: '12px 0 14px' }}>Ağaçlarım</h3>
-          <div className={styles.studentTreeCards}>
-            {behaviors
-              .filter((b) => trees.some((t) => t.behavior_id === b.id && t.earned >= 1))
-              .map((b) => {
-                const tree = trees.find((t) => t.behavior_id === b.id)!;
-                const stage = growthStage(tree.watered);
-                const treeName = TREE_NAMES[b.tree] || 'Ağaç';
-                const stageName = STAGE_NAMES[stage] || 'Fidan';
-                const rights = waterRights(tree);
-                const toNext = wateringsToNext(tree.watered);
-                const isWatering = wateringBehaviorId === b.id;
-
-                return (
-                  <div key={b.id} className={styles.studentTreeCard}>
-                    <div className={styles.cardHeader}>
-                      <h4>
-                        {b.name} <small style={{ fontSize: 12, fontWeight: 500, color: '#58665f' }}>({treeName})</small>
-                      </h4>
-                      <span className={styles.cardStageBadge}>{stageName}</span>
-                    </div>
-
-                    <div className={styles.treeVisualBox}>
-                      <TreeArt tree={b.tree} stage={stage} size={110} />
-                      {isWatering && (
-                        <div className={styles.wateringAnimationOverlay}>
-                          <Droplet size={38} className={styles.waterDrops} aria-hidden="true" />
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#0284c7', marginTop: 4 }}>
-                            Sulanıyor…
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {rights > 0 ? (
-                        <button
-                          type="button"
-                          className={styles.waterButton}
-                          onClick={() => void handleWater(b, tree)}
-                          disabled={isWatering}
-                          aria-label={`${b.name} ağacını sula (${rights} hak var)`}
-                        >
-                          <Droplet size={18} aria-hidden="true" />
-                          Sula ({rights} hak)
-                        </button>
-                      ) : (
-                        <p className={styles.noWaterText}>
-                          {b.name} davranışını göstermeye devam et, sulama hakkı kazan.
-                        </p>
-                      )}
-
-                      {toNext !== null ? (
-                        <p className={styles.treeProgressText}>
-                          Sonraki aşama için {toNext} sulama kaldı
-                        </p>
-                      ) : (
-                        <p className={styles.treeProgressText} style={{ color: '#16a34a' }}>
-                          Ağacın en güzel aşamasında!
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

@@ -58,7 +58,7 @@ function playChimeSound() {
       gardenAudio = new AudioCtx();
     }
     const ctx = gardenAudio;
-    if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
+    if (ctx.state === 'suspended') void ctx.resume().catch(() => { });
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -107,6 +107,7 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
 
   // Pencereler
   const [viewingStudent, setViewingStudent] = useState<GardenStudent | null>(null);
+  const [scoringStudentId, setScoringStudentId] = useState<string | null>(null);
   const [behaviorModalOpen, setBehaviorModalOpen] = useState(false);
   const [editingBehavior, setEditingBehavior] = useState<GardenBehavior | null>(null);
   const [isNewBehavior, setIsNewBehavior] = useState(false);
@@ -150,6 +151,7 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
   }, []);
 
   const activeBehaviors = behaviors ? behaviors.filter((b) => !b.archived) : [];
+  const scoringStudent = students?.find((s) => s.id === scoringStudentId) || null;
 
   // Tek dokunuşla puan verme
   const handleAward = async (student: GardenStudent, behavior: GardenBehavior) => {
@@ -186,15 +188,15 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
         const updatedTrees = existingTree
           ? oldTrees.map((t) => (t.behavior_id === behavior.id ? { ...t, earned: award.earned } : t))
           : [
-              ...oldTrees,
-              {
-                behavior_id: behavior.id,
-                earned: award.earned,
-                watered: award.watered,
-                planted_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-            ];
+            ...oldTrees,
+            {
+              behavior_id: behavior.id,
+              earned: award.earned,
+              watered: award.watered,
+              planted_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ];
 
         return {
           ...s,
@@ -294,15 +296,15 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
         const updatedTrees = existing
           ? oldTrees.map((t) => (t.behavior_id === behavior.id ? { ...t, earned: aw.earned } : t))
           : [
-              ...oldTrees,
-              {
-                behavior_id: behavior.id,
-                earned: aw.earned,
-                watered: aw.watered,
-                planted_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-            ];
+            ...oldTrees,
+            {
+              behavior_id: behavior.id,
+              earned: aw.earned,
+              watered: aw.watered,
+              planted_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ];
 
         return {
           ...s,
@@ -516,10 +518,7 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
           <StudentRow
             key={s.id}
             student={s}
-            activeBehaviors={activeBehaviors}
-            busyKeys={busyKeys}
-            animKey={animKey}
-            onAward={handleAward}
+            onOpenAward={() => setScoringStudentId(s.id)}
             onViewGarden={() => setViewingStudent(s)}
           />
         ))}
@@ -534,10 +533,7 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
               <StudentRow
                 key={s.id}
                 student={s}
-                activeBehaviors={activeBehaviors}
-                busyKeys={busyKeys}
-                animKey={animKey}
-                onAward={handleAward}
+                onOpenAward={() => setScoringStudentId(s.id)}
                 onViewGarden={() => setViewingStudent(s)}
               />
             ))}
@@ -566,10 +562,71 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
         </div>
       )}
 
+      {/* Puan Verme Penceresi (Kart Izgarası) */}
+      {scoringStudent && behaviors && (
+        <Modal
+          title={`${scoringStudent.name} — Puan Ver`}
+          onClose={() => setScoringStudentId(null)}
+          wide
+        >
+          <div className={styles.awardModalGrid}>
+            {activeBehaviors.map((b) => {
+              const key = `${scoringStudent.id}:${b.id}`;
+              const tree = (scoringStudent.trees || []).find((t) => t.behavior_id === b.id);
+              const earned = tree ? tree.earned : 0;
+              const isPlanted = earned >= 1;
+              const isBusy = busyKeys.has(key);
+              const isAnim = animKey === key;
+              const Icon = getGardenIcon(b.icon);
+              const treeName = TREE_NAMES[b.tree] || b.tree;
+
+              return (
+                <div
+                  key={b.id}
+                  className={`${styles.awardCard} ${isPlanted ? styles.awardCardPlanted : ''}`}
+                >
+                  <div className={styles.awardCardIconWrap}>
+                    <Icon size={22} aria-hidden="true" />
+                    {isPlanted && (
+                      <span className={styles.plantedBadge} title="Fidan dikildi">
+                        <Sprout size={12} aria-hidden="true" />
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.awardCardInfo}>
+                    <div className={styles.awardCardTitle}>{b.name}</div>
+                    <div className={styles.awardCardTree}>{treeName}</div>
+                    <div className={styles.awardCardCount}>
+                      {earned} puan
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.awardCardPlusBtn}
+                    disabled={isBusy}
+                    onClick={() => handleAward(scoringStudent, b)}
+                    aria-label={`${scoringStudent.name}: ${b.name} +1`}
+                    title={`${b.name} +1 ver`}
+                  >
+                    {isAnim && (
+                      <span className={styles.floatPlusBadge} aria-hidden="true">
+                        +1
+                      </span>
+                    )}
+                    <Plus size={15} aria-hidden="true" />
+                    <span>+1</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </Modal>
+      )}
+
       {/* Bahçeyi Gör Penceresi */}
       {viewingStudent && behaviors && (() => {
         const studentLevel = gardenLevel(viewingStudent.trees || []);
-        const { unlocked } = gardenUnlocks(studentLevel);
+        const { unlocked } = gardenUnlocks(studentLevel, activeBehaviors.length);
         const unlockedNames = GARDEN_UNLOCKS.filter((u) => unlocked.has(u.key)).map((u) => u.name).join(', ');
 
         return (
@@ -842,17 +899,11 @@ export function TeacherGardenPage({ selectedClass }: TeacherGardenPageProps) {
 // Öğrenci Satırı Bileşeni
 function StudentRow({
   student,
-  activeBehaviors,
-  busyKeys,
-  animKey,
-  onAward,
+  onOpenAward,
   onViewGarden,
 }: {
   student: GardenStudent;
-  activeBehaviors: GardenBehavior[];
-  busyKeys: Set<string>;
-  animKey: string | null;
-  onAward: (student: GardenStudent, behavior: GardenBehavior) => void;
+  onOpenAward: () => void;
   onViewGarden: () => void;
 }) {
   return (
@@ -864,62 +915,30 @@ function StudentRow({
         </span>
         <div className={styles.studentNameGroup}>
           <h4 className={styles.studentName}>{student.name}</h4>
-          <p className={styles.studentMeta}>
-            No {student.student_number || '—'} · {student.points || 0} puan
-          </p>
         </div>
       </div>
 
-      {/* Davranış İkon Butonları */}
-      <div className={styles.behaviorButtonsRow}>
-        {activeBehaviors.map((b) => {
-          const key = `${student.id}:${b.id}`;
-          const tree = (student.trees || []).find((t) => t.behavior_id === b.id);
-          const earned = tree ? tree.earned : 0;
-          const isPlanted = earned >= 1;
-          const isBusy = busyKeys.has(key);
-          const isAnim = animKey === key;
-          const Icon = getGardenIcon(b.icon);
-
-          return (
-            <button
-              key={b.id}
-              type="button"
-              className={`${styles.behaviorBtn} ${isPlanted ? styles.behaviorBtnPlanted : ''}`}
-              disabled={isBusy}
-              onClick={() => onAward(student, b)}
-              aria-label={`${student.name}: ${b.name} +1`}
-              title={`${student.name}: ${b.name} +1 (${earned} puan)`}
-            >
-              {isAnim && (
-                <span className={styles.floatPlusBadge} aria-hidden="true">
-                  +1
-                </span>
-              )}
-              <div className={styles.btnIconWrap}>
-                <Icon size={18} aria-hidden="true" />
-                {isPlanted && (
-                  <span className={styles.plantedBadge} title="Fidan dikildi">
-                    <Sprout size={12} aria-hidden="true" />
-                  </span>
-                )}
-              </div>
-              <span className={styles.btnEarnedCount}>{earned}</span>
-            </button>
-          );
-        })}
+      {/* Aksiyon Butonları */}
+      <div className={styles.studentActions}>
+        <button
+          type="button"
+          className={styles.awardOpenBtn}
+          onClick={onOpenAward}
+          aria-label={`${student.name} için puan ver`}
+        >
+          <Plus size={16} aria-hidden="true" />
+          Puan ver
+        </button>
+        <button
+          type="button"
+          className={styles.viewGardenBtn}
+          onClick={onViewGarden}
+          aria-label={`${student.name} bahçesini gör`}
+        >
+          <Eye size={16} aria-hidden="true" />
+          Bahçeyi gör
+        </button>
       </div>
-
-      {/* Bahçeyi Gör Butonu */}
-      <button
-        type="button"
-        className={styles.viewGardenBtn}
-        onClick={onViewGarden}
-        aria-label={`${student.name} bahçesini gör`}
-      >
-        <Eye size={16} aria-hidden="true" />
-        Bahçeyi gör
-      </button>
     </div>
   );
 }

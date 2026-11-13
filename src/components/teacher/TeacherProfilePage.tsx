@@ -156,6 +156,17 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
         {([{ id: 'account', label: 'Hesap bilgileri', icon: User }, { id: 'community', label: 'Topluluk profili', icon: Globe }, { id: 'security', label: 'Güvenlik', icon: ShieldCheck }] as const).map((section) => (
           <button key={section.id} type="button" aria-pressed={profileSection === section.id} onClick={() => setProfileSection(section.id)}><section.icon size={19} aria-hidden="true" />{section.label}</button>
         ))}
+        {onLogout && (
+          <button
+            type="button"
+            className={profileStyles.sidebarLogoutBtn}
+            onClick={onLogout}
+            aria-label="Çıkış yap"
+          >
+            <LogOut size={19} aria-hidden="true" />
+            <span>Çıkış yap</span>
+          </button>
+        )}
       </nav>
       </aside>
       <div className={profileStyles.content}>

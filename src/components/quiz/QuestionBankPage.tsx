@@ -8,7 +8,7 @@ import { useDialog } from '../ConfirmDialog';
 import { Notice, NoticeState } from '../teacher/TeacherUi';
 import { GRADE_OPTIONS } from '../../lib/filesData';
 import {
-  CHOICE_LETTERS, copyImageToQuiz, deleteQuestion, discardQuizImage, listQuestions, MAX_CHOICES, MIN_CHOICES, QuestionInput, QuestionRow,
+  CHOICE_LETTERS, copyImageToQuiz, deleteQuestion, deleteQuestions, discardQuizImage, listQuestions, MAX_CHOICES, MIN_CHOICES, QuestionInput, QuestionRow,
   QUIZ_IMAGE_TYPES, saveQuestion, uploadQuizImage, validateQuestion,
 } from '../../lib/quizData';
 import { SUBJECT_OPTIONS } from '../files/FileDialogs';
@@ -86,6 +86,7 @@ export function QuestionBankPage() {
 
   // Açık / kapalı grup ve soru durumları
   const [manualOpenGroups, setManualOpenGroups] = useState<Set<string>>(new Set());
+  const [manualClosedGroups, setManualClosedGroups] = useState<Set<string>>(new Set());
   const [closedInFilter, setClosedInFilter] = useState<Set<string>>(new Set());
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
 
@@ -211,6 +212,10 @@ export function QuestionBankPage() {
     if (hasFilter) {
       return !closedInFilter.has(key);
     }
+    // Tek grup varsa kullanıcı bilhassa kapatmadığı sürece açık gelsin
+    if (groups.length === 1) {
+      return !manualClosedGroups.has(key);
+    }
     return manualOpenGroups.has(key);
   };
 
@@ -222,14 +227,23 @@ export function QuestionBankPage() {
         else next.add(key);
         return next;
       });
-    } else {
-      setManualOpenGroups((prev) => {
+      return;
+    }
+    if (groups.length === 1) {
+      setManualClosedGroups((prev) => {
         const next = new Set(prev);
         if (next.has(key)) next.delete(key);
         else next.add(key);
         return next;
       });
+      return;
     }
+    setManualOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   const toggleQuestion = (id: string) => {
@@ -245,6 +259,7 @@ export function QuestionBankPage() {
     if (hasFilter) {
       setClosedInFilter(new Set());
     } else {
+      setManualClosedGroups(new Set());
       setManualOpenGroups(new Set(groups.map((g) => g.key)));
     }
   };
@@ -253,6 +268,7 @@ export function QuestionBankPage() {
     if (hasFilter) {
       setClosedInFilter(new Set(groups.map((g) => g.key)));
     } else {
+      setManualClosedGroups(new Set(groups.map((g) => g.key)));
       setManualOpenGroups(new Set());
     }
   };
@@ -282,6 +298,26 @@ export function QuestionBankPage() {
     if (!res.ok) { setNotice({ kind: 'error', text: `Silinemedi: ${res.error}` }); return; }
     setQuestions((prev) => (prev || []).filter((y) => y.id !== x.id));
     setNotice({ kind: 'ok', text: 'Soru silindi.' });
+  };
+
+  const removeGroup = async (g: QuestionGroup) => {
+    const ok = await confirm({
+      title: 'Bölümü ve soruları sil',
+      message: `"${g.displayTitle}" bölümündeki ${g.questions.length} soru bankadan silinsin mi?\n\nDaha önce yayınladığınız quizler etkilenmez (soruların kopyasını taşırlar).`,
+      confirmText: 'Bölümü Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
+
+    const res = await deleteQuestions(g.questions);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: `Silinemedi: ${res.error}` });
+      return;
+    }
+    const idsToRemove = new Set(g.questions.map((q) => q.id));
+    setQuestions((prev) => (prev || []).filter((y) => !idsToRemove.has(y.id)));
+    setNotice({ kind: 'ok', text: `"${g.displayTitle}" bölümündeki ${g.questions.length} soru silindi.` });
   };
 
   if (error) return <p className={f.error} role="alert">Sorular alınamadı: {error}</p>;
@@ -469,6 +505,18 @@ export function QuestionBankPage() {
                             aria-hidden="true"
                           />
                         </span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.groupDeleteBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void removeGroup(g);
+                        }}
+                        aria-label={`${g.displayTitle} bölümündeki tüm soruları sil`}
+                        title="Bölümü ve tüm soruları sil"
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
                       </button>
                     </div>
 

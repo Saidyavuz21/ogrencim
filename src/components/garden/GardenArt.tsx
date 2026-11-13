@@ -23,6 +23,9 @@ export const STAGE_NAMES = [
   'Yapraklı ağaç',
   'Çiçekli ağaç',
   'Meyveli ağaç',
+  'Bereketli ağaç',
+  'Ulu ağaç',
+  'Işıltılı ulu ağaç',
 ] as const;
 
 /** GARDEN_ICONS eşlemesi; bulunamazsa Star döner */
@@ -152,8 +155,15 @@ function PineCanopy({ stage }: { stage: number }) {
         </g>
       )}
 
-      {/* Stage 5: Kozalaklar */}
-      {stage === 5 && (
+      {/* Stage 5+: Kozalaklar (6+ bereket: ikinci kat, aynalanmış) */}
+      {stage >= 6 && (
+        <g stroke={OUTLINE} strokeWidth={1.4} transform="translate(100 6) scale(-1 1)">
+          <ellipse cx={30} cy={70} rx={3.5} ry={6} fill="#774724" />
+          <ellipse cx={42} cy={50} rx={3.5} ry={5.5} fill="#633b1e" />
+          <ellipse cx={58} cy={64} rx={3.5} ry={5.5} fill="#774724" />
+        </g>
+      )}
+      {stage >= 5 && (
         <g stroke={OUTLINE} strokeWidth={1.4}>
           <ellipse cx={28} cy={74} rx={3.5} ry={6} fill="#633b1e" />
           <ellipse cx={72} cy={74} rx={3.5} ry={6} fill="#633b1e" />
@@ -187,8 +197,18 @@ function OakCanopy({ stage }: { stage: number }) {
         </g>
       )}
 
-      {/* Stage 5: Palamutlar (Acorns) */}
-      {stage === 5 && (
+      {/* Stage 6+: Bereket, ikinci kat palamut */}
+      {stage >= 6 && (
+        <g stroke={OUTLINE} strokeWidth={1.4}>
+          <Acorn cx={36} cy={46} />
+          <Acorn cx={64} cy={40} />
+          <Acorn cx={50} cy={32} />
+          <Acorn cx={24} cy={46} />
+          <Acorn cx={76} cy={46} />
+        </g>
+      )}
+      {/* Stage 5+: Palamutlar (Acorns) */}
+      {stage >= 5 && (
         <g stroke={OUTLINE} strokeWidth={1.4}>
           <Acorn cx={30} cy={54} />
           <Acorn cx={46} cy={42} />
@@ -228,7 +248,20 @@ function WillowCanopy({ stage }: { stage: number }) {
       <path d="M66 48 Q72 68 68 88" stroke="#7ab66a" strokeWidth={3} fill="none" />
       <path d="M76 44 Q82 64 78 84" stroke="#68a658" strokeWidth={3} fill="none" />
 
-      {/* Stage 4 & 5: Sarkan püskül çiçekler / tomurcuklar */}
+      {/* Stage 6+: Bereket, dalların ucunda ikinci sıra çiçek */}
+      {stage >= 6 && (
+        <g stroke={OUTLINE} strokeWidth={1}>
+          <circle cx={23} cy={82} r={2.5} fill="#f2ec86" />
+          <circle cx={33} cy={86} r={2.5} fill="#f2ec86" />
+          <circle cx={42} cy={84} r={2.5} fill="#f2ec86" />
+          <circle cx={58} cy={84} r={2.5} fill="#f2ec86" />
+          <circle cx={67} cy={86} r={2.5} fill="#f2ec86" />
+          <circle cx={77} cy={82} r={2.5} fill="#f2ec86" />
+          <circle cx={30} cy={60} r={2.3} fill="#e5df63" />
+          <circle cx={70} cy={60} r={2.3} fill="#e5df63" />
+        </g>
+      )}
+      {/* Stage 4+: Sarkan püskül çiçekler / tomurcuklar */}
       {stage >= 4 && (
         <g stroke={OUTLINE} strokeWidth={1}>
           <circle cx={21} cy={70} r={2.5} fill="#e5df63" />
@@ -267,8 +300,9 @@ function RoundFruitCanopy({
       {/* Stage 4: Çiçekler */}
       {stage === 4 && <Blossoms tree={tree} />}
 
-      {/* Stage 5: Meyveler */}
-      {stage === 5 && <Fruits tree={tree} />}
+      {/* Stage 5+: Meyveler; 6+ bereket: aynalanmış ikinci kat */}
+      {stage >= 5 && <Fruits tree={tree} />}
+      {stage >= 6 && <g transform="translate(100 5) scale(-1 1)"><Fruits tree={tree} /></g>}
     </g>
   );
 }
@@ -415,6 +449,60 @@ function Olive({ cx, cy }: { cx: number; cy: number }) {
   );
 }
 
+/** Bereketli ağacın dibine düşmüş meyveler */
+function FallenFruits({ tree }: { tree: string }) {
+  const spots: [number, number][] = [[34, 113], [64, 114], [71, 111]];
+  return (
+    <g stroke={OUTLINE} strokeWidth={1.2}>
+      {spots.map(([cx, cy]) => {
+        const key = `${cx}-${cy}`;
+        switch (tree) {
+          case 'apple': return <Apple key={key} cx={cx} cy={cy} />;
+          case 'cherry': return <Cherries key={key} cx={cx} cy={cy - 3} />;
+          case 'orange': return <Orange key={key} cx={cx} cy={cy} />;
+          case 'lemon': return <Lemon key={key} cx={cx} cy={cy} />;
+          case 'olive': return <Olive key={key} cx={cx} cy={cy} />;
+          case 'oak': return <Acorn key={key} cx={cx} cy={cy - 2} />;
+          case 'pine': return <ellipse key={key} cx={cx} cy={cy} rx={5.5} ry={3.2} fill="#633b1e" />;
+          default: return <circle key={key} cx={cx} cy={cy} r={2.6} fill="#e5df63" />;
+        }
+      })}
+    </g>
+  );
+}
+
+/** Ulu ağacın dalındaki kuş */
+function PerchedBird() {
+  return (
+    <g stroke={OUTLINE} strokeWidth={1.4} strokeLinejoin="round">
+      <path d="M70 15 C70 9 77 7 81 10 L86 9 L82 13 C82 17 78 20 73 19 C71 18 70 17 70 15 Z" fill="#f2a541" />
+      <path d="M72 14 C74 12 78 12 79 14" fill="none" stroke="#b86e1c" />
+      <circle cx={79.5} cy={11.5} r={0.9} fill={OUTLINE} stroke="none" />
+      <path d="M73 19 L72 22 M76 19 L76 22" fill="none" />
+    </g>
+  );
+}
+
+/** Işıltılı ulu ağacın çevresindeki altın ışıltılar */
+function Sparkles8() {
+  const stars: [number, number, number][] = [[18, 30, 5], [84, 26, 6], [26, 66, 4], [78, 62, 4.5], [50, -2, 5.5], [10, 50, 3.5], [90, 46, 3.5]];
+  return (
+    <g>
+      {stars.map(([x, y, r], i) => (
+        <path
+          key={i}
+          className={styles.treeSparkle}
+          style={{ animationDelay: `${(i * 0.37) % 1.8}s` }}
+          d={`M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r} Z`}
+          fill="#f6c945"
+          stroke="#b8860b"
+          strokeWidth={0.8}
+        />
+      ))}
+    </g>
+  );
+}
+
 export interface TreeArtProps {
   tree: string;
   stage: number;
@@ -427,7 +515,7 @@ export interface TreeArtProps {
 }
 
 /**
- * 8 ağaç türü × 6 büyüme aşaması için özgün SVG çizim bileşeni.
+ * 8 ağaç türü × 9 büyüme aşaması için özgün SVG çizim bileşeni (6+ bereket, 7+ ulu, 8 ışıltılı).
  * viewBox="0 0 100 120"
  */
 export function TreeArt({
@@ -440,7 +528,7 @@ export function TreeArt({
   width,
   height,
 }: TreeArtProps) {
-  const safeStage = Math.max(0, Math.min(5, Math.floor(stage)));
+  const safeStage = Math.max(0, Math.min(8, Math.floor(stage)));
 
   // Sway animasyon sınıfı
   const swayClass = styles.treeSway;
@@ -484,7 +572,15 @@ export function TreeArt({
       aria-hidden="true"
       style={{ overflow: 'visible' }}
     >
-      {renderContent()}
+      {safeStage >= 7 ? (
+        // Ulu ağaç: aynı ağaç dibinden büyütülür
+        <g transform="translate(50 112) scale(1.14) translate(-50 -112)">
+          {renderContent()}
+          <PerchedBird />
+        </g>
+      ) : renderContent()}
+      {safeStage >= 6 && <FallenFruits tree={tree} />}
+      {safeStage === 8 && <Sparkles8 />}
     </svg>
   );
 }

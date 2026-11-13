@@ -163,6 +163,10 @@ Görsel kontrol sınırı: yerel önizleme ve test verileri; canlı yönetici ot
 
 Doğrulama kapsamı: yerel öğrenci önizlemesinde test verileriyle masaüstü ve mobil yerleşimler; gerçek öğrenci oturumu ve canlı sunucu doğrulaması değildir.
 
+Bahçe görünümü (`GardenPlot`) mevcut yeşil/sıcak nötr dil içinde, ağaçları masaüstünde yakın ve çapraz kümeler halinde; 640 px ve altı ekranlarda veya 560 px ve altı bileşen genişliğinde iki kollu çapraz düzende gösterir. Büyük bahçe evi ağaçlarla orantılıdır; kıvrımlı patika eve bağlanır, gölet evin yanında yer alır. Kelebekler ayrı rotalarda uçar; azaltılmış hareket tercihinde animasyon durur. Davranış adları kesilmeden satıra yayılır; büyüme aşaması ve sulama hakkı gerçek veriden gelir. Henüz dikilmemiş yuvalar boş durum olarak ayırt edilir. Mevcut seviye eşikleriyle açılan manzara süsleri ve ağaç seçme/sulama davranışı korunur; bu sahnenin renkleri ve yerleşimi diğer panellere genellenmez.
+
+Çiçek kazanımı ev önü/patika tarhları ve seyrek arıları; ev kazanımı sulama kovası/el arabasını; gölet kazanımı ördek ve su halkalarını da gösterir. Bunlar dekoratiftir; yeni puan veya seviye eşiği eklemez. Arı, ördek ve halka hareketleri azaltılmış hareket tercihinde durur.
+
 - Tekli açılır seçeneklerde `CustomSelect`; yeni native `<select>` ekleme. Çoklu seçim tekli seçime indirgenmez; Ödev gönder başlığındaki checkbox menüsü örnektir.
 - İkonlar `src/components/icons.tsx` üzerinden, tutarlı ölçü ve çizgi ağırlığıyla gelir. Küçük ikonlar 16–20 px, ana araçlar 20–24 px; emojiyle ikon taklidi yapma.
 - Listede kimlik solda, işlem sağda; satırlar ince çizgiyle ayrılır. Mobilde işlem metni gizlenebilir; erişilebilir ad ve en az 44 × 44 px alan korunur.

@@ -98,6 +98,19 @@ export async function deleteQuestion(q: Pick<QuestionRow, 'id' | 'image_path'>):
   return { ok: true, data: undefined };
 }
 
+/**
+ * Birden fazla soruyu (örneğin bir konudaki tüm soruları) topluca siler.
+ */
+export async function deleteQuestions(questions: Pick<QuestionRow, 'id' | 'image_path'>[]): Promise<Result> {
+  if (questions.length === 0) return { ok: true, data: undefined };
+  const ids = questions.map((q) => q.id);
+  const { error } = await supabase.from('quiz_questions').delete().in('id', ids);
+  if (error) return fail(error);
+  const imagePaths = Array.from(new Set(questions.map((q) => q.image_path).filter((p): p is string => Boolean(p))));
+  await Promise.all(imagePaths.map((p) => removeImageIfUnused(p)));
+  return { ok: true, data: undefined };
+}
+
 async function removeImageIfUnused(path: string) {
   const [inItems, inQuestions] = await Promise.all([
     supabase.from('quiz_items').select('id').eq('image_path', path).limit(1),

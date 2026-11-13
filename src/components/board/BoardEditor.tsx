@@ -103,6 +103,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [pageIndex, setPageIndex] = useState(0);
   const [tool, setTool] = useState<Tool>('select');
   const [color, setColor] = useState(COLORS[0]);
+  const isWhiteColor = color?.toLowerCase() === '#ffffff' || color?.toLowerCase() === '#fff';
   const [width, setWidth] = useState(WIDTHS[1]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -118,6 +119,20 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [presentTool, setPresentTool] = useState<Tool>('pen');
   const [presentColor, setPresentColor] = useState('#d03b3b');
   const [presentWidth, setPresentWidth] = useState(5);
+  const [penMenuOpen, setPenMenuOpen] = useState(false);
+  const [presentPenType, setPresentPenType] = useState<'pen' | 'highlighter' | 'fine' | 'brush'>('pen');
+  const penMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!penMenuOpen) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (penMenuRef.current && !penMenuRef.current.contains(e.target as Node)) {
+        setPenMenuOpen(false);
+      }
+    };
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => window.removeEventListener('pointerdown', handlePointerDown);
+  }, [penMenuOpen]);
   const [printing, setPrinting] = useState(false);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -1332,144 +1347,247 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
           {notice && <p className={`${styles.saveWarn} ${styles.floatNotice}`} role="status" onClick={() => setNotice(null)}>{notice}</p>}
         </div>
         <div className={styles.presentBar} role="toolbar" aria-label="Ders araçları">
-          <button
-            type="button"
-            className={`${styles.toolIconBtn} ${presentTool === 'pen' ? styles.toolActive : ''}`}
-            aria-pressed={presentTool === 'pen'}
-            onClick={() => setPresentTool('pen')}
-            title="Kalem"
-            aria-label="Kalem"
-          >
-            <Pen size={18} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className={`${styles.toolIconBtn} ${presentTool === 'highlighter' ? styles.toolActive : ''}`}
-            aria-pressed={presentTool === 'highlighter'}
-            onClick={() => setPresentTool('highlighter')}
-            title="Vurgulayıcı"
-            aria-label="Vurgulayıcı"
-          >
-            <Highlighter size={18} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className={`${styles.toolIconBtn} ${presentTool === 'eraser' ? styles.toolActive : ''}`}
-            aria-pressed={presentTool === 'eraser'}
-            onClick={() => setPresentTool('eraser')}
-            title="Silgi"
-            aria-label="Silgi"
-          >
-            <Eraser size={18} aria-hidden="true" />
-          </button>
-          <span className={styles.sep} aria-hidden="true" />
-          {['#ffffff', '#d03b3b', '#2a78d6', '#1f2a24', '#1e7a4c', '#e0a800'].map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={`${styles.colorSwatch} ${presentColor === c ? styles.colorSwatchActive : ''}`}
-              style={{ background: c }}
-              aria-pressed={presentColor === c}
-              onClick={() => { setPresentColor(c); if (presentTool === 'eraser') setPresentTool('pen'); }}
-              aria-label={`Renk ${c}`}
-            />
-          ))}
-          {(() => {
-            const i = Math.max(0, PRESENT_WIDTHS.findIndex((w) => w.value === presentWidth));
-            const cur = PRESENT_WIDTHS[i];
-            return (
+          {/* Çizim Araçları Grubu */}
+          <div className={styles.presentGroup}>
+            <div className={styles.penButtonWrapper} ref={penMenuRef}>
               <button
                 type="button"
-                className={styles.toolIconBtn}
-                onClick={() => setPresentWidth(PRESENT_WIDTHS[(i + 1) % PRESENT_WIDTHS.length].value)}
-                title={`Kalınlık: ${cur.label} (değiştirmek için dokunun)`}
-                aria-label={`Kalem kalınlığı: ${cur.label}. Değiştir`}
+                className={`${styles.toolIconBtn} ${styles.presentPenBtn} ${presentTool !== 'eraser' ? styles.toolActive : ''}`}
+                aria-pressed={presentTool !== 'eraser'}
+                onClick={() => {
+                  if (presentTool === 'eraser') {
+                    setPresentTool(presentPenType === 'highlighter' ? 'highlighter' : 'pen');
+                    setPenMenuOpen(true);
+                  } else {
+                    setPenMenuOpen((prev) => !prev);
+                  }
+                }}
+                title="Kalem ve renk ayarları (seçenekleri açmak için tıklayın)"
+                aria-label="Kalem ve renk ayarları"
               >
-                <span aria-hidden="true" style={{ width: cur.dot, height: cur.dot, borderRadius: '50%', background: presentColor, boxShadow: '0 0 0 2px #ffffff' }} />
+                {presentPenType === 'highlighter' ? (
+                  <Highlighter size={19} aria-hidden="true" />
+                ) : (
+                  <Pen size={19} aria-hidden="true" />
+                )}
+                <span
+                  className={styles.penColorIndicator}
+                  style={{ background: presentColor }}
+                  aria-hidden="true"
+                />
               </button>
-            );
-          })()}
-          <span className={styles.sep} aria-hidden="true" />
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={undoAnnot}
-            disabled={!annotPast.length}
-            title="Geri al"
-            aria-label="Geri al"
-          >
-            <RotateCcw size={18} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={() => { if (!layer.length) return; setAnnotPast((p) => [...p, annot]); setAnnot({ ...annot, [page.id]: [] }); }}
-            disabled={!layer.length}
-            title="Bu sayfadaki çizimleri temizle"
-            aria-label="Temizle"
-          >
-            <Trash2 size={18} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={savePresentAnnotations}
-            disabled={!layer.length}
-            title="Yazılanları bu sayfaya kaydet (kaydetmezseniz sunum bitince silinir)"
-            aria-label="Yazılanları sayfaya kaydet"
-          >
-            <Save size={18} aria-hidden="true" />
-          </button>
-          <span className={styles.sep} aria-hidden="true" />
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={prevPage}
-            disabled={pageIndex === 0}
-            aria-label="Önceki sayfa"
-            title="Önceki sayfa"
-          >
-            <ChevronLeft size={18} aria-hidden="true" />
-          </button>
-          <span className={styles.saveState}>{pageIndex + 1} / {content.pages.length}</span>
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={nextPage}
-            disabled={pageIndex >= content.pages.length - 1}
-            aria-label="Sonraki sayfa"
-            title="Sonraki sayfa"
-          >
-            <ChevronRight size={18} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={addPage}
-            title="Bu sayfadan sonra boş sayfa ekle"
-            aria-label="Boş sayfa ekle"
-          >
-            <Plus size={18} aria-hidden="true" />
-          </button>
-          <span className={styles.sep} aria-hidden="true" />
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={toggleBrowserFs}
-            title={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'}
-            aria-label={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'}
-          >
-            {fsActive ? <Minimize size={18} aria-hidden="true" /> : <Maximize size={18} aria-hidden="true" />}
-          </button>
-          <button
-            type="button"
-            className={styles.toolIconBtn}
-            onClick={toggleFull}
-            title="Dersi kapat, tahta sayfasına dön"
-            aria-label="Dersi kapat"
-          >
-            <X size={18} aria-hidden="true" />
-          </button>
+
+              {penMenuOpen && (
+                <div className={styles.presentPenPopover} role="dialog" aria-label="Kalem ayarları">
+                  <div className={styles.popoverSection}>
+                    <div className={styles.popoverLabel}>Kalem Türü</div>
+                    <div className={styles.penTypeGrid}>
+                      <button
+                        type="button"
+                        className={`${styles.penTypeBtn} ${presentPenType === 'pen' ? styles.penTypeActive : ''}`}
+                        onClick={() => {
+                          setPresentPenType('pen');
+                          setPresentTool('pen');
+                          setPresentWidth(5);
+                        }}
+                      >
+                        <Pen size={15} aria-hidden="true" />
+                        <span>Normal</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.penTypeBtn} ${presentPenType === 'highlighter' ? styles.penTypeActive : ''}`}
+                        onClick={() => {
+                          setPresentPenType('highlighter');
+                          setPresentTool('highlighter');
+                          setPresentWidth(6);
+                        }}
+                      >
+                        <Highlighter size={15} aria-hidden="true" />
+                        <span>Vurgu</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.penTypeBtn} ${presentPenType === 'fine' ? styles.penTypeActive : ''}`}
+                        onClick={() => {
+                          setPresentPenType('fine');
+                          setPresentTool('pen');
+                          setPresentWidth(2);
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1 }}>0.5</span>
+                        <span>İnce</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.penTypeBtn} ${presentPenType === 'brush' ? styles.penTypeActive : ''}`}
+                        onClick={() => {
+                          setPresentPenType('brush');
+                          setPresentTool('pen');
+                          setPresentWidth(12);
+                        }}
+                      >
+                        <span style={{ fontSize: 14, lineHeight: 1 }}>🖌</span>
+                        <span>Fırça</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.popoverSection}>
+                    <div className={styles.popoverLabel}>Renk</div>
+                    <div className={styles.presentColorGrid}>
+                      {['#1f2a24', '#d03b3b', '#2a78d6', '#1e7a4c', '#e0a800', '#ffffff'].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          className={`${styles.popoverColorSwatch} ${presentColor === c ? styles.popoverColorActive : ''}`}
+                          style={{ background: c }}
+                          onClick={() => {
+                            setPresentColor(c);
+                            if (presentTool === 'eraser') {
+                              setPresentTool(presentPenType === 'highlighter' ? 'highlighter' : 'pen');
+                            }
+                          }}
+                          aria-label={`Renk ${c}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.popoverSection}>
+                    <div className={styles.popoverLabel}>Kalınlık</div>
+                    <div className={styles.widthRow}>
+                      {[
+                        { value: 2, label: 'İnce', dot: 4 },
+                        { value: 5, label: 'Orta', dot: 8 },
+                        { value: 10, label: 'Kalın', dot: 13 },
+                        { value: 16, label: 'Çok Kalın', dot: 18 },
+                      ].map((w) => (
+                        <button
+                          key={w.value}
+                          type="button"
+                          className={`${styles.widthOptionBtn} ${presentWidth === w.value ? styles.widthOptionActive : ''}`}
+                          onClick={() => setPresentWidth(w.value)}
+                          title={w.label}
+                          aria-label={`Kalınlık ${w.label}`}
+                        >
+                          <span
+                            style={{
+                              width: w.dot,
+                              height: w.dot,
+                              borderRadius: '50%',
+                              background: presentColor === '#ffffff' ? '#333333' : presentColor,
+                            }}
+                          />
+                          <span className={styles.widthLabelText}>{w.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className={`${styles.toolIconBtn} ${presentTool === 'eraser' ? styles.toolActive : ''}`}
+              aria-pressed={presentTool === 'eraser'}
+              onClick={() => {
+                setPresentTool('eraser');
+                setPenMenuOpen(false);
+              }}
+              title="Silgi (çizimleri sil)"
+              aria-label="Silgi"
+            >
+              <Eraser size={19} aria-hidden="true" />
+            </button>
+          </div>
+
+          <span className={styles.presentSep} aria-hidden="true" />
+
+          {/* İşlemler Grubu */}
+          <div className={styles.presentGroup}>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
+              onClick={undoAnnot}
+              disabled={!annotPast.length}
+              title="Geri al"
+              aria-label="Geri al"
+            >
+              <RotateCcw size={18} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
+              onClick={savePresentAnnotations}
+              disabled={!layer.length}
+              title="Yazılanları bu sayfaya kaydet"
+              aria-label="Yazılanları sayfaya kaydet"
+            >
+              <Save size={18} aria-hidden="true" />
+            </button>
+          </div>
+
+          <span className={styles.presentSep} aria-hidden="true" />
+
+          {/* Sayfa Gezinme Grubu */}
+          <div className={styles.presentGroup}>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
+              onClick={prevPage}
+              disabled={pageIndex === 0}
+              aria-label="Önceki sayfa"
+              title="Önceki sayfa"
+            >
+              <ChevronLeft size={18} aria-hidden="true" />
+            </button>
+            <span className={styles.saveState}>{pageIndex + 1} / {content.pages.length}</span>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
+              onClick={nextPage}
+              disabled={pageIndex >= content.pages.length - 1}
+              aria-label="Sonraki sayfa"
+              title="Sonraki sayfa"
+            >
+              <ChevronRight size={18} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
+              onClick={addPage}
+              title="Bu sayfadan sonra boş sayfa ekle"
+              aria-label="Boş sayfa ekle"
+            >
+              <Plus size={18} aria-hidden="true" />
+            </button>
+          </div>
+
+          <span className={styles.presentSep} aria-hidden="true" />
+
+          {/* Ekran / Kapatma Grubu */}
+          <div className={styles.presentGroup}>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
+              onClick={toggleBrowserFs}
+              title={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'}
+              aria-label={fsActive ? 'Tam ekrandan çık' : 'Tam ekran yap'}
+            >
+              {fsActive ? <Minimize size={18} aria-hidden="true" /> : <Maximize size={18} aria-hidden="true" />}
+            </button>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
+              onClick={toggleFull}
+              title="Dersi kapat, tahta sayfasına dön"
+              aria-label="Dersi kapat"
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1654,14 +1772,26 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               <span className={styles.popoverLabel}>Çizim aracı</span>
               <div className={styles.brushRow}>
                 <button type="button" className={`${styles.brushCard} ${tool === 'pen' ? styles.brushActive : ''}`} aria-pressed={tool === 'pen'} onClick={() => setTool('pen')} title="Kalem (P)">
-                  <div className={styles.brushPreview} style={{ borderColor: tool === 'pen' ? color : '#dedad0' }}>
-                    <Pen size={20} color={tool === 'pen' ? color : 'currentColor'} />
+                  <div
+                    className={styles.brushPreview}
+                    style={{
+                      borderColor: tool === 'pen' ? (isWhiteColor ? '#20352d' : color) : '#dedad0',
+                      backgroundColor: tool === 'pen' && isWhiteColor ? '#20352d' : '#ffffff',
+                    }}
+                  >
+                    <Pen size={20} color={tool === 'pen' ? (isWhiteColor ? '#ffffff' : color) : 'currentColor'} />
                   </div>
                   <span>Kalem</span>
                 </button>
                 <button type="button" className={`${styles.brushCard} ${tool === 'highlighter' ? styles.brushActive : ''}`} aria-pressed={tool === 'highlighter'} onClick={() => setTool('highlighter')} title="Vurgulayıcı (H)">
-                  <div className={styles.brushPreview} style={{ borderColor: tool === 'highlighter' ? color : '#dedad0' }}>
-                    <Highlighter size={20} color={tool === 'highlighter' ? color : 'currentColor'} />
+                  <div
+                    className={styles.brushPreview}
+                    style={{
+                      borderColor: tool === 'highlighter' ? (isWhiteColor ? '#20352d' : color) : '#dedad0',
+                      backgroundColor: tool === 'highlighter' && isWhiteColor ? '#20352d' : '#ffffff',
+                    }}
+                  >
+                    <Highlighter size={20} color={tool === 'highlighter' ? (isWhiteColor ? '#ffffff' : color) : 'currentColor'} />
                   </div>
                   <span>Vurgu</span>
                 </button>
@@ -1672,8 +1802,14 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                   <span>Silgi</span>
                 </button>
                 <button type="button" className={`${styles.brushCard} ${tool === 'fill' ? styles.brushActive : ''}`} aria-pressed={tool === 'fill'} onClick={() => setTool('fill')} title="Doldur (F)">
-                  <div className={styles.brushPreview} style={{ borderColor: tool === 'fill' ? color : '#dedad0' }}>
-                    <PaintBucket size={20} color={tool === 'fill' ? color : 'currentColor'} />
+                  <div
+                    className={styles.brushPreview}
+                    style={{
+                      borderColor: tool === 'fill' ? (isWhiteColor ? '#20352d' : color) : '#dedad0',
+                      backgroundColor: tool === 'fill' && isWhiteColor ? '#20352d' : '#ffffff',
+                    }}
+                  >
+                    <PaintBucket size={20} color={tool === 'fill' ? (isWhiteColor ? '#ffffff' : color) : 'currentColor'} />
                   </div>
                   <span>Doldur</span>
                 </button>
@@ -1727,7 +1863,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                     }}
                     title={`${preset.label} (${preset.value}px)`}
                   >
-                    <span className={styles.widthDotPreview} style={{ width: preset.dot, height: preset.dot, backgroundColor: color }} />
+                    <span
+                      className={styles.widthDotPreview}
+                      style={{
+                        width: preset.dot,
+                        height: preset.dot,
+                        backgroundColor: color,
+                        boxShadow: isWhiteColor ? '0 0 0 1.5px #58665f' : undefined,
+                      }}
+                    />
                     <span>{preset.label}</span>
                   </button>
                 ))}
@@ -1824,7 +1968,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                     }}
                     title={`${preset.label} (${preset.value}px)`}
                   >
-                    <span className={styles.widthDotPreview} style={{ width: preset.dot, height: preset.dot, backgroundColor: color }} />
+                    <span
+                      className={styles.widthDotPreview}
+                      style={{
+                        width: preset.dot,
+                        height: preset.dot,
+                        backgroundColor: color,
+                        boxShadow: isWhiteColor ? '0 0 0 1.5px #58665f' : undefined,
+                      }}
+                    />
                     <span>{preset.label}</span>
                   </button>
                 ))}

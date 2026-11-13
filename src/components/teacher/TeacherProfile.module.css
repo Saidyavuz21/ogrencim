@@ -14,6 +14,9 @@
   .sectionNav button:hover { background: #f0f5ef; }
   .sectionNav button:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: -3px; }
   .sectionNav svg { flex-shrink: 0; }
+  .sectionNav .sidebarLogoutBtn { color: #c53030; margin-top: 6px; border-top: 1px solid #eeece5; border-radius: 10px; padding-top: 14px; }
+  .sectionNav .sidebarLogoutBtn:hover { background: #fdf2f2; color: #9b2c2c; }
+  .sectionNav .sidebarLogoutBtn:focus-visible { outline-color: #c53030; }
   .content { gap: 0; }
   .profile .layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 0; }
   .profile[data-section='community'] .layout,
@@ -31,14 +34,13 @@
   .profile .editForm { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .profile .editForm > :first-child,
   .profile .editForm > :last-child { grid-column: 1 / -1; }
-  .profile .security { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 24px; }
-  .profile .logoutPanel { justify-items: start; padding: 24px; }
-  .profile .logoutPanel > button { width: auto; min-width: 140px; }
+  .profile .security { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 24px; max-width: 640px; }
+  .profile .logoutPanel { display: none; }
   .desktopOnly { display: block; }
 }
 @media (min-width: 1280px) {
   .profile .details, .profile .editForm { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (min-width: 1600px) {
-  .profile .security { grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr); }
+  .profile .security { grid-template-columns: minmax(0, 1fr); }
 }

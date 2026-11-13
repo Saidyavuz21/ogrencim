@@ -71,10 +71,12 @@ export const GARDEN_TREES = ['apple', 'cherry', 'oak', 'pine', 'orange', 'olive'
 export const waterRights = (t: Pick<GardenTree, 'earned' | 'watered'>) => Math.max(0, t.earned - 1 - t.watered);
 
 /**
- * Büyüme aşaması 0–5 (sulama sayısına göre): 0 fidan · 1 genç fidan · 2 genç ağaç · 3 yapraklı · 4 çiçekli · 5 meyveli.
- * Eşikler: 0, 2, 5, 9, 14, 20 sulama.
+ * Büyüme aşaması 0–8 (sulama sayısına göre): 0 fidan · 1 genç fidan · 2 genç ağaç · 3 yapraklı · 4 çiçekli · 5 meyveli
+ * · 6 bereketli · 7 ulu · 8 ışıltılı ulu ağaç.
+ * Eşikler: 0, 2, 4, 6, 9, 12, 15, 19, 23 sulama (aşamalar arası 2–4 sulama).
  */
-export const GROWTH_THRESHOLDS = [0, 2, 5, 9, 14, 20] as const;
+export const GROWTH_THRESHOLDS = [0, 2, 4, 6, 9, 12, 15, 19, 23] as const;
+export const MAX_STAGE = GROWTH_THRESHOLDS.length - 1;
 export function growthStage(watered: number): number {
   let stage = 0;
   GROWTH_THRESHOLDS.forEach((min, i) => { if (watered >= min) stage = i; });
@@ -89,7 +91,7 @@ export function wateringsToNext(watered: number): number | null {
 // ---------------- Manzara kazanımları ----------------
 /**
  * Bahçe seviyesi: dikilmiş her ağaç (aşama + 1) kadar katkı verir.
- * Fidan dikmek 1, her büyüme aşaması +1 (meyveli ağaç = 6). 12 davranışla en fazla 72.
+ * Fidan dikmek 1, her büyüme aşaması +1 (meyveli ağaç = 6, ışıltılı ulu ağaç = 9).
  */
 export function gardenLevel(trees: Pick<GardenTree, 'earned' | 'watered'>[]): number {
   return trees.filter((t) => t.earned >= 1).reduce((sum, t) => sum + growthStage(t.watered) + 1, 0);
@@ -112,11 +114,21 @@ export const GARDEN_UNLOCKS = [
 ] as const;
 export type GardenUnlockKey = (typeof GARDEN_UNLOCKS)[number]['key'];
 
-/** Açılmış öğeler ve sıradaki hedef */
-export function gardenUnlocks(level: number) {
-  const unlocked = new Set<GardenUnlockKey>(GARDEN_UNLOCKS.filter((u) => level >= u.level).map((u) => u.key));
-  const next = GARDEN_UNLOCKS.find((u) => level < u.level) || null;
-  return { unlocked, next, remaining: next ? next.level - level : 0 };
+/**
+ * Öğenin açıldığı seviye. GARDEN_UNLOCKS seviyeleri 56'lık ölçektedir (gökkuşağı = 56 = bütün ağaçlar son aşamada);
+ * bahçenin en yüksek seviyesine (etkin davranış × 9) oranlanır. 6 davranışta eşikler eskisiyle neredeyse aynıdır,
+ * davranış arttıkça öğeler daha geç açılır; her öğe ulaşılabilir kalır.
+ */
+export function unlockLevel(u: { level: number }, behaviorCount = 6): number {
+  const maxLevel = Math.max(1, behaviorCount) * (MAX_STAGE + 1);
+  return Math.max(1, Math.round((u.level / 56) * maxLevel));
+}
+
+/** Açılmış öğeler ve sıradaki hedef (behaviorCount: sınıftaki etkin davranış sayısı) */
+export function gardenUnlocks(level: number, behaviorCount = 6) {
+  const unlocked = new Set<GardenUnlockKey>(GARDEN_UNLOCKS.filter((u) => level >= unlockLevel(u, behaviorCount)).map((u) => u.key));
+  const next = GARDEN_UNLOCKS.find((u) => level < unlockLevel(u, behaviorCount)) || null;
+  return { unlocked, next, remaining: next ? unlockLevel(next, behaviorCount) - level : 0 };
 }
 
 // ---------------- Öğretmen ----------------

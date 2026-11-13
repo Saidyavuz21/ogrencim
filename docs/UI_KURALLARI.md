@@ -80,6 +80,12 @@ Bu bölüm yalnızca `src/components/home/HomePage.tsx` ve `HomePage.module.css`
 - Masaüstü topluluk alanında mevcut herkese açık galeriden en fazla üç gerçek materyal göster. Yükleniyor, boş ve hata durumlarını ayrı ve doğru metinlerle sun; örnek materyal uydurma. Mobilde yalnızca topluluk bağlantısı bulunur.
 - Ana sayfa, topluluk, bilgi ve hukuk sayfalarında ortak `SiteFooter` kullan. Platform / Destek / Kurallar ve gizlilik altındaki bütün mevcut bağlantıları koru; ana sayfaya ayrı kısa footer yazma. Masaüstünde marka + üç bağlantı grubu, 760 px altında marka üstte ve kompakt iki sütun düzeni kullanılır. Bağlantılar en az 44 px yüksekliğindedir; giriş/kayıt ekranının kendi yerleşimini değiştirme.
 
+## Bahçe görünümü
+
+`src/components/garden/GardenPlot.tsx` ve `Garden.module.css` mevcut yeşil/sıcak nötr sistemi korur. Ağaçlar yakın ve çapraz kümeler oluşturur; ekran 640 px veya bileşen 560 px ve altındaysa iki kollu çapraz düzene geçer. Ev ağaçlarla orantılı ve belirgin büyüklüktedir; kıvrımlı patika eve bağlanır, büyük gölet evin yanında yer alır. Kelebeklerin bağımsız uçuş/kanat hareketi azaltılmış hareket tercihinde durur. Davranış etiketleri tam metinle satıra yayılır; dikilmemiş yuvalar ayrı boş durum olarak gösterilir. Büyüme aşaması, sulama hakkı, ağaç seçimi ve seviye eşiğiyle açılan mevcut manzara süsleri gerçek veri ve mevcut davranışla korunur. Sahneye özgü renkleri ve yerleşimi ortak panel kuralına dönüştürme.
+
+Çiçek kazanımı ev önü/patika tarhları ve seyrek arıları; ev kazanımı sulama kovası/el arabasını; gölet kazanımı ördek ve su halkalarını da gösterir. Bunlar dekoratiftir; yeni puan veya seviye eşiği eklemez. Arı, ördek ve halka hareketleri azaltılmış hareket tercihinde durur.
+
 ## Kaynak örnekler
 
 - Ortak kabuk: `src/components/teacher/TeacherDashboard.tsx`, `TeacherTopBar.tsx`, `TeacherSidebar.tsx`, `TeacherMobileNav.tsx`, `TeacherPageHeader.tsx`.

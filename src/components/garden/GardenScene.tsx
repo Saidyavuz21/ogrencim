@@ -201,13 +201,13 @@ export function WoodenFence() {
  * Gölet (Seviye 25)
  * Sol ön tarafta sazlıkları ve nilüferleri olan parıltılı gölet
  */
-export function Pond() {
+export function Pond({ fill = 'url(#garden-pond-grad)' }: { fill?: string } = {}) {
   return (
     <g className={styles.fadeInElement}>
       {/* Gölet kıyısı / çamur çemberi */}
       <ellipse cx="140" cy="510" rx="90" ry="46" fill="#4d7852" opacity="0.5" />
       {/* Gölet suyu */}
-      <ellipse cx="138" cy="508" rx="84" ry="40" fill="url(#garden-pond-grad)" stroke="#1a535c" strokeWidth="2" />
+      <ellipse cx="138" cy="508" rx="84" ry="40" fill={fill} stroke="#1a535c" strokeWidth="2" />
       {/* Su ışıltısı */}
       <ellipse cx="115" cy="498" rx="42" ry="16" fill="#ffffff" opacity="0.28" />
 
@@ -297,36 +297,19 @@ export function BirdsAndBirdhouse() {
  * Ağaçların arasında süzülen 3 neşeli kelebek
  */
 export function Butterflies() {
-  return (
-    <g className={`${styles.fadeInElement} ${styles.butterflyGroup}`}>
-      {/* Kelebek 1 (Sarı) */}
-      <g transform="translate(310, 340)">
-        <ellipse cx="-4" cy="-3" rx="4.5" ry="3.5" fill="#f1c40f" opacity="0.9" />
-        <ellipse cx="4" cy="-3" rx="4.5" ry="3.5" fill="#f1c40f" opacity="0.9" />
-        <ellipse cx="-3" cy="2" rx="3" ry="2.2" fill="#f39c12" />
-        <ellipse cx="3" cy="2" rx="3" ry="2.2" fill="#f39c12" />
-        <line x1="0" y1="-5" x2="0" y2="4" stroke="#2c3e50" strokeWidth="1" />
+  return <g>
+    {[{x:310,y:340,color:'#d9a744'},{x:680,y:360,color:'#659fad'},{x:860,y:430,color:'#cf87a0'}].map((b,i)=>(
+      <g key={i} transform={`translate(${b.x}, ${b.y})`}>
+        <g className={styles.butterflyFlight} style={{animationDelay: `-${i*4}s`, animationDuration: `${14+i*3}s`}}>
+          <g className={styles.butterflyWings} fill={b.color}>
+            <ellipse cx="-6" cy="-4" rx="7" ry="5" /><ellipse cx="6" cy="-4" rx="7" ry="5" />
+            <ellipse cx="-4" cy="3" rx="4.5" ry="3.5" /><ellipse cx="4" cy="3" rx="4.5" ry="3.5" />
+          </g>
+          <path d="M0 -7 V7 M0 -6 L-3 -10 M0 -6 L3 -10" stroke="#4d5141" strokeWidth="1.3" fill="none" />
+        </g>
       </g>
-
-      {/* Kelebek 2 (Mavi) */}
-      <g transform="translate(680, 360)">
-        <ellipse cx="-4" cy="-3" rx="4.5" ry="3.5" fill="#3498db" opacity="0.9" />
-        <ellipse cx="4" cy="-3" rx="4.5" ry="3.5" fill="#3498db" opacity="0.9" />
-        <ellipse cx="-3" cy="2" rx="3" ry="2.2" fill="#2980b9" />
-        <ellipse cx="3" cy="2" rx="3" ry="2.2" fill="#2980b9" />
-        <line x1="0" y1="-5" x2="0" y2="4" stroke="#2c3e50" strokeWidth="1" />
-      </g>
-
-      {/* Kelebek 3 (Pembe) */}
-      <g transform="translate(860, 430)">
-        <ellipse cx="-4" cy="-3" rx="4" ry="3" fill="#fd79a8" opacity="0.9" />
-        <ellipse cx="4" cy="-3" rx="4" ry="3" fill="#fd79a8" opacity="0.9" />
-        <ellipse cx="-2.5" cy="2" rx="2.5" ry="1.8" fill="#e84393" />
-        <ellipse cx="2.5" cy="2" rx="2.5" ry="1.8" fill="#e84393" />
-        <line x1="0" y1="-4" x2="0" y2="3" stroke="#2c3e50" strokeWidth="1" />
-      </g>
-    </g>
-  );
+    ))}
+  </g>;
 }
 
 /**
@@ -335,61 +318,12 @@ export function Butterflies() {
  */
 export function VillageHouse({ upgraded }: { upgraded: boolean }) {
   return (
-    <g transform="translate(900, 215)" className={styles.fadeInElement} stroke="#2d1c0e" strokeWidth="1.8" strokeLinejoin="round">
-      {/* Baca */}
-      <rect x="68" y="12" width="14" height="24" fill="#a0402a" />
-      <rect x="66" y="8" width="18" height="5" rx="1" fill="#7a2a16" />
-
-      {/* Seviye 31 (house2): Bacadan tüten duman bulutları */}
-      {upgraded && (
-        <g className={styles.smokePuff} stroke="none">
-          <circle cx="75" cy="2" r="5" fill="#ffffff" opacity="0.6" />
-          <circle cx="79" cy="-10" r="7.5" fill="#ffffff" opacity="0.5" />
-          <circle cx="74" cy="-24" r="10" fill="#ffffff" opacity="0.35" />
-        </g>
-      )}
-
-      {/* Evin Ana Gövdesi */}
-      <rect x="15" y="36" width="76" height="58" fill="#fffdfa" />
-
-      {/* Çatı */}
-      <polygon points="53,2 4,40 102,40" fill="#c0392b" />
-      <polygon points="53,2 6,38 100,38" fill="none" stroke="#e74c3c" strokeWidth="1.5" />
-
-      {/* Kapı */}
-      <path d="M43 62 L43 94 L63 94 L63 62 Q53 58 43 62 Z" fill="#8d5b34" />
-      <circle cx="58" cy="78" r="1.8" fill="#f1c40f" stroke="none" />
-
-      {/* Pencereler */}
-      {/* Sol Pencere */}
-      <rect x="22" y="52" width="15" height="18" rx="2" fill="#bbf2f6" />
-      <line x1="29.5" y1="52" x2="29.5" y2="70" stroke="#2d1c0e" strokeWidth="1" />
-      <line x1="22" y1="61" x2="37" y2="61" stroke="#2d1c0e" strokeWidth="1" />
-
-      {/* Sağ Pencere */}
-      <rect x="69" y="52" width="15" height="18" rx="2" fill="#bbf2f6" />
-      <line x1="76.5" y1="52" x2="76.5" y2="70" stroke="#2d1c0e" strokeWidth="1" />
-      <line x1="69" y1="61" x2="84" y2="61" stroke="#2d1c0e" strokeWidth="1" />
-
-      {/* Seviye 31 (house2) Eklentileri: Çiçek kutuları ve paspas */}
-      {upgraded && (
-        <g>
-          {/* Sol Pencere Çiçek Kutusu */}
-          <rect x="20" y="69" width="19" height="6" rx="1.5" fill="#795548" />
-          <circle cx="23" cy="68" r="2.5" fill="#ff7675" stroke="#c0392b" strokeWidth="0.8" />
-          <circle cx="29" cy="67" r="2.5" fill="#ffd166" stroke="#f39c12" strokeWidth="0.8" />
-          <circle cx="35" cy="68" r="2.5" fill="#fd79a8" stroke="#e84393" strokeWidth="0.8" />
-
-          {/* Sağ Pencere Çiçek Kutusu */}
-          <rect x="67" y="69" width="19" height="6" rx="1.5" fill="#795548" />
-          <circle cx="70" cy="68" r="2.5" fill="#ff7675" stroke="#c0392b" strokeWidth="0.8" />
-          <circle cx="76" cy="67" r="2.5" fill="#55efc4" stroke="#00b894" strokeWidth="0.8" />
-          <circle cx="82" cy="68" r="2.5" fill="#ffd166" stroke="#f39c12" strokeWidth="0.8" />
-
-          {/* Kapı Önü Taş Basamak / Paspas */}
-          <rect x="40" y="93" width="26" height="4" rx="2" fill="#7f8c8d" />
-        </g>
-      )}
+    <g transform="translate(900, 215)">
+      <image href="/images/garden/cottage-v2.png" x="0" y="-10" width="160" height="128" />
+      {upgraded && <g className={styles.smokePuff} fill="#fffdf5">
+        <circle cx="123" cy="-15" r="5" opacity=".8" />
+        <circle cx="127" cy="-27" r="8" opacity=".55" />
+      </g>}
     </g>
   );
 }

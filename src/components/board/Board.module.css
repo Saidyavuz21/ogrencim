@@ -152,22 +152,283 @@
 .presentButton { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 20px; border: 1px solid var(--teacher-primary, #25634b); border-radius: 14px; background: #fff; color: var(--teacher-primary, #25634b); font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
 .presentButton:hover { background: var(--teacher-selected, #e6f1e9); }
 .presentButton:focus-visible { outline: 3px solid #2a78d6; outline-offset: 2px; }
-/* Sunum çubuğu: altta, ortada, küçük */
-.presentBar { position: absolute; bottom: 10px; left: 50%; z-index: 3; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; max-width: calc(100vw - 16px); padding: 6px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 16px; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 28px rgb(0 0 0 / 18%); }
-.presentBar .sep { width: 1px; height: 28px; margin: 0 2px; background: var(--teacher-border, #dedad0); }
-/* Tahta başında parmakla kullanılır: dokunma alanları büyük */
-.presentBar .toolIconBtn { width: 48px; height: 48px; }
-.presentBar .toolIconBtn svg { width: 22px; height: 22px; }
-.presentBar .colorSwatch { width: 36px; height: 36px; min-width: 36px !important; min-height: 36px !important; max-width: 36px; max-height: 36px; margin: 0 4px; }
-/* Ders alanı koyu çubukla, düzenleme alanı beyaz araç çubuğuyla ayrışır */
-.presentBar { border-color: #20352d; background: #20352d; }
-.presentBar .toolIconBtn { color: #ffffff; }
-.presentBar .toolIconBtn:hover:not(:disabled) { background: rgb(255 255 255 / 14%); color: #ffffff; }
-.presentBar .toolIconBtn[aria-pressed='true'], .presentBar .toolIconBtn.toolActive { border-color: #ffffff; background: #ffffff; color: #20352d; }
-.presentBar .toolIconBtn:focus-visible { outline-color: #ffffff; }
-.presentBar .sep { background: rgb(255 255 255 / 24%); }
-.presentBar .saveState { color: #ffffff; font-variant-numeric: tabular-nums; }
-.presentBar .colorSwatchActive { box-shadow: 0 0 0 2px #20352d, 0 0 0 4px #ffffff; }
+/* Sunum çubuğu: açık tema, kompakt, gruplu */
+.presentBar {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  z-index: 25;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 20px);
+  padding: 6px 10px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.presentGroup {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.presentSep {
+  width: 1px;
+  height: 24px;
+  margin: 0 3px;
+  background: #e5e2d8;
+  flex-shrink: 0;
+}
+
+.presentBar .toolIconBtn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.presentBar .toolIconBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.presentBar .toolIconBtn:hover:not(:disabled) {
+  background: #f1f0eb;
+  color: #12281e;
+}
+
+.presentBar .toolIconBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary, #25634b);
+  outline-offset: 1px;
+}
+
+.presentBar .toolIconBtn[aria-pressed='true'],
+.presentBar .toolIconBtn.toolActive {
+  background: var(--teacher-selected, #e6f1e9);
+  color: var(--teacher-primary, #25634b);
+  border-color: #bad9c5;
+}
+
+.presentBar .toolIconBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.presentBar .saveState {
+  color: var(--teacher-text, #20352d);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Kalem butonu ve renk noktası */
+.penButtonWrapper {
+  position: relative;
+}
+
+.presentPenBtn {
+  position: relative;
+}
+
+.penColorIndicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Kalem Açılır Menüsü (Popover) */
+.presentPenPopover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 30;
+  width: 310px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popoverFadeIn 0.15s ease-out;
+}
+
+.presentPenPopover button {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.popoverSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popoverLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--teacher-muted, #58665f);
+}
+
+/* Kalem Çeşitleri Izgarası */
+.penTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.penTypeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--teacher-text, #20352d);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.penTypeBtn:hover {
+  background: #f7f6f2;
+}
+
+.penTypeBtn.penTypeActive {
+  background: var(--teacher-selected, #e6f1e9);
+  color: var(--teacher-primary, #25634b);
+  border-color: #bad9c5;
+  font-weight: 700;
+}
+
+/* Renk Daireleri */
+.presentColorGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  justify-items: center;
+  align-items: center;
+  padding: 4px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.popoverColorSwatch {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  box-sizing: border-box !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.18) !important;
+  cursor: pointer;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex-shrink: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.popoverColorSwatch:hover {
+  transform: scale(1.12);
+}
+
+.popoverColorActive {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--teacher-primary, #25634b) !important;
+  transform: scale(1.08);
+}
+
+/* Kalınlık Seçimi */
+.widthRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.widthOptionBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px 6px;
+  border: 1px solid var(--teacher-border, #dedad0);
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.widthOptionBtn:hover {
+  background: #f7f6f2;
+}
+
+.widthOptionActive {
+  background: var(--teacher-selected, #e6f1e9);
+  border-color: #bad9c5;
+}
+
+.widthLabelText {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--teacher-muted, #58665f);
+}
+
+.widthOptionActive .widthLabelText {
+  color: var(--teacher-primary, #25634b);
+}
 /* Tam ekranda hangi alanda olunduğunu gösteren ve değiştiren seçim (sol üst) */
 .modeSwitch { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; z-index: 26; display: inline-grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--teacher-border, #dedad0); border-radius: 14px; background: rgb(255 255 255 / 96%); box-shadow: 0 6px 20px rgb(24 46 34 / 10%); }
 .modeSwitch button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #35443d; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
@@ -499,6 +760,7 @@
 .widthDotPreview {
   display: inline-block;
   border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
 }
 .widthSlider {
   width: 100%;

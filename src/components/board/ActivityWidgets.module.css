@@ -1,0 +1,377 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  color: #1f2a24;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2a24;
+  line-height: 1.25;
+}
+
+.badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b4b43;
+  background: #f2efe7;
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.note {
+  margin: 0;
+  font-size: 14px;
+  color: #5b6962;
+  line-height: 1.4;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.orderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1.5px solid #d5d0c4;
+  border-radius: 10px;
+  background: #ffffff;
+  touch-action: none;
+  user-select: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.orderIdx {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #f2efe7;
+  color: #34443c;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.orderText {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  cursor: grab;
+}
+
+.orderBtns {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid #d5d0c4;
+  border-radius: 8px;
+  background: #faf8f3;
+  color: #2c3a33;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: #efece3;
+}
+
+.iconBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.iconBtn:focus-visible,
+.chip:focus-visible,
+.slot:focus-visible,
+.actionBtn:focus-visible,
+.pinBtn:focus-visible {
+  outline: 2px solid #1f5c41;
+  outline-offset: 2px;
+}
+
+.ok {
+  border-color: #1e7a4c !important;
+  background: #eaf6ef !important;
+}
+
+.bad {
+  border-color: #c93b47 !important;
+  background: #fdf0f1 !important;
+}
+
+.pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: #f7f4ec;
+  border: 1px solid #e3ded1;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 1.5px solid #cfc9ba;
+  background: #ffffff;
+  color: #1f2a24;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chipPicked {
+  border-color: #1f5c41;
+  background: #e8f4ed;
+  box-shadow: 0 0 0 2px rgba(31, 92, 65, 0.2);
+}
+
+.chipDragging {
+  position: relative;
+  z-index: 20;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.sortGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.sortBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1.5px dashed #c8c2b3;
+  border-radius: 10px;
+  background: #fcfbf8;
+  min-height: 90px;
+}
+
+.sortBoxReady {
+  border-color: #1f5c41;
+  background: #f2f9f5;
+}
+
+.sortBoxTitle {
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid #e1dcd0;
+  border-radius: 8px;
+  background: #f3f0e7;
+  color: #1f2a24;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sortItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.blanksBody {
+  font-size: 16px;
+  line-height: 2.1;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fcfbf8;
+  border: 1px solid #e3ded1;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  min-height: 38px;
+  padding: 2px 10px;
+  margin: 0 3px;
+  border-radius: 8px;
+  border: 1.5px dashed #9da8a2;
+  background: #ffffff;
+  color: #20352d;
+  font-size: 15px;
+  font-weight: 600;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.slotReady {
+  border-color: #1f5c41;
+  background: #eef7f2;
+}
+
+.labelStage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 160px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #dfd9cc;
+  background: #f7f4ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.labelImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+.pinWrap {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pinBtn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
+  background: #1f5c41;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  white-space: nowrap;
+}
+
+.pinFilled {
+  background: #ffffff;
+  color: #1f2a24;
+  border-color: #1f5c41;
+}
+
+.fractionStage {
+  flex: 1 1 auto;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.fractionSvg {
+  width: 100%;
+  height: 100%;
+  max-height: 260px;
+  overflow: visible;
+}
+
+.fractionPart {
+  cursor: pointer;
+  transition: fill 120ms ease, opacity 120ms ease;
+}
+
+.fractionPart:hover {
+  opacity: 0.85;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 1px solid #cfd8d2;
+  background: #ffffff;
+  color: #1f2a24;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actionPrimary {
+  background: #1f5c41;
+  border-color: #1f5c41;
+  color: #ffffff;
+}
+
+.actionPrimary:hover {
+  background: #184a34;
+}
+
+.resultText {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f5c41;
+}
+
+.resultBad {
+  color: #b42836;
+}
+

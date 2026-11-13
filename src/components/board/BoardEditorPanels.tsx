@@ -10,7 +10,7 @@ import {
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
-import { AUDIO_MAX_SECONDS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, DICE_MAX, MATCH_MAX_PAIRS, normalizeDiceCount, normalizeSlices, parseVideoUrl, SPINNER_MAX_SLICES, SPINNER_MIN_SLICES, SPINNER_SLICE_MAX_CHARS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
+import { AUDIO_MAX_SECONDS, BLANKS_MAX_DISTRACTORS, BOARD_IMAGE_TYPES, BoardEl, boardImageUrls, DICE_MAX, FRACTION_MAX_PARTS, FRACTION_MIN_PARTS, FractionShape, imageKey, MATCH_MAX_PAIRS, normalizeDiceCount, normalizeFractionParts, normalizeFractionShape, normalizeSlices, ORDER_MAX, ORDER_MIN, parseVideoUrl, SORT_MAX_GROUPS, SORT_MIN_GROUPS, SPINNER_MAX_SLICES, SPINNER_MIN_SLICES, SPINNER_SLICE_MAX_CHARS, uploadBoardAudio, WIDGET_LABEL, WidgetData, WidgetEl } from '../../lib/boardData';
 import type { AlignMode, DistributeAxis } from './snapGuides';
 import { FILES_BUCKET, LIBRARY_BUCKET, libraryFileName, listLibrary, listMyFiles } from '../../lib/filesData';
 import { CHOICE_LETTERS, QuestionRow } from '../../lib/quizData';
@@ -40,10 +40,12 @@ const BUILTIN_IMAGES: MediaItem[] = SCHOOL_ITEMS.map((item) => ({
 // --------------------------------------------------------
 // Seçili öğenin ayarları
 // --------------------------------------------------------
-export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, onOrder, onLock, onConfigure, onSaveToLibrary, onSaveImage, busy }: {
+export function SelectionPanel({ el, questions, minitests, boardImages, imageUrls, onPatch, onDelete, onOrder, onLock, onConfigure, onSaveToLibrary, onSaveImage, busy }: {
   el: BoardEl;
   questions: QuestionRow[];
   minitests: WidgetEl[];
+  boardImages?: { bucket: string; path: string }[];
+  imageUrls?: Record<string, string>;
   onPatch: (patch: Partial<BoardEl>) => void;
   onDelete: () => void;
   onOrder: (dir: 'front' | 'back') => void;
@@ -632,6 +634,21 @@ export function SelectionPanel({ el, questions, minitests, onPatch, onDelete, on
       {el.type === 'widget' && el.kind === 'dice' && (
         <DiceEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
       )}
+      {el.type === 'widget' && el.kind === 'order' && (
+        <OrderEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'sort' && (
+        <SortEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'blanks' && (
+        <BlanksEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'label' && (
+        <LabelEditor data={el.data} boardImages={boardImages || []} imageUrls={imageUrls || {}} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
+      {el.type === 'widget' && el.kind === 'fraction' && (
+        <FractionEditor data={el.data} onChange={(data) => onPatch({ data } as Partial<BoardEl>)} />
+      )}
       <div className={styles.pageTools}>
         {onConfigure && (
           <button type="button" className={styles.tool} onClick={onConfigure} title="Şekil ayarları">
@@ -1121,6 +1138,278 @@ function VideoEditor({ data, onChange }: { data: WidgetData; onChange: (data: Wi
           ? 'Video eklendi. Tahtada Oynat düğmesiyle açılır; bağlantıda başlangıç süresi (?t=90) varsa oradan başlar.'
           : 'Bağlantıyı yapıştırın. Video dosyası yüklenmez, kotanızdan yer harcamaz. Oynat düğmesine basılana kadar YouTube’a bağlanılmaz.'}
       </p>
+    </>
+  );
+}
+
+
+function OrderEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const items = data.orderItems?.length ? data.orderItems : ['1. Adım', '2. Adım', '3. Adım'];
+  const update = (next: string[]) => onChange({ ...data, orderItems: next.slice(0, ORDER_MAX) });
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Sıralama" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <span className={styles.propLabel}>Doğru sıra ({ORDER_MIN}–{ORDER_MAX} madde)</span>
+      {items.map((item, i) => (
+        <div key={i} className={styles.stepEditRow}>
+          <span className={styles.stepEditNum}>{i + 1}.</span>
+          <input
+            type="text"
+            value={item}
+            maxLength={120}
+            placeholder={`${i + 1}. madde`}
+            onChange={(e) => update(items.map((x, j) => (j === i ? e.target.value : x)))}
+          />
+          {items.length > ORDER_MIN && (
+            <button type="button" className={styles.tool} onClick={() => update(items.filter((_, j) => j !== i))} aria-label={`${i + 1}. maddeyi sil`}>×</button>
+          )}
+        </div>
+      ))}
+      {items.length < ORDER_MAX && (
+        <button type="button" className={styles.tool} onClick={() => update([...items, `${items.length + 1}. Madde`])}>+ Madde ekle</button>
+      )}
+      <p className={styles.hintText}>Öğrenciye karışık sırada gelir; sürükleyerek veya ok düğmeleriyle sıralar.</p>
+    </>
+  );
+}
+
+function SortEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const groups = data.sortGroups?.length ? data.sortGroups : [{ title: '1. Grup', items: ['Öğe 1'] }, { title: '2. Grup', items: ['Öğe 2'] }];
+  const update = (next: { title: string; items: string[] }[]) => onChange({ ...data, sortGroups: next.slice(0, SORT_MAX_GROUPS) });
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Gruplara Ayırma" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      {groups.map((g, gi) => (
+        <div key={gi} className={styles.propGroup}>
+          <div className={styles.stepEditRow}>
+            <input
+              type="text"
+              value={g.title}
+              maxLength={60}
+              placeholder={`${gi + 1}. grup başlığı`}
+              onChange={(e) => update(groups.map((gr, j) => (j === gi ? { ...gr, title: e.target.value } : gr)))}
+            />
+            {groups.length > SORT_MIN_GROUPS && (
+              <button type="button" className={styles.tool} onClick={() => update(groups.filter((_, j) => j !== gi))} aria-label={`${gi + 1}. grubu sil`}>×</button>
+            )}
+          </div>
+          <textarea
+            rows={2}
+            value={g.items.join('\n')}
+            placeholder="Her satıra bir madde yazın"
+            onChange={(e) => update(groups.map((gr, j) => (j === gi ? { ...gr, items: e.target.value.split('\n') } : gr)))}
+          />
+        </div>
+      ))}
+      {groups.length < SORT_MAX_GROUPS && (
+        <button type="button" className={styles.tool} onClick={() => update([...groups, { title: `${groups.length + 1}. Grup`, items: ['Yeni madde'] }])}>+ Grup ekle</button>
+      )}
+      <p className={styles.hintText}>Her grubun maddelerini alt satırlara yazın (2–4 grup).</p>
+    </>
+  );
+}
+
+function BlanksEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const distractors = data.blanksDistractors || [];
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Boşluk Doldurma" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <label>Metin ([kelime] boşluk olur)
+        <textarea
+          rows={4}
+          value={data.blanksText ?? ''}
+          placeholder="Örnek: Türkiye’nin başkenti [Ankara]’dır."
+          onChange={(e) => onChange({ ...data, blanksText: e.target.value })}
+        />
+      </label>
+      <span className={styles.propLabel}>Çeldirici kelimeler (0–{BLANKS_MAX_DISTRACTORS})</span>
+      {distractors.map((d, i) => (
+        <div key={i} className={styles.stepEditRow}>
+          <input
+            type="text"
+            value={d}
+            maxLength={40}
+            placeholder={`${i + 1}. çeldirici`}
+            onChange={(e) => onChange({ ...data, blanksDistractors: distractors.map((x, j) => (j === i ? e.target.value : x)) })}
+          />
+          <button type="button" className={styles.tool} onClick={() => onChange({ ...data, blanksDistractors: distractors.filter((_, j) => j !== i) })} aria-label="Çeldiriciyi sil">×</button>
+        </div>
+      ))}
+      {distractors.length < BLANKS_MAX_DISTRACTORS && (
+        <button type="button" className={styles.tool} onClick={() => onChange({ ...data, blanksDistractors: [...distractors, ''] })}>+ Çeldirici ekle</button>
+      )}
+    </>
+  );
+}
+
+function LabelEditor({
+  data,
+  boardImages,
+  imageUrls,
+  onChange,
+}: {
+  data: WidgetData;
+  boardImages: { bucket: string; path: string }[];
+  imageUrls: Record<string, string>;
+  onChange: (data: WidgetData) => void;
+}) {
+  const points = data.labelPoints || [];
+  const selectedKey = data.labelImage ? imageKey(data.labelImage) : '';
+  const selectedUrl = selectedKey ? imageUrls[selectedKey] : undefined;
+
+  const imgOptions = [
+    { value: '', label: 'Tahtadan görsel seçin…' },
+    ...boardImages.map((img, i) => {
+      const k = imageKey(img);
+      const name = img.path.split('/').pop() || `Görsel ${i + 1}`;
+      return { value: k, label: name };
+    }),
+  ];
+
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Görsel Etiketleme" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <label>Tahtadaki görsel
+        <CustomSelect
+          value={selectedKey}
+          options={imgOptions}
+          onChange={(val) => {
+            const found = boardImages.find((img) => imageKey(img) === val);
+            onChange({ ...data, labelImage: found ? { bucket: found.bucket, path: found.path } : undefined });
+          }}
+        />
+      </label>
+      {selectedUrl && (
+        <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid #d5d0c4', background: '#faf8f3', cursor: 'crosshair' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={selectedUrl}
+            alt="Nokta eklemek için tıklayın"
+            style={{ width: '100%', display: 'block', maxHeight: 160, objectFit: 'contain' }}
+            onClick={(e) => {
+              if (points.length >= 12) return;
+              const r = e.currentTarget.getBoundingClientRect();
+              const x = Math.round(Math.max(5, Math.min(95, ((e.clientX - r.left) / r.width) * 100)));
+              const y = Math.round(Math.max(5, Math.min(95, ((e.clientY - r.top) / r.height) * 100)));
+              const next = [...points, { id: `pt-${Date.now()}-${points.length}`, x, y, text: `Etiket ${points.length + 1}` }];
+              onChange({ ...data, labelPoints: next });
+            }}
+          />
+          {points.map((pt, i) => (
+            <span
+              key={pt.id}
+              style={{
+                position: 'absolute',
+                left: `${pt.x}%`,
+                top: `${pt.y}%`,
+                transform: 'translate(-50%, -50%)',
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                background: '#1f5c41',
+                color: '#fff',
+                fontSize: 11,
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}
+            >
+              {i + 1}
+            </span>
+          ))}
+        </div>
+      )}
+      {points.map((pt, i) => (
+        <div key={pt.id} className={styles.stepEditRow}>
+          <span className={styles.stepEditNum}>{i + 1}.</span>
+          <input
+            type="text"
+            value={pt.text}
+            maxLength={50}
+            placeholder={`${i + 1}. etiket`}
+            onChange={(e) => onChange({ ...data, labelPoints: points.map((p, j) => (j === i ? { ...p, text: e.target.value } : p)) })}
+          />
+          <button type="button" className={styles.tool} onClick={() => onChange({ ...data, labelPoints: points.filter((_, j) => j !== i) })} aria-label={`${i + 1}. noktayı sil`}>×</button>
+        </div>
+      ))}
+      <p className={styles.hintText}>Önce tahtadaki bir görseli seçin, sonra önizlemenin üzerine tıklayarak numaralı nokta ekleyin.</p>
+    </>
+  );
+}
+
+function FractionEditor({ data, onChange }: { data: WidgetData; onChange: (data: WidgetData) => void }) {
+  const shape = normalizeFractionShape(data.fractionShape);
+  const parts = normalizeFractionParts(data.fractionParts);
+  const den = data.fractionDen ?? parts;
+  const num = data.fractionNum ?? 1;
+  const showFraction = data.showFraction !== false;
+
+  return (
+    <>
+      <label>Başlık
+        <input type="text" value={data.title ?? ''} placeholder="Kesir Boyama" maxLength={80} onChange={(e) => onChange({ ...data, title: e.target.value })} />
+      </label>
+      <label>Şekil
+        <CustomSelect
+          value={shape}
+          options={[
+            { value: 'circle', label: 'Daire' },
+            { value: 'strip', label: 'Dikdörtgen şerit' },
+            { value: 'grid', label: 'Kare ızgara' },
+          ]}
+          onChange={(v) => onChange({ ...data, fractionShape: v as FractionShape })}
+        />
+      </label>
+      <label>Parça sayısı ({FRACTION_MIN_PARTS}–{FRACTION_MAX_PARTS})
+        <input
+          type="number"
+          min={FRACTION_MIN_PARTS}
+          max={FRACTION_MAX_PARTS}
+          value={parts}
+          onChange={(e) => onChange({ ...data, fractionParts: normalizeFractionParts(Number(e.target.value)) })}
+        />
+      </label>
+      <div className={styles.stepEditRow}>
+        <label style={{ flex: 1 }}>Hedef pay
+          <input
+            type="number"
+            min={0}
+            max={den}
+            value={num}
+            onChange={(e) => onChange({ ...data, fractionNum: Math.max(0, Math.min(den, Math.round(Number(e.target.value) || 0))) })}
+          />
+        </label>
+        <label style={{ flex: 1 }}>Hedef payda
+          <input
+            type="number"
+            min={1}
+            max={24}
+            value={den}
+            onChange={(e) => {
+              const nextDen = Math.max(1, Math.min(24, Math.round(Number(e.target.value) || 1)));
+              onChange({ ...data, fractionDen: nextDen, fractionNum: Math.min(num, nextDen) });
+            }}
+          />
+        </label>
+      </div>
+      <label className={styles.checkRow}>
+        <input
+          type="checkbox"
+          checked={showFraction}
+          onChange={(e) => onChange({ ...data, showFraction: e.target.checked })}
+        />
+        <span>Hedef kesri göster</span>
+      </label>
     </>
   );
 }

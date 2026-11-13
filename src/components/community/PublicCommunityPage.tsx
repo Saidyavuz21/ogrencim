@@ -285,89 +285,9 @@ export function PublicCommunityPage() {
           )}
         </div>
 
-        {/* Arama ve Süzgeçler */}
-        <section className={s.filterPanel} aria-label="Arama ve süzgeçler">
-          <div className={s.searchRow}>
-            <label className={s.searchInputLabel}>
-              <Search size={18} aria-hidden="true" />
-              <input
-                type="search"
-                className={s.searchInput}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Başlık, konu ya da ders ara…"
-                aria-label="Herkese açık içeriklerde ara"
-              />
-            </label>
-
-            <div className={s.kindTabs} role="group" aria-label="İçerik türü">
-              {KIND_TABS.map((t) => (
-                <button
-                  key={t.value || 'all'}
-                  type="button"
-                  className={s.kindTabBtn}
-                  aria-pressed={kind === t.value}
-                  onClick={() => setKind(t.value)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                className={s.btnSecondary}
-                onClick={clearFilters}
-              >
-                <X size={16} aria-hidden="true" />
-                <span>Süzgeçleri temizle</span>
-              </button>
-            )}
-          </div>
-
-          <button type="button" className={`${s.btnSecondary} ${s.mobileFilterToggle}`} aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(!filtersOpen)}>
-            <span>Filtreler ve sıralama{subject || grade || sort !== 'popular' ? ' · Seçili' : ''}</span>
-            <ChevronDown size={18} aria-hidden="true" />
-          </button>
-          <div id={filtersId} className={`${s.selectsRow} ${filtersOpen ? s.filtersOpen : ''}`}>
-            <div className={s.field}>
-              <label htmlFor={subjectSelectId} className={s.fieldLabel}>
-                Ders
-              </label>
-              <CustomSelect
-                id={subjectSelectId}
-                value={subject}
-                options={subjectOptions}
-                onChange={setSubject}
-              />
-            </div>
-
-            <div className={s.field}>
-              <label htmlFor={gradeSelectId} className={s.fieldLabel}>
-                Sınıf
-              </label>
-              <CustomSelect
-                id={gradeSelectId}
-                value={grade}
-                options={gradeOptions}
-                onChange={setGrade}
-              />
-            </div>
-
-            <div className={s.field}>
-              <label htmlFor={sortSelectId} className={s.fieldLabel}>
-                Sıralama
-              </label>
-              <CustomSelect
-                id={sortSelectId}
-                value={sort}
-                options={SORT_OPTIONS}
-                onChange={(val) => setSort(val as PublicSort)}
-              />
-            </div>
-          </div>
-        </section>
+        <div className={s.contentLayout}>
+          {/* Sol Alan: Galeri */}
+          <div className={s.galleryArea}>
 
         {/* Seçili öğretmen küçük profil kartı */}
         {selectedAuthor && (
@@ -587,6 +507,127 @@ export function PublicCommunityPage() {
             )}
           </>
         )}
+          </div>
+
+          {/* Sağ Kenar Çubuğu: Süzgeçler ve Oturum Bilgisi */}
+          <aside className={s.sidebar} aria-label="Arama ve süzgeçler">
+            <section className={s.filterPanel} aria-label="Süzgeç paneli">
+              <div className={s.searchRow}>
+                <label className={s.searchInputLabel}>
+                  <Search size={18} aria-hidden="true" />
+                  <input
+                    type="search"
+                    className={s.searchInput}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Başlık, konu ya da ders ara…"
+                    aria-label="Herkese açık içeriklerde ara"
+                  />
+                </label>
+
+                <div className={s.field}>
+                  <span className={s.fieldLabel}>İçerik türü</span>
+                  <div className={s.kindTabs} role="group" aria-label="İçerik türü">
+                    {KIND_TABS.map((t) => (
+                      <button
+                        key={t.value || 'all'}
+                        type="button"
+                        className={s.kindTabBtn}
+                        aria-pressed={kind === t.value}
+                        onClick={() => setKind(t.value)}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" className={`${s.btnSecondary} ${s.mobileFilterToggle}`} aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(!filtersOpen)}>
+                <span>Filtreler ve sıralama{subject || grade || sort !== 'popular' ? ' · Seçili' : ''}</span>
+                <ChevronDown size={18} aria-hidden="true" />
+              </button>
+              <div id={filtersId} className={`${s.selectsRow} ${filtersOpen ? s.filtersOpen : ''}`}>
+                <div className={s.field}>
+                  <label htmlFor={subjectSelectId} className={s.fieldLabel}>
+                    Ders
+                  </label>
+                  <CustomSelect
+                    id={subjectSelectId}
+                    value={subject}
+                    options={subjectOptions}
+                    onChange={setSubject}
+                  />
+                </div>
+
+                <div className={s.field}>
+                  <label htmlFor={gradeSelectId} className={s.fieldLabel}>
+                    Sınıf
+                  </label>
+                  <CustomSelect
+                    id={gradeSelectId}
+                    value={grade}
+                    options={gradeOptions}
+                    onChange={setGrade}
+                  />
+                </div>
+
+                <div className={s.field}>
+                  <label htmlFor={sortSelectId} className={s.fieldLabel}>
+                    Sıralama
+                  </label>
+                  <CustomSelect
+                    id={sortSelectId}
+                    value={sort}
+                    options={SORT_OPTIONS}
+                    onChange={(val) => setSort(val as PublicSort)}
+                  />
+                </div>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    className={s.btnClearFilters}
+                    onClick={clearFilters}
+                  >
+                    <X size={16} aria-hidden="true" />
+                    <span>Süzgeçleri temizle</span>
+                  </button>
+                )}
+              </div>
+            </section>
+
+            {/* Oturum Yan Kartı */}
+            <div className={s.sessionCard}>
+              {hasTeacherSession ? (
+                <div className={s.sessionCallout}>
+                  <div className={s.sessionCalloutHead}>
+                    <span className={s.sessionDot} aria-hidden="true" />
+                    <span className={s.sessionTitle}>Öğretmen oturumu açık</span>
+                  </div>
+                  <p className={s.sessionCalloutText}>
+                    Topluluk paneline geçerek tahtalarınızı yönetebilir ve paylaşımları kopyalayabilirsiniz.
+                  </p>
+                  <Link className={s.btnPrimary} href="/giris?sayfa=topluluk">
+                    <Globe size={16} aria-hidden="true" />
+                    <span>Topluluk paneline git</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className={s.sessionCallout}>
+                  <span className={s.sessionTitle}>Öğretmen misiniz?</span>
+                  <p className={s.sessionCalloutText}>
+                    Hazırladığınız materyalleri paylaşmak ve diğer öğretmenlerle etkileşimde bulunmak için giriş yapın.
+                  </p>
+                  <Link className={s.btnSecondary} href="/giris">
+                    <LogIn size={16} aria-hidden="true" />
+                    <span>Öğretmen girişi</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
       </main>
 
       {/* Önizleme Modalı */}

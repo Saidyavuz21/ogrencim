@@ -2,9 +2,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Component,
-  Copy, Diamond, Dice, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Spotlight, Square, Star, StickyNote, Trash2, Triangle, Type, Unlock, Video, Wheel, X,
+  AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Columns, Component,
+  Copy, Diamond, Dice, Download, Eraser, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, ListOrdered, Maximize, Mic, Minimize, Minus, MousePointer,
+  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Spotlight, Square, Star, StickyNote, Tag, TextCursorInput, Trash2, Triangle, Type, Unlock, Video, Wheel, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -1201,7 +1201,20 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const addWidget = (kind: WidgetKind) => {
     if (!page) return;
     const size = WIDGET_SIZE[kind];
-    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } : kind === 'timer' ? { seconds: 0 } : kind === 'match' ? { title: 'Eşleştirme', pairs: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] } : kind === 'audio' ? { title: 'Sesli not' } : kind === 'video' ? { title: 'Video' } : kind === 'spinner' ? { title: 'Çark', slices: ['1', '2', '3', '4', '5', '6'], removeWinner: false } : kind === 'dice' ? { title: 'Zar', dice: 2 } : {} };
+    const defaultData =
+      kind === 'steps' ? { title: 'Adım adım', steps: ['', ''] } :
+      kind === 'timer' ? { seconds: 0 } :
+      kind === 'match' ? { title: 'Eşleştirme', pairs: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] } :
+      kind === 'order' ? { title: 'Sıralama', orderItems: ['1. Adım', '2. Adım', '3. Adım'] } :
+      kind === 'sort' ? { title: 'Gruplara Ayırma', sortGroups: [{ title: '1. Grup', items: ['Öğe 1'] }, { title: '2. Grup', items: ['Öğe 2'] }] } :
+      kind === 'blanks' ? { title: 'Boşluk Doldurma', blanksText: 'Türkiye’nin başkenti [Ankara]’dır.', blanksDistractors: ['İstanbul'] } :
+      kind === 'label' ? { title: 'Görsel Etiketleme', labelPoints: [] } :
+      kind === 'fraction' ? { title: 'Kesir Boyama', fractionShape: 'circle' as const, fractionParts: 4, fractionNum: 3, fractionDen: 4, showFraction: true } :
+      kind === 'audio' ? { title: 'Sesli not' } :
+      kind === 'video' ? { title: 'Video' } :
+      kind === 'spinner' ? { title: 'Çark', slices: ['1', '2', '3', '4', '5', '6'], removeWinner: false } :
+      kind === 'dice' ? { title: 'Zar', dice: 2 } : {};
+    const el: WidgetEl = { id: newId(), type: 'widget', kind, x: Math.round((BOARD_W - size.w) / 2), y: Math.round((BOARD_H - size.h) / 2), w: size.w, h: size.h, data: defaultData };
     commitElements([...page.elements, el]);
     setTool('select');
     setSelectedIds([el.id]);
@@ -2004,6 +2017,15 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             el={selected}
             questions={questions}
             minitests={minitests}
+            boardImages={Array.from(
+              new Map(
+                content.pages
+                  .flatMap((p) => p.elements)
+                  .filter((e): e is ImageEl => e.type === 'image')
+                  .map((e) => [imageKey(e), { bucket: e.bucket, path: e.path }])
+              ).values()
+            )}
+            imageUrls={imageUrls}
             onPatch={(patch) => patchElement(selected.id, patch)}
             onDelete={() => deleteSelected([selected.id])}
             onOrder={(dir) => reorderElements(dir, [selected.id])}
@@ -2320,6 +2342,11 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                      k === 'video' ? <Video size={16} /> :
                      k === 'spinner' ? <Wheel size={16} /> :
                      k === 'dice' ? <Dice size={16} /> :
+                     k === 'order' ? <ListOrdered size={16} /> :
+                     k === 'sort' ? <Columns size={16} /> :
+                     k === 'blanks' ? <TextCursorInput size={16} /> :
+                     k === 'label' ? <Tag size={16} /> :
+                     k === 'fraction' ? <PieChart size={16} /> :
                      <Layers size={16} />}
                   </span>
                   <span className={styles.widgetItemTitle}>{WIDGET_LABEL[k]}</span>

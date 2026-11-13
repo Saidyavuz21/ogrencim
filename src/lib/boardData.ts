@@ -61,9 +61,16 @@ export interface NoteEl {
   locked?: boolean;
 }
 export interface ImageEl { id: string; type: 'image'; x: number; y: number; w: number; h: number; bucket: string; path: string; groupId?: string; lib?: ElementLib; locked?: boolean }
-export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice';
+export type WidgetKind = 'minitest' | 'reveal' | 'steps' | 'timer' | 'match' | 'audio' | 'video' | 'spinner' | 'dice' | 'order' | 'sort' | 'blanks' | 'label' | 'fraction';
 /** Eşleştirme etkinliği: soldaki öğe ↔ sağdaki eşi */
 export interface MatchPair { a: string; b: string }
+/** Gruplara ayırma etkinliği: grup başlığı ve ait maddeler */
+export interface SortGroup { title: string; items: string[] }
+/** Görsel etiketleme: tahta görseli ve üzerindeki numaralı etiket noktası */
+export interface LabelImageRef { bucket: string; path: string }
+export interface LabelPoint { id: string; x: number; y: number; text: string }
+/** Kesir boyama şekli */
+export type FractionShape = 'circle' | 'strip' | 'grid';
 /** Sesli not dosyası (öğretmenin klasöründe ya da ödev alanında) */
 export interface AudioRef { bucket: string; path: string; seconds?: number }
 /** Video parçası: şimdilik yalnızca YouTube (dosya yüklenmez, kota harcamaz) */
@@ -95,6 +102,23 @@ export interface WidgetData {
   removeWinner?: boolean;
   /** Zar: 1–3 zar */
   dice?: number;
+  /** Sıralama (order): 3–8 madde doğru sırada */
+  orderItems?: string[];
+  /** Gruplara ayırma (sort): 2–4 grup */
+  sortGroups?: SortGroup[];
+  /** Boşluk doldurma (blanks): [köşeli parantez] içinde boşluklar */
+  blanksText?: string;
+  /** Boşluk doldurma: 0–3 çeldirici kelime */
+  blanksDistractors?: string[];
+  /** Görsel etiketleme (label) */
+  labelImage?: LabelImageRef;
+  labelPoints?: LabelPoint[];
+  /** Kesir boyama (fraction) */
+  fractionShape?: FractionShape;
+  fractionParts?: number;
+  fractionNum?: number;
+  fractionDen?: number;
+  showFraction?: boolean;
 }
 export interface WidgetEl { id: string; type: 'widget'; kind: WidgetKind; x: number; y: number; w: number; h: number; data: WidgetData; groupId?: string; lib?: ElementLib; locked?: boolean }
 export interface PolyEl {
@@ -114,19 +138,34 @@ export interface BoardContent { version: 1; pages: BoardPage[] }
 /** Öğrencinin çizim katmanı: sayfa kimliği → çizgiler */
 export type DrawingLayer = Record<string, StrokeEl[]>;
 
-export const WIDGET_LABEL: Record<WidgetKind, string> = { minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme', audio: 'Sesli Not', video: 'Video', spinner: 'Çark', dice: 'Zar' };
+export const WIDGET_LABEL: Record<WidgetKind, string> = {
+  minitest: 'Mini Test', reveal: 'Cevabı Göster', steps: 'Adım Adım', timer: 'Kronometre', match: 'Eşleştirme',
+  audio: 'Sesli Not', video: 'Video', spinner: 'Çark', dice: 'Zar',
+  order: 'Sıralama', sort: 'Gruplara Ayırma', blanks: 'Boşluk Doldurma', label: 'Görsel Etiketleme', fraction: 'Kesir Boyama',
+};
 /** Parçalar listesinde eklenebilenler; "Cevabı Göster" artık Mini Test ayarı, eski tahtalarda çalışmaya devam eder */
-export const ADDABLE_WIDGETS: WidgetKind[] = ['minitest', 'steps', 'timer', 'match', 'audio', 'video', 'spinner', 'dice'];
+export const ADDABLE_WIDGETS: WidgetKind[] = [
+  'minitest', 'steps', 'timer', 'match', 'order', 'sort', 'blanks', 'label', 'fraction', 'audio', 'video', 'spinner', 'dice',
+];
 export const WIDGET_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   minitest: { w: 720, h: 520 }, reveal: { w: 420, h: 200 }, steps: { w: 620, h: 460 }, timer: { w: 380, h: 240 },
   match: { w: 860, h: 560 }, audio: { w: 460, h: 200 }, video: { w: 800, h: 520 },
   spinner: { w: 560, h: 680 }, dice: { w: 560, h: 340 },
+  order: { w: 600, h: 540 }, sort: { w: 860, h: 560 }, blanks: { w: 720, h: 500 },
+  label: { w: 860, h: 580 }, fraction: { w: 540, h: 560 },
 };
 
 export const SPINNER_MIN_SLICES = 2;
 export const SPINNER_MAX_SLICES = 12;
 export const SPINNER_SLICE_MAX_CHARS = 40;
 export const DICE_MAX = 3;
+export const ORDER_MIN = 3;
+export const ORDER_MAX = 8;
+export const SORT_MIN_GROUPS = 2;
+export const SORT_MAX_GROUPS = 4;
+export const BLANKS_MAX_DISTRACTORS = 3;
+export const FRACTION_MIN_PARTS = 2;
+export const FRACTION_MAX_PARTS = 12;
 
 /** Çark dilimleri: metin dışı değerleri boş yapar, uzunluk ve sayıyı sınırlar (boşlar düzenlemede kalabilir) */
 export function normalizeSlices(raw: unknown): string[] {
@@ -140,6 +179,47 @@ export function normalizeDiceCount(raw: unknown): number {
   return Math.max(1, Math.min(DICE_MAX, n));
 }
 
+export function normalizeOrderItems(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, ORDER_MAX).map((s) => (typeof s === 'string' ? s : ''));
+}
+
+export function normalizeSortGroups(raw: unknown): SortGroup[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, SORT_MAX_GROUPS).map((g) => {
+    const obj = g && typeof g === 'object' ? (g as Partial<SortGroup>) : {};
+    const title = typeof obj.title === 'string' ? obj.title : '';
+    const items = Array.isArray(obj.items) ? obj.items.filter((x): x is string => typeof x === 'string') : [];
+    return { title, items };
+  });
+}
+
+export function normalizeBlanksDistractors(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, BLANKS_MAX_DISTRACTORS).map((s) => (typeof s === 'string' ? s : ''));
+}
+
+export function normalizeLabelPoints(raw: unknown): LabelPoint[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 12).map((p, idx) => {
+    const obj = p && typeof p === 'object' ? (p as Partial<LabelPoint>) : {};
+    const id = typeof obj.id === 'string' && obj.id ? obj.id : `pt-${idx + 1}`;
+    const x = typeof obj.x === 'number' && Number.isFinite(obj.x) ? Math.max(5, Math.min(95, obj.x)) : 50;
+    const y = typeof obj.y === 'number' && Number.isFinite(obj.y) ? Math.max(5, Math.min(95, obj.y)) : 50;
+    const text = typeof obj.text === 'string' ? obj.text : '';
+    return { id, x, y, text };
+  });
+}
+
+export function normalizeFractionParts(raw: unknown): number {
+  const n = typeof raw === 'number' && Number.isFinite(raw) ? Math.round(raw) : 4;
+  return Math.max(FRACTION_MIN_PARTS, Math.min(FRACTION_MAX_PARTS, n));
+}
+
+export function normalizeFractionShape(raw: unknown): FractionShape {
+  return raw === 'strip' || raw === 'grid' ? raw : 'circle';
+}
+
 /** Yeni parça türlerinin verisini güvenli biçime getirir; diğer öğelere dokunmaz */
 function normalizeElement(el: BoardEl): BoardEl {
   if (!el || typeof el !== 'object') return el;
@@ -150,6 +230,21 @@ function normalizeElement(el: BoardEl): BoardEl {
   const data: WidgetData = el.data && typeof el.data === 'object' ? el.data : {};
   if (el.kind === 'spinner') return { ...el, locked, data: { ...data, slices: normalizeSlices(data.slices), removeWinner: data.removeWinner === true } };
   if (el.kind === 'dice') return { ...el, locked, data: { ...data, dice: normalizeDiceCount(data.dice) } };
+  if (el.kind === 'order') return { ...el, locked, data: { ...data, orderItems: normalizeOrderItems(data.orderItems) } };
+  if (el.kind === 'sort') return { ...el, locked, data: { ...data, sortGroups: normalizeSortGroups(data.sortGroups) } };
+  if (el.kind === 'blanks') return { ...el, locked, data: { ...data, blanksText: typeof data.blanksText === 'string' ? data.blanksText : '', blanksDistractors: normalizeBlanksDistractors(data.blanksDistractors) } };
+  if (el.kind === 'label') {
+    const img = data.labelImage && typeof data.labelImage === 'object' && typeof data.labelImage.bucket === 'string' && typeof data.labelImage.path === 'string'
+      ? { bucket: data.labelImage.bucket, path: data.labelImage.path }
+      : undefined;
+    return { ...el, locked, data: { ...data, labelImage: img, labelPoints: normalizeLabelPoints(data.labelPoints) } };
+  }
+  if (el.kind === 'fraction') {
+    const parts = normalizeFractionParts(data.fractionParts);
+    const den = typeof data.fractionDen === 'number' && Number.isFinite(data.fractionDen) && data.fractionDen >= 1 ? Math.round(data.fractionDen) : parts;
+    const num = typeof data.fractionNum === 'number' && Number.isFinite(data.fractionNum) && data.fractionNum >= 0 ? Math.min(den, Math.round(data.fractionNum)) : 1;
+    return { ...el, locked, data: { ...data, fractionShape: normalizeFractionShape(data.fractionShape), fractionParts: parts, fractionNum: num, fractionDen: den, showFraction: data.showFraction !== false } };
+  }
   return el.locked !== undefined && el.locked !== true ? { ...el, locked: undefined } : el;
 }
 
@@ -589,6 +684,7 @@ export function mediaRefs(pages: BoardPage[]): { bucket: string; path: string }[
     for (const el of p.elements) {
       if (el.type === 'image') out.push({ bucket: el.bucket, path: el.path });
       else if (el.type === 'widget' && el.kind === 'audio' && el.data.audio?.path) out.push({ bucket: el.data.audio.bucket, path: el.data.audio.path });
+      else if (el.type === 'widget' && el.kind === 'label' && el.data.labelImage?.path) out.push({ bucket: el.data.labelImage.bucket, path: el.data.labelImage.path });
     }
   }
   return out;

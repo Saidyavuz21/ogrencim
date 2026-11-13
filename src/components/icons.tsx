@@ -1209,3 +1209,39 @@ export const DistributeV = createIcon('DistributeV', (
     <rect x="7" y="9" width="10" height="6" rx="1" />
   </>
 ));
+
+export const ListOrdered = createIcon('ListOrdered', (
+  <>
+    <path d="M10 6h11" />
+    <path d="M10 12h11" />
+    <path d="M10 18h11" />
+    <path d="M4 6h1v4" />
+    <path d="M4 10h2" />
+    <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" />
+  </>
+));
+
+export const Columns = createIcon('Columns', (
+  <>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M9 3v18" />
+    <path d="M15 3v18" />
+  </>
+));
+
+export const TextCursorInput = createIcon('TextCursorInput', (
+  <>
+    <path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1" />
+    <path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5" />
+    <path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1" />
+    <path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7" />
+    <path d="M9 7v10" />
+  </>
+));
+
+export const PieChart = createIcon('PieChart', (
+  <>
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+    <path d="M22 12A10 10 0 0 0 12 2v10z" />
+  </>
+));

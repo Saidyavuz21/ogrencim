@@ -8,6 +8,7 @@ import { imageKey, revealAnswer, videoEmbedUrl, WidgetEl } from '../../lib/board
 import { answerQuiz, CHOICE_LETTERS, PRACTICE_TRIES, PracticeAnswerResult, QuestionRow, QuizStateItem } from '../../lib/quizData';
 import { RichText } from '../math/RichText';
 import { DiceWidget, SpinnerWidget } from './ChanceWidgets';
+import { BlanksWidget, FractionWidget, LabelWidget, OrderWidget, SortWidget } from './ActivityWidgets';
 import styles from './Board.module.css';
 import videoStyles from './VideoWidget.module.css';
 
@@ -50,6 +51,11 @@ export function WidgetView({ el, ctx }: { el: WidgetEl; ctx: WidgetContext }) {
   if (el.kind === 'video') return <VideoWidget el={el} />;
   if (el.kind === 'spinner') return <SpinnerWidget el={el} />;
   if (el.kind === 'dice') return <DiceWidget el={el} />;
+  if (el.kind === 'order') return <OrderWidget el={el} />;
+  if (el.kind === 'sort') return <SortWidget el={el} />;
+  if (el.kind === 'blanks') return <BlanksWidget el={el} />;
+  if (el.kind === 'label') return <LabelWidget el={el} mediaUrls={ctx.mediaUrls} />;
+  if (el.kind === 'fraction') return <FractionWidget el={el} />;
   return <Timer el={el} />;
 }
 

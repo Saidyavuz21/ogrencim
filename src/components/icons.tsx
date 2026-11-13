@@ -79,6 +79,13 @@ export const X = createIcon('X', (
   </>
 ));
 
+export const Home = createIcon('Home', (
+  <>
+    <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+    <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </>
+));
+
 export const LayoutDashboard = createIcon('LayoutDashboard', (
   <>
     <rect width="7" height="9" x="3" y="3" rx="1" />
@@ -1253,6 +1260,40 @@ export const Ruler = createIcon('Ruler', (
     <path d="m11.5 9.5 2-2" />
     <path d="m8.5 6.5 2-2" />
     <path d="m17.5 15.5 2-2" />
+  </>
+));
+
+export const SetSquare45 = createIcon('SetSquare45', (
+  <>
+    <path d="M4 20V4l16 16H4Z" />
+    <path d="M8 16v-5l5 5H8Z" />
+  </>
+));
+
+export const SetSquare3060 = createIcon('SetSquare3060', (
+  <>
+    <path d="M6 21V3l11 18H6Z" />
+    <path d="M9 17.5V11l4 6.5H9Z" />
+  </>
+));
+
+export const Protractor = createIcon('Protractor', (
+  <>
+    <path d="M3 18a9 9 0 0 1 18 0H3Z" />
+    <path d="M8 18a4 4 0 0 1 8 0" />
+    <path d="M12 9v2.5" />
+    <path d="m6.4 11.4 1.6 1.6" />
+    <path d="m17.6 11.4-1.6 1.6" />
+  </>
+));
+
+export const CompassTool = createIcon('CompassTool', (
+  <>
+    <path d="M12 2v3" />
+    <circle cx="12" cy="7" r="2" />
+    <path d="M10.8 8.7 6 21" />
+    <path d="M13.2 8.7 18 21" />
+    <path d="M8.5 15a8 8 0 0 0 7 0" />
   </>
 ));
 

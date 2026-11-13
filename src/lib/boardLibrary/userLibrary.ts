@@ -17,7 +17,7 @@ export interface UserLibraryRow {
   name: string;
   category: LibraryCategory;
   elements: BoardEl[];
-  visibility: 'private' | 'school';
+  visibility: 'private' | 'school' | 'branch';
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +29,7 @@ export interface SchoolLibraryRow {
   elements: BoardEl[];
   updated_at: string;
   author_name: string;
+  visibility?: 'school' | 'branch';
 }
 
 export function userRowToItem(row: UserLibraryRow): LibraryItem {
@@ -60,7 +61,7 @@ export function schoolRowToItem(row: SchoolLibraryRow): LibraryItem {
     source: 'school',
     rowId: row.id,
     authorName: row.author_name,
-    visibility: 'school',
+    visibility: row.visibility === 'branch' ? 'branch' : 'school',
   };
 }
 
@@ -86,7 +87,7 @@ export interface SaveLibraryItemInput {
   name: string;
   category: LibraryCategory;
   elements: BoardEl[];
-  visibility?: 'private' | 'school';
+  visibility?: 'private' | 'school' | 'branch';
 }
 
 /**
@@ -147,7 +148,7 @@ export async function saveLibraryItem(input: SaveLibraryItemInput): Promise<Resu
 export interface UpdateLibraryItemPatch {
   name?: string;
   category?: LibraryCategory;
-  visibility?: 'private' | 'school';
+  visibility?: 'private' | 'school' | 'branch';
 }
 
 /**

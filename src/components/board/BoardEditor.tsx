@@ -2,9 +2,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  AlertCircle, ArrowLeft, ArrowRight, BarChart3, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Columns, Component,
-  Copy, Diamond, Dice, Download, Eraser, Grid3x3, Hand, Hexagon, Highlighter, History, HelpCircle, Image as ImageIcon, LaserPointer, Layers, ListOrdered, Maximize, Mic, Minimize, Minus, MousePointer,
-  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Radio, RotateCcw, RotateCw, Ruler, Save, ScreenCurtain, Shapes, Shuffle, Sliders, Sparkles, Spotlight, Square, Star, StickyNote, Tag, Tally5, TextCursorInput, Timer, Trash2, TrendingUp, Triangle, Type, Unlock, Video, Wheel, X,
+  AlertCircle, ArrowLeft, ArrowRight, BarChart3, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Circle, Clock, Columns, CompassTool, Component,
+  Copy, Diamond, Dice, Download, Eraser, Grid3x3, Hand, Hexagon, Highlighter, History, HelpCircle, IconProps, Image as ImageIcon, LaserPointer, Layers, ListOrdered, Maximize, Mic, Minimize, Minus, MousePointer,
+  PaintBucket, Palette, Pen, PieChart, Play, Plus, Printer, Protractor, Radio, RotateCcw, RotateCw, Ruler, Save, ScreenCurtain, SetSquare3060, SetSquare45, Shapes, Shuffle, Sliders, Sparkles, Spotlight, Square, Star, StickyNote, Tag, Tally5, TextCursorInput, Timer, Trash2, TrendingUp, Triangle, Type, Unlock, Video, Wheel, X,
 } from '../icons';
 import { CustomSelect } from '../CustomSelect';
 import { Spinner } from '../Spinner';
@@ -69,6 +69,14 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'text', label: 'Metin', key: 't' },
 ];
 
+const MEASURE_TOOL_ITEMS: { kind: MeasureToolKind; label: string; icon: React.FC<IconProps> }[] = [
+  { kind: 'ruler', label: 'Cetvel', icon: Ruler },
+  { kind: 'set45', label: 'Gönye 45°', icon: SetSquare45 },
+  { kind: 'set3060', label: 'Gönye 30-60°', icon: SetSquare3060 },
+  { kind: 'protractor', label: 'İletki', icon: Protractor },
+  { kind: 'compass', label: 'Pergel', icon: CompassTool },
+];
+
 export const BOARD_BG_COLORS: { c: string; label: string; dark?: boolean }[] = [
   { c: '#ffffff', label: 'Beyaz' },
   { c: '#faf8f0', label: 'Krem' },
@@ -89,7 +97,7 @@ const TOOL_LABEL: Record<string, string> = {
 type SideTab = 'draw' | 'shapes' | 'text' | 'media' | 'widgets' | 'page';
 const SIDE_TABS: { id: SideTab; label: string }[] = [
   { id: 'draw', label: 'Çizim' }, { id: 'shapes', label: 'Şekiller' }, { id: 'text', label: 'Metin' },
-  { id: 'media', label: 'Görseller' }, { id: 'widgets', label: 'Parçalar' }, { id: 'page', label: 'Zemin' },
+  { id: 'media', label: 'Görseller' }, { id: 'widgets', label: 'Öğeler' }, { id: 'page', label: 'Zemin' },
 ];
 const tabOfTool = (t: Tool): SideTab | null => (
   DRAW_TOOLS.includes(t) || t === 'fill' ? 'draw' : SHAPE_TOOLS.includes(t) ? 'shapes' : t === 'text' || t === 'note' ? 'text' : null
@@ -137,6 +145,9 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
   const [smartPen, setSmartPen] = useState(false);
   const [measureTools, setMeasureTools] = useState<MeasureToolItem[]>([]);
   const [measureMenuOpen, setMeasureMenuOpen] = useState(false);
+  const toggleMeasureTool = (k: MeasureToolKind) => {
+    setMeasureTools((prev) => (prev.some((t) => t.kind === k) ? prev.filter((t) => t.kind !== k) : [...prev, createMeasureTool(k, newId())]));
+  };
   const [showPdfImport, setShowPdfImport] = useState(false);
   const stagePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchRef = useRef<{ dist: number; cx: number; cy: number; zoom: number; pan: { x: number; y: number } } | null>(null);
@@ -1023,7 +1034,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       setSaveModal({ elements: elementsToSave });
     };
 
-    const handleSaveShape = async (name: string, category: LibraryCategory, visibility: 'private' | 'school') => {
+    const handleSaveShape = async (name: string, category: LibraryCategory, visibility: 'private' | 'school' | 'branch') => {
       if (!saveModal) return;
       setSaveBusy(true);
       const res = await saveLibraryItem({
@@ -1041,7 +1052,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
       loadUserLibrary();
     };
 
-    const handleUpdateShape = async (id: string, patch: { name: string; category: LibraryCategory; visibility?: 'private' | 'school' }) => {
+    const handleUpdateShape = async (id: string, patch: { name: string; category: LibraryCategory; visibility?: 'private' | 'school' | 'branch' }) => {
       setSaveBusy(true);
       const res = await updateLibraryItem(id, patch);
       setSaveBusy(false);
@@ -1066,7 +1077,8 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
 
     const handleToggleSchoolShare = async (item: LibraryItem) => {
       const rowId = item.rowId || item.id.replace(/^user:/, '');
-      const nextVisibility = item.visibility === 'school' ? 'private' : 'school';
+      // Paylaşılmışsa (okul ya da zümre) kaldırılır, değilse okulla paylaşılır
+      const nextVisibility = item.visibility && item.visibility !== 'private' ? 'private' : 'school';
       const res = await updateLibraryItem(rowId, { visibility: nextVisibility });
       if (!res.ok) {
         setNotice(res.error);
@@ -1320,7 +1332,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
     // Hangi alanda olunduğu her zaman görünür: sol üstte iki parçalı seçim
     const modeSwitch = (
       <div className={`${styles.modeSwitch} ${presenting ? styles.modeSwitchDers : ''}`} role="group" aria-label="Tahta alanı">
-        <button type="button" aria-pressed={!presenting} onClick={() => switchMode(false)} title="Düzenleme alanı: çizim, şekil, parça ve sayfa hazırlığı">
+        <button type="button" aria-pressed={!presenting} onClick={() => switchMode(false)} title="Düzenleme alanı: çizim, şekil, öğe ve sayfa hazırlığı">
           <Pen size={18} aria-hidden="true" /><span>Düzenleme</span>
         </button>
         <button type="button" aria-pressed={presenting} onClick={() => switchMode(true)} title="Ders alanı: düzenleme kapalı; yazılanlar “Sayfaya kaydet”e basılmadıkça saklanmaz">
@@ -1460,7 +1472,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             <div className={styles.previewActions}>
               <div className={styles.modeGroup} role="group" aria-label="Hazırlık">
                 <span className={styles.modeCaption} aria-hidden="true">Hazırlık</span>
-                <button type="button" className={styles.openButton} onClick={() => toggleFull(false)} aria-label="Düzenle" title="Düzenleme alanı: çizim, şekil, parça ve sayfa hazırlığı">
+                <button type="button" className={styles.openButton} onClick={() => toggleFull(false)} aria-label="Düzenle" title="Düzenleme alanı: çizim, şekil, öğe ve sayfa hazırlığı">
                   <Pen size={20} aria-hidden="true" /><span>Düzenle</span>
                 </button>
               </div>
@@ -1516,7 +1528,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
             </nav>
             <div className={styles.stage}>
               <BoardCanvas page={page} imageUrls={imageUrls} renderWidget={(w) => <WidgetView el={w} ctx={ctx} />} widgetsPassive ariaLabel={`${board.title}, ${pageIndex + 1}. sayfa (önizleme)`} />
-              <p className={styles.hintText}>Hazırlık için “Düzenle”: çizim, şekil, parça ve sayfalar. Sınıfta tahtanın başında “Derste kullan”: düzenleme kapalıdır, yalnızca kalemle yazılır.</p>
+              <p className={styles.hintText}>Hazırlık için “Düzenle”: çizim, şekil, öğe ve sayfalar. Sınıfta tahtanın başında “Derste kullan”: düzenleme kapalıdır, yalnızca kalemle yazılır.</p>
             </div>
           </div>
           {deleteConfirm}
@@ -1819,27 +1831,24 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                     <div className={styles.popoverSection}>
                       <div className={styles.popoverLabel}>Ölçme Araçları</div>
                       <div className={styles.measureTypeGrid}>
-                        {(
-                          [
-                            ['ruler', 'Cetvel'],
-                            ['set45', 'Gönye 45°'],
-                            ['set3060', 'Gönye 30-60°'],
-                            ['protractor', 'İletki'],
-                            ['compass', 'Pergel'],
-                          ] as [MeasureToolKind, string][]
-                        ).map(([k, lbl]) => (
-                          <button
-                            key={k}
-                            type="button"
-                            className={styles.measureTypeBtn}
-                            onClick={() => {
-                              setMeasureTools((prev) => [...prev, createMeasureTool(k, newId())]);
-                              setMeasureMenuOpen(false);
-                            }}
-                          >
-                            <span>{lbl}</span>
-                          </button>
-                        ))}
+                        {MEASURE_TOOL_ITEMS.map(({ kind, label, icon: Icon }) => {
+                          const active = measureTools.some((t) => t.kind === kind);
+                          return (
+                            <button
+                              key={kind}
+                              type="button"
+                              aria-pressed={active}
+                              className={`${styles.measureTypeBtn} ${active ? styles.measureTypeActive : ''}`}
+                              onClick={() => {
+                                toggleMeasureTool(kind);
+                                setMeasureMenuOpen(false);
+                              }}
+                            >
+                              <Icon size={15} aria-hidden="true" />
+                              <span>{label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -2321,25 +2330,22 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
               )}
               <div className={styles.popoverSection} style={{ marginTop: 12 }}>
                 <span className={styles.popoverLabel}>Ölçme araçları</span>
-                <div className={styles.pageTools} style={{ flexWrap: 'wrap', gap: 6 }}>
-                  {(
-                    [
-                      ['ruler', 'Cetvel'],
-                      ['set45', 'Gönye 45°'],
-                      ['set3060', 'Gönye 30-60°'],
-                      ['protractor', 'İletki'],
-                      ['compass', 'Pergel'],
-                    ] as [MeasureToolKind, string][]
-                  ).map(([k, lbl]) => (
-                    <button
-                      key={k}
-                      type="button"
-                      className={styles.tool}
-                      onClick={() => setMeasureTools((prev) => [...prev, createMeasureTool(k, newId())])}
-                    >
-                      <Ruler size={15} aria-hidden="true" /> {lbl}
-                    </button>
-                  ))}
+                <div className={styles.measureDrawGrid}>
+                  {MEASURE_TOOL_ITEMS.map(({ kind, label, icon: Icon }) => {
+                    const active = measureTools.some((t) => t.kind === kind);
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        aria-pressed={active}
+                        className={`${styles.measureDrawBtn} ${active ? styles.brushActive : ''}`}
+                        onClick={() => toggleMeasureTool(kind)}
+                      >
+                        <Icon size={18} aria-hidden="true" />
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2548,7 +2554,7 @@ export function BoardEditor({ boardId, onClose }: { boardId: string; onClose: ()
                   </div>
                 ))}
               </div>
-              <p className={styles.hintText}>Parça tahtanın ortasına eklenir; ayarları bu panelde açılır. “Geri” ile listeye dönersiniz.</p>
+              <p className={styles.hintText}>Öğe tahtanın ortasına eklenir; ayarları bu panelde açılır. “Geri” ile listeye dönersiniz.</p>
             </div>
           )}
 

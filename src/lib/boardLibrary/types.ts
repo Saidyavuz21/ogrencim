@@ -25,7 +25,7 @@ export interface LibraryItem {
   source?: 'mine' | 'school';
   rowId?: string;
   authorName?: string;
-  visibility?: 'private' | 'school';
+  visibility?: 'private' | 'school' | 'branch';
 }
 
 /**

@@ -8,7 +8,7 @@ import styles from './Board.module.css';
 
 export interface SaveShapeModalProps {
   elements: BoardEl[];
-  onSave: (name: string, category: LibraryCategory, visibility: 'private' | 'school') => Promise<void>;
+  onSave: (name: string, category: LibraryCategory, visibility: 'private' | 'school' | 'branch') => Promise<void>;
   onClose: () => void;
   busy?: boolean;
   schoolSharingEnabled?: boolean;
@@ -36,7 +36,7 @@ export function SaveShapeModal({
 
   const [name, setName] = useState(initialName);
   const [category, setCategory] = useState<LibraryCategory>(initialCategory);
-  const [visibility, setVisibility] = useState<'private' | 'school' | 'branch'>('private');
+  const [visibility, setVisibility] = useState<'private' | 'school' | 'branch' | 'branch'>('private');
   const [error, setError] = useState<string | null>(null);
 
   const modalRef = useRef<HTMLDivElement | null>(null);

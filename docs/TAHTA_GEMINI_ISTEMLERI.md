@@ -313,3 +313,102 @@ GÖREV: Düzenleyicinin "Öğeler" panelini (WIDGET_GROUPS / getWidgetGroups ile
    "Parça tahtanın ortasına eklenir…" açıklaması yalnızca öğe listesinde görünsün.
 Renkler WIDGET_GROUPS'taki tonlardan gelir; yeni renk tanımlama.
 ```
+
+---
+
+# Paket 10 – Yeni parçalar (13 Kasım 2026)
+
+Not: Yeni parçalarda dış kapsayıcı `${bs.widget} ${styles.wrap}` (bs = ./Board.module.css), ölçüler cqw.
+Her yeni parça WIDGET_GROUPS'ta doğru gruba eklenir. Önerilen sıra: 20–22 bir parti, 23–25 bir parti, 26–27 ayrı.
+
+## İstem 20 – Sayı doğrusu
+
+```
+GÖREV: Parça (kind: 'numberline', grup: Matematik). Öğretmen başlangıç, bitiş, büyük adım (çizgi + sayı) ve küçük adım
+(yalnız çizgi) seçer; ondalık ve negatif desteklenir (ör. -10…10, 0…1 adım 0,1). Kesir etiketi seçeneği (0, 1/4, 2/4…).
+Kullanım: noktaya dokununca işaret konur/kaldırılır (3 renk); "Atlama" kipinde iki noktaya sırayla dokununca aralarına
+üstten yay ve yayın üstünde fark (+3, −2) çizilir. Öğretmen bazı sayı etiketlerini gizleyebilir; gizli etikete dokunan
+öğrenci sayıyı yazar, "Kontrol et". "Temizle". SVG ile çiz.
+```
+
+## İstem 21 – Tahtada öğrenci seçici ve grup oluşturucu
+
+```
+GÖREV: İki parça (grup: Sınıf araçları): 'picker' (Rastgele öğrenci) ve 'groups' (Grup oluşturucu).
+Öğretmen panelindeki "Sınıf araçları"nda bu ikisi zaten var (Rastgele seçici, Gruplama); onların veri alma ve seçme
+mantığını bul ve ORTAK modüle taşıyarak yeniden kullan (kopyalama; mevcut sayfalar aynı modülü kullansın, davranışları bozulmasın).
+- Parça ayarında sınıf seçimi (öğretmenin sınıfları, CustomSelect). Öğrenci adları tahta JSON'una KAYDEDİLMEZ;
+  yalnızca sınıf adı/kimliği kaydedilir, adlar parça açılınca sunucudan okunur.
+- picker: "Seç" düğmesi kısa animasyonla bir ad gösterir; "Seçilenleri tekrar seçme" (oturumluk), "Sıfırla".
+- groups: 2–6 grup ya da "grup başına N kişi"; "Oluştur" grupları renkli kartlar olarak gösterir; "Karıştır".
+- Öğrenci görünümünde (StudentBoardPlayer) bu iki parça ad göstermez: "Bu araç öğretmen ekranında çalışır." yazar.
+Veritabanına dokunma; mevcut veri fonksiyonları yetmezse "EKSİK:" notu yaz.
+```
+
+## İstem 22 – Zemin: izometrik ve müzik dizeği
+
+```
+GÖREV: Sayfa zeminine iki seçenek ekle: 'isometric' (60° üçgen ızgara noktaları ya da ince çizgileri) ve 'staff'
+(5 çizgili müzik dizeği, sayfa boyunca eşit aralıklı dizek grupları). Background tipine ekle, normalize eski değerleri korusun.
+Zemin panelindeki küçük önizlemeler, renderBoardSvg (küçük resim/yazdırma) ve öğrenci görünümü de yeni zeminleri çizsin.
+```
+
+## İstem 23 – Kelime ve harf kartları
+
+```
+GÖREV: Parça (kind: 'wordcards', grup: Soru ve etkinlik). Örnek: mevcut 'order' (Sıralama) parçası.
+İki kip: "Harflerden kelime" (öğretmen kelime yazar, harfler karışık kartlar olur) ve "Kelimelerden cümle" (öğretmen cümle
+yazar, kelimeler karışık kartlar). İsteğe bağlı "Hecelere ayır" kipi: öğretmen heceleri tire ile yazar (ka-lem), kartlar hece.
+Öğrenci kartları sürükleyerek ya da kart + boş yere dokunarak dizer; "Kontrol et" (tr-TR karşılaştırma), "Karıştır".
+1–5 soru (kelime/cümle) tek parçada sırayla: "Sonraki" düğmesi. Büyük harf / küçük harf gösterimi seçeneği.
+```
+
+## İstem 24 – Hızlı anket (Doğru/Yanlış ya da 2–4 seçenek)
+
+```
+GÖREV: Parça (kind: 'poll', grup: Soru ve etkinlik). Öğretmen soru ve 2–4 seçenek yazar; "Doğru/Yanlış" ve "Evet/Hayır"
+hazır şablonları. Öğrenciler kendi cihazından OY VERMEZ (bu sürümde yok): öğretmen el kaldıranları sayar, her seçeneğin
+yanındaki +/− düğmeleriyle sayıyı girer. Sonuç yatay çubuk grafik + yüzde. "Sonucu gizle/göster", "Sıfırla".
+İsteğe bağlı doğru seçenek işareti; "Doğruyu göster" basılınca o seçenek yeşil olur. Sayılar kaydedilmez (oturumluk).
+```
+
+## İstem 25 – Trafik ışığı
+
+```
+GÖREV: Parça (kind: 'signal', grup: Sınıf araçları). Dikey üç lamba: kırmızı "Sessiz çalışma", sarı "Fısıltıyla / grup",
+yeşil "Serbest konuşma". Öğretmen lamba adlarını değiştirebilir. Lambaya dokununca yalnız o yanar (diğerleri soluk);
+altında büyük yazıyla durum adı. Mikrofon ya da ses ölçümü YOK. Renk körlüğü için yanan lambada ikon/şekil farkı da olsun.
+```
+
+## İstem 26 – Onluk bloklar ve para
+
+```
+GÖREV: Parça (kind: 'manipulatives', grup: Matematik). İki set: "Onluk taban blokları" (birlik küp, onluk çubuk, yüzlük
+plaka) ve "Para" (1, 5, 10, 25, 50 kuruş, 1 TL madeni; 5, 10, 20, 50, 100, 200 TL banknot — gerçek banknot görseli
+KULLANMA, sade renkli dikdörtgen + tutar yazısı). Parçanın solunda kaynak tepsisi; oradan sürüklenen her parça çalışma
+alanına kopyalanır, alan içinde serbest taşınır, tepsiye geri sürüklenince silinir. Üstte anlık toplam (ör. "1 yüzlük,
+3 onluk, 4 birlik = 134" / "12,75 TL"). "Boz" (onluğu 10 birliğe) ve "Grupla" (10 birliği onluğa) düğmeleri seçili parçaya
+uygulanır. "Temizle". Öğretmen başlangıç düzenini kaydedebilir (parça verisine), öğrencinin yaptıkları kaydedilmez.
+```
+
+## İstem 27 – Açılır pencere ikonları (ipucu, bilgi, soru, dikkat, örnek)
+
+```
+GÖREV: Tahtaya yerleştirilen küçük bir ikon (kind: 'popup', grup: Soru ve etkinlik); dokununca tahtanın üstünde pencere
+(modal) açılır. Pencerenin içeriği GİZLİ BİR TAHTA SAYFASIDIR — böylece içine her öğe (yazı, görsel, şekil, parçalar) normal
+düzenleyiciyle konur.
+- BoardPage'e isteğe bağlı popup?: { ownerId: string } alanı ekle (ownerId = ikon parçasının id'si). Bu sayfalar sayfa
+  şeridinde, sayfa sayacında, sunumda ileri/geri geçişte ve yazdırmada GÖRÜNMEZ; MAX_PAGES sınırına sayılmaz ama en fazla
+  20 açılır sayfa. Normalize: sahibi olmayan açılır sayfa silinmez, ilk boş ikona bağlanmaz; normal sayfaya çevrilir.
+- İkon türleri: ipucu (ampul, amber), bilgi (i, mavi), soru (?, mor), dikkat (!, kırmızı), örnek (kalem, yeşil). Ayarlarda
+  tür ve isteğe bağlı kısa etiket ("İpucu 1"). İkon yuvarlak, en az 44×44 px dokunma alanı, hafif nabız animasyonu
+  (prefers-reduced-motion'da yok).
+- Düzenleyicide ikon seçiliyken ayar panelinde "İçeriği düzenle": açılır sayfa düzenleyicide açılır, üstte şerit
+  "Açılır pencere: İpucu 1 · ← Tahtaya dön". İkon eklenince boş açılır sayfa otomatik oluşur. İkon silinince sayfası da silinir
+  (onay penceresiyle; geri alınabilir). İkon kopyalanınca sayfası da kopyalanır.
+- Ders kipinde ve öğrenci görünümünde ikona dokununca modal: başlıkta tür ikonu + etiket, gövdede açılır sayfanın içeriği
+  sayfa oranında küçültülmüş çizilir ve içindeki parçalar etkileşimli çalışır; Kapat düğmesi, Esc, arka plana dokunma kapatır.
+  Odak modal içinde kalır, kapanınca ikona döner (useDialog/ConfirmDialog kalıbına bak).
+- Kütüphaneye kaydetme ve topluluk kopyalama: açılır sayfalar tahtayla birlikte taşınır; ikon tek başına kütüphaneye kaydedilemez.
+Bu iş büyük; önce veri modeli + düzenleme, sonra ders/öğrenci modalı olarak iki adımda yapıp her adımda tsc/eslint çalıştır.
+```

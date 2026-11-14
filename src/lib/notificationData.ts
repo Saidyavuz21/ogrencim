@@ -214,6 +214,27 @@ export function notificationText(n: AppNotification): string {
   }
 }
 
+/**
+ * Ana cümlenin altındaki satırlar (türe göre; ana cümlede geçen bilgiyi tekrar etmez).
+ * detail: ikinci satır (ödev/duyuru başlığı, topluluk içeriği); preview: soluk üçüncü satır (mesaj metni, ders, sınıf).
+ */
+export function notificationLines(n: AppNotification): { detail: string | null; preview: string | null } {
+  const t = n.title?.trim() || null;
+  const b = n.body?.trim() || null;
+  switch (n.kind) {
+    case 'mesaj':
+      return { detail: null, preview: b };
+    case 'odev_degerlendirildi':
+      return { detail: t, preview: null };
+    case 'topluluk':
+      if (n.sub === 'follow') return { detail: null, preview: null };
+      if (n.sub === 'moderation') return { detail: null, preview: b };
+      return { detail: t, preview: null };
+    default:
+      return { detail: t, preview: b };
+  }
+}
+
 /** Bildirime tıklanınca gidilecek sayfa. refId ile sayfa ilgili kaydı açabilir (ör. sohbet, ödev). */
 export type NotificationTarget =
   | { role: 'teacher'; page: TeacherPageId; refId: string | null }

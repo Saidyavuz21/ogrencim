@@ -26,7 +26,7 @@ KESİN KURALLAR
    supabase.from('notifications') ile doğrudan okuma/yazma YAPMA. Bir fonksiyon eksikse UYDURMA;
    değiştirdiğin dosyanın sonuna "EKSİK:" başlıklı not yaz ve o kısmı devre dışı bırak.
 2. src/lib/notificationData.ts dosyasını DEĞİŞTİRME (yalnızca içe aktar).
-3. Bildirim metnini kendin kurma: ana cümle her zaman notificationText(n); ikinci satır n.title (ve varsa n.body).
+3. Bildirim metnini kendin kurma: ana cümle her zaman notificationText(n); alt satırlar notificationLines(n) (detail, preview).
    Tıklanınca gidilecek yer her zaman notificationTarget(n, rol).
 4. Mevcut işlevleri bozma: mesaj okundu bilgisi, topluluk sayfasının kendi bildirim listesi (CommunityNotifications),
    duyurular sayfası, öğrenci "Uygulamayı yükle" kartı (InstallAppBanner) olduğu gibi kalır.

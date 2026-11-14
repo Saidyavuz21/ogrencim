@@ -73,8 +73,8 @@ Güncelleme: 9 Kasım 2026. Codex, Claude, Gemini ve diğer kodlama ajanları ye
 
 Bu bölüm yalnızca `src/components/home/HomePage.tsx` ve `HomePage.module.css` kapsamındadır (11 Kasım 2026, uygulanan ve ekran görüntüleriyle incelenen düzen).
 
-- Masaüstü ana içerik en fazla 1360 px, yatay dolgu 40 px; solda büyütülmüş mevcut `/images/okul-bahcesi.png`, sağda en fazla 520 px giriş kartı bulunur. Başlık ve açıklama iki alanın hemen altında tam genişlikte beyaz bir kartta yer alır; mobilde bu kart gizlenir. Kart radius 16 px ve padding 32 px; 761–1050 px aralığında içerik/kart dolgusu 24 px olur.
-- 760 px ve altında tanıtım metni, illüstrasyon ve materyal listesi gizlenir. Giriş kartındaki “Hoş geldiniz” ve açıklaması görünür kalır. Kart padding 24 px dikey / 20 px yatay, dış yatay boşluk 16 px olur. Kompakt logo ve açılır menü, tek giriş formu, kayıt bağlantısı ve kartın altındaki topluluk bağlantısı korunur.
+Masaüstü ana sayfa içeriği üst menüyle hizalı, en fazla 1440 px ve yatay dolgusu 40 px olur. Solda başlık ve açıklama, hemen altında /images/okul-aile-ogrenci.png illüstrasyonu ve topluluk bağlantıları yer alır. Sağdaki giriş kartı en fazla 460 px olur; sütunlar üstten hizalanır. Tanıtım metni ayrı bir alt kartta tekrarlanmaz. Form alanlarının ve PIN kutularının ölçüleri korunur. 760 px ve altındaki mevcut mobil giriş düzeni korunur (14 Kasım 2026).
+- 760 px ve altında tanıtım metni, illüstrasyon ve materyal listesi gizlenir. Giriş kartı karşılama başlığı ve açıklaması olmadan rol seçimiyle başlar. Kart padding 24 px dikey / 20 px yatay, dış yatay boşluk 16 px olur. Kompakt logo ve açılır menü, tek giriş formu ve kartın altındaki topluluk bağlantısı korunur; kayıt bağlantısı yalnızca Öğretmen sekmesinde formun altında gösterilir.
 - Rol seçimi iki eşit parça ve açık yeşil seçili durum kullanır. Varsayılan öğrenci rolü, mevcut okul seçimi + okul numarası + dört haneli PIN; öğretmenin e-posta/şifre alanları ve şifre görünürlüğü korunur. “Şifremi unuttum” gibi mevcut olmayan işlev ekleme.
 - Metin alanları ve ana düğme 52 px; PIN kutuları 52 × 56 px ve aralıkları 12 px kalır. CAPTCHA, PIN odak/yapıştırma, gönderim sırasında kilitleme ve gerçek hata mesajları korunur.
 - Masaüstü topluluk alanında mevcut herkese açık galeriden en fazla üç gerçek materyal göster. Yükleniyor, boş ve hata durumlarını ayrı ve doğru metinlerle sun; örnek materyal uydurma. Mobilde yalnızca topluluk bağlantısı bulunur.
@@ -87,6 +87,10 @@ Bu bölüm yalnızca `src/components/home/HomePage.tsx` ve `HomePage.module.css`
 Çiçek kazanımı ev önü/patika tarhları ve seyrek arıları; ev kazanımı sulama kovası/el arabasını; gölet kazanımı ördek ve su halkalarını da gösterir. Bunlar dekoratiftir; yeni puan veya seviye eşiği eklemez. Arı, ördek ve halka hareketleri azaltılmış hareket tercihinde durur.
 
 ## Kaynak örnekler
+
+- Topluluk ve öğretmen profilinde Akış/Liste seçimi ve `PostCard` ortaktır. Akış büyük görselli, Liste kompakt yatay karttır; galeri seçeneği bulunmaz. Sayfaya göre farklı materyal kartı veya etkileşim stili tanımlama.
+
+- Topluluk öğretmen profili: `TeacherProfileView.tsx` ve `TeacherProfileView.module.css`. 1080 px profil, geniş PostCard akışı, 280 px masaüstü bilgi sütunu; 900 px altında tek sütun. Sayaçlar mevcut takip listelerini açar. Gerçek biyografi/veri kullanılır; örnek profil metni eklenmez.
 
 - Ortak kabuk: `src/components/teacher/TeacherDashboard.tsx`, `TeacherTopBar.tsx`, `TeacherSidebar.tsx`, `TeacherMobileNav.tsx`, `TeacherPageHeader.tsx`.
 - Renk/ölçü ve sayfa desenleri: `src/components/teacher/TeacherDashboard.module.css`.

@@ -113,9 +113,9 @@ Masaüstü öğretmen üst çubuğunun tam ortasında Topluluk / Sınıf araçla
 
 Giriş/kayıt istisnası: tek sütun, en fazla 520 px içerik; mobilde 20 px, 540 px üstünde 32 px panel dolgusu. Alanlar ve ana düğme 52 px; PIN kutuları 52 × 56 px. Bu genişlik öğretmen dashboard'una taşınmaz.
 
-Herkese açık ana sayfa (`HomePage`) masaüstünde en fazla 1360 px ana içerik ve 40 px yatay dolgu kullanır. Solda büyütülmüş mevcut `/images/okul-bahcesi.png` illüstrasyonu, sağda en fazla 520 px giriş kartı bulunur. Tanıtım başlığı ve açıklama bu iki alanın hemen altında tam genişlikte, beyaz bir kartta yer alır: 26–36 px başlık, 600 ağırlık, 1.3 satır yüksekliği; 26 × 32 px dolgu ve 16 px köşe. Mobilde bu tanıtım kartı gizlidir. Giriş kartı 16 px köşeli ve 32 px dolguludur. 761–1050 px arasında yatay içerik ve kart dolgusu 24 px olur.
+Herkese açık ana sayfa masaüstünde üst menüyle hizalı, en fazla 1440 px içerik ve 40 px yatay dolgu kullanır. Solda başlık ve açıklama ile altında okul–aile–öğrenci illüstrasyonu yer alır. Sağda en fazla 460 px giriş kartı bulunur; sütunlar üstten hizalanır. Ayrı alt tanıtım kartı kullanılmaz. Giriş kartı 16 px köşeli ve 32 px dolguludur; 761–1050 px aralığında dolgu 24 px olur. Mobil düzen korunur (14 Kasım 2026).
 
-**The Giriş Önceliği Rule.** Herkese açık ana sayfada 760 px ve altında tanıtım başlığı, açıklaması, illüstrasyonu ve materyal listesi gizlenir. Kompakt logo/menü başlığı, giriş kartındaki görünür “Hoş geldiniz” ve açıklaması, rol seçimi ve tek giriş formu kalır. Kart dolgusu dikey 24 px / yatay 20 px, dış yatay boşluk 16 px olur. Site bağlantıları açılır menüdedir; kayıt bağlantısı kartın, topluluk bağlantısı kartın altındadır. Bu kırılım öğretmen/öğrenci paneline veya ayrı giriş/kayıt sayfasına genellenmez.
+**The Giriş Önceliği Rule.** Herkese açık ana sayfada 760 px ve altında tanıtım başlığı, açıklaması, illüstrasyonu ve materyal listesi gizlenir. Kompakt logo/menü başlığı, başlık ve açıklama içermeyen giriş kartı, rol seçimi ve tek giriş formu kalır. Kart dolgusu dikey 24 px / yatay 20 px, dış yatay boşluk 16 px olur. Site bağlantıları açılır menüdedir; kayıt bağlantısı yalnızca Öğretmen sekmesinde formun altındadır; topluluk bağlantısı kartın altındadır. Bu kırılım öğretmen/öğrenci paneline veya ayrı giriş/kayıt sayfasına genellenmez.
 
 ## Elevation & Depth
 
@@ -126,6 +126,12 @@ Herkese açık ana sayfa (`HomePage`) masaüstünde en fazla 1360 px ana içerik
 Kontroller 8–12 px, ana paneller masaüstünde 18 px / mobilde 16 px köşelidir. Yuvarlak avatar ve küçük pastel araç ikonları mevcut sistemin parçasıdır. Giriş ekranına ait şekil kısıtları bütün öğretmen paneline genellenmez.
 
 ## Components
+
+### Topluluk öğretmen profili
+
+Paylaşımlar bölümünde toplulukla aynı Akış/Liste seçimi bulunur; galeri seçeneği yoktur. İki sayfa ortak PostCard kullanır. Akış büyük görseli üstte, Liste küçük görseli bilgilerin yanında gösterir. Tepkiler ve materyal işlemleri iki görünümde de korunur.
+
+Profil en fazla 1080 px genişlikte ortalanır. Kimlik ve takip işlemleri kompakt beyaz üst panelde; paylaşım/takipçi/takip sayaçları tıklanabilirdir. Paylaşımlar, Yazılar ve Hakkında bölümleri alt çizgili seçimlerdir. Materyaller mevcut PostCard etkileşimleriyle geniş gönderi akışı olarak gösterilir. Masaüstünde 280 px bilgi sütunu bulunur; 900 px altında tek sütun olur ve bilgiye Hakkında bölümünden erişilir. Görsel değişiklik takip, gizlilik ve materyal işlemlerinin yetkilerini değiştirmez.
 
 ### Herkese açık ana sayfa
 

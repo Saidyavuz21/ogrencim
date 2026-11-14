@@ -96,10 +96,14 @@ export default function HomePage() {
       <main className={styles.main}>
         <div className={styles.hero}>
           <section className={styles.story} aria-label="Okul topluluğu">
+            <div className={styles.welcomeCard}>
+              <h1 id="home-welcome-title">Sınıfın için her şey bir arada.</h1>
+              <p>Ödevleri paylaşın, gelişimi takip edin, derslerinize birlikte hayat verin.</p>
+            </div>
             <div className={styles.illustration}>
               {/* This is an authored illustration, not a photograph or interface screenshot. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/okul-bahcesi.png" width="1254" height="1254" alt="Okul girişinde bir kitabı birlikte inceleyen öğretmen, öğrenci ve veli" />
+              <img src="/images/okul-aile-ogrenci.png" width="1536" height="1024" alt="Web platformu üzerinden bir araya gelen okul, öğretmen, öğrenci ve aile" />
             </div>
             <div className={styles.features}>
               <Link href="/topluluk"><Layers size={20} aria-hidden="true" /> Ders tahtaları <ArrowRight size={17} aria-hidden="true" /></Link>
@@ -107,9 +111,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className={styles.login} aria-labelledby="login-title">
-            <h2 id="login-title">Hoş geldiniz</h2>
-            <p className={styles.intro}>Devam etmek için hesabınıza giriş yapın.</p>
+          <section className={styles.login} aria-label="Hesabınıza giriş yapın">
             <div className={styles.roles} aria-label="Giriş yapacağınız rol">
               {['Öğrenci', 'Öğretmen'].map(item => <button key={item} type="button" disabled={isSubmitting} aria-pressed={role === item} onClick={() => { setRole(item); setNotice(''); setPin(['', '', '', '']); }}>{item}</button>)}
             </div>
@@ -141,13 +143,11 @@ export default function HomePage() {
               </fieldset>
               {notice && <p className={styles.notice} role="alert">{notice}</p>}
             </form>
-            <div className={styles.register}>Hesabınız yok mu? <Link href="/giris#kayit">Ücretsiz kayıt ol</Link></div>
+            {role === 'Öğretmen' && (
+              <div className={styles.register}>Hesabınız yok mu? <Link href="/giris#kayit">Ücretsiz kayıt ol</Link></div>
+            )}
           </section>
         </div>
-        <section className={styles.welcomeCard} aria-labelledby="home-welcome-title">
-          <h1 id="home-welcome-title">Sınıfın için her şey bir arada.</h1>
-          <p>Ödevleri paylaşın, gelişimi takip edin, derslerinize birlikte hayat verin.</p>
-        </section>
         <Link className={styles.mobileCommunityLink} href="/topluluk">Topluluğu keşfet <ArrowRight size={18} aria-hidden="true" /></Link>
         <section className={styles.community} aria-labelledby="community-title">
           <div className={styles.communityHeading}>

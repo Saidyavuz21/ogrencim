@@ -11,6 +11,7 @@ import { WidgetContext, WidgetView } from '../board/Widgets';
 import { BoardContent, StrokeEl, WidgetEl } from '../../lib/boardData';
 import { CHOICE_LETTERS } from '../../lib/quizData';
 import { getLiveContent, liveAnswer, liveHeartbeat, LIVE_HEARTBEAT_MS, LiveLayer, LiveSession, useLiveSession } from '../../lib/liveData';
+import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
 import { LiveBadge, penLeft, QuestionBars, QuestionBody, strokesOf, useNow, useOwnLayer, withStrokes } from './liveShared';
 import { RichText } from '../math/RichText';
 import styles from './Live.module.css';
@@ -30,6 +31,11 @@ export function LiveStudentSession({ sessionId, studentId, onClose }: { sessionI
   const [answer, setAnswer] = useState<{ key: string; choice: number } | null>(null);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    void markNotificationGroupsRead(notificationGroups.live(sessionId));
+  }, [sessionId]);
 
   useEffect(() => {
     let alive = true;

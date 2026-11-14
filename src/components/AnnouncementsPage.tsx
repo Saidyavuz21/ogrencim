@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Trash2 } from './icons';
 import { AnnouncementRow, listAnnouncements } from '../lib/studentData';
+import { markNotificationGroupsRead, notificationGroups } from '../lib/notificationData';
 import { createAnnouncement, deleteAnnouncement } from '../lib/teacherData';
 import { adminListSchools } from '../lib/adminData';
 import { supabase, SchoolRecord } from '../lib/supabaseClient';
@@ -40,6 +41,18 @@ export function AnnouncementsPage({ manager }: AnnouncementsPageProps) {
   const [urgent, setUrgent] = useState(false);
   const [target, setTarget] = useState(ALL_SCHOOLS);
   const [busy, setBusy] = useState(false);
+  const markedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (isAdmin || !loaded || !items.length) return;
+    const unreadIds = items
+      .map((a) => a.id)
+      .filter((id) => !markedRef.current.has(id))
+      .slice(0, 50);
+    if (!unreadIds.length) return;
+    unreadIds.forEach((id) => markedRef.current.add(id));
+    void markNotificationGroupsRead(unreadIds.flatMap((id) => notificationGroups.announcement(id)));
+  }, [isAdmin, loaded, items]);
 
   const apply = (res: Awaited<ReturnType<typeof listAnnouncements>>) => {
     setLoaded(true);

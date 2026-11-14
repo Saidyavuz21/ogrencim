@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Minus, X } from '../icons';
 import { MyHomework } from '../../lib/studentData';
+import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
 import type { SubmissionRow } from '../../lib/teacherData';
 import { StudentSubmission } from './StudentSubmission';
 import { QuizPlayer } from '../quiz/QuizPlayer';
@@ -76,16 +77,35 @@ export function StudentHomeworksPage({ homeworks, loaded, studentId, onSubmissio
   const [playing, setPlaying] = useState<MyHomework | null>(null);
   const [boardOf, setBoardOf] = useState<MyHomework | null>(null);
   const [now] = useState(() => Date.now());
-  const pending = sortPending(homeworks.filter((h) => !h.check));
-  const checked = homeworks.filter((h) => h.check);
+  const pending = useMemo(() => sortPending(homeworks.filter((h) => !h.check)), [homeworks]);
+  const checked = useMemo(() => homeworks.filter((h) => h.check), [homeworks]);
   // Seçim yapılmadıysa: bekleyen ödev varsa "Bekleyen", yoksa "Tümü"
   const [chosen, setFilter] = useState<Filter | null>(null);
   const filter: Filter = chosen ?? (pending.length ? 'pending' : 'all');
+  const list = useMemo(
+    () => (filter === 'pending' ? pending : filter === 'checked' ? checked : [...pending, ...checked]),
+    [filter, pending, checked]
+  );
+  const markedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!loaded || !list.length) return;
+    const toMark: MyHomework[] = [];
+    for (const h of list) {
+      const key = `${h.id}:${h.check?.status ?? ''}:${h.submission?.status ?? ''}`;
+      if (!markedRef.current.has(key)) {
+        toMark.push(h);
+        if (toMark.length >= 25) break; // En fazla 50 grup (her ödev 2 grup döndürür)
+      }
+    }
+    if (!toMark.length) return;
+    toMark.forEach((h) => markedRef.current.add(`${h.id}:${h.check?.status ?? ''}:${h.submission?.status ?? ''}`));
+    void markNotificationGroupsRead(toMark.flatMap((h) => notificationGroups.homework(h.id)));
+  }, [loaded, list]);
 
   if (!loaded) return <Spinner center label="Ödevler yükleniyor…" />;
   if (!homeworks.length) return <p className={`${styles.panel} ${styles.mutedText}`}>Sınıfına henüz ödev verilmedi.</p>;
 
-  const list = filter === 'pending' ? pending : filter === 'checked' ? checked : [...pending, ...checked];
   const tabs: [Filter, string, number][] = [['pending', 'Bekleyen', pending.length], ['checked', 'Kontrol edilen', checked.length], ['all', 'Tümü', homeworks.length]];
 
   return (

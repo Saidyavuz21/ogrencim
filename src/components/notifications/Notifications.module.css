@@ -442,3 +442,272 @@
     width: 100%;
   }
 }
+
+/* ===== Bildirim Ayarları (NotificationSettingsSection) ===== */
+@media (min-width: 1024px) {
+  .teacherProfileSection {
+    margin-top: 24px;
+  }
+}
+
+.settingsWrap {
+  --teacher-bg: #f7f6f2;
+  --teacher-surface: #ffffff;
+  --teacher-text: #20352d;
+  --teacher-muted: #58665f;
+  --teacher-border: #dedad0;
+  --teacher-divider: #eeece5;
+  --teacher-primary: #25634b;
+  --teacher-hover: #1d503d;
+  --teacher-selected: #e6f1e9;
+
+  display: grid;
+  gap: 16px;
+  color: var(--teacher-text);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.settingsHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.settingsTitle {
+  margin: 0;
+  color: var(--teacher-text);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.settingsIntro {
+  margin: 0;
+  color: var(--teacher-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.settingsList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--teacher-border);
+  border-radius: 14px;
+  background: var(--teacher-surface);
+  overflow: hidden;
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 60px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--teacher-divider);
+  box-sizing: border-box;
+}
+
+.settingsRow:last-child {
+  border-bottom: 0;
+}
+
+.settingsRowText {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.settingsRowLabel {
+  color: var(--teacher-text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.settingsRowDesc {
+  color: var(--teacher-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.switchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  min-width: 48px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.switchBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.switchBtn:focus-visible {
+  outline: none;
+}
+
+.switchTrack {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 46px;
+  height: 26px;
+  padding: 2px;
+  border: 1px solid #a4b1a6;
+  border-radius: 999px;
+  background: #e3e0d6;
+  box-sizing: border-box;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.switchBtn[aria-checked='true'] .switchTrack {
+  border-color: var(--teacher-primary);
+  background: var(--teacher-primary);
+}
+
+.switchBtn:focus-visible .switchTrack {
+  outline: 3px solid var(--teacher-primary);
+  outline-offset: 2px;
+}
+
+.switchThumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(20 35 28 / 22%);
+  transform: translateX(0);
+  transition: transform 0.15s ease;
+}
+
+.switchBtn[aria-checked='true'] .switchThumb {
+  transform: translateX(20px);
+}
+
+.quietBox {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--teacher-border);
+  border-radius: 14px;
+  background: var(--teacher-surface);
+}
+
+.quietTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.quietControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--teacher-divider);
+}
+
+.timeField {
+  display: grid;
+  gap: 6px;
+  color: var(--teacher-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.timeInput {
+  min-width: 124px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #a4b1a6;
+  border-radius: 10px;
+  background: var(--teacher-surface);
+  color: var(--teacher-text);
+  font: inherit;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+
+.timeInput:disabled {
+  background: #f4f2ec;
+  color: var(--teacher-muted);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.timeInput:focus-visible {
+  outline: 3px solid var(--teacher-primary);
+  outline-offset: 1px;
+}
+
+.saveBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--teacher-primary);
+  border-radius: 10px;
+  background: var(--teacher-primary);
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.saveBtn:hover:not(:disabled) {
+  background: var(--teacher-hover);
+  border-color: var(--teacher-hover);
+}
+
+.saveBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.saveBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary);
+  outline-offset: 2px;
+}
+
+.settingsNote {
+  margin: 0;
+  color: var(--teacher-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .quietControls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .timeInput {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .saveBtn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+

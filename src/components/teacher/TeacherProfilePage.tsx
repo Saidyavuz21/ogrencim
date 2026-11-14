@@ -7,6 +7,8 @@ import { changeMyPassword, updateMyProfile, changeMyEmail } from '../../lib/supa
 import { CustomSelect } from '../CustomSelect';
 import { CollapsiblePanel } from './TeacherUi';
 import { CommunityProfileSettings } from '../community/CommunityProfileSettings';
+import { NotificationSettingsSection } from '../notifications/NotificationSettingsSection';
+import notifStyles from '../notifications/Notifications.module.css';
 import styles from './TeacherDashboard.module.css';
 import profileStyles from './TeacherProfile.module.css';
 
@@ -353,6 +355,10 @@ export function TeacherProfilePage({ user, onLogout, onUserUpdated }: TeacherPro
               </p>
             </>
           )}
+        </section>
+
+        <section className={`${styles.panel} ${profileStyles.account} ${notifStyles.teacherProfileSection}`} aria-label="Bildirim ayarları">
+          <NotificationSettingsSection role="teacher" />
         </section>
 
         <aside className={`${styles.pointsAside} ${profileStyles.security}`}>

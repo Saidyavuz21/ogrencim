@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { LogOut } from '../icons';
 import { subjectHue } from '../../data/subjects';
 import { AnnouncementRow, ClassmateRank, MyGrade, MyPointRow, MyStudent } from '../../lib/studentData';
+import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
 import { EXAMS } from '../../lib/teacherData';
 import { CollapsiblePanel, formatDateTime } from '../teacher/TeacherUi';
 import {
   computeCompetitionRanks, countTiers, getPointTier, getRankBadgeClass, getRankRowPodiumClass,
   LeaderboardTierLegend, TIER_CLASS, TIER_ROW_CLASS,
 } from '../teacher/TeacherLeaderboardPage';
+import { NotificationSettingsSection } from '../notifications/NotificationSettingsSection';
 import { Spinner } from '../Spinner';
 import sharedStyles from '../teacher/TeacherDashboard.module.css';
 
@@ -154,6 +156,19 @@ export function StudentRankingPage({ ranking, myId, className, loaded = true }: 
 // ---------------- Duyurular ----------------
 /** Duyuru listesi: öğrenci paneli ve öğretmen/admin duyuru sayfası ortak kullanır */
 export function AnnouncementsList({ announcements, loaded }: { announcements: AnnouncementRow[]; loaded: boolean }) {
+  const markedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!loaded || !announcements.length) return;
+    const unreadIds = announcements
+      .map((a) => a.id)
+      .filter((id) => !markedRef.current.has(id))
+      .slice(0, 50);
+    if (!unreadIds.length) return;
+    unreadIds.forEach((id) => markedRef.current.add(id));
+    void markNotificationGroupsRead(unreadIds.flatMap((id) => notificationGroups.announcement(id)));
+  }, [loaded, announcements]);
+
   return (
     <div className={styles.pageBody}>
       {!loaded && <Spinner center label="Duyurular yükleniyor…" />}
@@ -193,6 +208,9 @@ export function StudentAccountPage({ me, fallbackName, fallbackNo, fallbackClass
           ))}
         </dl>
         <p className={styles.mutedText}>Bilgilerinde yanlışlık varsa ya da PIN&apos;ini unutursan sınıf öğretmenine söyle; yeni PIN öğretmenin tarafından verilir.</p>
+      </section>
+      <section className={styles.panel} aria-label="Bildirim ayarları">
+        <NotificationSettingsSection role="student" />
       </section>
       <section className={styles.panel} aria-labelledby="student-logout-title">
         <h2 id="student-logout-title" className={styles.panelTitle}>Oturum</h2>

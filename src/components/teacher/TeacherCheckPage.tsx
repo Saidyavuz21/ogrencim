@@ -6,6 +6,7 @@ import {
   CheckStatus, HomeworkCheckRow, homeworkIsOpen, HomeworkRow, listHomeworkChecks, listHomeworkSubmissions, listMyHomeworks,
   returnSubmission, saveHomeworkChecks, setHomeworkClosed, setHomeworkResultsReleased, SUBMISSION_BUCKET, SubmissionRow, FILE_RETENTION_DAYS, filesExpireAt,
 } from '../../lib/teacherData';
+import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
 import { AttachmentList, CollapsiblePanel, Notice, NoticeState, initialsOf, StudentSortToggle, useClassStudents } from './TeacherUi';
 import { useDialog } from '../ConfirmDialog';
 import { CustomSelect } from '../CustomSelect';
@@ -72,6 +73,12 @@ export function TeacherCheckPage({ selectedClass, initialHomeworkId, onCreateHom
   const activeHw = homeworks.find((h) => h.id === homeworkId) || homeworks[0];
   const activeHwId = activeHw?.id;
   const acceptsSubmissions = !!activeHw?.accepts_submissions;
+
+  // Seçili ödev açıldığında ilgili teslim bildirimlerini okundu yap
+  useEffect(() => {
+    if (!activeHwId) return;
+    void markNotificationGroupsRead(notificationGroups.submissions(activeHwId));
+  }, [activeHwId]);
 
   // Seçili ödevin teslimleri
   useEffect(() => {

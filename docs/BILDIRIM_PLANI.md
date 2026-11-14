@@ -60,7 +60,7 @@ Gerekçe: güvenlik, yetki ve sunucu işi hata kaldırmaz ve canlı veritabanın
 
 ## Aşama 1 – Zil ve okunmamış sayısı
 
-Veritabanı (Claude) ✅ 14 Kasım 2026 · `supabase/migrations/20261117090000_notifications.sql` (canlıya uygulandı; önce canlıda geri alınan işlemle test edildi):
+Veritabanı (Claude) ✅ 14 Kasım 2026 · `d53403f` · `supabase/migrations/20261117090000_notifications.sql` (canlıya uygulandı; önce canlıda geri alınan işlemle test edildi):
 - [x] `notifications`: alıcı (`recipient_user` öğretmen **ya da** `recipient_student` öğrenci), `kind`, `sub`, `group_key`, `ref_id`, `title`, `body`, `actor_name`, `count`, `updated_at`, `read_at`, `push_state`
 - [x] **Toplama:** aynı alıcıya aynı `group_key` ile okunmamış kayıt varsa yeni satır açılmaz; `count` artar (mesaj, teslim, topluluk) ya da yalnızca yenilenir (ödev, değerlendirme, duyuru, canlı ders)
 - [x] `notification_settings`: tür başına zil / push kapatma; sessiz saatler (yalnızca öğretmen değiştirir)
@@ -72,7 +72,7 @@ Veritabanı (Claude) ✅ 14 Kasım 2026 · `supabase/migrations/20261117090000_n
 - [x] Eski bildirimler: okunmuşlar 60 gün, hepsi 180 gün sonra silinir (pg_cron `notifications-cleanup`)
 - [x] Realtime yayınına eklendi
 
-Veri katmanı (Claude) ✅ `src/lib/notificationData.ts`:
+Veri katmanı (Claude) ✅ `d53403f` · `src/lib/notificationData.ts`:
 - [x] `countUnreadNotifications`, `listNotifications`, `markNotificationsRead`, `markNotificationGroupsRead` + `notificationGroups`, `getNotificationSettings` / `saveNotificationSettings`, `notificationText`, `notificationTarget`, `useUnreadNotifications` (realtime + 60 sn + sekmeye dönünce; destekleyen tarayıcıda ikon rozeti)
 - [x] Sohbet açılınca mesaj bildirimi okunur (öğretmen ve öğrenci mesaj sayfaları; sınıf grubu `mark_group_read` içinde)
 - [ ] Ödev, teslim, canlı ders, duyuru açılınca okunma → Gemini İstem 4

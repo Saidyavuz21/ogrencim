@@ -609,6 +609,8 @@ export interface MessageRow {
   content: string;
   is_read: boolean;
   created_at: string;
+  /** Öğretmen sildiyse dolu; metin boştur, "Bu mesaj silindi" gösterilir */
+  deleted_at?: string | null;
 }
 
 export async function getMySchoolId(): Promise<string | null> {
@@ -620,13 +622,23 @@ export async function listMessages(conversationIds: string[]): Promise<Result<Me
   if (!conversationIds.length) return { ok: true, data: [] };
   const { data, error } = await supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, sender_name, sender_role, content, is_read, created_at')
+    .select('id, conversation_id, sender_id, sender_name, sender_role, content, is_read, created_at, deleted_at')
     .in('conversation_id', conversationIds)
     .order('created_at', { ascending: true })
     .limit(500);
   if (error) return fail(error);
   return { ok: true, data: (data as MessageRow[]) || [] };
 }
+
+/** Öğretmen: kendi mesajını ya da öğrenci mesajını siler (yumuşak silme; kimin sildiği kayıtlıdır) */
+export async function deleteMessage(id: string): Promise<Result> {
+  const { error } = await supabase.rpc('delete_message', { p_id: id });
+  if (error) return fail(error);
+  return { ok: true, data: undefined };
+}
+
+/** Konuşma listesindeki son mesaj önizlemesi */
+export const messagePreview = (m: Pick<MessageRow, 'content' | 'deleted_at'>) => (m.deleted_at ? 'Mesaj silindi' : m.content);
 
 export async function sendMessage(conversationId: string, content: string): Promise<Result> {
   const text = content.trim();
@@ -679,7 +691,8 @@ export async function countUnreadStudentMessages(): Promise<number> {
     .from('messages')
     .select('id', { count: 'exact', head: true })
     .in('sender_role', ['parent', 'student'])
-    .eq('is_read', false);
+    .eq('is_read', false)
+    .is('deleted_at', null);
   return count || 0;
 }
 

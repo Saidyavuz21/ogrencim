@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Send, Users, ArrowLeft, MessageSquare, Plus, X } from '../icons';
+import { Send, Users, ArrowLeft, MessageSquare, Plus, X, Trash2 } from '../icons';
 import {
   classConversationId,
+  deleteMessage,
   isFamilyRole,
   markConversationRead,
   MessageRow,
+  messagePreview,
   sendMessage,
   studentConversationId,
 } from '../../lib/teacherData';
@@ -16,6 +18,7 @@ import { LiveBadge } from './TeacherUi';
 import { Notice, NoticeState, formatDateTime, initialsOf, useClassStudents } from './TeacherUi';
 import { listGroupReadReceipts, ReadReceipt } from '../../lib/schoolData';
 import { Spinner } from '../Spinner';
+import { useDialog } from '../ConfirmDialog';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherMessagesPageProps {
@@ -31,6 +34,8 @@ interface TeacherMessagesPageProps {
 
 export function TeacherMessagesPage({ selectedClass, classNames, schoolId, currentUserId, initialConversationId, onRead }: TeacherMessagesPageProps) {
   const { students, loading, error } = useClassStudents(selectedClass);
+  const { confirm } = useDialog();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [manualConv, setManualConv] = useState<{
     forInitial: string | null | undefined;
     id: string | null;
@@ -131,6 +136,29 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
     setAlsoClasses(null);
   };
 
+  // Kendi mesajı ya da öğrenci mesajı silinebilir; metin kalkar, yerinde "Bu mesaj silindi" yazar
+  const handleDelete = async (m: MessageRow) => {
+    if (deletingId) return;
+    const ok = await confirm({
+      title: 'Mesajı sil',
+      message: isFamilyRole(m.sender_role)
+        ? `${m.sender_name} adlı öğrencinin bu mesajı silinsin mi? Mesajın yerinde "Bu mesaj silindi" yazacak.`
+        : 'Bu mesaj silinsin mi? Öğrenciler mesajın yerinde "Bu mesaj silindi" görecek.',
+      confirmText: 'Sil',
+      cancelText: 'Vazgeç',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    setDeletingId(m.id);
+    const res = await deleteMessage(m.id);
+    setDeletingId(null);
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: `Mesaj silinemedi: ${res.error}` });
+      return;
+    }
+    refresh();
+  };
+
   const toggleAlso = (c: string) =>
     setAlsoClasses((prev) => (prev?.includes(c) ? prev.filter((x) => x !== c) : [...(prev || []), c]));
 
@@ -193,7 +221,7 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
                         <span className={styles.studentAvatar} aria-hidden="true">{c.isGroup ? <Users size={18} /> : initialsOf(c.title)}</span>
                         <span className={styles.studentCardInfo}>
                           <strong>{c.title}</strong>
-                          <span>{last ? `${isFamilyRole(last.sender_role) ? '' : 'Siz: '}${last.content}` : c.subtitle}</span>
+                          <span>{last ? `${isFamilyRole(last.sender_role) ? '' : 'Siz: '}${messagePreview(last)}` : c.subtitle}</span>
                         </span>
                         {unread > 0 && <span className={styles.pageCardBadge} aria-label={`${unread} okunmamış`}>{unread}</span>}
                       </button>
@@ -224,7 +252,21 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
                 return (
                   <div key={m.id} className={`${styles.bubble} ${mine ? styles.bubbleMine : ''}`}>
                     {!mine && <strong>{m.sender_name}</strong>}
-                    <p>{m.content}</p>
+                    {m.deleted_at
+                      ? <p className={styles.bubbleDeleted}>Bu mesaj silindi</p>
+                      : <p>{m.content}</p>}
+                    {!m.deleted_at && (mine || isFamilyRole(m.sender_role)) && (
+                      <button
+                        type="button"
+                        className={styles.bubbleDelete}
+                        onClick={() => void handleDelete(m)}
+                        disabled={deletingId === m.id}
+                        aria-label={mine ? 'Mesajımı sil' : `${m.sender_name} mesajını sil`}
+                        title="Sil"
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                      </button>
+                    )}
                     <span title={active.isGroup && mine ? readTitle : undefined}>
                       {formatDateTime(m.created_at)}
                       {mine && !active.isGroup ? (m.is_read ? ' · Okundu' : ' · İletildi') : ''}

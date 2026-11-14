@@ -3979,3 +3979,16 @@
   .portalSidebar .sidebarGroup { margin-top: 12px; gap: 2px; padding-top: 10px; border-top: 1px solid #eeece5; }
   .portalSidebar .sidebarGroup h2 { margin: 0 10px 4px; color: var(--teacher-muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
 }
+
+/* Mesaj silme (öğretmen): silinmiş mesaj ve sil düğmesi */
+.bubbleDeleted { color: var(--teacher-muted); font-style: italic; }
+.bubble:has(> .bubbleDelete) { position: relative; padding-right: 40px; }
+.bubbleDelete { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--teacher-muted); cursor: pointer; opacity: 0; transition: opacity 120ms ease, background-color 120ms ease; }
+.bubble:hover > .bubbleDelete, .bubbleDelete:focus-visible { opacity: 1; }
+.bubbleDelete:hover { background: #fcecef; color: #a33342; }
+.bubbleDelete:focus-visible { outline: 3px solid var(--teacher-primary); outline-offset: 1px; }
+.bubbleDelete:disabled { opacity: 0.4; cursor: wait; }
+@media (pointer: coarse) {
+  .bubble:has(> .bubbleDelete) { padding-right: 48px; }
+  .bubbleDelete { top: 0; right: 0; width: 44px; height: 44px; opacity: 0.75; }
+}

@@ -124,7 +124,7 @@ export function StudentMessagesPage({ me, onRead, initialConversationId }: { me:
                     <span className={styles.studentAvatar} aria-hidden="true">{c.canWrite ? <MessageSquare size={18} /> : <Users size={18} />}</span>
                     <span className={styles.studentCardInfo}>
                       <strong>{c.title}</strong>
-                      <span>{last ? `${isFamilyRole(last.sender_role) ? 'Sen' : last.sender_name}: ${last.content}` : c.subtitle}</span>
+                      <span>{last ? `${isFamilyRole(last.sender_role) ? 'Sen' : last.sender_name}: ${last.deleted_at ? 'Mesaj silindi' : last.content}` : c.subtitle}</span>
                     </span>
                     {unread > 0 && <span className={styles.pageCardBadge} aria-label={`${unread} okunmamış`}>{unread}</span>}
                   </button>
@@ -150,7 +150,7 @@ export function StudentMessagesPage({ me, onRead, initialConversationId }: { me:
                 return (
                   <div key={m.id} className={`${styles.bubble} ${mine ? styles.bubbleMine : ''}`}>
                     {!mine && <strong>{m.sender_name}</strong>}
-                    <p>{m.content}</p>
+                    {m.deleted_at ? <p className={styles.bubbleDeleted}>Bu mesaj silindi</p> : <p>{m.content}</p>}
                     <span>{formatDateTime(m.created_at)}{mine ? (m.is_read ? ' · Okundu' : ' · İletildi') : ''}</span>
                   </div>
                 );

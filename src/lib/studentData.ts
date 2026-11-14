@@ -45,7 +45,8 @@ export async function countMyUnreadMessages(conversationId: string): Promise<num
     .select('id', { count: 'exact', head: true })
     .eq('conversation_id', conversationId)
     .in('sender_role', ['teacher', 'admin'])
-    .eq('is_read', false);
+    .eq('is_read', false)
+    .is('deleted_at', null);
   if (error) return 0;
   return count || 0;
 }

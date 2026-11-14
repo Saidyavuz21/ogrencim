@@ -853,3 +853,163 @@
   }
 }
 
+/* ===== Telefon Bildirimi Davet Kartı (PushInviteCard) ===== */
+.inviteWrap {
+  --teacher-bg: #f7f6f2;
+  --teacher-surface: #ffffff;
+  --teacher-text: #20352d;
+  --teacher-muted: #58665f;
+  --teacher-border: #dedad0;
+  --teacher-divider: #eeece5;
+  --teacher-primary: #25634b;
+  --teacher-hover: #1d503d;
+  --teacher-selected: #e6f1e9;
+
+  display: grid;
+  gap: 10px;
+  color: var(--teacher-text);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.inviteCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--teacher-border);
+  border-radius: 18px;
+  background: var(--teacher-surface);
+  box-sizing: border-box;
+}
+
+.inviteMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.inviteIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--teacher-divider);
+  border-radius: 12px;
+  background: var(--teacher-bg);
+  color: var(--teacher-primary);
+  flex-shrink: 0;
+}
+
+.inviteText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inviteTitle {
+  margin: 0;
+  color: var(--teacher-text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.inviteDesc {
+  margin: 0;
+  color: var(--teacher-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.inviteActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.invitePrimaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--teacher-primary);
+  border-radius: 10px;
+  background: var(--teacher-primary);
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.invitePrimaryBtn:hover:not(:disabled) {
+  background: var(--teacher-hover);
+  border-color: var(--teacher-hover);
+}
+
+.invitePrimaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.invitePrimaryBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary);
+  outline-offset: 2px;
+}
+
+.inviteSecondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--teacher-border);
+  border-radius: 10px;
+  background: var(--teacher-surface);
+  color: var(--teacher-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.inviteSecondaryBtn:hover:not(:disabled) {
+  background: #f4f2ec;
+  border-color: #a4b1a6;
+}
+
+.inviteSecondaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.inviteSecondaryBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .inviteCard {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
+
+  .inviteActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+

@@ -13,6 +13,7 @@ import {
   type NotificationTarget,
 } from '../../lib/notificationData';
 import { NotificationPanel } from '../notifications/NotificationPanel';
+import { PushInviteCard } from '../notifications/PushInviteCard';
 import { Aquarium } from '../aquarium/Aquarium';
 import { StudentGarden } from '../garden/StudentGarden';
 import { Notice } from '../teacher/TeacherUi';
@@ -183,6 +184,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
       <main id="student-content" className={`${styles.dashboard} ${s.content}`}>
         <LiveJoinStrip sessions={liveSessions} onJoin={setLiveId} />
         <InstallAppBanner variant={page === 'hesap' ? 'profile' : 'suggestion'} visible={page === 'home' || page === 'hesap'} />
+        {page === 'home' && <PushInviteCard role="student" />}
         {page === 'home' || !info ? (
           <StudentHome
             me={me}

@@ -6,6 +6,7 @@ import type { ClassToolId } from './TeacherClassToolsPage';
 import { TeacherClass, UserAccount } from '../../data/portalData';
 import { TEACHER_PAGE_GROUPS, TeacherPageId, teacherPageHref, isPlainLeftClick, visibleTeacherPages } from './teacherPages';
 import { TEACHER_CLASS_TOOL_TONE, teacherPageToneVars, teacherToneVars } from './teacherColors';
+import { PushInviteCard } from '../notifications/PushInviteCard';
 import styles from './TeacherDashboard.module.css';
 
 interface TeacherHomeProps {
@@ -29,6 +30,7 @@ export function TeacherHome({ user, classes, selectedClass, onSelectClass, onOpe
 
   return (
     <>
+      <PushInviteCard role="teacher" />
       <header className={`${styles.homeHeader} ${styles.mobileHomeHeader}`}>
         <div className={styles.homeIdentity}>
           <span className={styles.homeAvatar} aria-hidden="true">{initials}</span>

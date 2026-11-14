@@ -9,6 +9,12 @@ import s from './Notifications.module.css';
 const DISMISSED_KEY = 'tofutr:push-invite-dismissed';
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
+/** Kart yalnızca telefon/tablette (dokunmatik) ya da ana ekrana eklenmiş uygulamada; bilgisayarda ayarlardan açılır */
+function isMobileContext(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  return window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(display-mode: standalone)').matches;
+}
+
 function isInviteAllowedByStorage(): boolean {
   if (typeof window === 'undefined') return false;
   try {
@@ -35,7 +41,7 @@ export function PushInviteCard({ role }: { role: 'teacher' | 'student' }) {
     const check = async () => {
       await Promise.resolve();
       if (cancelled) return;
-      if (!isInviteAllowedByStorage()) return;
+      if (!isMobileContext() || !isInviteAllowedByStorage()) return;
 
       const status = await getPushStatus();
       if (cancelled) return;

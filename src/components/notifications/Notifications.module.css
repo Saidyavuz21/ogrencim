@@ -487,6 +487,73 @@
   line-height: 1.5;
 }
 
+.deviceBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--teacher-border);
+  border-radius: 14px;
+  background: var(--teacher-surface);
+  box-sizing: border-box;
+}
+
+.deviceActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.deviceMuted {
+  margin: 0;
+  color: var(--teacher-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.deviceInfo {
+  margin: 0;
+  color: var(--teacher-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.testPushBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--teacher-border);
+  border-radius: 10px;
+  background: var(--teacher-bg);
+  color: var(--teacher-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.testPushBtn:hover:not(:disabled) {
+  background: #eeece5;
+  border-color: #a4b1a6;
+}
+
+.testPushBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.testPushBtn:focus-visible {
+  outline: 3px solid var(--teacher-primary);
+  outline-offset: 2px;
+}
+
 .settingsList {
   display: grid;
   margin: 0;
@@ -496,6 +563,24 @@
   border-radius: 14px;
   background: var(--teacher-surface);
   overflow: hidden;
+}
+
+.settingsListHead {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--teacher-divider);
+  background: var(--teacher-bg);
+  color: var(--teacher-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settingsColHead {
+  width: 64px;
+  text-align: center;
 }
 
 .settingsRow {
@@ -511,6 +596,27 @@
 
 .settingsRow:last-child {
   border-bottom: 0;
+}
+
+.settingsSwitches {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.switchCol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+}
+
+.switchColLabel {
+  display: none;
+  color: var(--teacher-muted);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .settingsRowText {
@@ -695,6 +801,42 @@
 }
 
 @media (max-width: 760px) {
+  .deviceBox {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+  }
+
+  .deviceActions {
+    margin-left: auto;
+  }
+
+  .settingsListHead {
+    display: none;
+  }
+
+  .settingsRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .settingsSwitches {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding-top: 4px;
+  }
+
+  .switchCol {
+    width: auto;
+    gap: 6px;
+  }
+
+  .switchColLabel {
+    display: inline;
+  }
+
   .quietControls {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -9,6 +9,13 @@ import {
   type NotificationKind,
   type NotificationSettings,
 } from '../../lib/notificationData';
+import {
+  disablePush,
+  enablePush,
+  getPushStatus,
+  sendTestPush,
+  type PushStatus,
+} from '../../lib/pushData';
 import { Spinner } from '../Spinner';
 import { Notice, type NoticeState } from '../teacher/TeacherUi';
 import s from './Notifications.module.css';
@@ -24,9 +31,12 @@ export function NotificationSettingsSection({ role }: { role: 'teacher' | 'stude
   const endId = useId();
 
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
+  const [pushStatus, setPushStatus] = useState<PushStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pendingKinds, setPendingKinds] = useState<Partial<Record<NotificationKind, boolean>>>({});
+  const [togglingDevicePush, setTogglingDevicePush] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
   const [savingQuiet, setSavingQuiet] = useState(false);
   const [notice, setNotice] = useState<NoticeState>(null);
 
@@ -36,7 +46,8 @@ export function NotificationSettingsSection({ role }: { role: 'teacher' | 'stude
     setLoadError(null);
     setNotice(null);
 
-    const res = await getNotificationSettings();
+    const [res, status] = await Promise.all([getNotificationSettings(), getPushStatus()]);
+    setPushStatus(status);
     setLoading(false);
 
     if (!res.ok) {
@@ -62,8 +73,9 @@ export function NotificationSettingsSection({ role }: { role: 'teacher' | 'stude
       setLoading(true);
       setLoadError(null);
 
-      const res = await getNotificationSettings();
+      const [res, status] = await Promise.all([getNotificationSettings(), getPushStatus()]);
       if (cancelled) return;
+      setPushStatus(status);
       setLoading(false);
 
       if (!res.ok) {
@@ -96,28 +108,86 @@ export function NotificationSettingsSection({ role }: { role: 'teacher' | 'stude
   // Bir kayıt sürerken bütün anahtarlar kilitli: kayıtlar sırayla gider, hata geri alması başka değişikliği silmez
   const anyPending = Object.values(pendingKinds).some(Boolean);
 
-  const handleToggleKind = async (kind: NotificationKind) => {
-    if (!settings || anyPending) return;
+  const handleToggleDevicePush = async () => {
+    if (!pushStatus || togglingDevicePush) return;
+
+    setNotice(null);
+    setTogglingDevicePush(true);
+
+    const res = pushStatus.enabled ? await disablePush() : await enablePush();
+    const nextStatus = await getPushStatus();
+    setPushStatus(nextStatus);
+    setTogglingDevicePush(false);
+
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: res.error });
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    if (sendingTest || togglingDevicePush) return;
+
+    setNotice(null);
+    setSendingTest(true);
+
+    const res = await sendTestPush();
+    setSendingTest(false);
+
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: res.error });
+      return;
+    }
+
+    setNotice({
+      kind: 'ok',
+      text:
+        role === 'teacher'
+          ? 'Deneme bildirimi gönderildi. Birkaç saniye içinde gelmezse telefonun bildirim ayarlarını kontrol edin.'
+          : 'Deneme bildirimi gönderildi. Birkaç saniye içinde gelmezse telefonun bildirim ayarlarını kontrol et.',
+    });
+  };
+
+  const handleToggleChannel = async (kind: NotificationKind, channel: 'in_app' | 'push') => {
+    if (!settings || anyPending || savingQuiet) return;
 
     const prevOffInApp = settings.off_in_app;
-    const isCurrentlyOn = !prevOffInApp.includes(kind);
-    const nextOffInApp = isCurrentlyOn
-      ? [...prevOffInApp, kind]
-      : prevOffInApp.filter((k) => k !== kind);
+    const prevOffPush = settings.off_push;
+
+    if (channel === 'push' && prevOffInApp.includes(kind)) {
+      return;
+    }
+
+    const nextOffInApp =
+      channel === 'in_app'
+        ? !prevOffInApp.includes(kind)
+          ? [...prevOffInApp, kind]
+          : prevOffInApp.filter((k) => k !== kind)
+        : prevOffInApp;
+
+    const nextOffPush =
+      channel === 'push'
+        ? !prevOffPush.includes(kind)
+          ? [...prevOffPush, kind]
+          : prevOffPush.filter((k) => k !== kind)
+        : prevOffPush;
 
     setNotice(null);
     setPendingKinds((prev) => ({ ...prev, [kind]: true }));
-    setSettings((prev) => (prev ? { ...prev, off_in_app: nextOffInApp } : prev));
+    setSettings((prev) =>
+      prev ? { ...prev, off_in_app: nextOffInApp, off_push: nextOffPush } : prev
+    );
 
     const res = await saveNotificationSettings({
       off_in_app: nextOffInApp,
-      off_push: settings.off_push,
+      off_push: nextOffPush,
     });
 
     setPendingKinds((prev) => ({ ...prev, [kind]: false }));
 
     if (!res.ok) {
-      setSettings((prev) => (prev ? { ...prev, off_in_app: prevOffInApp } : prev));
+      setSettings((prev) =>
+        prev ? { ...prev, off_in_app: prevOffInApp, off_push: prevOffPush } : prev
+      );
       setNotice({ kind: 'error', text: `Ayar kaydedilemedi: ${res.error}` });
     }
   };
@@ -150,6 +220,16 @@ export function NotificationSettingsSection({ role }: { role: 'teacher' | 'stude
     setNotice({ kind: 'ok', text: 'Sessiz saat ayarları kaydedildi.' });
   };
 
+  const iosInstallText =
+    role === 'teacher'
+      ? "iPhone'da bildirim almak için: Safari'de Paylaş düğmesine dokunun → Ana Ekrana Ekle → ana ekrandaki tofutr simgesinden açın."
+      : "iPhone'da bildirim almak için: Safari'de Paylaş düğmesine dokun → Ana Ekrana Ekle → ana ekrandaki tofutr simgesinden aç.";
+
+  const deniedText =
+    role === 'teacher'
+      ? 'Bildirim izni bu tarayıcıda engellenmiş. Tarayıcı ayarlarından tofutr.com için bildirimlere izin verin.'
+      : 'Bildirim izni bu tarayıcıda engellenmiş. Tarayıcı ayarlarından tofutr.com için bildirimlere izin ver.';
+
   return (
     <div className={s.settingsWrap} aria-labelledby={headingId}>
       <div className={s.settingsHeader}>
@@ -168,37 +248,111 @@ export function NotificationSettingsSection({ role }: { role: 'teacher' | 'stude
             Tekrar dene
           </button>
         </div>
-      ) : loading || !settings ? (
+      ) : loading || !settings || !pushStatus ? (
         <Spinner center size="sm" label="Bildirim ayarları yükleniyor…" />
       ) : (
         <>
-          <ul className={s.settingsList}>
-            {kinds.map((item) => {
-              const isOn = !settings.off_in_app.includes(item.kind);
-              const isBusy = anyPending || savingQuiet;
-              return (
-                <li key={item.kind} className={s.settingsRow}>
-                  <div className={s.settingsRowText}>
-                    <span className={s.settingsRowLabel}>{item.label}</span>
-                    <span className={s.settingsRowDesc}>{item.description}</span>
-                  </div>
+          <div className={s.deviceBox}>
+            {pushStatus.support === 'unsupported' ? (
+              <p className={s.deviceMuted}>Bu tarayıcı telefon bildirimlerini desteklemiyor.</p>
+            ) : pushStatus.support === 'ios-needs-install' ? (
+              <p className={s.deviceInfo}>{iosInstallText}</p>
+            ) : pushStatus.permission === 'denied' ? (
+              <p className={s.deviceInfo}>{deniedText}</p>
+            ) : (
+              <>
+                <div className={s.settingsRowText}>
+                  <span className={s.settingsRowLabel}>Telefon bildirimleri (bu cihaz)</span>
+                  <span className={s.settingsRowDesc}>Uygulama kapalıyken de bildirim gelir.</span>
+                </div>
+                <div className={s.deviceActions}>
+                  {pushStatus.enabled && (
+                    <button
+                      type="button"
+                      className={s.testPushBtn}
+                      disabled={sendingTest || togglingDevicePush}
+                      onClick={() => void handleSendTestPush()}
+                    >
+                      {sendingTest ? 'Gönderiliyor…' : 'Deneme gönder'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     role="switch"
-                    aria-checked={isOn}
-                    aria-label={item.label}
+                    aria-checked={pushStatus.enabled}
+                    aria-label="Telefon bildirimleri (bu cihaz)"
                     className={s.switchBtn}
-                    disabled={isBusy}
-                    onClick={() => void handleToggleKind(item.kind)}
+                    disabled={togglingDevicePush}
+                    onClick={() => void handleToggleDevicePush()}
                   >
                     <span className={s.switchTrack} aria-hidden="true">
                       <span className={s.switchThumb} />
                     </span>
                   </button>
-                </li>
-              );
-            })}
-          </ul>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className={s.settingsList}>
+            <div className={s.settingsListHead} aria-hidden="true">
+              <span className={s.settingsColHead}>Zil</span>
+              <span className={s.settingsColHead}>Telefon</span>
+            </div>
+            <ul className={s.list}>
+              {kinds.map((item) => {
+                const isInAppOn = !settings.off_in_app.includes(item.kind);
+                const isPushOn = isInAppOn && !settings.off_push.includes(item.kind);
+                const isBusy = anyPending || savingQuiet;
+                return (
+                  <li key={item.kind} className={s.settingsRow}>
+                    <div className={s.settingsRowText}>
+                      <span className={s.settingsRowLabel}>{item.label}</span>
+                      <span className={s.settingsRowDesc}>{item.description}</span>
+                    </div>
+                    <div className={s.settingsSwitches}>
+                      <div className={s.switchCol}>
+                        <span className={s.switchColLabel} aria-hidden="true">
+                          Zil
+                        </span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isInAppOn}
+                          aria-label={`${item.label} — Zil`}
+                          className={s.switchBtn}
+                          disabled={isBusy}
+                          onClick={() => void handleToggleChannel(item.kind, 'in_app')}
+                        >
+                          <span className={s.switchTrack} aria-hidden="true">
+                            <span className={s.switchThumb} />
+                          </span>
+                        </button>
+                      </div>
+                      <div className={s.switchCol}>
+                        <span className={s.switchColLabel} aria-hidden="true">
+                          Telefon
+                        </span>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isPushOn}
+                          aria-label={`${item.label} — Telefon`}
+                          className={s.switchBtn}
+                          disabled={isBusy || !isInAppOn}
+                          onClick={() => void handleToggleChannel(item.kind, 'push')}
+                        >
+                          <span className={s.switchTrack} aria-hidden="true">
+                            <span className={s.switchThumb} />
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
 
           {role === 'teacher' && settings.can_edit_quiet ? (
             <form className={s.quietBox} onSubmit={handleSaveQuiet}>

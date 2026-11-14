@@ -73,3 +73,6 @@ next-env.d.ts
 
 # Sunucu adresi (scripts/sunucu betikleri okur); depo herkese açık olduğu için gönderilmez
 /.sunucu.env
+
+# Kütüphane görsellerinin yerel kaynak klasörü: Supabase kütüphanesine yönetici panelinden yüklenir, siteye/sunucuya gitmez
+public/images/kutuphane/

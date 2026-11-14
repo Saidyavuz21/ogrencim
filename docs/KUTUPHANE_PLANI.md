@@ -39,7 +39,8 @@ Güncelleme: 14 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
    - Tahtada görsel paneli › Kütüphane (`src/components/board/BoardEditorPanels.tsx`)
    Ödev ve tahta, seçilen dosyayı **kendi deposuna kopyalar** (`copyImageToBoard`, ödev ekleri). Bu yüzden kütüphanede öğe taşımak ya da silmek mevcut ödev ve tahtaları bozmaz. Yine de silme yerine önce **gizleme** olsun (geri alınabilir).
 2. **Sayfa çok ağır:** kartlarda her resmin asıl dosyası (1–2,6 MB) imzalı adresle yükleniyor; 37 görsel ≈ 55 MB. Yüklemede **küçük önizleme** (≈ 400 px, ≈ 30 KB WebP) üretilmeli; kartlar onu göstermeli, asıl dosya yalnızca önizleme/indirme/ekleme anında.
-3. **Yarım gezegenler:** Ay, Dünya, Güneş vb. kütüphanede yarım görünüyor. Yereldeki yeni dosyalar (`public/images/kutuphane/gok-cisimleri`) tam; eski sürümlerde gece yarısı siyahtı ve arka plan temizlenirken silinmiş. Başka bir araç görselleri yeniden üretiyor (`public/images/kutuphane/`, henüz commit edilmedi). Bitince kütüphanedeki eski sürümler yenileriyle değiştirilmeli. Burun resmi de önizleme kutusundan taşıyor (kontrol edilecek).
+3. **Yarım gezegenler / taşan burun:** Supabase'deki dosyalar yereldekilerle bayt bayt aynı ve tam; sorun görselde değil. Nedenler: (a) 1–2,6 MB PNG'ler kartta yavaş yükleniyor, yüklenme bitmeden yarım görünüyor; (b) önizleme kutusunda resim kutudan uzun olabiliyor (`.preview img` için `max-height: 190px`, kutu daha kısa). Küçük önizleme ve kutu ölçüsü düzeltmesiyle çözülür.
+   **Kaynak klasör kuralı:** `public/images/kutuphane/` yalnızca yereldeki kaynak klasördür; `.gitignore`'da, sunucuya gitmez (14 Kasım 2026). Görseller kütüphaneye yalnızca yönetici panelinden yüklenir. Eksik görselleri (ör. deney ve elektrik araçları) kullanıcı kütüphane işi bitince kendisi yükleyecek.
 4. **Yapay zekâ ile üretilmiş görseller:** `uretim-bilgisi.json` notu "temsili görseldir, gerçek fotoğraf değildir" diyor. Öğede **kaynak / lisans** alanı olsun (ör. "Yapay zekâ ile üretilmiş temsili görsel", "tofutr", "CC BY …"); önizlemede küçük not olarak görünsün.
 5. **Bölümler arası arama:** her bölümün ağacı farklı olduğu için "3. sınıf matematik için her şey" ağaçtan çıkmaz. Öğeye isteğe bağlı **sınıf seviyeleri** (çoklu) ve **ders** alanı eklenir; arama ve ileride "Branşıma göre" süzme bunları kullanır.
 6. **Hazır tahtalarda dikkat:** tahtadaki resimler admin'in tahta deposunda, Mini Test parçaları admin'in soru bankasına bağlı. Kopyalarken resimler ve sorular öğretmene kopyalanmalı (Topluluk kopyalaması bunu nasıl yapıyorsa aynısı; uygulamadan önce kontrol edilecek).
@@ -50,8 +51,7 @@ Güncelleme: 14 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
 ## Aşama 0 – Hazırlık
 
 - [ ] Küçük önizleme: yüklemede üretilir (`library-thumbs` deposu ya da aynı depoda `thumbs/`); mevcut 37 görsel için bir kerelik üretim
-- [ ] Yarım görselleri yenileriyle değiştirme (diğer aracın görselleri bitince)
-- [ ] Önizleme kutusunda taşma düzeltmesi
+- [ ] Önizleme kutusunda taşma düzeltmesi (yarım görünme küçük önizlemeyle birlikte çözülür)
 
 ## Aşama 1 – Bölümler ve kategori ağacı
 

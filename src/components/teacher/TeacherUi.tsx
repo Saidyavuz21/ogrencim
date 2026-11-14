@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react';
-import { AlertCircle, CheckCircle2, ChevronDown, FileText, X } from '../icons';
+import { AlertCircle, Check, CheckCheck, CheckCircle2, ChevronDown, FileText, X } from '../icons';
 import { ClassStudent, formatBytes, getAttachmentUrl, HomeworkAttachment, listClassStudents } from '../../lib/teacherData';
 import styles from './TeacherDashboard.module.css';
 
@@ -187,6 +187,30 @@ export const initialsOf = (name: string) =>
 
 export const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+/** Mesaj durumu: ✓ iletildi, yeşil ✓✓ okundu (okunma saatiyle; eski mesajlarda saat yok) */
+export function MessageTicks({ read, readAt }: { read: boolean; readAt?: string | null }) {
+  if (!read) {
+    return (
+      <span className={styles.msgTicks} title="İletildi">
+        <Check size={14} aria-hidden="true" />
+        <span className={styles.visuallyHidden}>İletildi</span>
+      </span>
+    );
+  }
+  const sameDay = readAt && new Date(readAt).toDateString() === new Date().toDateString();
+  const when = readAt
+    ? sameDay
+      ? new Date(readAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      : formatDateTime(readAt)
+    : '';
+  return (
+    <span className={`${styles.msgTicks} ${styles.msgTicksRead}`} title={when ? `Okundu: ${when}` : 'Okundu'}>
+      <CheckCheck size={14} aria-hidden="true" />
+      {when ? `Okundu ${when}` : 'Okundu'}
+    </span>
+  );
+}
 
 export const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });

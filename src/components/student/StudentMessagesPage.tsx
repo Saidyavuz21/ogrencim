@@ -7,7 +7,7 @@ import { classConversationId, isFamilyRole, markConversationRead, sendMessage, s
 import { useLiveMessages } from '../../lib/useLiveMessages';
 import { listMyGroups, markGroupRead } from '../../lib/schoolData';
 import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
-import { LiveBadge, Notice, NoticeState, formatDateTime } from '../teacher/TeacherUi';
+import { LiveBadge, MessageTicks, Notice, NoticeState, formatDateTime } from '../teacher/TeacherUi';
 import { useFitToViewport } from '../shell/PortalShell';
 import sharedStyles from '../teacher/TeacherDashboard.module.css';
 
@@ -151,7 +151,7 @@ export function StudentMessagesPage({ me, onRead, initialConversationId }: { me:
                   <div key={m.id} className={`${styles.bubble} ${mine ? styles.bubbleMine : ''}`}>
                     {!mine && <strong>{m.sender_name}</strong>}
                     {m.deleted_at ? <p className={styles.bubbleDeleted}>Bu mesaj silindi</p> : <p>{m.content}</p>}
-                    <span>{formatDateTime(m.created_at)}{mine ? (m.is_read ? ' · Okundu' : ' · İletildi') : ''}</span>
+                    <span>{formatDateTime(m.created_at)}{mine && !m.deleted_at ? <> · <MessageTicks read={m.is_read} readAt={m.read_at} /></> : null}</span>
                   </div>
                 );
               })}

@@ -611,6 +611,8 @@ export interface MessageRow {
   created_at: string;
   /** Öğretmen sildiyse dolu; metin boştur, "Bu mesaj silindi" gösterilir */
   deleted_at?: string | null;
+  /** Okunma saati (sunucu yazar; eski mesajlarda boş) */
+  read_at?: string | null;
 }
 
 export async function getMySchoolId(): Promise<string | null> {
@@ -622,7 +624,7 @@ export async function listMessages(conversationIds: string[]): Promise<Result<Me
   if (!conversationIds.length) return { ok: true, data: [] };
   const { data, error } = await supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, sender_name, sender_role, content, is_read, created_at, deleted_at')
+    .select('id, conversation_id, sender_id, sender_name, sender_role, content, is_read, created_at, deleted_at, read_at')
     .in('conversation_id', conversationIds)
     .order('created_at', { ascending: true })
     .limit(500);

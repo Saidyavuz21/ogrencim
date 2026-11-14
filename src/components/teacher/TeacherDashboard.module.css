@@ -3992,3 +3992,7 @@
   .bubble:has(> .bubbleDelete) { padding-right: 48px; }
   .bubbleDelete { top: 0; right: 0; width: 44px; height: 44px; opacity: 0.75; }
 }
+
+/* Mesaj durumu: ✓ iletildi, ✓✓ okundu */
+.msgTicks, .bubble .msgTicks { display: inline-flex; align-items: center; gap: 3px; vertical-align: -2px; font-size: inherit; color: var(--teacher-muted); }
+.msgTicks.msgTicksRead, .bubble .msgTicks.msgTicksRead { color: var(--teacher-primary); font-weight: 500; }

@@ -14,7 +14,7 @@ import {
 } from '../../lib/teacherData';
 import { useLiveMessages } from '../../lib/useLiveMessages';
 import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
-import { LiveBadge } from './TeacherUi';
+import { LiveBadge, MessageTicks } from './TeacherUi';
 import { Notice, NoticeState, formatDateTime, initialsOf, useClassStudents } from './TeacherUi';
 import { listGroupReadReceipts, ReadReceipt } from '../../lib/schoolData';
 import { Spinner } from '../Spinner';
@@ -269,7 +269,7 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
                     )}
                     <span title={active.isGroup && mine ? readTitle : undefined}>
                       {formatDateTime(m.created_at)}
-                      {mine && !active.isGroup ? (m.is_read ? ' · Okundu' : ' · İletildi') : ''}
+                      {mine && !active.isGroup && !m.deleted_at ? <> · <MessageTicks read={m.is_read} readAt={m.read_at} /></> : null}
                       {mine && active.isGroup ? ` · ${readers.length}/${students.length} okudu` : ''}
                     </span>
                     {mine && active.isGroup && readers.length > 0 && (

@@ -124,6 +124,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   const reloadData = useCallback(() => setDataVersion((v) => v + 1), []);
 
+  // Okunmamış mesaj sayısı: sohbet okununca ve zil sayısı her değiştiğinde (yeni mesaj / okundu) yenilenir
+  const refreshUnreadMessages = useCallback(() => {
+    void countUnreadStudentMessages().then(setUnreadMessages);
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(refreshUnreadMessages, 400);
+    return () => clearTimeout(t);
+  }, [unreadNotificationCount, refreshUnreadMessages]);
+
   const classNames = useMemo(() => {
     const names = classRows.map((c) => c.class_name);
     return homeroomClass ? [homeroomClass, ...names.filter((n) => n !== homeroomClass)] : names;
@@ -332,7 +341,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           {page === 'reading' && <TeacherReadingPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'class_report' && <ClassReportPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'grade_entry' && <TeacherGradesPage key={effectiveClass} selectedClass={effectiveClass} defaultSubject={defaultSubject} />}
-          {page === 'messages' && <TeacherMessagesPage key={`${effectiveClass}:${convRequest.n}`} selectedClass={effectiveClass} classNames={classNames} schoolId={schoolId} currentUserId={currentUser?.id} initialConversationId={messageConvId} />}
+          {page === 'messages' && <TeacherMessagesPage key={`${effectiveClass}:${convRequest.n}`} selectedClass={effectiveClass} classNames={classNames} schoolId={schoolId} currentUserId={currentUser?.id} initialConversationId={messageConvId} onRead={refreshUnreadMessages} />}
         </>
       )}
       </div>

@@ -25,9 +25,11 @@ interface TeacherMessagesPageProps {
   schoolId: string | null;
   currentUserId?: string;
   initialConversationId?: string | null;
+  /** Mesajlar okundu yapılınca (menüdeki sayı yenilensin) */
+  onRead?: () => void;
 }
 
-export function TeacherMessagesPage({ selectedClass, classNames, schoolId, currentUserId, initialConversationId }: TeacherMessagesPageProps) {
+export function TeacherMessagesPage({ selectedClass, classNames, schoolId, currentUserId, initialConversationId, onRead }: TeacherMessagesPageProps) {
   const { students, loading, error } = useClassStudents(selectedClass);
   const [manualConv, setManualConv] = useState<{
     forInitial: string | null | undefined;
@@ -115,8 +117,8 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
   // Açık konuşmaya gelen öğrenci mesajlarını okundu yap (karşı taraf "Okundu" görür)
   const hasUnreadInThread = thread.some((m) => isFamilyRole(m.sender_role) && !m.is_read);
   useEffect(() => {
-    if (activeConv && hasUnreadInThread) markConversationRead(activeConv);
-  }, [activeConv, hasUnreadInThread]);
+    if (activeConv && hasUnreadInThread) void markConversationRead(activeConv).then(() => onRead?.());
+  }, [activeConv, hasUnreadInThread, onRead]);
 
   // Açık konuşmanın zil bildirimi okundu olur (başka öğretmen mesajı okumuş olsa da)
   useEffect(() => {

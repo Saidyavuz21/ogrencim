@@ -130,6 +130,12 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
     countMyUnreadMessages(studentConversationId(user.id)).then(setUnreadMessages);
   }, [user.id]);
 
+  // Yeni mesaj gelince ya da bildirim okununca menüdeki mesaj sayısı da yenilensin
+  useEffect(() => {
+    const t = setTimeout(refreshUnread, 400);
+    return () => clearTimeout(t);
+  }, [unreadNotifications, refreshUnread]);
+
   const info = getStudentPage(page);
   const myRank = ranking.findIndex((r) => r.id === user.id) + 1;
   const pendingHomeworks = homeworks.filter((h) => !h.check && !h.quiz?.finished).length;

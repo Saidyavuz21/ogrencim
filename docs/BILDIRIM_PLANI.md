@@ -78,8 +78,8 @@ Veri katmanı (Claude) ✅ `d53403f` · `src/lib/notificationData.ts`:
 - [ ] Ödev, teslim, canlı ders, duyuru açılınca okunma → Gemini İstem 4
 
 Ekranlar (Gemini; istemler `docs/BILDIRIM_GEMINI_ISTEMLERI.md`):
-- [ ] Öğretmen ve öğrenci kabuğunda **zil** + kırmızı sayı (9'dan fazlası "9+"); masaüstünde üst çubukta, mobilde üst çubukta
-- [ ] Zile basınca **bildirim listesi** (masaüstü açılır panel, mobil tam ekran sayfa): ikon, metin, göreli zaman, okunmamış vurgusu, "Tümünü okundu yap", tıklayınca ilgili sayfaya gider
+- [x] (14 Kasım, `876f7ee`) Öğretmen ve öğrenci kabuğunda **zil** + kırmızı sayı (9'dan fazlası "9+"); masaüstünde üst çubukta, mobilde üst çubukta
+- [x] (14 Kasım, `9959c9a`, `876f7ee`) Zile basınca **bildirim listesi** (masaüstü açılır panel, mobil tam ekran sayfa): ikon, metin, göreli zaman, okunmamış vurgusu, "Tümünü okundu yap", tıklayınca ilgili sayfaya gider
 - [ ] Menüde mesajlar ve ödevler yanında okunmamış sayısı
 - [ ] Ayarlar: tür başına zil / push anahtarları, sessiz saatler (öğretmen)
 

@@ -120,6 +120,8 @@ GÖREV: Öğretmen ve öğrenci üst çubuğundaki mevcut zil düğmesini yeni b
 - onOpenTarget: openPage(target.page). target.page === 'mesajlar' ve refId doluysa StudentMessagesPage o sohbeti açsın
   (isteğe bağlı initialConversationId prop'u; refId 'ogr:…' ise birebir, 'sinif:…' ise o grup).
 - Sol menüdeki duyurular rozeti (newAnnouncements) ve diğer rozetler değişmez.
+- StudentPortal / AdminDashboard kök div'indeki styles.portalShell ve PortalShell.tsx'teki styles.portalSidebar sınıflarını KALDIRMA
+  (öğrenci ve yönetici menüsünün geniş ekran görünümü bunlara bağlı). Öğretmen sol menüsüne (TeacherSidebar, ikon şeridi) DOKUNMA.
 
 İKİSİ İÇİN
 - Panel açıkken sayfa değişirse panel kapanır.

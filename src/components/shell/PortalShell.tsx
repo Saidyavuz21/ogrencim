@@ -21,7 +21,7 @@ export interface ShellPage<Id extends string, Group extends string> {
 }
 
 // ---------------- Üst çubuk ----------------
-export function PortalTopBar({ label, userName, roleBadge, menuOpen, isProfile, profileLabel = 'Hesabım', bell, onMenu, onHome, onProfile }: {
+export function PortalTopBar({ label, userName, roleBadge, menuOpen, isProfile, profileLabel = 'Hesabım', bell, bellRef, onMenu, onHome, onProfile }: {
   /** Erişilebilirlik adı: "Öğrenci üst menüsü" */
   label: string;
   userName?: string;
@@ -29,8 +29,10 @@ export function PortalTopBar({ label, userName, roleBadge, menuOpen, isProfile, 
   menuOpen: boolean;
   isProfile: boolean;
   profileLabel?: string;
-  bell?: { count: number; onClick: () => void; label: string };
-  onMenu: () => void;
+  bell?: { count: number; onClick: () => void; label: string; expanded?: boolean };
+  bellRef?: React.Ref<HTMLButtonElement>;
+  /** Verilmezse üst çubukta menü düğmesi olmaz (öğrenci: menü alt çubukta) */
+  onMenu?: () => void;
   onHome: () => void;
   onProfile: () => void;
 }) {
@@ -38,9 +40,11 @@ export function PortalTopBar({ label, userName, roleBadge, menuOpen, isProfile, 
     <header className={styles.topBar}>
       <nav className={styles.topBarContainer} aria-label={label}>
         <div className={styles.topBarLeft}>
-          <button type="button" className={styles.menuButton} onClick={onMenu} aria-label="Menüyü aç" aria-expanded={menuOpen}>
-            <Menu size={24} aria-hidden="true" />
-          </button>
+          {onMenu && (
+            <button type="button" className={styles.menuButton} onClick={onMenu} aria-label="Menüyü aç" aria-expanded={menuOpen}>
+              <Menu size={24} aria-hidden="true" />
+            </button>
+          )}
           <button type="button" className={styles.topBarLogo} onClick={onHome} aria-label="Ana sayfaya dön">
             <BrandLogo height={36} />
           </button>
@@ -48,7 +52,7 @@ export function PortalTopBar({ label, userName, roleBadge, menuOpen, isProfile, 
         </div>
         <div className={styles.topBarActions}>
           {bell && (
-            <button type="button" className={styles.notificationButton} onClick={bell.onClick} aria-label={bell.count > 0 ? `${bell.label}, ${bell.count} yeni` : bell.label}>
+            <button ref={bellRef} type="button" className={styles.notificationButton} onClick={bell.onClick} aria-expanded={bell.expanded} aria-label={bell.count > 0 ? `${bell.label}, ${bell.count} okunmamış` : bell.label} title={bell.label}>
               <Bell size={22} aria-hidden="true" />
               {bell.count > 0 && <span className={styles.notificationCount} aria-hidden="true">{bell.count > 99 ? '99+' : bell.count}</span>}
             </button>

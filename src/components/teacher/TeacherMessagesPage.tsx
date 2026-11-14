@@ -24,11 +24,15 @@ interface TeacherMessagesPageProps {
   classNames: string[];
   schoolId: string | null;
   currentUserId?: string;
+  initialConversationId?: string | null;
 }
 
-export function TeacherMessagesPage({ selectedClass, classNames, schoolId, currentUserId }: TeacherMessagesPageProps) {
+export function TeacherMessagesPage({ selectedClass, classNames, schoolId, currentUserId, initialConversationId }: TeacherMessagesPageProps) {
   const { students, loading, error } = useClassStudents(selectedClass);
-  const [activeConv, setActiveConv] = useState<string | null>(null);
+  const [manualConv, setManualConv] = useState<{
+    forInitial: string | null | undefined;
+    id: string | null;
+  } | null>(null);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   // Grup sohbeti: mesajın da gideceği diğer sınıflar (null = seçici kapalı)
@@ -66,6 +70,12 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
     [groupConv, selectedClass, students]
   );
   const convIds = useMemo(() => conversations.map((c) => c.id), [conversations]);
+  const activeConv =
+    manualConv && manualConv.forInitial === initialConversationId
+      ? manualConv.id
+      : initialConversationId && conversations.some((c) => c.id === initialConversationId)
+        ? initialConversationId
+        : null;
   const { messages, error: msgError, live, refresh } = useLiveMessages(convIds);
 
   const byConv = useMemo(() => {
@@ -114,7 +124,7 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
   }, [activeConv, thread.length]);
 
   const openConv = (id: string) => {
-    setActiveConv(id);
+    setManualConv({ forInitial: initialConversationId, id });
     setNotice(null);
     setAlsoClasses(null);
   };
@@ -195,7 +205,7 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
         {active ? (
           <section className={styles.chatPanel} aria-label={active.title}>
             <div className={styles.chatHeader}>
-              <button type="button" className={styles.backButton} onClick={() => setActiveConv(null)} aria-label="Konuşmalara dön"><ArrowLeft size={20} aria-hidden="true" /><span>Konuşmalar</span></button>
+              <button type="button" className={styles.backButton} onClick={() => setManualConv({ forInitial: initialConversationId, id: null })} aria-label="Konuşmalara dön"><ArrowLeft size={20} aria-hidden="true" /><span>Konuşmalar</span></button>
               <div>
                 <strong>{active.title}</strong>
                 <span>{active.subtitle}</span>

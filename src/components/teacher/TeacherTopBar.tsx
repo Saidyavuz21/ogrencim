@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Bell, User, MessageSquare } from '../icons';
 import { BrandLogo } from '../BrandLogo';
 import { CustomSelect } from '../CustomSelect';
@@ -12,6 +13,8 @@ interface TeacherTopBarProps {
   isProfile: boolean;
   onHome: () => void;
   onNotifications: () => void;
+  bellRef?: React.Ref<HTMLButtonElement>;
+  notificationsOpen?: boolean;
   onProfile: () => void;
   classNames: string[];
   selectedClass: string;
@@ -28,7 +31,7 @@ interface TeacherTopBarProps {
   isBoards: boolean;
 }
 
-export function TeacherTopBar({ user, unreadCount, isProfile, onHome, onNotifications, onProfile, classNames, selectedClass, onSelectClass, onMessages, unreadMessages, isMessages }: TeacherTopBarProps) {
+export function TeacherTopBar({ user, unreadCount, isProfile, onHome, onNotifications, bellRef, notificationsOpen, onProfile, classNames, selectedClass, onSelectClass, onMessages, unreadMessages, isMessages }: TeacherTopBarProps) {
   const initials = (user?.name || '').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('tr-TR')).join('') || 'Ö';
   return (
     <header className={styles.topBar}>
@@ -56,7 +59,7 @@ export function TeacherTopBar({ user, unreadCount, isProfile, onHome, onNotifica
             <MessageSquare size={26} aria-hidden="true" />
             {unreadMessages > 0 && <span className={styles.topBarMessageCount} aria-hidden="true">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
           </button>
-          <button type="button" className={`${styles.notificationButton} ${styles.topBarIconAction}`} onClick={onNotifications} aria-label={unreadCount > 0 ? `Bildirimler, ${unreadCount} okunmamış` : 'Bildirimler'} title="Bildirimler">
+          <button ref={bellRef} type="button" className={`${styles.notificationButton} ${styles.topBarIconAction}`} onClick={onNotifications} aria-expanded={Boolean(notificationsOpen)} aria-label={unreadCount > 0 ? `Bildirimler, ${unreadCount} okunmamış` : 'Bildirimler'} title="Bildirimler">
             <Bell size={26} aria-hidden="true" />
             {unreadCount > 0 && <span className={styles.notificationCount} aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}
           </button>

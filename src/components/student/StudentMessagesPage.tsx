@@ -28,7 +28,7 @@ const styles: Record<string, string> = {
  * Öğrencinin mesajları: öğretmenlerle tek birebir konuşma (ogr:<id>) + sınıf grubu (yalnızca okunur).
  * Masaüstünde liste ve sohbet yan yana; dar ekranda önce liste, dokununca sohbet.
  */
-export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: () => void }) {
+export function StudentMessagesPage({ me, onRead, initialConversationId }: { me: MyStudent; onRead?: () => void; initialConversationId?: string | null }) {
   const directConv = studentConversationId(me.id);
   const groupConv = me.class_name ? classConversationId(me.school_id, me.class_name) : '';
   // Katıldığı ek grupların (seçmeli ders, etüt, kulüp) sohbetleri
@@ -44,7 +44,16 @@ export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: ()
     ...groups.map((g) => ({ id: classConversationId(me.school_id, g), title: `${g} grubu`, subtitle: 'Grup duyuruları (yalnızca okunur)', canWrite: false })),
   ], [directConv, groupConv, me.class_name, me.school_id, groups]);
 
-  const [active, setActive] = useState<string | null>(null);
+  const [manualConv, setManualConv] = useState<{
+    forInitial: string | null | undefined;
+    id: string | null;
+  } | null>(null);
+  const active =
+    manualConv && manualConv.forInitial === initialConversationId
+      ? manualConv.id
+      : initialConversationId && convs.some((c) => c.id === initialConversationId)
+        ? initialConversationId
+        : null;
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<NoticeState>(null);
@@ -111,7 +120,7 @@ export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: ()
               const unread = c.canWrite ? list.filter((m) => !isFamilyRole(m.sender_role) && !m.is_read).length : 0;
               return (
                 <li key={c.id}>
-                  <button type="button" className={styles.convItem} aria-current={c.id === active ? 'true' : undefined} onClick={() => { setActive(c.id); setNotice(null); }}>
+                  <button type="button" className={styles.convItem} aria-current={c.id === active ? 'true' : undefined} onClick={() => { setManualConv({ forInitial: initialConversationId, id: c.id }); setNotice(null); }}>
                     <span className={styles.studentAvatar} aria-hidden="true">{c.canWrite ? <MessageSquare size={18} /> : <Users size={18} />}</span>
                     <span className={styles.studentCardInfo}>
                       <strong>{c.title}</strong>
@@ -128,7 +137,7 @@ export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: ()
         {activeConv ? (
           <section className={styles.chatPanel} aria-label={activeConv.title}>
             <div className={styles.chatHeader}>
-              <button type="button" className={styles.backButton} onClick={() => setActive(null)}><ArrowLeft size={20} aria-hidden="true" /><span>Konuşmalar</span></button>
+              <button type="button" className={styles.backButton} onClick={() => setManualConv({ forInitial: initialConversationId, id: null })}><ArrowLeft size={20} aria-hidden="true" /><span>Konuşmalar</span></button>
               <div><strong>{activeConv.title}</strong><span>{activeConv.subtitle}</span></div>
               <LiveBadge live={live} />
             </div>

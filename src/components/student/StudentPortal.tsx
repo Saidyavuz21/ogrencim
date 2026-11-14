@@ -1,12 +1,18 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { UserAccount } from '../../data/portalData';
 import {
   AnnouncementRow, ClassmateRank, countMyUnreadMessages, getMyStudent, listAnnouncements, listMyClassRanking, listMyGrades,
   listMyHomeworks, listMyPoints, MyGrade, MyHomework, MyPointRow, MyStudent,
 } from '../../lib/studentData';
 import { studentConversationId } from '../../lib/teacherData';
+import {
+  useUnreadNotifications,
+  type AppNotification,
+  type NotificationTarget,
+} from '../../lib/notificationData';
+import { NotificationPanel } from '../notifications/NotificationPanel';
 import { Aquarium } from '../aquarium/Aquarium';
 import { StudentGarden } from '../garden/StudentGarden';
 import { Notice } from '../teacher/TeacherUi';
@@ -47,6 +53,18 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
   const { page } = route;
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const { count: unreadNotifications } = useUnreadNotifications(true);
+  const bellRef = useRef<HTMLButtonElement | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // Bildirimden açılan sohbet; n her tıklamada artar (aynı sohbete yeniden gitmek için mesaj sayfası yeniden açılır)
+  const [convRequest, setConvRequest] = useState<{ id?: string; n: number }>({ n: 0 });
+  const messageConvId = convRequest.id;
+
+  useEffect(() => {
+    const closeOnPop = () => setNotificationsOpen(false);
+    window.addEventListener('popstate', closeOnPop);
+    return () => window.removeEventListener('popstate', closeOnPop);
+  }, []);
 
   const [me, setMe] = useState<MyStudent | null>(null);
   const [homeworks, setHomeworks] = useState<MyHomework[]>([]);
@@ -93,8 +111,18 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
   }, [page, latestAnnouncement, user.id]);
 
   const openPage = (next: StudentPageId) => {
+    setNotificationsOpen(false);
     route.openPage(next);
     if (next === 'home') setVersion((v) => v + 1);
+  };
+
+  const handleOpenNotificationTarget = (target: NotificationTarget, _n: AppNotification) => {
+    void _n;
+    if (target.role !== 'student') return;
+    if (target.page === 'mesajlar') {
+      setConvRequest((r) => ({ id: target.refId ?? undefined, n: r.n + 1 }));
+    }
+    openPage(target.page);
   };
 
   const refreshUnread = useCallback(() => {
@@ -122,10 +150,22 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
         userName={studentName}
         menuOpen={menuOpen}
         isProfile={page === 'hesap'}
-        bell={{ count: newAnnouncements, label: 'Duyurular', onClick: () => openPage('duyurular') }}
-        onMenu={() => setMenuOpen(true)}
+        bellRef={bellRef}
+        bell={{
+          count: unreadNotifications,
+          label: 'Bildirimler',
+          onClick: () => setNotificationsOpen((prev) => !prev),
+          expanded: notificationsOpen,
+        }}
         onHome={() => openPage('home')}
         onProfile={() => openPage('hesap')}
+      />
+      <NotificationPanel
+        role="student"
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onOpenTarget={handleOpenNotificationTarget}
+        anchorRef={bellRef}
       />
       <PortalSidebar<StudentPageId, StudentPageGroup>
         label="Öğrenci menüsü"
@@ -203,14 +243,14 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
           </div>
         )}
         {page === 'mesajlar' && (me
-          ? <StudentMessagesPage me={me} onRead={refreshUnread} />
+          ? <StudentMessagesPage key={convRequest.n} me={me} onRead={refreshUnread} initialConversationId={messageConvId} />
           : (loaded ? <p className={styles.mutedText}>Öğrenci bilgisi alınamadı.</p> : <Spinner center label="Mesajlar yükleniyor…" />))}
         {page === 'duyurular' && <AnnouncementsList announcements={announcements} loaded={loaded} />}
         {page === 'hesap' && (
           <StudentAccountPage me={me} fallbackName={user.name} fallbackNo={user.studentNo} fallbackClass={user.className} onLogout={handleLogout} />
         )}
       </main>
-      <StudentNavigation page={page} badges={badges} onOpenPage={openPage} />
+      <StudentNavigation page={page} badges={badges} menuOpen={menuOpen} onOpenPage={openPage} onMenu={() => setMenuOpen(true)} />
       {liveId && <LiveStudentSession sessionId={liveId} studentId={user.id} onClose={() => setLiveId(null)} />}
     </div>
   );

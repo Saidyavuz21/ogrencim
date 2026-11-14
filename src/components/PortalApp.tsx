@@ -159,7 +159,6 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
             onSectionChange={setTeacherSection}
             announcementsContent={<AnnouncementsPage manager="teacher" />}
             onLogout={handleLogout}
-            onOpenNotifications={() => setTeacherSection('announcements')}
             currentUser={currentUser}
             onUserUpdated={setCurrentUser}
           />

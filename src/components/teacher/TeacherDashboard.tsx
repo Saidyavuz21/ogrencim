@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { UserAccount } from '../../data/portalData';
 import {
   countStudentsByClass,
@@ -9,6 +9,12 @@ import {
   listMyClasses,
   TeacherClassRow,
 } from '../../lib/teacherData';
+import {
+  useUnreadNotifications,
+  type AppNotification,
+  type NotificationTarget,
+} from '../../lib/notificationData';
+import { NotificationPanel } from '../notifications/NotificationPanel';
 import { TeacherHome } from './TeacherHome';
 import { TeacherTopBar } from './TeacherTopBar';
 import { TeacherSidebar } from './TeacherSidebar';
@@ -66,13 +72,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onSectionChange,
   announcementsContent,
   onLogout,
-  onOpenNotifications,
-  unreadCount = 0,
   currentUser,
   onUserUpdated,
 }) => {
   const homeroomClass = currentUser?.className && currentUser.className !== 'Yok' ? currentUser.className : '';
   const defaultSubject = currentUser?.branch || '';
+  const { count: unreadNotificationCount } = useUnreadNotifications(true);
+  const bellRef = useRef<HTMLButtonElement | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // Bildirimden açılan sohbet; n her tıklamada artar (aynı sohbete yeniden gitmek için mesaj sayfası yeniden açılır)
+  const [convRequest, setConvRequest] = useState<{ id?: string; n: number }>({ n: 0 });
+  const messageConvId = convRequest.id;
 
   // --- Sınıflar (veritabanı) ---
   const [classRows, setClassRows] = useState<TeacherClassRow[]>([]);
@@ -144,6 +154,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const page: TeacherPageId = activeSection === 'announcements' ? 'announcements' : currentPage;
 
   const openPage = (next: TeacherPageId) => {
+    setNotificationsOpen(false);
     setActivePage(next);
     const info = getTeacherPage(next);
     const url = new URL(window.location.href);
@@ -159,8 +170,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     if (next === 'home') reloadData();
   };
 
+  const handleOpenNotificationTarget = (target: NotificationTarget, _n: AppNotification) => {
+    void _n;
+    if (target.role !== 'teacher') return;
+    if (target.page === 'messages') {
+      setConvRequest((r) => ({ id: target.refId ?? undefined, n: r.n + 1 }));
+    } else if (target.page === 'check_sheet' && target.refId) {
+      setCheckHomeworkId(target.refId);
+    }
+    openPage(target.page);
+  };
+
   useEffect(() => {
     const syncFromUrl = () => {
+      setNotificationsOpen(false);
       const next = pageIdFromSlug(new URLSearchParams(window.location.search).get('sayfa'));
       setActivePage(next);
       onSectionChange?.(next === 'announcements' ? 'announcements' : 'dashboard');
@@ -182,10 +205,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     <div className={`${styles.dashboardShell} ${sidebarCollapsed ? styles.dashboardSidebarCollapsed : ''}`}>
       <TeacherTopBar
         user={currentUser}
-        unreadCount={unreadCount}
+        unreadCount={unreadNotificationCount}
         isProfile={page === 'profile'}
         onHome={() => openPage('home')}
-        onNotifications={() => { openPage('announcements'); onOpenNotifications?.(); }}
+        onNotifications={() => setNotificationsOpen((prev) => !prev)}
+        bellRef={bellRef}
+        notificationsOpen={notificationsOpen}
         onProfile={() => openPage('profile')}
         classNames={classNames}
         selectedClass={effectiveClass}
@@ -200,6 +225,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         isClassTools={page === 'class_tools'}
         onBoards={() => openPage('boards')}
         isBoards={page === 'boards'}
+      />
+      <NotificationPanel
+        role="teacher"
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onOpenTarget={handleOpenNotificationTarget}
+        anchorRef={bellRef}
       />
       <TeacherSidebar
         collapsed={sidebarCollapsed}
@@ -300,7 +332,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           {page === 'reading' && <TeacherReadingPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'class_report' && <ClassReportPage key={effectiveClass} selectedClass={effectiveClass} />}
           {page === 'grade_entry' && <TeacherGradesPage key={effectiveClass} selectedClass={effectiveClass} defaultSubject={defaultSubject} />}
-          {page === 'messages' && <TeacherMessagesPage key={effectiveClass} selectedClass={effectiveClass} classNames={classNames} schoolId={schoolId} currentUserId={currentUser?.id} />}
+          {page === 'messages' && <TeacherMessagesPage key={`${effectiveClass}:${convRequest.n}`} selectedClass={effectiveClass} classNames={classNames} schoolId={schoolId} currentUserId={currentUser?.id} initialConversationId={messageConvId} />}
         </>
       )}
       </div>

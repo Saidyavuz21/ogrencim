@@ -18,7 +18,6 @@ import {
   getPost,
   getSuggestions,
   listMyTopics,
-  thumbUrl,
   type FeedKindFilter,
   type FeedPost,
   type FeedTab,
@@ -50,12 +49,12 @@ import {
 import { Notice, type NoticeState } from '../teacher/TeacherUi';
 import { CommunityNotifications } from './CommunityNotifications';
 import { CommunityPreview } from './CommunityPreview';
-import { PostCard, feedPostToSummary } from './PostCard';
+import { PostCard } from './PostCard';
 import { PostComposer } from './PostComposer';
 import { TeacherByline } from './TeacherAvatar';
 import s from './CommunitySocial.module.css';
 
-type ViewMode = 'feed' | 'gallery';
+type ViewMode = 'feed' | 'list';
 type SpecialScope = Exclude<CommunityScope, 'all'> | null;
 
 const VIEW_STORAGE_KEY = 'topluluk-gorunum';
@@ -63,7 +62,7 @@ const VIEW_STORAGE_KEY = 'topluluk-gorunum';
 function readStoredView(): ViewMode {
   if (typeof window === 'undefined') return 'feed';
   try {
-    return window.localStorage.getItem(VIEW_STORAGE_KEY) === 'gallery' ? 'gallery' : 'feed';
+    return ['list', 'gallery'].includes(window.localStorage.getItem(VIEW_STORAGE_KEY) || '') ? 'list' : 'feed';
   } catch {
     return 'feed';
   }
@@ -145,7 +144,6 @@ export function CommunityFeed({
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
-  const [failedThumbs, setFailedThumbs] = useState<Record<string, boolean>>({});
 
   // Özel kapsam verisi (Editörün seçimi / Favorilerim / Paylaştıklarım -> searchCommunity)
   const [scopeItems, setScopeItems] = useState<CommunitySummary[]>([]);
@@ -196,10 +194,6 @@ export function CommunityFeed({
 
   // Ana akış / galeri yüklemesi
   const effectiveFeedKind = (): FeedKindFilter => {
-    if (viewMode === 'gallery') {
-      if (kindFilter === 'board' || kindFilter === 'questions') return kindFilter;
-      return 'item';
-    }
     if (
       kindFilter === 'text' ||
       kindFilter === 'link' ||
@@ -389,10 +383,10 @@ export function CommunityFeed({
               <button
                 type="button"
                 className={s.viewSwitchBtn}
-                aria-pressed={viewMode === 'gallery'}
-                onClick={() => handleChangeView('gallery')}
+                aria-pressed={viewMode === 'list'}
+                onClick={() => handleChangeView('list')}
               >
-                Galeri
+                Liste
               </button>
             </div>
           )}
@@ -1038,80 +1032,13 @@ export function CommunityFeed({
                 )}
               </section>
             )
-          ) : viewMode === 'gallery' ? (
-            <>
-              <div className={s.galleryGrid}>
-                {posts.map((post) => {
-                  const it = post.item;
-                  if (!it) return null;
-                  const tUrl = thumbUrl(it.thumb_path);
-                  const showThumb = Boolean(
-                    it.kind === 'board' && tUrl && !failedThumbs[it.id]
-                  );
-                  const Icon = KIND_ICON[it.kind] || Layers;
-                  const subLine = [it.subject, it.grade].filter(Boolean).join(' · ');
-                  const countText =
-                    it.kind === 'board'
-                      ? `${it.page_count} sayfa`
-                      : `${it.question_count} soru`;
-
-                  return (
-                    <button
-                      key={post.id}
-                      type="button"
-                      className={s.galleryCard}
-                      onClick={() => {
-                        const sum = feedPostToSummary(post);
-                        if (sum) setPreviewItem(sum);
-                      }}
-                    >
-                      <div className={subjectThumbClass(it.subject)}>
-                        {showThumb && tUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={tUrl}
-                            alt=""
-                            className={s.thumbImg}
-                            loading="lazy"
-                            onError={() =>
-                              setFailedThumbs((prev) => ({ ...prev, [it.id]: true }))
-                            }
-                          />
-                        ) : (
-                          <Icon size={28} />
-                        )}
-                      </div>
-                      <h3 className={s.galleryTitle}>{it.title}</h3>
-                      <p className={s.galleryMeta}>
-                        {[subLine || KIND_LABEL[it.kind], countText]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                      <span className={s.bylineMeta}>{post.author.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {hasMore && (
-                <div className={s.moreRow}>
-                  <button
-                    type="button"
-                    className={s.btnSecondary}
-                    disabled={loadingMore}
-                    onClick={() => loadFeed(posts[posts.length - 1]?.created_at || null)}
-                  >
-                    {loadingMore ? 'Yükleniyor…' : 'Daha fazla göster'}
-                  </button>
-                </div>
-              )}
-            </>
           ) : (
             <>
               {posts.map((post) => (
                 <PostCard
                   key={post.id}
                   post={post}
+                  displayMode={viewMode}
                   onOpenTeacher={onOpenTeacher}
                   onOpenPreview={(sum) => setPreviewItem(sum)}
                   onUpdated={(postId, patch) => {

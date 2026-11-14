@@ -52,6 +52,7 @@ import {
 import { Notice, formatDate, type NoticeState } from '../teacher/TeacherUi';
 import { TeacherAvatar, TeacherByline } from './TeacherAvatar';
 import s from './CommunitySocial.module.css';
+import presentation from './PostCardPresentation.module.css';
 
 const KIND_ICON: Record<CommunityKind, React.ComponentType<{ size?: number }>> = {
   board: Layers,
@@ -126,6 +127,7 @@ export function feedPostToSummary(post: FeedPost): CommunitySummary | null {
 
 export interface PostCardProps {
   post: FeedPost;
+  displayMode?: 'feed' | 'list';
   defaultCommentsOpen?: boolean;
   onOpenTeacher: (teacherId: string) => void;
   onOpenPreview: (summary: CommunitySummary) => void;
@@ -139,6 +141,7 @@ const EDIT_GRADE_OPTIONS = [{ value: '', label: 'Kademe seçilmedi' }, ...GRADE_
 
 export function PostCard({
   post,
+  displayMode = 'feed',
   defaultCommentsOpen = false,
   onOpenTeacher,
   onOpenPreview,
@@ -496,7 +499,7 @@ export function PostCard({
   const ItemIcon = it ? KIND_ICON[it.kind] || Layers : Layers;
 
   return (
-    <article className={s.postCard}>
+    <article className={`${s.postCard} ${displayMode === 'feed' ? presentation.feed : ''}`}>
       <div className={s.postHeader}>
         <TeacherByline
           card={post.author}
@@ -700,7 +703,7 @@ export function PostCard({
 
           {/* Materyal kutusu (kind = 'item') */}
           {post.kind === 'item' && it && (
-            <div className={showItemThumb ? s.itemBox : `${s.itemBox} ${s.itemBoxNoThumb}`}>
+            <div data-material-preview={showItemThumb} className={showItemThumb ? s.itemBox : `${s.itemBox} ${s.itemBoxNoThumb}`}>
               <div
                 className={
                   showItemThumb

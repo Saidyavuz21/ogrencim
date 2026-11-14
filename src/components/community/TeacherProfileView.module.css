@@ -1,0 +1,38 @@
+.profilePage { display: grid; gap: 20px; width: 100%; max-width: 1080px; margin: 0 auto; min-width: 0; }
+.backRow { display: flex; }
+.profilePanel { padding: 28px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; }
+.profileTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.profileIdentity { display: flex; align-items: center; gap: 24px; min-width: 0; }
+.profileName { margin: 0; color: #20352d; font-size: 30px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.profileStatsRow { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 16px 0 0 120px; }
+.profileStatsRow button { min-height: 44px; border: 0; padding: 0; background: transparent; color: #58665f; font: inherit; font-size: 14px; cursor: pointer; }
+.profileStatsRow strong { margin-right: 4px; color: #20352d; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.profileStatsRow button:hover { color: #25634b; text-decoration: underline; }
+.tabsBar { display: flex; gap: 24px; border-bottom: 1px solid #dedad0; }
+.tabBtn { min-height: 48px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #58665f; font: inherit; font-size: 15px; cursor: pointer; }
+.tabBtn[aria-pressed='true'] { border-bottom-color: #25634b; color: #25634b; font-weight: 600; }
+.profileLayout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; align-items: start; }
+.profileFeed, .postFeed { display: grid; min-width: 0; gap: 20px; }
+.profileAside { display: grid; gap: 20px; }
+.aboutPanel { padding: 22px; border: 1px solid #dedad0; border-radius: 16px; background: #fff; min-width: 0; }
+.aboutPanel h3 { margin: 0 0 16px; color: #20352d; font-size: 18px; font-weight: 600; }
+.aboutPanel p { margin: 8px 0 0; color: #58665f; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.materialLink { display: flex; align-items: center; gap: 10px; min-height: 44px; border: 0; padding: 0; background: transparent; color: #25634b; font: inherit; cursor: pointer; }
+.listTitle { margin: 0; font-size: 20px; color: #20352d; }
+.profilePage button:focus-visible { outline: 3px solid #25634b; outline-offset: 3px; }
+.viewControls { display: none; justify-self: end; }
+@media (max-width: 900px) {
+  .profileLayout { grid-template-columns: minmax(0, 1fr); }
+  .profileAside { display: none; }
+  .viewControls { display: flex; }
+}
+@media (max-width: 600px) {
+  .profilePage { gap: 16px; }
+  .profilePanel { padding: 20px 16px; }
+  .profileTop { flex-direction: column; gap: 16px; }
+  .profileIdentity { gap: 16px; }
+  .profileName { font-size: 24px; }
+  .profileStatsRow { margin-left: 0; gap: 8px 20px; }
+  .tabsBar { gap: 12px; }
+  .tabBtn { padding-inline: 8px; }
+}

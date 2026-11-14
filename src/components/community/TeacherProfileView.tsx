@@ -2,8 +2,6 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
-  KIND_LABEL,
-  type CommunityKind,
   type CommunitySummary,
 } from '../../lib/communityData';
 import {
@@ -13,7 +11,6 @@ import {
   getTeacherProfile,
   listFollows,
   reportContent,
-  thumbUrl,
   type FeedPost,
   type TeacherCard,
   type TeacherProfile,
@@ -22,11 +19,9 @@ import { useDialog } from '../ConfirmDialog';
 import { Spinner } from '../Spinner';
 import {
   ArrowLeft,
-  ArrowUpRight,
   Bell,
   Edit,
   Flag,
-  HelpCircle,
   Layers,
   MoreHorizontal,
   School,
@@ -37,61 +32,15 @@ import {
   VolumeX,
   X,
 } from '../icons';
-import { Notice, formatDateTime, type NoticeState } from '../teacher/TeacherUi';
+import { Notice, type NoticeState } from '../teacher/TeacherUi';
 import { CommunityPreview } from './CommunityPreview';
 import { TeacherAvatar, TeacherByline } from './TeacherAvatar';
-import s from './CommunitySocial.module.css';
+import base from './CommunitySocial.module.css';
+import layout from './TeacherProfileView.module.css';
+import { PostCard } from './PostCard';
+const s = { ...base, ...layout };
 
-type ProfileTab = 'shares' | 'posts' | 'followers' | 'following';
-
-const KIND_ICON: Record<CommunityKind, React.ComponentType<{ size?: number }>> = {
-  board: Layers,
-  questions: HelpCircle,
-};
-
-function subjectThumbClass(subject: string | null | undefined): string {
-  const v = (subject || '').toLocaleLowerCase('tr-TR');
-  if (v.includes('matematik')) return `${s.thumbBox} ${s.thumbMath}`;
-  if (v.includes('türkçe') || v.includes('edebiyat')) return `${s.thumbBox} ${s.thumbTurkish}`;
-  if (v.includes('fen') || v.includes('fizik') || v.includes('kimya') || v.includes('biyoloji')) {
-    return `${s.thumbBox} ${s.thumbScience}`;
-  }
-  if (v.includes('sosyal') || v.includes('tarih') || v.includes('coğrafya') || v.includes('hayat')) {
-    return `${s.thumbBox} ${s.thumbSocial}`;
-  }
-  return s.thumbBox;
-}
-
-function postToSummary(post: FeedPost): CommunitySummary | null {
-  if (!post.item) return null;
-  const it = post.item;
-  return {
-    id: it.id,
-    kind: it.kind,
-    title: it.title,
-    description: post.body || '',
-    grade: it.grade,
-    subject: it.subject,
-    outcomes: it.outcomes || [],
-    tags: it.tags || [],
-    author_name: post.author.name,
-    author_id: post.author.id,
-    page_count: it.page_count,
-    question_count: it.question_count,
-    rating_avg: it.rating_avg,
-    rating_count: it.rating_count,
-    copy_count: it.copy_count,
-    recent_copies: 0,
-    featured: it.featured,
-    hidden: false,
-    is_mine: post.is_mine,
-    is_favorite: it.is_favorite,
-    my_rating: null,
-    origin_author: it.origin_author,
-    origin_title: it.origin_title,
-    created_at: post.created_at,
-  };
-}
+type ProfileTab = 'shares' | 'posts' | 'about' | 'followers' | 'following';
 
 export interface TeacherProfileViewProps {
   teacherId: string;
@@ -128,11 +77,11 @@ export function TeacherProfileView({
 
   // Sekme durumu
   const [tab, setTab] = useState<ProfileTab>('shares');
+  const [shareView, setShareView] = useState<'feed' | 'list'>('feed');
   const [shares, setShares] = useState<FeedPost[]>([]);
   const [sharesMore, setSharesMore] = useState(false);
   const [sharesLoading, setSharesLoading] = useState(false);
   const [sharesError, setSharesError] = useState<string | null>(null);
-  const [failedThumbs, setFailedThumbs] = useState<Record<string, boolean>>({});
 
   const [posts, setPosts] = useState<FeedPost[]>([]);
 
@@ -402,7 +351,7 @@ export function TeacherProfileView({
     typeof profile?.followers === 'number' && typeof profile?.following === 'number';
 
   return (
-    <div className={s.hubWrap}>
+    <div className={layout.profilePage}>
       <div className={s.backRow}>
         <button type="button" className={s.btnSecondary} onClick={onBack}>
           <ArrowLeft size={16} aria-hidden="true" />
@@ -581,22 +530,16 @@ export function TeacherProfileView({
             </div>
 
             <div className={s.profileStatsRow}>
-              {showFollowCounts && (
-                <span>
-                  <strong>{profile.followers}</strong> takipçi ·{' '}
-                  <strong>{profile.following}</strong> takip
-                </span>
-              )}
-              <span>
-                <strong>{profile.item_count ?? 0}</strong> paylaşım ·{' '}
-                <strong>{profile.copy_total ?? 0}</strong> kopya ·{' '}
-                <strong>{profile.thanks_total ?? 0}</strong> teşekkür
-              </span>
+              <button type="button" onClick={() => setTab('shares')}><strong>{profile.item_count ?? 0}</strong> Paylaşım</button>
+              {showFollowCounts && <>
+                <button type="button" onClick={() => setTab('followers')}><strong>{profile.followers}</strong> Takipçi</button>
+                <button type="button" onClick={() => setTab('following')}><strong>{profile.following}</strong> Takip</button>
+              </>}
             </div>
           </section>
 
           {/* Sekmeler */}
-          <div className={s.tabsBar} role="tablist" aria-label="Öğretmen profili sekmeleri">
+          <div className={s.tabsBar} role="group" aria-label="Öğretmen profili bölümleri">
             <button
               type="button"
               className={s.tabBtn}
@@ -613,28 +556,23 @@ export function TeacherProfileView({
             >
               Yazılar
             </button>
-            {showFollowCounts && (
-              <>
-                <button
-                  type="button"
-                  className={s.tabBtn}
-                  aria-pressed={tab === 'followers'}
-                  onClick={() => setTab('followers')}
-                >
-                  Takipçiler ({profile.followers})
-                </button>
-                <button
-                  type="button"
-                  className={s.tabBtn}
-                  aria-pressed={tab === 'following'}
-                  onClick={() => setTab('following')}
-                >
-                  Takip edilenler ({profile.following})
-                </button>
-              </>
-            )}
+            <button type="button" className={s.tabBtn} aria-pressed={tab === 'about'} onClick={() => setTab('about')}>Hakkında</button>
           </div>
 
+          <div className={layout.profileLayout}>
+          <div className={layout.profileFeed}>
+          {tab === 'shares' && <div className={layout.viewControls}>
+            <div className={base.viewSwitch} role="group" aria-label="Görünüm biçimi">
+              <button type="button" className={base.viewSwitchBtn} aria-pressed={shareView === 'feed'} onClick={() => setShareView('feed')}>Akış</button>
+              <button type="button" className={base.viewSwitchBtn} aria-pressed={shareView === 'list'} onClick={() => setShareView('list')}>Liste</button>
+            </div>
+          </div>}
+          {tab === 'about' && <section className={layout.aboutPanel}>
+            <h3>Hakkında</h3>
+            {profile.bio && <p>{profile.bio}</p>}
+            <p>{[profile.branch, profile.city, profile.school].filter(Boolean).join(' · ') || 'Henüz profil bilgisi eklenmemiş.'}</p>
+          </section>}
+          {(tab === 'followers' || tab === 'following') && <h3 className={layout.listTitle}>{tab === 'followers' ? 'Takipçiler' : 'Takip edilenler'}</h3>}
           {/* Paylaşımlar sekmesi */}
           {tab === 'shares' && (
             <>
@@ -648,56 +586,13 @@ export function TeacherProfileView({
                 </section>
               ) : (
                 <>
-                  <div className={s.galleryGrid}>
-                    {shares.map((post) => {
-                      const it = post.item;
-                      if (!it) return null;
-                      const tUrl = thumbUrl(it.thumb_path);
-                      const showThumb = Boolean(tUrl && !failedThumbs[it.id]);
-                      const Icon = KIND_ICON[it.kind] || Layers;
-                      const subLine = [it.subject, it.grade].filter(Boolean).join(' · ');
-                      const countText =
-                        it.kind === 'board'
-                          ? `${it.page_count} sayfa`
-                          : `${it.question_count} soru`;
-
-                      return (
-                        <button
-                          key={post.id}
-                          type="button"
-                          className={s.galleryCard}
-                          onClick={() => {
-                            const sum = postToSummary(post);
-                            if (sum) setPreviewItem(sum);
-                          }}
-                        >
-                          <div className={subjectThumbClass(it.subject)}>
-                            {showThumb && tUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={tUrl}
-                                alt=""
-                                className={s.thumbImg}
-                                loading="lazy"
-                                onError={() =>
-                                  setFailedThumbs((prev) => ({ ...prev, [it.id]: true }))
-                                }
-                              />
-                            ) : (
-                              <Icon size={28} />
-                            )}
-                          </div>
-                          <h3 className={s.galleryTitle}>{it.title}</h3>
-                          <p className={s.galleryMeta}>
-                            {[subLine || KIND_LABEL[it.kind], countText]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                        </button>
-                      );
-                    })}
+                  <div className={layout.postFeed}>
+                    {shares.map((post) => <PostCard key={post.id} post={post} displayMode={shareView}
+                      onOpenTeacher={onOpenTeacher} onOpenPreview={setPreviewItem}
+                      onUpdated={(id, patch) => setShares(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p))}
+                      onDeleted={(id) => setShares(prev => prev.filter(p => p.id !== id))}
+                    />)}
                   </div>
-
                   {sharesMore && (
                     <div className={s.moreRow}>
                       <button
@@ -730,27 +625,13 @@ export function TeacherProfileView({
                 </section>
               ) : (
                 <>
-                  <ul className={s.postList}>
-                    {posts.map((p) => (
-                      <li key={p.id} className={s.postRow}>
-                        <span className={s.postDate}>{formatDateTime(p.created_at)}</span>
-                        {p.body && <p className={s.postBody}>{p.body}</p>}
-                        {p.link_url && (
-                          <div>
-                            <a
-                              href={p.link_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={s.postLinkCard}
-                            >
-                              <span>{p.link_title || p.link_url}</span>
-                              <ArrowUpRight size={15} aria-hidden="true" />
-                            </a>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className={layout.postFeed}>
+                    {posts.map((post) => <PostCard key={post.id} post={post}
+                      onOpenTeacher={onOpenTeacher} onOpenPreview={setPreviewItem}
+                      onUpdated={(id, patch) => setPosts(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p))}
+                      onDeleted={(id) => setPosts(prev => prev.filter(p => p.id !== id))}
+                    />)}
+                  </div>
 
                   {postsMore && (
                     <div className={s.moreRow}>
@@ -812,6 +693,52 @@ export function TeacherProfileView({
               )}
             </>
           )}
+
+          </div>
+          <aside className={layout.profileAside}>
+            <section className={s.sideMenuCard} aria-label="Görünüm biçimi">
+              <div className={s.sideMenuHeader}>
+                <h3 className={s.asideTitle}>Görünüm</h3>
+                <div className={base.viewSwitch} role="group" aria-label="Görünüm biçimi">
+                  <button
+                    type="button"
+                    className={base.viewSwitchBtn}
+                    aria-pressed={shareView === 'feed'}
+                    onClick={() => {
+                      setShareView('feed');
+                      setTab('shares');
+                    }}
+                  >
+                    Akış
+                  </button>
+                  <button
+                    type="button"
+                    className={base.viewSwitchBtn}
+                    aria-pressed={shareView === 'list'}
+                    onClick={() => {
+                      setShareView('list');
+                      setTab('shares');
+                    }}
+                  >
+                    Liste
+                  </button>
+                </div>
+              </div>
+            </section>
+            <section className={layout.aboutPanel}>
+              <h3>Hakkında</h3>
+              {profile.branch && <p>{profile.branch}</p>}
+              {profile.city && <p>{profile.city}</p>}
+              {profile.school && <p>{profile.school}</p>}
+              {!profile.branch && !profile.city && !profile.school && <p>Henüz profil bilgisi eklenmemiş.</p>}
+            </section>
+            <section className={layout.aboutPanel}>
+              <h3>Paylaşılan materyaller</h3>
+              <button type="button" className={layout.materialLink} onClick={() => setTab('shares')}><Layers size={19} aria-hidden="true" />{profile.item_count ?? 0} materyal</button>
+              <p>{profile.copy_total ?? 0} kopya · {profile.thanks_total ?? 0} teşekkür</p>
+            </section>
+          </aside>
+          </div>
         </>
       )}
 

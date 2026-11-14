@@ -116,7 +116,7 @@ export function StudentPortal({ user, onLogout }: StudentPortalProps) {
   const handleLogout = () => { route.clearRoute(); onLogout(); };
 
   return (
-    <div className={`${styles.dashboardShell} ${s.portal}`}>
+    <div className={`${styles.dashboardShell} ${styles.portalShell} ${s.portal}`}>
       <PortalTopBar
         label="Öğrenci üst menüsü"
         userName={studentName}

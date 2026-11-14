@@ -3955,3 +3955,27 @@
 @media (min-width: 1921px) {
   .dashboardShell { max-width: 1920px; margin-inline: auto; }
 }
+
+/* Öğrenci ve yönetici paneli (PortalSidebar): geniş ekranda yazılı liste menü.
+   Öğretmenin ikon şeridi (0924190) bu iki panele uygulanmaz; bu sınıfları öğretmen kabuğu kullanmaz. */
+@media (min-width: 1024px) {
+  .dashboardShell.portalShell { grid-template-columns: 264px minmax(0, 1fr); }
+  .portalShell > .portalSidebar {
+    width: auto;
+    height: calc(100dvh - 144px);
+    margin: 0 0 24px 24px;
+    padding: 10px 0 0;
+    border: 1px solid var(--teacher-border);
+    border-radius: 18px;
+    background: var(--teacher-surface, #ffffff);
+    overflow: hidden;
+  }
+  .portalShell > .portalSidebar .sidebarNav { padding: 0 10px 10px; gap: 2px; justify-items: stretch; }
+  .portalSidebar .sidebarItem { display: flex; justify-items: initial; justify-content: flex-start; align-items: center; align-content: initial; min-height: 42px; padding: 9px 10px; gap: 10px; border: 0; border-radius: 10px; font-size: 14px; font-weight: 400; line-height: 1.4; text-align: left; white-space: normal; }
+  .portalSidebar .sidebarItem svg { width: 19px; height: 19px; stroke-width: 1.75; color: var(--teacher-muted); }
+  .portalSidebar .sidebarItem:hover { background: #f5f4ef; }
+  .portalSidebar .sidebarItem[aria-current='page'] { background: var(--teacher-selected); color: var(--teacher-primary); font-weight: 600; }
+  .portalSidebar .sidebarItem[aria-current='page'] svg { color: var(--teacher-primary); }
+  .portalSidebar .sidebarGroup { margin-top: 12px; gap: 2px; padding-top: 10px; border-top: 1px solid #eeece5; }
+  .portalSidebar .sidebarGroup h2 { margin: 0 10px 4px; color: var(--teacher-muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
+}

@@ -63,7 +63,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, curren
   const handleLogout = onLogout && (() => { route.clearRoute(); onLogout(); });
 
   return (
-    <div className={`${styles.dashboardShell} ${s.adminShell}`}>
+    <div className={`${styles.dashboardShell} ${styles.portalShell} ${s.adminShell}`}>
       <PortalTopBar
         label="Yönetim üst menüsü"
         userName={currentUser?.name}

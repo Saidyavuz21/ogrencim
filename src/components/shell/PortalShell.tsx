@@ -109,7 +109,7 @@ export function PortalSidebar<Id extends string, Group extends string>({
   return (
     <>
       <div className={`${styles.sidebarBackdrop} ${drawerOpen ? styles.sidebarBackdropOpen : ''}`} onClick={onClose} aria-hidden="true" />
-      <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`} aria-label={label} aria-hidden={wide ? undefined : !open} inert={wide ? undefined : !open}>
+      <aside className={`${styles.sidebar} ${styles.portalSidebar} ${open ? styles.sidebarOpen : ''}`} aria-label={label} aria-hidden={wide ? undefined : !open} inert={wide ? undefined : !open}>
         <div className={styles.sidebarHead}>
           <span className={styles.sidebarTitle}>Menü</span>
           <button ref={closeRef} type="button" className={styles.sidebarClose} onClick={onClose} aria-label="Menüyü kapat">

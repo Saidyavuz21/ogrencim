@@ -97,9 +97,9 @@ Altyapı (Claude) ✅ 14 Kasım 2026 · `supabase/migrations/20261118090000_push
 - [x] Deneme bildirimi: `push_test()` (saatte 5)
 
 Ekranlar (Gemini; İstem 5 ve 6):
-- [ ] Ayarlarda "Bu cihaz" anahtarı, "Deneme gönder", tür başına telefon anahtarı (İstem 5)
-- [ ] **"Bildirimleri aç" kartı** ana sayfada; izin yalnızca "Aç"a basınca istenir; "Şimdi değil" → 30 gün sormaz (İstem 6)
-- [ ] iPhone'da ana ekrana eklenmemişse "Paylaş → Ana Ekrana Ekle" yönergesi (İstem 5 ve 6)
+- [x] (14 Kasım, `cd39563`) Ayarlarda "Bu cihaz" anahtarı, "Deneme gönder", tür başına telefon anahtarı (İstem 5)
+- [x] (14 Kasım, `a0080eb`) **"Bildirimleri aç" kartı** ana sayfada; izin yalnızca "Aç"a basınca istenir; "Şimdi değil" → 30 gün sormaz (İstem 6)
+- [x] iPhone'da ana ekrana eklenmemişse "Paylaş → Ana Ekrana Ekle" yönergesi (İstem 5 ve 6)
 
 Doğrulama (kullanıcıyla birlikte, gerçek cihazda):
 - [ ] Samsung + Chrome / Samsung Internet: bildirim, tıklayınca doğru sayfa, ikonda sayı

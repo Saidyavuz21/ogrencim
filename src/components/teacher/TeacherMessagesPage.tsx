@@ -11,6 +11,7 @@ import {
   studentConversationId,
 } from '../../lib/teacherData';
 import { useLiveMessages } from '../../lib/useLiveMessages';
+import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
 import { LiveBadge } from './TeacherUi';
 import { Notice, NoticeState, formatDateTime, initialsOf, useClassStudents } from './TeacherUi';
 import { listGroupReadReceipts, ReadReceipt } from '../../lib/schoolData';
@@ -106,6 +107,11 @@ export function TeacherMessagesPage({ selectedClass, classNames, schoolId, curre
   useEffect(() => {
     if (activeConv && hasUnreadInThread) markConversationRead(activeConv);
   }, [activeConv, hasUnreadInThread]);
+
+  // Açık konuşmanın zil bildirimi okundu olur (başka öğretmen mesajı okumuş olsa da)
+  useEffect(() => {
+    if (activeConv) void markNotificationGroupsRead(notificationGroups.conversation(activeConv));
+  }, [activeConv, thread.length]);
 
   const openConv = (id: string) => {
     setActiveConv(id);

@@ -6,6 +6,7 @@ import { MyStudent } from '../../lib/studentData';
 import { classConversationId, isFamilyRole, markConversationRead, sendMessage, studentConversationId } from '../../lib/teacherData';
 import { useLiveMessages } from '../../lib/useLiveMessages';
 import { listMyGroups, markGroupRead } from '../../lib/schoolData';
+import { markNotificationGroupsRead, notificationGroups } from '../../lib/notificationData';
 import { LiveBadge, Notice, NoticeState, formatDateTime } from '../teacher/TeacherUi';
 import { useFitToViewport } from '../shell/PortalShell';
 import sharedStyles from '../teacher/TeacherDashboard.module.css';
@@ -71,6 +72,11 @@ export function StudentMessagesPage({ me, onRead }: { me: MyStudent; onRead?: ()
       markConversationRead(active, 'family').then(() => onRead?.());
     }
   }, [active, directConv, hasUnreadInThread, onRead]);
+
+  // Birebir konuşmanın zil bildirimi okundu olur (grup için mark_group_read sunucuda yapar)
+  useEffect(() => {
+    if (active && active === directConv) void markNotificationGroupsRead(notificationGroups.conversation(active));
+  }, [active, directConv, thread.length]);
 
   // Grup sohbeti açılınca yalnızca bu öğrencinin "okudum" kaydı düşer (öğretmen kimin okuduğunu görür)
   useEffect(() => {

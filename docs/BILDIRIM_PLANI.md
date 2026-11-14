@@ -75,13 +75,13 @@ Veritabanı (Claude) ✅ 14 Kasım 2026 · `d53403f` · `supabase/migrations/202
 Veri katmanı (Claude) ✅ `d53403f` · `src/lib/notificationData.ts`:
 - [x] `countUnreadNotifications`, `listNotifications`, `markNotificationsRead`, `markNotificationGroupsRead` + `notificationGroups`, `getNotificationSettings` / `saveNotificationSettings`, `notificationText`, `notificationTarget`, `useUnreadNotifications` (realtime + 60 sn + sekmeye dönünce; destekleyen tarayıcıda ikon rozeti)
 - [x] Sohbet açılınca mesaj bildirimi okunur (öğretmen ve öğrenci mesaj sayfaları; sınıf grubu `mark_group_read` içinde)
-- [ ] Ödev, teslim, canlı ders, duyuru açılınca okunma → Gemini İstem 4
+- [x] (14 Kasım) Ödev, teslim, canlı ders, duyuru açılınca okunma (Gemini İstem 4)
 
 Ekranlar (Gemini; istemler `docs/BILDIRIM_GEMINI_ISTEMLERI.md`):
 - [x] (14 Kasım, `876f7ee`) Öğretmen ve öğrenci kabuğunda **zil** + kırmızı sayı (9'dan fazlası "9+"); masaüstünde üst çubukta, mobilde üst çubukta
 - [x] (14 Kasım, `9959c9a`, `876f7ee`) Zile basınca **bildirim listesi** (masaüstü açılır panel, mobil tam ekran sayfa): ikon, metin, göreli zaman, okunmamış vurgusu, "Tümünü okundu yap", tıklayınca ilgili sayfaya gider
 - [ ] Menüde mesajlar ve ödevler yanında okunmamış sayısı
-- [ ] Ayarlar: tür başına zil / push anahtarları, sessiz saatler (öğretmen)
+- [x] (14 Kasım) Ayarlar: tür başına zil anahtarları, sessiz saatler (öğretmen); push anahtarları Aşama 2
 
 ## Aşama 2 – Telefon bildirimi (Web Push) ve ikon rozeti
 

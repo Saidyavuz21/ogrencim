@@ -7,6 +7,7 @@
 // ========================================================
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
+import { syncPushSubscription } from './pushData';
 import type { Result } from './teacherData';
 import type { TeacherPageId } from '../components/teacher/teacherPages';
 import type { StudentPageId } from '../components/student/studentRoutes';
@@ -41,7 +42,9 @@ export type NotificationKind =
   | 'soru_yeni'
   | 'soru_cevap'
   | 'tahta_paylasildi'
-  | 'dosya_silinecek';
+  | 'dosya_silinecek'
+  /** Telefon bildirimi denemesi (ayarlardan) */
+  | 'sistem';
 
 /** Topluluk bildiriminin alt türü (sub) */
 export type CommunitySubKind = 'follow' | 'post' | 'copy' | 'thanks' | 'used' | 'comment' | 'moderation';
@@ -209,6 +212,8 @@ export function notificationText(n: AppNotification): string {
       return n.sub === 'urgent' ? 'Önemli duyuru' : 'Yeni duyuru';
     case 'topluluk':
       return (COMMUNITY_TEXT[n.sub || ''] || (() => 'Toplulukta yeni bir şey var'))(n);
+    case 'sistem':
+      return n.title || 'Sistem bildirimi';
     default:
       return 'Yeni bildirim';
   }
@@ -226,6 +231,8 @@ export function notificationLines(n: AppNotification): { detail: string | null; 
       return { detail: null, preview: b };
     case 'odev_degerlendirildi':
       return { detail: t, preview: null };
+    case 'sistem':
+      return { detail: null, preview: b };
     case 'topluluk':
       if (n.sub === 'follow') return { detail: null, preview: null };
       if (n.sub === 'moderation') return { detail: null, preview: b };
@@ -309,6 +316,8 @@ export function useUnreadNotifications(enabled: boolean) {
       timer = setTimeout(() => { if (alive) void refresh(); }, 300);
     };
     load();
+    // İzin önceden verilmişse bu cihazın telefon bildirimi kaydını yenile (yeni izin istemez)
+    void syncPushSubscription().catch(() => {});
     const channel = supabase
       .channel(uniqueChannel('notifications'))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, load)

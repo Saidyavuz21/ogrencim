@@ -175,3 +175,68 @@ Mesaj sayfaları zaten bağlı (TeacherMessagesPage, StudentMessagesPage) — on
 - Bu çağrılar sessizdir: hata gösterilmez, yükleme göstergesi yoktur, sayfanın geri kalanını beklemez.
 - Aynı kayıt için tekrar tekrar çağırma (useEffect bağımlılıklarını kayıt kimliğine göre kur).
 ```
+
+---
+
+# Aşama 2 – Telefon bildirimi ekranları
+
+Altyapı hazır ve canlıda: `supabase/migrations/20261118090000_push.sql`, gönderici `supabase/functions/send-push`,
+servis betiği `public/sw.js`, istemci `src/lib/pushData.ts`. Ortak kurallar aynen geçerli; ek olarak:
+
+```
+EK KURALLAR (Aşama 2)
+- Telefon bildirimi yalnızca src/lib/pushData.ts ile: getPushSupport, getPushStatus, enablePush, disablePush, sendTestPush.
+  public/sw.js, src/lib/pushData.ts, src/lib/notificationData.ts DEĞİŞTİRME. Notification.requestPermission'ı doğrudan ÇAĞIRMA
+  (enablePush yapar). enablePush yalnızca kullanıcının bir düğmeye tıklamasıyla çağrılır (sayfa açılınca izin İSTENMEZ).
+- Push metni sunucuda üretilir ve içerik içermez; ekranda "mesaj içeriği telefona düşmez" demene gerek yok, söz de verme.
+```
+
+## İstem 5 – Ayarlarda telefon bildirimi
+
+```
+GÖREV: src/components/notifications/NotificationSettingsSection.tsx'e "Telefon bildirimleri" kısmı ekle (öğretmen ve öğrenci).
+
+1) Bölümün en üstünde (başlık ve açıklamanın altında) "Bu cihaz" satırı:
+   - getPushStatus() ile durum. Duruma göre:
+     support === 'unsupported': soluk metin "Bu tarayıcı telefon bildirimlerini desteklemiyor."
+     support === 'ios-needs-install': kısa yönerge (öğrenciye "sen", öğretmene "siz"):
+       "iPhone'da bildirim almak için: Safari'de Paylaş düğmesine dokun → Ana Ekrana Ekle → ana ekrandaki tofutr simgesinden aç."
+     permission === 'denied': "Bildirim izni bu tarayıcıda engellenmiş. Tarayıcı ayarlarından tofutr.com için bildirimlere izin ver." (anahtar yok)
+     aksi hâlde: "Telefon bildirimleri (bu cihaz)" etiketi + açıklama "Uygulama kapalıyken de bildirim gelir." + role="switch" anahtar.
+       Açık = status.enabled. Açarken enablePush(), kapatırken disablePush(); istek sürerken anahtar disabled; sonuçtan sonra getPushStatus() ile yenile;
+       hata gelirse Notice ile res.error göster (anahtar eski hâlinde kalır).
+   - Anahtar açıkken yanında küçük ikincil düğme "Deneme gönder" → sendTestPush(); başarılıysa Notice ok:
+     "Deneme bildirimi gönderildi. Birkaç saniye içinde gelmezse telefonun bildirim ayarlarını kontrol et/edin."; hata → Notice error.
+     İstek sürerken düğme disabled. Sessiz saatte de deneme gider (sunucu deneme için sessiz saati uygulamaz).
+2) Tür listesindeki her satıra ikinci bir anahtar ekle: "Zil" ve "Telefon" diye iki küçük sütun başlığı olsun (masaüstünde satırın sağında
+   iki anahtar yan yana; mobilde satır altında iki anahtar etiketleriyle). Telefon anahtarı: açık = tür off_push içinde DEĞİL.
+   Değiştirince saveNotificationSettings({ off_in_app, off_push }) (mevcut kilit mantığıyla: kayıt sürerken bütün anahtarlar disabled,
+   hata olursa geri al). Zil kapalıysa telefon anahtarı da disabled ve kapalı görünsün (zilde olmayan bildirim telefona da gitmez).
+   Bu cihazda bildirim kapalıyken telefon anahtarları yine değiştirilebilir (başka cihazları etkiler); üstte zaten durum yazıyor.
+3) Öğretmende sessiz saatler kısmı aynen kalır. Öğrenci notu ("Gece 22.00 ile 07.00 arasında telefona bildirim gönderilmez.") aynen kalır.
+4) Sayfa açılınca izin İSTENMEZ; yalnızca anahtara dokununca.
+```
+
+## İstem 6 – "Bildirimleri aç" kartı
+
+```
+GÖREV: Kullanıcıyı telefon bildirimlerini açmaya bir kez davet eden küçük kart.
+
+Dosya: src/components/notifications/PushInviteCard.tsx (+ stiller Notifications.module.css içinde)
+  export function PushInviteCard({ role }: { role: 'teacher' | 'student' })
+
+Görünme kuralı (hepsi birden):
+- getPushStatus(): support 'supported' VE permission 'default' VE enabled false
+  (iOS'ta support 'ios-needs-install' ise kart, bunun yerine kısa "Ana Ekrana Ekle" yönergesini gösterir; aynı kapatma kuralı geçerli).
+- localStorage 'tofutr:push-invite-dismissed' içinde 30 günden yeni bir tarih YOK (try/catch ile oku/yaz; erişilemezse kartı gösterme).
+Metin:
+- Öğrenci: başlık "Bildirimleri aç", metin "Yeni ödev, mesaj ve canlı ders başlayınca telefonuna bildirim gelsin."
+- Öğretmen: başlık "Bildirimleri açın", metin "Öğrenci mesajı ve ödev teslimi gelince telefonunuza bildirim gelsin."
+Düğmeler: birincil "Aç" → enablePush(); başarılıysa kart kaybolur ve kısa başarı mesajı (Notice ok) 4 sn görünür; hata → Notice error, kart kalır.
+          ikincil "Şimdi değil" → localStorage'a bugünün tarihi, kart kaybolur.
+Yer:
+- Öğrenci: StudentPortal ana sayfasında (page === 'home'), InstallAppBanner'ın altında. InstallAppBanner'a dokunma.
+- Öğretmen: TeacherHome'un en üstünde, mevcut içerikten önce (masaüstü ve mobil). Öğretmen sol menüsüne / ikon şeridine DOKUNMA.
+Görünüm: DESIGN.md'ye uygun sade kart (ince kenarlık, 18px radius, mobilde 16px), solda Bell ikonu; dikkat çekici renk/animasyon YOK.
+Kart sayfa açılır açılmaz izin İSTEMEZ; yalnızca "Aç" düğmesiyle.
+```

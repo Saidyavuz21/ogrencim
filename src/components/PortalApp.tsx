@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import teacherStyles from './teacher/TeacherDashboard.module.css';
 import { restoreSession, signOutUser, supabase } from '../lib/supabaseClient';
+import { disablePushOnLogout } from '../lib/pushData';
 import { TeacherDashboard } from './teacher/TeacherDashboard';
 import { AdminDashboard } from './admin/AdminDashboard';
 import { StudentPortal } from './student/StudentPortal';
@@ -47,6 +48,8 @@ export function PortalApp({ variant = 'public' }: PortalAppProps) {
   const handleLogout = async () => {
     setIsAuthenticated(false);
     setCurrentUser(SIGNED_OUT_USER);
+    // Bu cihaz çıkıştan sonra bu kişiye telefon bildirimi almasın (oturum kapanmadan önce)
+    await disablePushOnLogout();
     await signOutUser();
     window.location.replace('/');
   };

@@ -85,19 +85,21 @@ Ekranlar (Gemini; istemler `docs/BILDIRIM_GEMINI_ISTEMLERI.md`):
 
 ## Aşama 2 – Telefon bildirimi (Web Push) ve ikon rozeti
 
-Altyapı (Claude):
-- [ ] **VAPID anahtar çifti**: gizli anahtar sunucuda (Supabase Vault + Edge Function ortamı), açık anahtar `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
-- [ ] `push_subscriptions`: alıcı, `endpoint` (tekil), `p256dh`, `auth`, cihaz bilgisi, `last_ok_at`; öğrenci çıkışında ve 410/404 yanıtında silinir
-- [ ] **Service worker** `public/sw.js`: `push` → bildirim göster + `setAppBadge(sayı)`; `notificationclick` → ilgili sayfayı aç / öne getir. Önbellekleme yok (yalnızca bildirim)
-- [ ] **Gönderici:** Edge Function `send-push` (mevcut `purge-expired-files` düzeniyle). `notifications` eklenince pg_net ile tetiklenir, pg_cron her dakika yedek tarama yapar; `push_state` = bekliyor → gönderildi / atlandı / ertelendi
-- [ ] Kurallar: tür push'a kapalıysa atla; sessiz saatteyse sabah 07:00'ye ertele (birikenler tek özet push); aynı `group_key` için 10 dakikada en fazla bir push
-- [ ] Rozet: uygulama açıkken `navigator.setAppBadge(okunmamış)`, hepsi okununca `clearAppBadge()`. Android'de rozet bildirimden gelir (Samsung sayı gösterir)
-- [ ] `manifest.json` kontrolü: `display: standalone`, `start_url`, ikonlar, `id` (iPhone'da push için ana ekrana ekleme şart)
+Altyapı (Claude) ✅ 14 Kasım 2026 · `supabase/migrations/20261118090000_push.sql` (canlıda; önce geri alınan işlemle test edildi), `supabase/functions/send-push` (sunucuya kuruldu), `public/sw.js`, `src/lib/pushData.ts`:
+- [x] **VAPID anahtar çifti** ve gönderim gizli anahtarı Vault'ta (`push_vapid_public`, `push_vapid_private`, `push_dispatch_secret`). Açık anahtar ortam değişkeni değil, `push_public_key()` fonksiyonundan gelir (yayın ayarı gerekmez)
+- [x] `push_subscriptions`: kişi, `endpoint` (tekil), `p256dh`, `auth`, cihaz bilgisi, `last_ok_at`, `fail_count`; öğrencide oturuma bağlı (çıkışta ve oturum süresi dolunca geçersiz); 404/410 ya da 5 ardışık hatada silinir; kişi başına en fazla 10 cihaz
+- [x] **Service worker** `public/sw.js`: push → bildirim + `setAppBadge`; tıklayınca açık sekmeyi öne getirip ilgili sayfaya gider. Önbellekleme yok. `/sw.js` önbelleğe alınmaz (next.config)
+- [x] **Gönderici:** Edge Function `send-push` (`web-push` kütüphanesi, Edge Runtime 1.71.2'de denendi). Yeni bekleyen bildirim olan işlemin sonunda pg_net ile bir kez, ayrıca pg_cron `push-dispatch` her dakika
+- [x] Kurallar (`push_claim`): tür push'a kapalıysa atla; sessiz saatte ertele, bitince kişi başına tek özet ("3 yeni bildirimin var"); aynı bildirim için 10 dakikada en fazla bir push; 30 dakikadan eski bekleyen atlanır; push metninde içerik yok
+- [x] Rozet: push ile gelen okunmamış sayısı (`setAppBadge`), uygulama açıkken `useUnreadNotifications`
+- [x] Çıkışta bu cihazın aboneliği silinir (öğretmen ve öğrenci); uygulama açılınca izin varsa kayıt yenilenir
+- [x] `manifest.json`: `id`, `start_url: /giris`
+- [x] Deneme bildirimi: `push_test()` (saatte 5)
 
-Ekranlar (Gemini):
-- [ ] **"Bildirimleri aç" kartı**: ilk girişte değil, kullanıcı bir şey yaptıktan sonra (ör. ödev teslim edince / mesaj gönderince) bir kez; reddederse 30 gün sormaz
-- [ ] iPhone'da ana ekrana eklenmemişse "Önce Paylaş → Ana Ekrana Ekle" yönergesi
-- [ ] Ayarlarda "Bu cihazda bildirimler: açık / kapalı" ve "Deneme bildirimi gönder"
+Ekranlar (Gemini; İstem 5 ve 6):
+- [ ] Ayarlarda "Bu cihaz" anahtarı, "Deneme gönder", tür başına telefon anahtarı (İstem 5)
+- [ ] **"Bildirimleri aç" kartı** ana sayfada; izin yalnızca "Aç"a basınca istenir; "Şimdi değil" → 30 gün sormaz (İstem 6)
+- [ ] iPhone'da ana ekrana eklenmemişse "Paylaş → Ana Ekrana Ekle" yönergesi (İstem 5 ve 6)
 
 Doğrulama (kullanıcıyla birlikte, gerçek cihazda):
 - [ ] Samsung + Chrome / Samsung Internet: bildirim, tıklayınca doğru sayfa, ikonda sayı

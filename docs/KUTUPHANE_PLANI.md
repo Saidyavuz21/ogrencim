@@ -11,7 +11,13 @@ Güncelleme: 14 Kasım 2026. Kullanıcıyla konuşularak kararlaştırıldı. He
   - Çalışma kâğıtları: Sınıf → Ders
   - Görseller: Ders/alan → Konu (ör. Fen görselleri › Duyu organları); görseller her sınıfta kullanılabildiği için sınıf seviyesi yok
   - Animasyonlar: Ders → Konu
-- Ağacı süper admin yönetici panelinden kurar (ekle, adlandır, sırala, taşı, gizle).
+- **Bütün düzeni süper admin yönetir**, kod değişikliği gerekmez:
+  - **Bölümler:** ekle, adını/açıklamasını/kapak resmini değiştir, sırala, gizle (silme yalnızca boş bölümde)
+  - **Kategoriler:** ekle, adlandır, sırala, gizle; başka üst kategoriye ya da **başka bölüme taşı** (alt kategorileri ve öğeleriyle birlikte)
+  - **Öğeler:** tek tek ya da **toplu seçip** başka kategoriye/bölüme taşı, gizle
+  - Taşımada kurallar: 3 seviye sınırı aşılamaz; bir kategori kendi altına taşınamaz; her bölüm hangi öğe türlerini kabul ettiğini bilir
+    (ör. Hazır tahtalar yalnızca tahta, Görseller yalnızca resim) ve uymayan öğe oraya taşınamaz
+  - Taşıma dosya yolunu değiştirmez (dosya depoda yerinde kalır); ödev ve tahtalardaki kopyalar etkilenmez
 - **Belirli gün ve haftalar** (23 Nisan, 29 Ekim…) ayrı bölüm değil **etiket**: aynı etiketle görsel, kâğıt ve tahta birlikte bulunur.
 - Animasyon: ilk sürümde **GIF + YouTube bağlantısı**. MP4 ve ses (MP3) sonra (depo ayarı + sunucu trafiği kararı).
 - Hazır tahtalar admin'in kendi tahta düzenleyicisinde hazırlanır, "Kütüphaneye ekle" ile yayınlanır; öğretmen "Tahtalarıma kopyala" ile alır. Asıl tahta değişmez; admin güncellerse sonraki kopyalar yeni sürümü alır.
@@ -53,18 +59,20 @@ Veritabanı (Claude):
 - [ ] `library_sections`: ad, adres adı (slug), açıklama, kapak resmi, sıra, gizli
 - [ ] `library_categories`: bölüm, üst kategori (en fazla 3 seviye), ad, slug, kapak resmi (isteğe bağlı), sıra, gizli
 - [ ] `library_items` ekleri: `section_id`, `category_id`, `kind` (`file` | `link` | `board`), `grades` (sınıf seviyeleri), `subject`, `source` (kaynak/lisans), `thumb_path`, `url` (bağlantı), `hidden`, `sort`
-- [ ] Taşıma: mevcut 4 kategori → Görseller bölümü altında kategoriler (Duyu organları ve Gezegenler → Fen görselleri; Meyveler ve Okul eşyaları → kullanıcıya sorulacak)
+- [ ] Taşıma: mevcut 4 kategori → "Başlangıç yerleşimi"ndeki düzen
+- [ ] `library_sections.allowed_kinds`: bölümün kabul ettiği öğe türleri (taşıma ve yükleme bunu denetler)
 - [ ] Güvenlik: okuma öğretmen + admin, yazma yalnızca admin; gizli bölüm/kategori/öğe öğretmene görünmez
 - [ ] Bölüm/kategori sayıları ve kapakları tek çağrıda (giriş ekranı hızlı açılsın)
 
 Veri katmanı (Claude) `src/lib/libraryData.ts`:
 - [ ] `listSections`, `listCategories(section)`, `listItems({ section, category, q, grade, subject, before })`, `searchLibrary(q)`
-- [ ] Admin: bölüm/kategori ekle-düzenle-sırala-taşı-gizle; öğe yükle (önizleme üretimiyle), kategori ata, gizle
+- [ ] Admin: bölüm ekle-düzenle-sırala-gizle; kategori ekle-düzenle-sırala-gizle-taşı (bölümler arası dahil); öğe yükle (önizleme üretimiyle), tek/toplu taşı, gizle
+- [ ] Taşıma kuralları sunucuda denetlenir (3 seviye, döngü yok, bölümün öğe türü)
 - [ ] Mevcut `listLibrary` (ödev seçici ve tahta paneli) çalışmaya devam eder; sonra bölüm/kategori süzmesi eklenir
 
 Ekranlar (Gemini):
 - [ ] Öğretmen: bölüm kartları → kategori kartları → alt kategori sekmeleri + öğeler; yol göstergesi; her seviyede arama; mobilde 2 sütun
-- [ ] Admin: kategori ağacı yönetimi (sürükle-bırak yerine yukarı/aşağı düğmeleri), öğe yükleme sırasında bölüm/kategori seçimi
+- [ ] Admin: bölüm yönetimi ve kategori ağacı (sürükle-bırak yerine yukarı/aşağı ve "Taşı…" düğmeleri), öğelerde çoklu seçim + "Taşı…" + "Gizle", yüklemede bölüm/kategori seçimi
 - [ ] Ödev seçicisi ve tahta panelinde bölüm/kategori süzgeci
 
 ## Aşama 2 – Çalışma kâğıtları ve animasyonlar
@@ -87,7 +95,9 @@ Ekranlar (Gemini):
 - [ ] Topluluktan kütüphaneye alma (öğretmen izni + kaynak adı)
 - [ ] Belirli gün ve haftalar için öne çıkan şerit (tarihe göre)
 
-## Açık sorular
+## Başlangıç yerleşimi
 
-- Meyveler ve Okul eşyaları hangi ana kategoriye girecek? (Öneri: "Hayat Bilgisi görselleri" ya da "Genel görseller")
-- Görseller bölümünün ilk seviyesi: dersler mi (Fen, Matematik, Türkçe, Hayat Bilgisi, Sosyal…) yoksa konu alanları mı (Canlılar, Uzay, Eşyalar…)?
+Yerleşimi süper admin sonradan istediği gibi değiştirir; taşıma yalnızca başlangıç düzenini kurar:
+- Görseller › Fen görselleri › Duyu organları, Gezegenler
+- Görseller › Genel görseller › Meyveler, Okul eşyaları
+- Çalışma kâğıtları, Animasyonlar, Hazır tahtalar: boş bölüm olarak açılır (kategorilerini admin kurar)

@@ -102,7 +102,7 @@ Ekranlar (Gemini; İstem 5 ve 6):
 - [x] iPhone'da ana ekrana eklenmemişse "Paylaş → Ana Ekrana Ekle" yönergesi (İstem 5 ve 6)
 
 Doğrulama (kullanıcıyla birlikte, gerçek cihazda):
-- [ ] Samsung + Chrome / Samsung Internet: bildirim, tıklayınca doğru sayfa, ikonda sayı
+- [x] (14 Kasım, kullanıcı denedi) Samsung + Chrome: bildirim geliyor; ikon rozeti Android'de telefonun kendi ayarına bağlı (sitenin setAppBadge'i Android'de yok)
 - [ ] iPhone (ana ekrana eklenmiş): bildirim ve rozet
 - [ ] Masaüstü Chrome / Edge
 - [ ] Öğrenci çıkış yapınca o cihaza bildirim gitmiyor
